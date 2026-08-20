@@ -1,0 +1,122 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import { useAuthStore } from '../store/authStore'
+
+const RELATIONSHIPS = ['Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Spouse', 'Grandfather', 'Grandmother', 'Other']
+const AVATAR_COLORS = ['#4F8EF7','#FF6B6B','#34C759','#FF9500','#AF52DE','#FF2D55','#5AC8FA','#FFCC00']
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+}
+
+export default function AddMemberPage() {
+  const [displayName, setDisplayName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [relationship, setRelationship] = useState('')
+  const [betName, setBetName] = useState('')
+  const [selectedColor, setSelectedColor] = useState(AVATAR_COLORS[0])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const { familyId } = useAuthStore()
+  const navigate = useNavigate()
+
+  const handleAdd = async (e) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const { error } = await supabase.from('family_members').insert({
+        family_id: familyId,
+        user_id: generateUUID(), // unique ID for each member
+        display_name: displayName,
+        phone: phone ? `+91${phone}` : null,
+        relationship,
+        bet_name: betName || null,
+        avatar_color: selectedColor,
+        role: 'member',
+      })
+      if (error) throw error
+      navigate('/')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="add-member-page">
+      <div className="add-member-card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>←</button>
+          <h2 style={{ fontSize: 20, fontWeight: 800 }}>Add Family Member</h2>
+        </div>
+
+        {error && <div className="error-msg">{error}</div>}
+
+        <form onSubmit={handleAdd}>
+          {/* Avatar color picker */}
+          <div className="form-group">
+            <label>Avatar Color</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {AVATAR_COLORS.map(c => (
+                <div key={c} onClick={() => setSelectedColor(c)} style={{
+                  width: 32, height: 32, borderRadius: '50%', background: c,
+                  cursor: 'pointer',
+                  border: selectedColor === c ? '3px solid #1A1A2E' : '3px solid transparent',
+                  transition: 'border 0.15s',
+                }} />
+              ))}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Full Name *</label>
+            <input className="input" value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
+              placeholder="e.g. Sudha" required />
+          </div>
+
+          <div className="form-group">
+            <label>Mobile Number</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <span style={{
+                padding: '13px 10px', background: 'var(--bg)',
+                border: '1.5px solid var(--border)', borderRadius: 'var(--radius)',
+                fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap'
+              }}>🇮🇳 +91</span>
+              <input className="input" type="tel" value={phone}
+                onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="9876543210" maxLength={10} style={{ flex: 1 }} />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Relationship *</label>
+            <select className="input" value={relationship}
+              onChange={e => setRelationship(e.target.value)} required>
+              <option value="">Select relationship</option>
+              {RELATIONSHIPS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Pet Name / Nickname</label>
+            <input className="input" value={betName}
+              onChange={e => setBetName(e.target.value)}
+              placeholder="e.g. Chinna, Kanna, Joo..." />
+          </div>
+
+          <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop: 8 }}>
+            {loading ? 'Adding...' : 'Add Member'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
