@@ -43,22 +43,51 @@ export default function MapAllPage() {
   const { locations } = useLocations(familyId)
   const watchRef = useRef(null)
 
-  // Share own location
+  // Share own location — update every 10 seconds + on movement
   useEffect(() => {
     if (!user || !familyId) return
+
+    let lastLat = null, lastLng = null
+
     const update = async (pos) => {
+      lastLat = pos.coords.latitude
+      lastLng = pos.coords.longitude
+      const now = new Date().toISOString()
       await supabase.from('locations').upsert({
         user_id: user.id, family_id: familyId,
-        lat: pos.coords.latitude, lng: pos.coords.longitude,
+        lat: lastLat, lng: lastLng,
         accuracy: pos.coords.accuracy,
-        is_sharing: true, updated_at: new Date().toISOString(),
+        is_sharing: true, updated_at: now,
       }, { onConflict: 'user_id' })
+      // Update heartbeat so online status works
+      await supabase.from('family_members')
+        .update({ last_active: now })
+        .eq('user_id', user.id)
+        .eq('family_id', familyId)
     }
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(update)
-      watchRef.current = navigator.geolocation.watchPosition(update, null, { enableHighAccuracy: true })
+      watchRef.current = navigator.geolocation.watchPosition(update, null, {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 10000,
+      })
     }
-    return () => { if (watchRef.current) navigator.geolocation.clearWatch(watchRef.current) }
+
+    // Force update every 10 seconds regardless of movement
+    const interval = setInterval(() => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(update, null, {
+          enableHighAccuracy: true, maximumAge: 5000,
+        })
+      }
+    }, 10000)
+
+    return () => {
+      if (watchRef.current) navigator.geolocation.clearWatch(watchRef.current)
+      clearInterval(interval)
+    }
   }, [user, familyId])
 
   const memberCount = Object.keys(locations).length

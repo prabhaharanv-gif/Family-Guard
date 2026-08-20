@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { to: '/messages', icon: '💬', label: 'Messages' },
   { to: '/sos', icon: '🆘', label: 'SOS' },
   { to: '/map-all', icon: '🗺️', label: 'Map' },
+  { to: '/profile', icon: '👤', label: 'Profile' },
 ]
 
 export default function Layout() {

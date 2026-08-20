@@ -8,9 +8,9 @@ export default function MessagesPage() {
   const [members, setMembers] = useState({})
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [clearing, setClearing] = useState(false)
   const bottomRef = useRef(null)
 
-  // Load members map for display names
   useEffect(() => {
     if (!familyId) return
     supabase.from('family_members').select('user_id, display_name, avatar_color')
@@ -24,7 +24,6 @@ export default function MessagesPage() {
       })
   }, [familyId])
 
-  // Load messages
   useEffect(() => {
     if (!familyId) return
 
@@ -34,7 +33,6 @@ export default function MessagesPage() {
       .order('created_at', { ascending: true })
       .then(({ data }) => { if (data) setMessages(data) })
 
-    // Real-time subscription
     const channel = supabase
       .channel(`messages:${familyId}`)
       .on('postgres_changes', {
@@ -43,12 +41,21 @@ export default function MessagesPage() {
       }, (payload) => {
         setMessages(prev => [...prev, payload.new])
       })
+      .on('postgres_changes', {
+        event: 'DELETE', schema: 'public', table: 'messages',
+        filter: `family_id=eq.${familyId}`,
+      }, () => {
+        // Any delete event — reload messages (handles bulk clear)
+        supabase.from('messages').select('*')
+          .eq('family_id', familyId)
+          .order('created_at', { ascending: true })
+          .then(({ data }) => setMessages(data || []))
+      })
       .subscribe()
 
     return () => supabase.removeChannel(channel)
   }, [familyId])
 
-  // Scroll to bottom on new message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -65,6 +72,14 @@ export default function MessagesPage() {
     setSending(false)
   }
 
+  const handleClearMessages = async () => {
+    if (!window.confirm('Clear all messages for everyone in this family? This cannot be undone.')) return
+    setClearing(true)
+    await supabase.from('messages').delete().eq('family_id', familyId)
+    setMessages([])
+    setClearing(false)
+  }
+
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -74,12 +89,32 @@ export default function MessagesPage() {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Top Bar */}
+      {/* Top Bar with Clear button */}
       <div className="top-bar">
         <div>
           <div className="top-bar-title">💬 Messages</div>
           <div className="top-bar-sub">Family group chat</div>
         </div>
+        {messages.length > 0 && (
+          <button
+            onClick={handleClearMessages}
+            disabled={clearing}
+            style={{
+              background: 'rgba(245,59,87,0.18)',
+              border: '1px solid rgba(245,59,87,0.35)',
+              color: '#FF6B80',
+              borderRadius: 10,
+              padding: '7px 12px',
+              fontWeight: 700,
+              fontSize: 12,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {clearing ? '...' : '🗑️ Clear'}
+          </button>
+        )}
       </div>
 
       {/* Messages */}
@@ -102,7 +137,6 @@ export default function MessagesPage() {
               alignItems: 'flex-end',
               gap: 8,
             }}>
-              {/* Avatar */}
               {!isOwn && (
                 <div style={{
                   width: 32, height: 32, borderRadius: '50%',

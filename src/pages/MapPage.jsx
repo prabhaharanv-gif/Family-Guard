@@ -52,23 +52,43 @@ export default function MapPage() {
       .then(({ data }) => { if (data) setMember(data) })
   }, [targetUserId, familyId])
 
-  // Share own location continuously
+  // Share own location — update every 10 seconds + on movement
   useEffect(() => {
     if (!user || !familyId) return
+
     const update = async (pos) => {
+      const now = new Date().toISOString()
       await supabase.from('locations').upsert({
         user_id: user.id, family_id: familyId,
         lat: pos.coords.latitude, lng: pos.coords.longitude,
         accuracy: pos.coords.accuracy,
-        is_sharing: true,
-        updated_at: new Date().toISOString(),
+        is_sharing: true, updated_at: now,
       }, { onConflict: 'user_id' })
+      await supabase.from('family_members')
+        .update({ last_active: now })
+        .eq('user_id', user.id)
+        .eq('family_id', familyId)
     }
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(update)
-      watchRef.current = navigator.geolocation.watchPosition(update, null, { enableHighAccuracy: true })
+      watchRef.current = navigator.geolocation.watchPosition(update, null, {
+        enableHighAccuracy: true, maximumAge: 5000, timeout: 10000,
+      })
     }
-    return () => { if (watchRef.current) navigator.geolocation.clearWatch(watchRef.current) }
+
+    const interval = setInterval(() => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(update, null, {
+          enableHighAccuracy: true, maximumAge: 5000,
+        })
+      }
+    }, 10000)
+
+    return () => {
+      if (watchRef.current) navigator.geolocation.clearWatch(watchRef.current)
+      clearInterval(interval)
+    }
   }, [user, familyId])
 
   const targetLoc = targetUserId ? locations[targetUserId] : null

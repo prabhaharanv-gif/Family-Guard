@@ -154,8 +154,11 @@ export default function SOSPage() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 12, overflow: 'hidden' }}>
           {sentMessage && (
             <div style={{
-              background: 'var(--green)', color: '#fff', borderRadius: 12,
-              padding: '12px 16px', marginBottom: 12, textAlign: 'center', fontWeight: 700,
+              background: 'linear-gradient(135deg, #10B981, #059669)',
+              color: '#fff', borderRadius: 14,
+              padding: '14px 16px', marginBottom: 12, textAlign: 'center',
+              fontWeight: 700, fontSize: 14,
+              boxShadow: '0 4px 16px rgba(16,185,129,0.35)',
             }}>
               ✅ Alert sent: "{sentMessage}"
             </div>
@@ -226,9 +229,19 @@ export default function SOSPage() {
                   🕐 {new Date(alert.created_at).toLocaleString()}
                 </div>
                 {!alert.is_resolved && isOwn && (
-                  <button className="resolve-btn" style={{ background: 'var(--blue)' }}
-                    onClick={() => resolveAlert(alert.id)}>
-                    I'm Safe Now ✅
+                  <button
+                    onClick={() => resolveAlert(alert.id)}
+                    style={{
+                      marginTop: 14, width: '100%',
+                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                      color: '#fff', border: 'none', borderRadius: 12,
+                      padding: '12px 16px', fontWeight: 800,
+                      fontFamily: 'inherit', cursor: 'pointer', fontSize: 14,
+                      boxShadow: '0 4px 16px rgba(16,185,129,0.4)',
+                      letterSpacing: 0.2,
+                    }}
+                  >
+                    ✅ I'm Safe Now
                   </button>
                 )}
               </div>

@@ -77,8 +77,13 @@ export const useAuthStore = create((set, get) => ({
 
   updateFamilyName: async (familyId, newName) => {
     const { error } = await supabase
-      .from('families').update({ name: newName }).eq('id', familyId)
-    if (!error) set({ familyName: newName })
+      .from('families')
+      .update({ name: newName })
+      .eq('id', familyId)
+
+    if (error) throw error
+
+    set({ familyName: newName })
   },
 
   signOut: async () => {
