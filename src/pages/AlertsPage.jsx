@@ -3,12 +3,14 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useSOS } from '../hooks/useSOS'
 import PullToRefresh from '../components/PullToRefresh'
+import Dialog from '../components/Dialog'
 
 export default function AlertsPage() {
   const { user, familyId } = useAuthStore()
   const { resolveAlert } = useSOS(familyId, user?.id)
   const [alerts, setAlerts] = useState([])
   const [clearing, setClearing] = useState(false)
+  const [dialog, setDialog] = useState(null)
 
   const loadAlerts = async () => {
     if (!familyId) return
@@ -20,20 +22,30 @@ export default function AlertsPage() {
     if (data) setAlerts(data)
   }
 
-  useEffect(() => {
-    loadAlerts()
-  }, [familyId])
+  useEffect(() => { loadAlerts() }, [familyId])
 
-  const handleClearHistory = async () => {
+  const handleClearHistory = () => {
     const resolved = alerts.filter(a => a.is_resolved)
-    if (resolved.length === 0) { alert('No resolved alerts to clear.'); return }
-    if (!window.confirm(`Clear ${resolved.length} resolved alert(s)? This cannot be undone.`)) return
-    setClearing(true)
-    const ids = resolved.map(a => a.id)
-    const { error } = await supabase.rpc('clear_sos_history', { p_family_id: familyId || ids[0] })
-    if (error) { alert('Error: ' + error.message) }
-    else { setAlerts(prev => prev.filter(a => !a.is_resolved)) }
-    setClearing(false)
+    if (resolved.length === 0) {
+      setDialog({ type: 'alert', title: 'Nothing to Clear', message: 'There are no resolved alerts to clear.' })
+      return
+    }
+    setDialog({
+      type: 'confirm',
+      title: 'Clear Alert History',
+      message: `This will permanently delete ${resolved.length} resolved alert${resolved.length > 1 ? 's' : ''}. This cannot be undone.`,
+      confirmLabel: 'Clear',
+      onConfirm: async () => {
+        setClearing(true)
+        const { error } = await supabase.rpc('clear_sos_history', { p_family_id: familyId })
+        if (error) {
+          setDialog({ type: 'error', title: 'Admin Only', message: 'Only a family Admin can clear alert history.' })
+        } else {
+          setAlerts(prev => prev.filter(a => !a.is_resolved))
+        }
+        setClearing(false)
+      },
+    })
   }
 
   const resolvedCount = alerts.filter(a => a.is_resolved).length
@@ -88,6 +100,17 @@ export default function AlertsPage() {
       )}
       </div>
       </PullToRefresh>
+
+      {dialog && (
+        <Dialog
+          type={dialog.type}
+          title={dialog.title}
+          message={dialog.message}
+          confirmLabel={dialog.confirmLabel}
+          onConfirm={dialog.onConfirm}
+          onClose={() => setDialog(null)}
+        />
+      )}
     </div>
   )
 }

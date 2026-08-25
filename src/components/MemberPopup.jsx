@@ -8,11 +8,7 @@ export default function MemberPopup({ member, onClose }) {
   const hasPhone = digits.length >= 10
 
   const handleCall = () => {
-    if (hasPhone) {
-      window.location.href = 'tel:' + digits
-    } else {
-      alert('No phone number saved for this member.')
-    }
+    if (hasPhone) window.location.href = 'tel:' + digits
   }
 
   return (

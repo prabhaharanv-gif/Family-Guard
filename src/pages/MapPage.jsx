@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { Geolocation } from '@capacitor/geolocation'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useLocations } from '../hooks/useLocations'
+import SmoothMarker from '../components/SmoothMarker'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -32,8 +33,16 @@ function createIcon(color, initial) {
 
 function FlyTo({ lat, lng }) {
   const map = useMap()
+  const hasFlown = useRef(false)
   useEffect(() => {
-    if (lat && lng) map.flyTo([lat, lng], 16, { animate: true, duration: 1.2 })
+    // Center on the member once when their location first appears. After that,
+    // let the SmoothMarker glide handle movement so the map doesn't keep
+    // yanking the viewport on every GPS update.
+    if (hasFlown.current) return
+    if (lat && lng) {
+      hasFlown.current = true
+      map.flyTo([lat, lng], 16, { animate: true, duration: 1.2 })
+    }
   }, [lat, lng])
   return null
 }
@@ -141,12 +150,11 @@ export default function MapPage() {
 
           {/* Target member marker */}
           {targetLoc && (
-            <Marker
+            <SmoothMarker
               position={[targetLoc.lat, targetLoc.lng]}
               icon={createIcon(member?.avatar_color || '#4F8EF7', member?.display_name?.[0] || '?')}
             >
-              <Popup>
-                <div style={{ minWidth: 160, fontFamily: 'Inter, sans-serif', padding: '2px 0' }}>
+              <div style={{ minWidth: 160, fontFamily: 'Inter, sans-serif', padding: '2px 0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                     <div style={{
                       width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
@@ -173,18 +181,16 @@ export default function MapPage() {
                       boxShadow: '0 3px 10px rgba(149,19,69,0.3)',
                     }}>🗺️ Open in Google Maps</a>
                 </div>
-              </Popup>
-            </Marker>
+            </SmoothMarker>
           )}
 
           {/* Other family members */}
           {Object.entries(locations)
             .filter(([uid]) => uid !== targetUserId)
             .map(([uid, loc]) => (
-              <Marker key={uid} position={[loc.lat, loc.lng]}
+              <SmoothMarker key={uid} position={[loc.lat, loc.lng]}
                 icon={createIcon(loc.avatarColor || '#ccc', loc.displayName?.[0] || '?')}>
-                <Popup>
-                  <div style={{ minWidth: 160, fontFamily: 'Inter, sans-serif', padding: '2px 0' }}>
+                <div style={{ minWidth: 160, fontFamily: 'Inter, sans-serif', padding: '2px 0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                       <div style={{
                         width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
@@ -211,8 +217,7 @@ export default function MapPage() {
                         boxShadow: '0 3px 10px rgba(79,70,229,0.3)',
                       }}>🗺️ Open in Google Maps</a>
                   </div>
-                </Popup>
-              </Marker>
+              </SmoothMarker>
             ))}
         </MapContainer>
       </div>

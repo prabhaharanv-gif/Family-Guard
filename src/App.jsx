@@ -19,6 +19,7 @@ import ProfilePage from './pages/ProfilePage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import { usePushNotifications } from './hooks/usePushNotifications'
 import { useLocationService } from './hooks/useLocationService'
+import { useLocationBroadcast } from './hooks/useLocationBroadcast'
 import { useHeartbeat } from './hooks/useHeartbeat'
 import { initBackHandler, pushCloser, removeCloser } from './lib/backHandler'
 import Layout from './components/Layout'
@@ -151,7 +152,7 @@ function PolicyContent() {
     { icon: '📋', title: 'What We Collect', color: '#4F46E5', items: ['Mobile number for account creation', 'Display name and optional profile photo', 'Real-time location (only when sharing is ON)', 'Messages within your family group', 'SOS alerts you send or receive', 'Device push notification token for alerts'] },
     { icon: '🔒', title: 'How We Use It', color: '#059669', items: ['Location shared only with your own family group', 'Messages visible only to your family members', 'Push tokens used only for SOS and message alerts', 'We never sell or share your data', 'We never read your messages'] },
     { icon: '🛡️', title: 'How We Protect It', color: '#7C3AED', items: ['Data stored on SOC 2 compliant Supabase servers', 'Row Level Security on all tables', 'Passwords bcrypt hashed — we cannot see them', 'All API calls require authentication'] },
-    { icon: '🗑️', title: 'Data Retention', color: '#D97706', items: ['Messages auto-deleted after 90 days', 'Resolved SOS alerts deleted after 30 days', 'Only current location stored — no history', 'Delete your account and all data anytime from Profile'] },
+    { icon: '🗑️', title: 'Data Retention', color: '#D97706', items: ['Messages are automatically deleted after 90 days', 'Resolved SOS alerts are deleted after 30 days', 'Only your current location is stored — no history is kept', 'Delete your account and all data anytime from Profile'] },
     { icon: '✅', title: 'Your Rights', color: '#16A34A', items: ['Turn off location sharing anytime in Profile → Privacy', 'Delete account and all data from Profile → Delete My Account', 'Leave any family group at any time'] },
   ]
   return (
@@ -426,7 +427,8 @@ export default function App() {
   }, [sosAlert, nativeAlarmOn, stopAllAlarms])
 
   usePushNotifications(user?.id, familyId)
-  useLocationService() // Background GPS foreground service — keeps tracking when app killed
+  useLocationService() // Background GPS foreground service — keeps tracking when app killed (native only)
+  useLocationBroadcast(user?.id, familyId) // Always-on writer — keeps pins fresh on web + native while app is open
 
   // Device ping listener — plays alarm when another member pings this device
   useEffect(() => {

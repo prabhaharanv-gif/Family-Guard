@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { Geolocation } from '@capacitor/geolocation'
 import { useAuthStore } from '../store/authStore'
 import { useLocations } from '../hooks/useLocations'
 import { supabase } from '../lib/supabase'
 import { startBatteryReporting } from '../hooks/useBattery'
+import SmoothMarker from '../components/SmoothMarker'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -35,18 +36,25 @@ function createIcon(color, initial, avatarUrl) {
 
 function FitAll({ locations }) {
   const map = useMap()
+  const hasFit = useRef(false)
+
   useEffect(() => {
+    // Only auto-fit on the very first load so the map doesn't jump around
+    // while members are moving in real-time.
+    if (hasFit.current) return
     const coords = Object.values(locations).map(l => [l.lat, l.lng])
+    if (coords.length === 0) return
+    hasFit.current = true
     if (coords.length === 1) map.setView(coords[0], 15)
-    else if (coords.length > 1) map.fitBounds(coords, { padding: [60, 60] })
+    else map.fitBounds(coords, { padding: [60, 60] })
   }, [locations])
+
   return null
 }
 
 export default function MapAllPage() {
   const { user, familyId } = useAuthStore()
   const { locations } = useLocations(familyId)
-  const watchRef   = useRef(null)
   const batteryRef = useRef({ level: null, charging: false })
 
   useEffect(() => {
@@ -122,28 +130,16 @@ export default function MapAllPage() {
       }
 
       const pos = await getPositionRobust()
-      // Got a fix — clear any previous error
+      // Got a fix — clear any previous error and write once.
+      // NOTE: continuous location writing is handled globally by
+      // useLocationBroadcast (in App.jsx), which runs whenever the app is
+      // open on any platform. Here we just do a one-shot write so tapping
+      // Refresh gives an immediate fresh fix.
       setLocErrorType(null)
       await updateLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, pos.coords.speed)
-
-      // Start watching for continuous updates
-      if (!watchRef.current) {
-        watchRef.current = await Geolocation.watchPosition(
-          { enableHighAccuracy: true },
-          async (p, err) => {
-            if (err) { console.warn('[Map] Watch error:', err); return }
-            if (p) {
-              setLocErrorType(null) // clear error once watch delivers a fix
-              await updateLocation(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.coords.speed)
-            }
-          }
-        )
-      }
     } catch (e) {
       console.warn('[Map] GPS failed:', e?.message)
       // Only show the error banner if the map itself is also empty.
-      // If other members' locations ARE visible, GPS failing for our own
-      // position update is a background issue — the map is still useful.
       setLocErrorType('fail')
     }
   }
@@ -161,24 +157,8 @@ export default function MapAllPage() {
   useEffect(() => {
     if (!user || !familyId) return
     startTracking()
-
-    // ── Background location timeout ───────────────────────────────────────
-    // Stop silently updating location if the app has been idle/backgrounded
-    // for more than 2 hours. Protects user privacy and battery.
-    // The watch restarts next time the user actively opens the Map tab.
-    const IDLE_TIMEOUT = 2 * 60 * 60 * 1000 // 2 hours
-    const idleTimer = setTimeout(() => {
-      if (watchRef.current) {
-        Geolocation.clearWatch({ id: watchRef.current })
-        watchRef.current = null
-        console.log('[Map] Location watch stopped after 2h idle')
-      }
-    }, IDLE_TIMEOUT)
-
-    return () => {
-      clearTimeout(idleTimer)
-      if (watchRef.current) { Geolocation.clearWatch({ id: watchRef.current }); watchRef.current = null }
-    }
+    // No watch cleanup needed here anymore — continuous tracking lives in
+    // the global useLocationBroadcast hook.
   }, [user, familyId])
 
   const memberCount = Object.keys(locations).length
@@ -259,7 +239,7 @@ export default function MapAllPage() {
           <FitAll locations={locations} />
 
           {Object.entries(locations).map(([uid, loc]) => (
-            <Marker
+            <SmoothMarker
               key={uid}
               position={[loc.lat, loc.lng]}
               icon={createIcon(
@@ -268,8 +248,7 @@ export default function MapAllPage() {
                 loc.avatarUrl || null
               )}
             >
-              <Popup>
-                <div style={{ minWidth: 160, fontFamily: 'Inter, sans-serif', padding: '2px 0' }}>
+              <div style={{ minWidth: 160, fontFamily: 'Inter, sans-serif', padding: '2px 0' }}>
                   {/* Avatar + name row */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                     {loc.avatarUrl ? (
@@ -289,6 +268,12 @@ export default function MapAllPage() {
                       <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
                         🕐 {new Date(loc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                       </div>
+                      {/* Stale warning — if location is older than 5 minutes */}
+                      {(Date.now() - new Date(loc.updatedAt)) > 5 * 60 * 1000 && (
+                        <div style={{ fontSize: 10, color: '#D97706', fontWeight: 700, marginTop: 3 }}>
+                          ⚠️ Location may be outdated
+                        </div>
+                      )}
                     </div>
                   </div>
                   {/* Google Maps button */}
@@ -306,8 +291,7 @@ export default function MapAllPage() {
                     🗺️ Open in Google Maps
                   </a>
                 </div>
-              </Popup>
-            </Marker>
+            </SmoothMarker>
           ))}
         </MapContainer>
       </div>

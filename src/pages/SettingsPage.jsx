@@ -1,14 +1,32 @@
+import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
+import Dialog from '../components/Dialog'
 
 export default function SettingsPage() {
   const { user, familyName, inviteCode, signOut } = useAuthStore()
+  const [dialog, setDialog] = useState(null)
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(inviteCode)
+    setDialog({ type: 'alert', title: 'Code Copied', message: 'Share this code with your family members so they can join.' })
+  }
+
+  const handleSignOut = () => {
+    setDialog({
+      type: 'confirm',
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out of FamilyGuard?',
+      confirmLabel: 'Sign Out',
+      onConfirm: signOut,
+    })
+  }
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div className="top-bar">
         <div>
           <div className="top-bar-title">⚙️ Settings</div>
-          <div className="top-bar-sub">Account & preferences</div>
+          <div className="top-bar-sub">Account & Preferences</div>
         </div>
       </div>
 
@@ -51,7 +69,7 @@ export default function SettingsPage() {
             <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: 6, color: '#000000' }}>
               {inviteCode}
             </div>
-            <button onClick={() => { navigator.clipboard.writeText(inviteCode); alert('Copied!') }}
+            <button onClick={handleCopyCode}
               style={{
                 background: 'var(--blue-light)', border: 'none', borderRadius: 10,
                 padding: '8px 14px', color: '#000000', fontWeight: 700,
@@ -94,16 +112,33 @@ export default function SettingsPage() {
         </div>
 
         {/* Sign Out */}
-        <button onClick={() => { if (window.confirm('Sign out of FamilyGuard?')) signOut() }}
+        <button onClick={handleSignOut}
           style={{
             width: '100%', padding: 15, borderRadius: 16,
             background: 'var(--red-light)', border: '1.5px solid rgba(245,59,87,0.2)',
             color: 'var(--red)', fontWeight: 700, fontSize: 15,
             fontFamily: 'inherit', cursor: 'pointer', marginTop: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
           }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
           Sign Out
         </button>
       </div>
+
+      {dialog && (
+        <Dialog
+          type={dialog.type}
+          title={dialog.title}
+          message={dialog.message}
+          confirmLabel={dialog.confirmLabel}
+          onConfirm={dialog.onConfirm}
+          onClose={() => setDialog(null)}
+        />
+      )}
     </div>
   )
 }

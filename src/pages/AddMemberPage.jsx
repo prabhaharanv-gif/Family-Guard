@@ -100,7 +100,7 @@ export default function AddMemberPage() {
           </div>
 
           <div className="form-group">
-            <label>Pet Name / Nickname</label>
+            <label>Nickname (Optional)</label>
             <input className="input" value={betName}
               onChange={e => setBetName(e.target.value)}
               placeholder="e.g. Chinna, Kanna, Joo..." />

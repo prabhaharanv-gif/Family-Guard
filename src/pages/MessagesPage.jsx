@@ -3,6 +3,7 @@ import { registerPlugin, Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
+import Dialog from '../components/Dialog'
 
 const MessagesPageNative = registerPlugin('MessagesPage')
 function notifyNativePageOpen(open) {
@@ -88,7 +89,7 @@ function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onInfo, onC
           <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
         </svg>
       ),
-      label: 'Reply', sub: 'Quote and reply to this message',
+      label: 'Reply', sub: 'Reply to this message',
       color: '#4F46E5', bg: '#EEF2FF', fn: onReply, show: true,
     },
     {
@@ -98,7 +99,7 @@ function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onInfo, onC
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
       ),
-      label: 'Edit', sub: 'Change your message',
+      label: 'Edit', sub: 'Edit this message',
       color: '#059669', bg: '#F0FDF4', fn: onEdit, show: isOwn,
     },
     {
@@ -129,14 +130,22 @@ function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onInfo, onC
 
         {/* Message preview */}
         <div style={{
-          background: 'linear-gradient(135deg, #F8F7FF, #FDF0F5)',
-          borderRadius: 14, padding: '12px 16px',
-          marginBottom: 20, border: '1px solid #EDE9FF',
+          background: 'linear-gradient(135deg, #FDF7FA 0%, #F8F0F5 100%)',
+          borderRadius: 16, padding: '14px 16px',
+          marginBottom: 20,
+          border: '1.5px solid #EEE0E6',
+          boxShadow: '0 2px 8px rgba(149,19,69,0.06)',
         }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 5 }}>
-            {isOwn ? 'Your Message' : 'Message'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div style={{
+              width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+              background: isOwn ? '#951345' : '#6B7280',
+            }} />
+            <div style={{ fontSize: 11, fontWeight: 700, color: isOwn ? '#951345' : '#6B7280', letterSpacing: 0.2 }}>
+              {isOwn ? 'Your message' : 'Message'}
+            </div>
           </div>
-          <div style={{ fontSize: 13, color: '#0D0C1D', lineHeight: 1.5, maxHeight: 60, overflow: 'hidden' }}>
+          <div style={{ fontSize: 13, color: '#0D0C1D', lineHeight: 1.5, maxHeight: 72, overflow: 'hidden' }}>
             {msg.content}
           </div>
         </div>
@@ -279,6 +288,7 @@ export default function MessagesPage() {
   })
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch]   = useState(false)
+  const [dialog, setDialog]           = useState(null) // { type, title, message, onConfirm }
   const [typingUsers, setTypingUsers] = useState({})
   const bottomRef      = useRef(null)
   const longPressRef   = useRef(null)
@@ -420,24 +430,38 @@ export default function MessagesPage() {
       p_message_id:  msgId,
       p_new_content: newContent,
     })
-    if (error) alert('Could not edit: ' + error.message)
+    if (error) setDialog({ type: 'error', message: 'Could not edit message. Please try again.' })
   }
 
   // ── Delete ──────────────────────────────────────────────────────────────────
-  const handleDelete = async (msg) => {
-    if (!window.confirm('Delete this message?')) return
-    const { error } = await supabase.rpc('delete_message', { p_message_id: msg.id })
-    if (error) alert('Could not delete: ' + error.message)
-    else setMessages(prev => prev.filter(m => m.id !== msg.id))
+  const handleDelete = (msg) => {
+    setDialog({
+      type: 'confirm',
+      title: 'Delete Message',
+      message: 'This will delete the message for everyone in the family.',
+      confirmLabel: 'Delete',
+      onConfirm: async () => {
+        const { error } = await supabase.rpc('delete_message', { p_message_id: msg.id })
+        if (error) setDialog({ type: 'error', message: 'Could not delete message. Please try again.' })
+        else setMessages(prev => prev.filter(m => m.id !== msg.id))
+      },
+    })
   }
 
   // ── Clear chat ──────────────────────────────────────────────────────────────
-  const handleClearMessages = async () => {
-    if (!window.confirm('Clear all messages for everyone in this family? This cannot be undone.')) return
-    setClearing(true)
-    await supabase.from('messages').delete().eq('family_id', familyId)
-    setMessages([])
-    setClearing(false)
+  const handleClearMessages = () => {
+    setDialog({
+      type: 'confirm',
+      title: 'Clear All Messages',
+      message: 'This will delete all messages for everyone in this family and cannot be undone.',
+      confirmLabel: 'Clear Chat',
+      onConfirm: async () => {
+        setClearing(true)
+        await supabase.from('messages').delete().eq('family_id', familyId)
+        setMessages([])
+        setClearing(false)
+      },
+    })
   }
 
   const handleTextChange = (e) => {
@@ -605,12 +629,22 @@ export default function MessagesPage() {
           const filtered = searchQuery
             ? messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
             : messages
-          return filtered.map(msg => {
+          return filtered.map((msg, idx) => {
             const isOwn  = msg.user_id === user?.id
             const member = members[msg.user_id]
             const readCount = (reads[msg.id] || []).length
             const allRead   = otherMemberCount > 0 && readCount >= otherMemberCount
             const someRead  = readCount > 0
+
+            // ── Grouping: hide name/avatar when same sender follows immediately ──
+            const prevMsg = filtered[idx - 1]
+            const nextMsg = filtered[idx + 1]
+            const sameAsPrev = prevMsg && prevMsg.user_id === msg.user_id
+            const sameAsNext = nextMsg && nextMsg.user_id === msg.user_id
+            // Only show name/avatar on the FIRST bubble in a run
+            const showSenderInfo = !sameAsPrev
+            // Tighten vertical gap inside a group
+            const isGrouped = sameAsPrev || sameAsNext
 
             // Date separator
             const msgDate = new Date(msg.created_at)
@@ -627,7 +661,7 @@ export default function MessagesPage() {
             }
 
           return (
-            <div key={msg.id}>
+            <div key={msg.id} style={{ marginBottom: isGrouped && sameAsNext ? 2 : 8 }}>
               {/* Date separator */}
               {dateLabel && (
                 <div style={{
@@ -649,20 +683,25 @@ export default function MessagesPage() {
               flexDirection: isOwn ? 'row-reverse' : 'row',
               alignItems: 'flex-end', gap: 8,
             }}>
-              {/* Avatar */}
+              {/* Avatar — shown only on first bubble of a run; placeholder keeps alignment */}
               {!isOwn && (
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
-                  background: member?.avatar_color || '#951345',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontWeight: 800, fontSize: 13, flexShrink: 0,
-                }}>
-                  {member?.display_name?.[0]?.toUpperCase() || '?'}
-                </div>
+                showSenderInfo ? (
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: member?.avatar_color || '#951345',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontWeight: 800, fontSize: 13, flexShrink: 0,
+                  }}>
+                    {member?.display_name?.[0]?.toUpperCase() || '?'}
+                  </div>
+                ) : (
+                  <div style={{ width: 32, flexShrink: 0 }} />
+                )
               )}
 
               <div style={{ maxWidth: '72%' }}>
-                {!isOwn && (
+                {/* Sender name — only on first bubble of a run */}
+                {!isOwn && showSenderInfo && (
                   <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 3, paddingLeft: 4 }}>
                     {member?.display_name || 'Family'}
                   </div>
@@ -768,6 +807,18 @@ export default function MessagesPage() {
         />
       )}
 
+      {/* ── In-app dialog (replaces alert/confirm) ── */}
+      {dialog && (
+        <Dialog
+          type={dialog.type}
+          title={dialog.title}
+          message={dialog.message}
+          confirmLabel={dialog.confirmLabel}
+          onConfirm={dialog.onConfirm}
+          onClose={() => setDialog(null)}
+        />
+      )}
+
       {/* ── Edit modal ── */}
       {editMsg && (
         <EditModal msg={editMsg} onClose={() => setEditMsg(null)} onSave={handleEdit} />
@@ -778,13 +829,13 @@ export default function MessagesPage() {
         <div className="overlay" onClick={() => setDetailMsg(null)}>
           <div className="popup" onClick={e => e.stopPropagation()}>
             <div className="popup-handle" />
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
               Message Info
             </div>
             <div style={{ background: '#F5F4FB', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#0D0C1D', marginBottom: 16 }}>
               {detailMsg.content}
             </div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#34B7F1', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#34B7F1', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ color: '#34B7F1', display: 'inline-flex' }}><DoubleTick /></span>
               Read by {(reads[detailMsg.id] || []).length}
             </div>
@@ -814,7 +865,7 @@ export default function MessagesPage() {
               if (pending.length === 0) return null
               return (
                 <>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#8480B0', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#8480B0', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ display: 'inline-flex' }}><SingleTick /></span>
                     Delivered · not read ({pending.length})
                   </div>

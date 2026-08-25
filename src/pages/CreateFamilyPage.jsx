@@ -65,7 +65,7 @@ export default function CreateFamilyPage() {
             />
           </div>
           <div className="form-group">
-            <label>Your Name in the family</label>
+            <label>Your Name in the Family</label>
             <input
               className="input"
               value={displayName}

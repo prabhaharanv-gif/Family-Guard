@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import MemberPopup from '../components/MemberPopup'
+import Dialog from '../components/Dialog'
 import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 
@@ -171,7 +172,7 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
           style={{ marginBottom: 8 }}
         />
         <div style={{ fontSize: 11, color: '#B0AAC8', marginBottom: 16 }}>
-          Leave blank and save to remove the nickname.
+          Clear the field and save to remove the nickname.
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
@@ -206,6 +207,7 @@ export default function FamilyPage() {
   const [sosAlert, setSosAlert]         = useState(null)
   const [sosAlertMember, setSosAlertMember] = useState(null)
   const [isOwner, setIsOwner]           = useState(false)      // is current user the family creator?
+  const [dialog, setDialog]             = useState(null)
   const longPressTimer = useRef(null)
   const didLongPress = useRef(false)
   const navigate = useNavigate()
@@ -337,15 +339,15 @@ export default function FamilyPage() {
     try {
       const { error } = await supabase.rpc('accept_join_request', { request_id: request.id })
       if (error) throw error
-      alert(`✅ ${request.requester_name} added to family!`)
-    } catch (err) { alert('Error: ' + err.message) }
+      setDialog({ type: 'alert', title: 'Member Added', message: `${request.requester_name} has been added to the family!` })
+    } catch (err) { setDialog({ type: 'error', message: err.message }) }
   }
 
   const handleReject = async (request) => {
     try {
       const { error } = await supabase.rpc('reject_join_request', { request_id: request.id })
       if (error) throw error
-    } catch (err) { alert('Error: ' + err.message) }
+    } catch (err) { setDialog({ type: 'error', message: err.message }) }
   }
 
   const handleSaveFamilyName = async () => {
@@ -355,9 +357,9 @@ export default function FamilyPage() {
       setEditingFamilyName(false)
       const msg = err.message || ''
       if (msg.includes('PGRST301') || msg.includes('permission') || msg.includes('not authorized')) {
-        alert('Only the family creator can rename this family.')
+        setDialog({ type: 'error', title: 'Admin Only', message: 'Only the family creator can rename the family.' })
       } else {
-        alert('Could not rename family: ' + msg)
+        setDialog({ type: 'error', message: 'Could not rename family. Please try again.' })
       }
     }
   }
@@ -383,8 +385,8 @@ export default function FamilyPage() {
       p_family_id:      familyId,
       p_target_user_id: member.user_id,
     })
-    if (pingErr) { alert('Error: ' + pingErr.message); return }
-    alert(`📡 Ping sent to ${member.display_name}'s device!`)
+    if (pingErr) { setDialog({ type: 'error', message: pingErr.message }); return }
+    setDialog({ type: 'alert', title: 'Ping Sent', message: `A sound alert has been sent to ${member.display_name}'s device.` })
   }
 
   const handleSaveMemberName = async (member, newName) => {
@@ -396,7 +398,7 @@ export default function FamilyPage() {
       p_target_user_id: member.user_id,
       p_nickname:       trimmed,
     })
-    if (error) { alert('Failed to save name: ' + error.message); return }
+    if (error) { setDialog({ type: 'error', message: 'Failed to save name. Please try again.' }); return }
 
     setNicknames(prev => {
       const next = { ...prev }
@@ -406,22 +408,40 @@ export default function FamilyPage() {
     })
   }
 
-  const handleRemoveMember = async (member) => {
-    if (!window.confirm(`Remove "${member.display_name}" from the family?`)) return
-    // SECURE: remove_family_member RPC validates admin role server-side
-    const { error } = await supabase.rpc('remove_family_member', {
-      p_family_id: familyId,
-      p_user_id:   member.user_id,
+  const handleRemoveMember = (member) => {
+    setDialog({
+      type: 'confirm',
+      title: 'Remove Member',
+      message: `Remove "${member.display_name}" from the family? They will need a new invite to rejoin.`,
+      confirmLabel: 'Remove',
+      onConfirm: async () => {
+        // SECURE: remove_family_member RPC validates admin role server-side
+        const { error } = await supabase.rpc('remove_family_member', {
+          p_family_id: familyId,
+          p_user_id:   member.user_id,
+        })
+        if (error) { setDialog({ type: 'error', message: error.message }); return }
+        setMembers(prev => prev.filter(m => m.user_id !== member.user_id))
+        setActionMember(null)
+      },
     })
-    if (error) { alert('Error: ' + error.message); return }
-    setMembers(prev => prev.filter(m => m.user_id !== member.user_id))
-    setActionMember(null)
   }
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {sosAlert && <SOSAlert alert={sosAlert} memberName={sosAlertMember} onDismiss={() => setSosAlert(null)} />}
+
+      {dialog && (
+        <Dialog
+          type={dialog.type}
+          title={dialog.title}
+          message={dialog.message}
+          confirmLabel={dialog.confirmLabel}
+          onConfirm={dialog.onConfirm}
+          onClose={() => setDialog(null)}
+        />
+      )}
 
       {/* Long-press action sheet */}
       {/* ── Family Switcher Sheet ── */}
@@ -719,7 +739,7 @@ export default function FamilyPage() {
                     ) : lastSeen ? (
                       <span>Last seen {lastSeen}</span>
                     ) : (
-                      <span>Not yet active</span>
+                      <span>No activity yet</span>
                     )}
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
+import Dialog from '../components/Dialog'
 
 export default function OnboardingPage() {
   const { user, familyId, inviteCode } = useAuthStore()
@@ -10,6 +11,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState('')
   const [requested, setRequested] = useState(false)
   const [targetFamily, setTargetFamily] = useState(null)
+  const [dialog, setDialog] = useState(null)
 
   const handleJoinRequest = async (e) => {
     e.preventDefault()
@@ -93,7 +95,7 @@ export default function OnboardingPage() {
       <div className="auth-card">
         <div className="auth-logo">🛡️</div>
         <h1 className="auth-title">Welcome!</h1>
-        <p className="auth-subtitle">What would you like to do?</p>
+        <p className="auth-subtitle">How would you like to get started?</p>
 
         <div style={{
           background: 'var(--blue-light)', borderRadius: 16,
@@ -109,7 +111,7 @@ export default function OnboardingPage() {
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>
             Share this with family members so they can join you
           </div>
-          <button onClick={() => { navigator.clipboard.writeText(inviteCode); alert('Code copied!') }}
+          <button onClick={() => { navigator.clipboard.writeText(inviteCode); setDialog({ type: 'alert', title: 'Code Copied', message: 'Share this code with your family members so they can join.' }) }}
             style={{
               marginTop: 12, background: 'linear-gradient(135deg, #4F46E5, #7C3AED)', color: '#fff',
               border: 'none', borderRadius: 10, padding: '10px 24px',
@@ -126,6 +128,15 @@ export default function OnboardingPage() {
           🔑 Join Another Family
         </button>
       </div>
+
+      {dialog && (
+        <Dialog
+          type={dialog.type}
+          title={dialog.title}
+          message={dialog.message}
+          onClose={() => setDialog(null)}
+        />
+      )}
     </div>
   )
 }

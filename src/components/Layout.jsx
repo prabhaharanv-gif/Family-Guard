@@ -30,22 +30,27 @@ const NAV_ITEMS = [
   {
     to: '/sos', label: 'SOS',
     icon: () => (
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-        {/* Outer pulse ring */}
-        <circle cx="15" cy="15" r="14" fill="url(#sosGrad)" opacity="0.18"/>
-        {/* Main button */}
-        <circle cx="15" cy="15" r="11" fill="url(#sosGrad)"/>
-        {/* Inner ring for depth */}
-        <circle cx="15" cy="15" r="11" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/>
-        <text x="15" y="19.5" textAnchor="middle" fontSize="8.5" fontWeight="900"
-          fill="white" fontFamily="Sora,Arial,sans-serif" letterSpacing="0.8">SOS</text>
-        <defs>
-          <radialGradient id="sosGrad" cx="40%" cy="35%">
-            <stop offset="0%" stopColor="#F43F5E"/>
-            <stop offset="100%" stopColor="#BE123C"/>
-          </radialGradient>
-        </defs>
-      </svg>
+      <div style={{ position: 'relative', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Outer maroon ring */}
+        <div style={{
+          position: 'absolute', inset: -3, borderRadius: '50%',
+          border: '2px solid #951345', opacity: 0.3,
+        }} />
+        {/* Red SOS circle — same size as other icons' visual area */}
+        <div style={{
+          width: 28, height: 28, borderRadius: '50%',
+          background: 'linear-gradient(145deg, #F43F5E 0%, #BE123C 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 3px 10px rgba(244,63,94,0.45)',
+        }}>
+          <span style={{
+            fontFamily: 'Sora, sans-serif',
+            fontSize: 9, fontWeight: 900,
+            color: '#fff', letterSpacing: 0.4,
+            lineHeight: 1, userSelect: 'none',
+          }}>SOS</span>
+        </div>
+      </div>
     ),
   },
   {

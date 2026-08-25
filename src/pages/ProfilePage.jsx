@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
+import Dialog from '../components/Dialog'
 
 function Toggle({ on, onToggle }) {
   return (
@@ -13,10 +14,10 @@ function Toggle({ on, onToggle }) {
       onClick={onToggle}
       style={{
         width: 46, height: 26, borderRadius: 13,
-        background: on ? '#059669' : '#D1D5DB',
+        background: on ? '#951345' : '#D1D5DB',
         border: 'none', cursor: 'pointer', position: 'relative',
         transition: 'all 0.25s', flexShrink: 0,
-        boxShadow: on ? '0 2px 8px rgba(16,185,129,0.4)' : 'none',
+        boxShadow: on ? '0 2px 8px rgba(149,19,69,0.35)' : 'none',
       }}
     >
       <div style={{
@@ -246,6 +247,7 @@ export default function ProfilePage() {
   const [saving, setSaving]             = useState(false)
   const [saved, setSaved]               = useState(false)
   const [error, setError]               = useState('')
+  const [dialog, setDialog]             = useState(null)
   const [showPwModal, setShowPwModal]           = useState(false)
   const [showDeleteModal, setShowDeleteModal]   = useState(false)
   const [showInviteSheet, setShowInviteSheet]   = useState(false)
@@ -487,11 +489,18 @@ export default function ProfilePage() {
     }
   }
 
-  const handleLeaveFamily = async () => {
+  const handleLeaveFamily = () => {
     const label = myFamilyName || familyId || 'this family'
-    if (!window.confirm('Do You Want To Leave From Your Sweet Family? 💔')) return
-    try { await leaveFamily(user.id, familyId); navigate('/onboarding') }
-    catch (err) { setError(err.message) }
+    setDialog({
+      type: 'confirm',
+      title: 'Leave Family',
+      message: `Are you sure you want to leave "${label}"? You will need a new invite to rejoin.`,
+      confirmLabel: 'Leave',
+      onConfirm: async () => {
+        try { await leaveFamily(user.id, familyId); navigate('/onboarding') }
+        catch (err) { setError(err.message) }
+      },
+    })
   }
 
   const initial = displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?'
@@ -520,16 +529,24 @@ export default function ProfilePage() {
               border: '2px solid rgba(255,255,255,0.5)',
             }}>{initial}</div>
           )}
-          {/* Small edit badge so users know the circle is tappable */}
+          {/* Camera edit badge */}
           <div style={{
-            position: 'absolute', bottom: -2, right: -2,
-            width: 16, height: 16, borderRadius: '50%',
-            background: '#fff', border: '1.5px solid #951345',
+            position: 'absolute', bottom: -1, right: -1,
+            width: 20, height: 20, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #951345, #720D35)',
+            border: '2px solid #fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 9, lineHeight: 1,
+            boxShadow: '0 2px 6px rgba(149,19,69,0.4)',
           }}>
-            {uploading ? '⏳' : '✎'}
+            {uploading
+              ? <div style={{ width: 8, height: 8, borderRadius: '50%', border: '2px solid #fff', borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
+              : <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+            }
           </div>
+          <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
           {/* Dim overlay while uploading */}
           {uploading && (
             <div style={{
@@ -546,13 +563,19 @@ export default function ProfilePage() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button onClick={() => { if (window.confirm('Sign out?')) signOut() }} style={{
+          <button onClick={() => setDialog({ type: 'confirm', title: 'Sign Out', message: 'Are you sure you want to sign out?', confirmLabel: 'Sign Out', onConfirm: signOut })} style={{
             background: 'rgba(255,255,255,0.92)',
             border: '1.5px solid #fff',
             color: '#951345', borderRadius: 10,
             padding: '7px 14px', fontWeight: 800, fontSize: 12,
             fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap',
+            display: 'flex', alignItems: 'center', gap: 6,
           }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
             Sign Out
           </button>
         </div>
@@ -601,7 +624,7 @@ export default function ProfilePage() {
                 My Code
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 6, color: '#000' }}>
+                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 3, color: '#0D0C1D', fontFamily: 'Sora, sans-serif' }}>
                   {myInviteCode}
                 </div>
                 <button onClick={() => setShowInviteSheet(true)} style={{
@@ -691,14 +714,12 @@ export default function ProfilePage() {
                         </div>
                       </div>
                     </div>
-                    {isActive ? (
+                    {isActive && (
                       <div style={{
                         background: '#951345', color: '#fff',
                         fontSize: 10, fontWeight: 800, padding: '3px 8px',
                         borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5,
                       }}>Active</div>
-                    ) : (
-                      <div style={{ color: '#9C6B7A', fontSize: 12, fontWeight: 600 }}>Tap to switch →</div>
                     )}
                   </div>
                 )
@@ -712,18 +733,54 @@ export default function ProfilePage() {
           <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 12 }}>
             Privacy
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#000' }}>🟢 Show Me Online</div>
-            <Toggle on={showOnline} onToggle={handleToggleOnline} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#000' }}>📍 Show My Location</div>
-            <Toggle on={showLocation} onToggle={handleToggleLocation} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#000' }}>🕐 Show Last Seen</div>
-            <Toggle on={showLastSeen} onToggle={handleToggleLastSeen} />
-          </div>
+          {[
+            {
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/>
+                </svg>
+              ),
+              label: 'Show Me Online', value: showOnline, handler: handleToggleOnline,
+            },
+            {
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+              ),
+              label: 'Show My Location', value: showLocation, handler: handleToggleLocation,
+            },
+            {
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              ),
+              label: 'Show Last Seen', value: showLastSeen, handler: handleToggleLastSeen,
+            },
+          ].map((item, i, arr) => (
+            <div key={item.label}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                    background: '#FDF0F5', border: '1px solid #EDD0DA',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {item.icon}
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#0D0C1D' }}>{item.label}</div>
+                </div>
+                <Toggle on={item.value} onToggle={item.handler} />
+              </div>
+              {i < arr.length - 1 && (
+                <div style={{ height: 1, background: '#F5EEF2', margin: '10px 0' }} />
+              )}
+            </div>
+          ))}
         </div>
 
         {/* ── SAVE + CHANGE PASSWORD side by side ── */}
@@ -754,7 +811,17 @@ export default function ProfilePage() {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 20 }}>🔒</span>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                background: '#F5E8EF', border: '1px solid #EDD0DA',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  <circle cx="12" cy="16" r="1.2" fill="#951345"/>
+                </svg>
+              </div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>Privacy Policy</div>
                 <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>How we protect your data</div>
@@ -795,7 +862,7 @@ export default function ProfilePage() {
               await signOut()
               window.location.href = '/login'
             } catch (err) {
-              alert('Failed to delete account: ' + err.message)
+              setDialog({ type: 'error', message: 'Failed to delete account. Please try again or contact support.' })
             }
           }}
         />
@@ -810,7 +877,7 @@ export default function ProfilePage() {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
               Share My Code
             </div>
-            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 8, color: '#000', marginBottom: 4 }}>
+            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 5, color: '#0D0C1D', fontFamily: 'Sora, sans-serif', marginBottom: 4 }}>
               {myInviteCode}
             </div>
             <div style={{ fontSize: 12, color: '#9C6B7A', marginBottom: 20 }}>
@@ -906,7 +973,7 @@ export default function ProfilePage() {
 
             {/* Go to Family */}
             <button onClick={() => {
-              if (selectedFam.family_id !== familyId) switchFamily(selectedFam.family_id)
+              // Switching is done from Family page — here just show details
               setSelectedFam(null)
               navigate('/')
             }} style={{
@@ -924,11 +991,18 @@ export default function ProfilePage() {
             </button>
 
             {/* Leave Family */}
-            <button onClick={async () => {
-              if (!window.confirm(`Leave "${selectedFam.name}"? You will need an invite to rejoin.`)) return
-              setSelectedFam(null)
-              try { await leaveFamily(user.id, selectedFam.family_id) }
-              catch (e) { setError(e.message) }
+            <button onClick={() => {
+              setDialog({
+                type: 'confirm',
+                title: 'Leave Family',
+                message: `Leave "${selectedFam.name}"? You will need a new invite to rejoin.`,
+                confirmLabel: 'Leave',
+                onConfirm: async () => {
+                  setSelectedFam(null)
+                  try { await leaveFamily(user.id, selectedFam.family_id) }
+                  catch (e) { setError(e.message) }
+                },
+              })
             }} style={{
               width: '100%', padding: '14px 16px', borderRadius: 14,
               background: '#FFF0F0', border: '1.5px solid #EF4444',
@@ -944,6 +1018,17 @@ export default function ProfilePage() {
 
           </div>
         </div>
+      )}
+
+      {dialog && (
+        <Dialog
+          type={dialog.type}
+          title={dialog.title}
+          message={dialog.message}
+          confirmLabel={dialog.confirmLabel}
+          onConfirm={dialog.onConfirm}
+          onClose={() => setDialog(null)}
+        />
       )}
     </div>
   )

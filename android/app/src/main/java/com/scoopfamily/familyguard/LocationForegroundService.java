@@ -103,9 +103,10 @@ public class LocationForegroundService extends Service {
     // ── Location updates ─────────────────────────────────────────────────────
     private void startLocationUpdates() {
         LocationRequest request = new LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY, 30_000L) // every 30 seconds
-            .setMinUpdateDistanceMeters(10f)              // or if moved > 10m
+                Priority.PRIORITY_HIGH_ACCURACY, 15_000L) // every 15 seconds
+            .setMinUpdateDistanceMeters(5f)               // or if moved > 5m
             .setWaitForAccurateLocation(false)
+            .setMaxUpdateDelayMillis(30_000L)             // max 30s delay
             .build();
 
         locationCallback = new LocationCallback() {
@@ -195,10 +196,25 @@ public class LocationForegroundService extends Service {
 
             int code = conn.getResponseCode();
             if (code == 200 || code == 204) {
-                Log.i(TAG, "Location pushed: " + loc.getLatitude() + "," + loc.getLongitude()
-                    + " battery=" + battery + "% speed=" + String.format("%.1f", speedKmh) + "km/h");
+                Log.i(TAG, "✅ Location pushed: " + loc.getLatitude() + "," + loc.getLongitude()
+                    + " bat=" + battery + "% spd=" + String.format("%.1f", speedKmh) + "km/h");
             } else {
-                Log.w(TAG, "Push failed HTTP " + code);
+                // Read error body for diagnosis
+                java.io.InputStream errStream = conn.getErrorStream();
+                String errBody = "";
+                if (errStream != null) {
+                    try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(errStream))) {
+                        StringBuilder sb = new StringBuilder();
+                        String line;
+                        while ((line = br.readLine()) != null) sb.append(line);
+                        errBody = sb.toString();
+                    } catch (Exception ignored) {}
+                }
+                Log.w(TAG, "❌ Push failed HTTP " + code + " body=" + errBody);
+                // If 401/403 — session token expired, log it clearly
+                if (code == 401 || code == 403) {
+                    Log.e(TAG, "Session token expired — JS needs to call updateSessionToken()");
+                }
             }
             conn.disconnect();
 

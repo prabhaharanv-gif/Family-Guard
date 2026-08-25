@@ -152,7 +152,7 @@ export default function LoginPage() {
     setError('')
     const digits = mobile.replace(/[^0-9]/g, '')
     if (!digits || digits.length !== 10) { setError('Enter a valid 10-digit mobile number'); return }
-    if (!password) { setError('Enter your password'); return }
+    if (!password) { setError('Please enter your password'); return }
     const email = `91${digits}@familyguard.app`
     const { error: authErr } = await supabase.auth.signInWithPassword({ email, password })
     if (authErr) { setError('Invalid mobile number or password'); return }

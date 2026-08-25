@@ -1,20 +1,27 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { cacheSet, cacheGet } from './useOfflineCache'
 
 export function useLocations(familyId) {
   const [locations, setLocations] = useState(() => cacheGet(`locations:${familyId}`) || {})
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading]     = useState(true)
+  // Keep a ref of the latest locations map so the realtime handler always
+  // has access to the current state without stale closure issues.
+  const locationsRef = useRef(locations)
+  useEffect(() => { locationsRef.current = locations }, [locations])
 
   useEffect(() => {
     if (!familyId) return
 
-    async function fetch() {
+    async function fetchAll() {
       const [{ data: locs }, { data: members }] = await Promise.all([
-        supabase.from('locations')
+        supabase
+          .from('locations')
           .select('user_id, lat, lng, updated_at, is_sharing, battery_level, is_charging, speed')
-          .eq('family_id', familyId).eq('is_sharing', true),
-        supabase.from('family_members')
+          .eq('family_id', familyId)
+          .eq('is_sharing', true),
+        supabase
+          .from('family_members')
           .select('user_id, display_name, avatar_color, avatar_url')
           .eq('family_id', familyId),
       ])
@@ -27,15 +34,16 @@ export function useLocations(familyId) {
           if (!l.lat || !l.lng || (l.lat === 0 && l.lng === 0)) return
           const m = memberMap[l.user_id] || {}
           map[l.user_id] = {
-            lat: l.lat, lng: l.lng,
+            lat:         l.lat,
+            lng:         l.lng,
             updatedAt:   l.updated_at,
             displayName: m.display_name || 'Member',
-            avatarColor: m.avatar_color || '#4F8EF7',
-            avatarUrl:   m.avatar_url || null,
+            avatarColor: m.avatar_color || '#951345',
+            avatarUrl:   m.avatar_url   || null,
             isSharing:   l.is_sharing,
             battery:     l.battery_level ?? null,
-            isCharging:  l.is_charging ?? false,
-            speed:       l.speed ?? null,
+            isCharging:  l.is_charging   ?? false,
+            speed:       l.speed         ?? null,
           }
         })
         setLocations(map)
@@ -44,36 +52,106 @@ export function useLocations(familyId) {
       setLoading(false)
     }
 
-    fetch()
+    fetchAll()
 
-    const channel = supabase.channel(`locations:${familyId}`)
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'locations',
-        filter: `family_id=eq.${familyId}`,
-      }, (payload) => {
-        const l = payload.new
-        if (!l || !l.is_sharing) return
-        if (!l.lat || !l.lng || (l.lat === 0 && l.lng === 0)) return
-        setLocations(prev => {
-          const updated = {
-            ...prev,
-            [l.user_id]: {
-              ...prev[l.user_id],
-              lat: l.lat, lng: l.lng,
-              updatedAt:  l.updated_at,
-              isSharing:  l.is_sharing,
-              battery:    l.battery_level ?? prev[l.user_id]?.battery ?? null,
-              isCharging: l.is_charging ?? false,
-              speed:      l.speed ?? null,
-            }
+    // ── Real-time: listen for ANY change to the locations table ──────────────
+    // IMPORTANT: Do NOT filter on is_sharing here — Supabase postgres_changes
+    // UPDATE payloads only include changed columns, so is_sharing can be
+    // undefined (falsy) even when location sharing is on. Instead we re-fetch
+    // the full row from the DB whenever a change arrives, which guarantees we
+    // always have the complete, authoritative data.
+    const channel = supabase
+      .channel(`locations-rt:${familyId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'locations', filter: `family_id=eq.${familyId}` },
+        async (payload) => {
+          const uid = payload.new?.user_id || payload.old?.user_id
+          if (!uid) return
+
+          // Re-fetch the single updated row so we always have the full record
+          const { data: rows } = await supabase
+            .from('locations')
+            .select('user_id, lat, lng, updated_at, is_sharing, battery_level, is_charging, speed')
+            .eq('family_id', familyId)
+            .eq('user_id', uid)
+            .single()
+
+          if (!rows) {
+            // Row deleted — remove from map
+            setLocations(prev => {
+              const next = { ...prev }
+              delete next[uid]
+              cacheSet(`locations:${familyId}`, next)
+              return next
+            })
+            return
           }
-          cacheSet(`locations:${familyId}`, updated)
-          return updated
-        })
-      })
-      .subscribe()
 
-    return () => supabase.removeChannel(channel)
+          // Not sharing — remove pin
+          if (!rows.is_sharing || !rows.lat || !rows.lng || (rows.lat === 0 && rows.lng === 0)) {
+            setLocations(prev => {
+              if (!prev[uid]) return prev
+              const next = { ...prev }
+              delete next[uid]
+              cacheSet(`locations:${familyId}`, next)
+              return next
+            })
+            return
+          }
+
+          // Fetch member info (from current state to avoid extra DB call most of the time)
+          const existing = locationsRef.current[uid]
+          const memberInfo = existing
+            ? { displayName: existing.displayName, avatarColor: existing.avatarColor, avatarUrl: existing.avatarUrl }
+            : await supabase
+                .from('family_members')
+                .select('display_name, avatar_color, avatar_url')
+                .eq('family_id', familyId)
+                .eq('user_id', uid)
+                .single()
+                .then(({ data: m }) => ({
+                  displayName: m?.display_name || 'Member',
+                  avatarColor: m?.avatar_color || '#951345',
+                  avatarUrl:   m?.avatar_url   || null,
+                }))
+
+          setLocations(prev => {
+            const next = {
+              ...prev,
+              [uid]: {
+                lat:         rows.lat,
+                lng:         rows.lng,
+                updatedAt:   rows.updated_at,
+                displayName: memberInfo.displayName,
+                avatarColor: memberInfo.avatarColor,
+                avatarUrl:   memberInfo.avatarUrl,
+                isSharing:   rows.is_sharing,
+                battery:     rows.battery_level ?? prev[uid]?.battery ?? null,
+                isCharging:  rows.is_charging   ?? false,
+                speed:       rows.speed         ?? null,
+              },
+            }
+            cacheSet(`locations:${familyId}`, next)
+            return next
+          })
+        }
+      )
+      .subscribe((status) => {
+        // If the channel fails to subscribe, fall back to polling every 30s
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[useLocations] Realtime channel error — falling back to polling')
+        }
+      })
+
+    // ── Polling fallback: refresh every 30 s in case realtime drops ──────────
+    // This ensures the map stays accurate even if the WebSocket disconnects.
+    const pollTimer = setInterval(fetchAll, 30_000)
+
+    return () => {
+      supabase.removeChannel(channel)
+      clearInterval(pollTimer)
+    }
   }, [familyId])
 
   return { locations, loading }
