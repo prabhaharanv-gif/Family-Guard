@@ -621,8 +621,33 @@ export default function FamilyPage() {
                 <div style={{
                   marginLeft: 'auto', flexShrink: 0,
                   display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', gap: 3,
+                  alignItems: 'center', gap: 4,
                 }}>
+                  {/* Battery */}
+                  {loc?.battery !== null && loc?.battery !== undefined && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 3,
+                      background: loc.battery <= 20 ? '#FEF2F2' : loc.isCharging ? '#F0FDF4' : '#F8F7FF',
+                      borderRadius: 6, padding: '2px 6px',
+                      border: `1px solid ${loc.battery <= 20 ? '#FCA5A5' : loc.isCharging ? '#BBF7D0' : '#EDE9FF'}`,
+                    }}>
+                      <span style={{ fontSize: 10 }}>{loc.isCharging ? '⚡' : loc.battery <= 20 ? '🪫' : '🔋'}</span>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: loc.battery <= 20 ? '#DC2626' : loc.isCharging ? '#16A34A' : '#6B7280' }}>
+                        {loc.battery}%
+                      </span>
+                    </div>
+                  )}
+                  {/* Driving */}
+                  {loc?.speed > 15 && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 3,
+                      background: '#EFF6FF', borderRadius: 6, padding: '2px 6px',
+                      border: '1px solid #BFDBFE',
+                    }}>
+                      <span style={{ fontSize: 10 }}>🚗</span>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: '#1D4ED8' }}>{Math.round(loc.speed)}km/h</span>
+                    </div>
+                  )}
                   <div style={{ position: 'relative', width: 28, height: 28 }}>
                     {/* Map pin SVG */}
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">

@@ -5,6 +5,7 @@ import { Geolocation } from '@capacitor/geolocation'
 import { useAuthStore } from '../store/authStore'
 import { useLocations } from '../hooks/useLocations'
 import { supabase } from '../lib/supabase'
+import { startBatteryReporting } from '../hooks/useBattery'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -45,37 +46,41 @@ function FitAll({ locations }) {
 export default function MapAllPage() {
   const { user, familyId } = useAuthStore()
   const { locations } = useLocations(familyId)
-  const watchRef = useRef(null)
+  const watchRef   = useRef(null)
+  const batteryRef = useRef({ level: null, charging: false })
+
+  useEffect(() => {
+    const stop = startBatteryReporting(b => { batteryRef.current = b })
+    return stop
+  }, [])
   const [refreshing, setRefreshing] = useState(false)
   // null   = not yet tried (no banner)
   // 'perm' = permission denied
   // 'fail' = GPS failed AND no locations in DB yet (only show if map is empty)
   const [locErrorType, setLocErrorType] = useState(null)
 
-  const updateLocation = async (lat, lng, accuracy) => {
+  const updateLocation = async (lat, lng, accuracy, speed) => {
     const { data: memberPref } = await supabase.from('family_members').select('show_location')
       .eq('user_id', user.id).eq('family_id', familyId).single()
     const sharingOn = !(memberPref && memberPref.show_location === false)
 
-    const now = new Date().toISOString()
-
-    await supabase.from('family_members')
-      .update({ last_active: now })
-      .eq('user_id', user.id).eq('family_id', familyId)
-
     if (!sharingOn) {
       await supabase.from('locations').upsert({
         user_id: user.id, family_id: familyId,
-        is_sharing: false, updated_at: now,
+        is_sharing: false, updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,family_id' })
       return
     }
 
-    await supabase.from('locations').upsert({
-      user_id: user.id, family_id: familyId,
-      lat, lng, accuracy: accuracy || 0,
-      is_sharing: true, updated_at: now,
-    }, { onConflict: 'user_id,family_id' })
+    await supabase.rpc('upsert_location_with_battery', {
+      p_family_id:   familyId,
+      p_lat:         lat,
+      p_lng:         lng,
+      p_accuracy:    accuracy || 0,
+      p_speed:       speed ?? null,
+      p_battery:     batteryRef.current.level ?? null,
+      p_is_charging: batteryRef.current.charging ?? false,
+    })
   }
 
   const getPositionRobust = async () => {
@@ -119,7 +124,7 @@ export default function MapAllPage() {
       const pos = await getPositionRobust()
       // Got a fix — clear any previous error
       setLocErrorType(null)
-      await updateLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy)
+      await updateLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, pos.coords.speed)
 
       // Start watching for continuous updates
       if (!watchRef.current) {
@@ -129,7 +134,7 @@ export default function MapAllPage() {
             if (err) { console.warn('[Map] Watch error:', err); return }
             if (p) {
               setLocErrorType(null) // clear error once watch delivers a fix
-              await updateLocation(p.coords.latitude, p.coords.longitude, p.coords.accuracy)
+              await updateLocation(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.coords.speed)
             }
           }
         )

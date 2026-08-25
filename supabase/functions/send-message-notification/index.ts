@@ -187,23 +187,17 @@ serve(async (req) => {
     const accessToken = await getAccessToken(serviceAccount)
     if (!accessToken) return new Response('Auth error', { status: 500 })
 
-    // ── Hybrid FCM (notification + data) ─────────────────────────────────
-    // The `notification` block still lets FCM deliver reliably on all Android
-    // variants (including MIUI) when the app is background/killed. The fix here
-    // is the `android.notification` sub-block:
-    //   • channel_id points at family_messages_v3 — the channel your app
-    //     actually creates with your custom message_tone.mp3 (res/raw).
-    //   • sound is set to the custom tone file name (NO extension) so the
-    //     system notification uses message_tone instead of 'default'.
-    //   • App foreground  → Firebase calls onMessageReceived(); your Java code
-    //     plays message_tone directly (unchanged).
-    //   • App background/killed → FCM renders the notification on the v3 channel,
-    //     which is configured with message_tone — so the same sound plays.
+    // ── DATA-ONLY FCM payload ────────────────────────────────────────────
+    // CRITICAL: No `notification` block. With a notification block, Android's
+    // FCM SDK auto-displays the notification when the app is backgrounded or
+    // killed and NEVER calls onMessageReceived() — which means our mute logic
+    // in Java is bypassed entirely.
+    //
+    // Data-only payload guarantees onMessageReceived() fires in ALL states
+    // (foreground, background, killed), so MyFirebaseMessagingService can
+    // check the mute level and Messages-page-open flag before deciding whether
+    // to show a notification, play a sound, or stay silent.
     const fcmPayload = {
-      notification: {
-        title: `💬 ${senderName}`,
-        body:  preview,
-      },
       data: {
         type:      'message',
         sender:    senderName,
@@ -213,10 +207,6 @@ serve(async (req) => {
       android: {
         priority: 'high',
         ttl:      '300s',
-        notification: {
-          channel_id: 'family_messages_v3',
-          sound:      'message_tone',
-        },
       },
     }
 

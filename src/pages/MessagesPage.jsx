@@ -277,9 +277,14 @@ export default function MessagesPage() {
   const [muteLevel, setMuteLevel] = useState(() => {
     try { return parseInt(localStorage.getItem('msg_mute_level') || '0', 10) } catch { return 0 }
   })
-  const bottomRef    = useRef(null)
-  const longPressRef = useRef(null)
-  const didLongPress = useRef(false)
+  const [searchQuery, setSearchQuery]   = useState('')
+  const [showSearch, setShowSearch]     = useState(false)
+  const [typingUsers, setTypingUsers]   = useState({})
+  const bottomRef      = useRef(null)
+  const longPressRef   = useRef(null)
+  const didLongPress   = useRef(false)
+  const typingTimerRef = useRef(null)
+  const typingChRef    = useRef(null)
 
   useEffect(() => {
     notifyNativePageOpen(true)
@@ -374,6 +379,26 @@ export default function MessagesPage() {
     return () => { document.removeEventListener('visibilitychange', onVisible); supabase.removeChannel(channel) }
   }, [familyId])
 
+  // ── Typing indicator via Supabase Broadcast ──────────────────────────────
+  useEffect(() => {
+    if (!familyId || !user) return
+    const ch = supabase.channel(`typing:${familyId}`)
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload.user_id === user.id) return
+        setTypingUsers(prev => ({ ...prev, [payload.user_id]: Date.now() }))
+        setTimeout(() => {
+          setTypingUsers(prev => {
+            const u = { ...prev }
+            if (Date.now() - (u[payload.user_id] || 0) >= 2900) delete u[payload.user_id]
+            return u
+          })
+        }, 3000)
+      })
+      .subscribe()
+    typingChRef.current = ch
+    return () => supabase.removeChannel(ch)
+  }, [familyId, user])
+
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
   // ── Send ────────────────────────────────────────────────────────────────────
@@ -415,6 +440,14 @@ export default function MessagesPage() {
     await supabase.from('messages').delete().eq('family_id', familyId)
     setMessages([])
     setClearing(false)
+  }
+
+  const handleTextChange = (e) => {
+    setText(e.target.value)
+    if (!typingTimerRef.current && typingChRef.current) {
+      typingChRef.current.send({ type: 'broadcast', event: 'typing', payload: { user_id: user?.id } })
+      typingTimerRef.current = setTimeout(() => { typingTimerRef.current = null }, 1000)
+    }
   }
 
   // ── Mute ────────────────────────────────────────────────────────────────────
@@ -484,7 +517,61 @@ export default function MessagesPage() {
             {clearing ? 'Clearing...' : 'Clear Chat'}
           </button>
         )}
+        <button onClick={() => setShowSearch(s => !s)} style={{
+          background: showSearch ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)',
+          border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10,
+          width: 36, height: 36, cursor: 'pointer', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke={showSearch ? '#951345' : '#fff'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </button>
       </div>
+
+      {/* Search bar */}
+      {showSearch && (
+        <div style={{ padding: '8px 16px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF' }}>
+          <div style={{ position: 'relative' }}>
+            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search messages..." autoFocus
+              style={{
+                width: '100%', padding: '10px 36px 10px 14px',
+                borderRadius: 12, border: '1.5px solid #EDE9FF',
+                fontSize: 14, fontFamily: 'inherit', outline: 'none',
+                background: '#fff', boxSizing: 'border-box',
+              }} />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} style={{
+                position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#9CA3AF',
+              }}>✕</button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Typing indicator */}
+      {Object.keys(typingUsers).length > 0 && (
+        <div style={{ padding: '6px 20px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF',
+          display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{
+                width: 6, height: 6, borderRadius: '50%', background: '#7C3AED',
+                animation: `tdot 1.2s ${i*0.2}s ease-in-out infinite`,
+              }} />
+            ))}
+          </div>
+          <style>{`@keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}`}</style>
+          <span style={{ fontSize: 12, color: '#7C3AED', fontWeight: 600 }}>
+            {Object.keys(typingUsers).length === 1
+              ? `${members[Object.keys(typingUsers)[0]]?.display_name || 'Someone'} is typing...`
+              : 'Several people are typing...'}
+          </span>
+        </div>
+      )}
 
       {/* Messages list */}
       <PullToRefresh onRefresh={reloadMessages}>
@@ -514,9 +601,20 @@ export default function MessagesPage() {
           </div>
         )}
 
+        {msgsLoaded && searchQuery && messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+          <div className="empty-state">
+            <div className="empty-emoji">🔍</div>
+            <div className="empty-text">No results</div>
+            <div className="empty-sub">No messages match "{searchQuery}"</div>
+          </div>
+        )}
+
         {msgsLoaded && (() => {
           let lastDateLabel = null
-          return messages.map(msg => {
+          const filtered = searchQuery
+            ? messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
+            : messages
+          return filtered.map(msg => {
             const isOwn  = msg.user_id === user?.id
             const member = members[msg.user_id]
             const readCount = (reads[msg.id] || []).length
@@ -642,7 +740,7 @@ export default function MessagesPage() {
       }}>
         <textarea
           value={text}
-          onChange={e => setText(e.target.value)}
+          onChange={handleTextChange}
           placeholder={replyTo ? 'Write a reply...' : 'Type a message...'}
           rows={1}
           style={{
