@@ -92,7 +92,15 @@ export default function Layout({ unreadMessages = 0 }) {
       <nav className="bottom-nav">
         {NAV_ITEMS.map(item => (
           <NavLink key={item.to} to={item.to} end={item.end}
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            // Prevent the Android/iOS WebView long-press context menu that
+            // shows the href (e.g. "http://localhost/profile"). NavLink renders
+            // as an <a> tag, so the browser treats it as a link and shows a
+            // "Open in new tab / Copy link" popup on long press.
+            onContextMenu={e => e.preventDefault()}
+            draggable={false}
+            style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
+          >
             {({ isActive }) => (
               <>
                 <div className="nav-icon-wrap" style={{ position: 'relative' }}>

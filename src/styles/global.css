@@ -967,3 +967,15 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   SUPPRESS LONG-PRESS CONTEXT MENU ON NAV LINKS
+   Prevents Android/iOS WebView from showing "Open in new tab /
+   Copy link http://localhost/profile" on long press of nav items.
+   ══════════════════════════════════════════════════════════════ */
+.bottom-nav a,
+.bottom-nav a * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}

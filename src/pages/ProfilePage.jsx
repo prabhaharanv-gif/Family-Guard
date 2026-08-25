@@ -785,17 +785,18 @@ export default function ProfilePage() {
 
         {/* ── SAVE + CHANGE PASSWORD side by side ── */}
         <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1, whiteSpace: 'nowrap' }}>
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
           <button onClick={() => setShowPwModal(true)} style={{
             flex: 1, padding: 14, borderRadius: 14,
             background: '#fff', border: '1.5px solid #951345',
-            color: '#951345', fontWeight: 800, fontSize: 14,
+            color: '#951345', fontWeight: 800, fontSize: 13,
             fontFamily: 'inherit', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            whiteSpace: 'nowrap',
           }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
