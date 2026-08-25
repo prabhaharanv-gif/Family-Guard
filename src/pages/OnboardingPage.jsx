@@ -17,22 +17,13 @@ export default function OnboardingPage() {
     setLoading(true)
 
     try {
-      const { data: family, error: fe } = await supabase
-        .from('families')
-        .select('id, name')
-        .eq('invite_code', joinCode.toUpperCase().trim())
-        .single()
-
-      if (fe || !family) throw new Error('Invalid invite code. Please check and try again.')
-      if (family.id === familyId) throw new Error('This is your own family code!')
-
-      const { error: re } = await supabase.from('join_requests').insert({
-        family_id: family.id,
-        requester_id: user.id,
-        requester_name: user.user_metadata?.display_name || 'Family Member',
+      // SECURE: submit_join_request RPC handles all validation server-side
+      // (family lookup, membership check, duplicate prevention)
+      const { error: re } = await supabase.rpc('submit_join_request', {
+        p_invite_code:    joinCode.toUpperCase().trim(),
+        p_requester_name: user.user_metadata?.display_name || 'Family Member',
       })
-
-      if (re) throw re
+      if (re) throw new Error(re.message || 'Failed to send join request')
 
       setTargetFamily(family)
       setRequested(true)
@@ -120,9 +111,10 @@ export default function OnboardingPage() {
           </div>
           <button onClick={() => { navigator.clipboard.writeText(inviteCode); alert('Code copied!') }}
             style={{
-              marginTop: 12, background: 'var(--blue)', color: '#fff',
-              border: 'none', borderRadius: 8, padding: '8px 20px',
+              marginTop: 12, background: 'linear-gradient(135deg, #4F46E5, #7C3AED)', color: '#fff',
+              border: 'none', borderRadius: 10, padding: '10px 24px',
               fontWeight: 700, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit',
+              boxShadow: '0 4px 14px rgba(79,70,229,0.35)',
             }}>📋 Copy Code</button>
         </div>
 

@@ -3,33 +3,60 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
+const toEmail = (mobile) => `91${mobile.replace(/[^0-9]/g, '')}@familyguard.app`
+
+// Clean open/closed eye icon — no emoji. `open` = password visible.
+function EyeIcon({ open }) {
+  return open ? (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ) : (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+      <line x1="2" y1="2" x2="22" y2="22" />
+    </svg>
+  )
+}
+
 export default function RegisterPage() {
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [mobile, setMobile] = useState('')
   const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [agreed, setAgreed] = useState(false)
   const { createOwnFamily } = useAuthStore()
 
   const handleRegister = async (e) => {
     e.preventDefault()
     setError('')
+    if (!name.trim()) { setError('Please enter your name'); return }
+    if (mobile.replace(/[^0-9]/g, '').length !== 10) {
+      setError('Enter a valid 10-digit mobile number'); return
+    }
     if (password.length < 6) { setError('Password must be at least 6 characters'); return }
-    setLoading(true)
+    if (password !== confirm) { setError('Passwords do not match'); return }
+    if (!agreed) { setError('Please accept the Privacy Policy & Terms to continue'); return }
 
+    setLoading(true)
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email, password,
+        email: toEmail(mobile), password,
         options: { data: { display_name: name } },
       })
-
-      if (signUpError) throw signUpError
+      if (signUpError) {
+        if (signUpError.message.includes('already registered')) {
+          throw new Error('This mobile number is already registered. Please sign in.')
+        }
+        throw signUpError
+      }
       if (!data.user) throw new Error('Registration failed')
-
-      // Auto-create own family
       await createOwnFamily(data.user.id, name)
-
-      // Go to onboarding choice
       window.location.href = '/onboarding'
     } catch (err) {
       setError(err.message)
@@ -53,20 +80,98 @@ export default function RegisterPage() {
               onChange={e => setName(e.target.value)}
               placeholder="e.g. Prabhakaran" required />
           </div>
+
           <div className="form-group">
-            <label>Email</label>
-            <input className="input" type="email" value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com" required />
+            <label>Mobile Number</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{
+                background: '#F5F4FB', border: '1.5px solid #E9E6FB',
+                borderRadius: 12, padding: '12px 14px',
+                fontWeight: 700, fontSize: 14, color: '#3A1020',
+                whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                🇮🇳 +91
+              </div>
+              <input className="input" type="tel" value={mobile}
+                onChange={e => setMobile(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                placeholder="98765 43210" required style={{ flex: 1 }} />
+            </div>
           </div>
+
           <div className="form-group">
             <label>Password</label>
-            <input className="input" type="password" value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Min 6 characters" required />
+            <div style={{ position: 'relative' }}>
+              <input className="input" type={showPassword ? 'text' : 'password'} value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Min 6 characters" required style={{ paddingRight: 44 }} />
+              <button type="button" onClick={() => setShowPassword(s => !s)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                style={{
+                  position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 18, padding: 4, lineHeight: 1,
+                }}>
+                <EyeIcon open={showPassword} />
+              </button>
+            </div>
           </div>
+
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <div style={{ position: 'relative' }}>
+              <input className="input" type={showConfirm ? 'text' : 'password'} value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                placeholder="Re-enter password" required style={{ paddingRight: 44 }} />
+              <button type="button" onClick={() => setShowConfirm(s => !s)}
+                aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                style={{
+                  position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 18, padding: 4, lineHeight: 1,
+                }}>
+                <EyeIcon open={showConfirm} />
+              </button>
+            </div>
+          </div>
+
+          {/* Terms & Privacy Policy checkbox */}
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10,
+            margin: '4px 0 8px', padding: '12px 14px',
+            background: agreed ? '#F0FDF4' : '#F8F7FF',
+            borderRadius: 12,
+            border: `1.5px solid ${agreed ? '#10B981' : '#E9E6FB'}`,
+            transition: 'all 0.2s', cursor: 'pointer',
+          }} onClick={() => setAgreed(a => !a)}>
+            {/* Custom checkbox */}
+            <div style={{
+              width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
+              background: agreed ? '#10B981' : '#fff',
+              border: `2px solid ${agreed ? '#10B981' : '#C4BEE8'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.2s',
+            }}>
+              {agreed && (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </div>
+            <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5, userSelect: 'none' }}>
+              I have read and agree to the{' '}
+              <Link
+                to="/privacy"
+                onClick={e => e.stopPropagation()}
+                style={{ color: '#951345', fontWeight: 700, textDecoration: 'underline' }}
+              >
+                Privacy Policy & Terms
+              </Link>
+              {' '}of FamilyGuard
+            </div>
+          </div>
+
           <button className="btn btn-primary" type="submit"
-            disabled={loading} style={{ marginTop: 8 }}>
+            disabled={loading || !agreed} style={{ marginTop: 4, opacity: agreed ? 1 : 0.6 }}>
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>

@@ -48,13 +48,13 @@ export default function SettingsPage() {
             Your Family Invite Code
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: 6, color: 'var(--blue)' }}>
+            <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: 6, color: '#000000' }}>
               {inviteCode}
             </div>
             <button onClick={() => { navigator.clipboard.writeText(inviteCode); alert('Copied!') }}
               style={{
                 background: 'var(--blue-light)', border: 'none', borderRadius: 10,
-                padding: '8px 14px', color: 'var(--blue)', fontWeight: 700,
+                padding: '8px 14px', color: '#000000', fontWeight: 700,
                 fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
               }}>
               📋 Copy
@@ -80,6 +80,17 @@ export default function SettingsPage() {
               <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{item.value}</span>
             </div>
           ))}
+        </div>
+
+        {/* Privacy Policy */}
+        <div className="settings-card" style={{ cursor: 'pointer' }} onClick={() => window.location.href = '/privacy'}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 20 }}>🔒</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>Privacy Policy</span>
+            </div>
+            <span style={{ color: '#9C6B7A', fontSize: 16 }}>›</span>
+          </div>
         </div>
 
         {/* Sign Out */}

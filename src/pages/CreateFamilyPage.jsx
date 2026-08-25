@@ -23,30 +23,22 @@ export default function CreateFamilyPage() {
     setLoading(true)
 
     try {
-      const { data: family, error: fe } = await supabase
-        .from('families')
-        .insert({ name: familyName, created_by: user.id })
-        .select()
-        .single()
+      // SECURE: atomic RPC — creates family + admin membership in one transaction
+      // created_by and user_id are forced to auth.uid() server-side
+      const { data: family, error: fe } = await supabase.rpc(
+        'create_family_with_membership',
+        {
+          p_family_name:  familyName.trim(),
+          p_display_name: displayName.trim(),
+        }
+      )
 
       if (fe) throw fe
       if (!family) throw new Error('Family was not created')
 
-      const { error: me } = await supabase.from('family_members').insert({
-        family_id: family.id,
-        user_id: user.id,
-        display_name: displayName,
-        role: 'admin',
-      })
-
-      if (me) throw me
-
       await loadFamily(user.id)
-
-      // Hard redirect - guaranteed to work
-      window.location.href = '/'
+      window.location.href = '/profile'
     } catch (err) {
-      console.error('Create family error:', err)
       setError(err.message || 'Something went wrong. Please try again.')
       setLoading(false)
     }
@@ -73,7 +65,7 @@ export default function CreateFamilyPage() {
             />
           </div>
           <div className="form-group">
-            <label>Your Name in the group</label>
+            <label>Your Name in the family</label>
             <input
               className="input"
               value={displayName}

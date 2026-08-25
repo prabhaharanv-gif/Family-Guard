@@ -16,13 +16,32 @@
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
+
+        <!-- ── FCM background/killed message handler ── -->
+        <service
+            android:name=".MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- ── SOS siren foreground service ──────────────────────────────────
+             foregroundServiceType="mediaPlayback" is required on Android 14+
+             when a foreground service plays audio (AudioTrack / AudioManager).
+             Starting this service from a high-priority FCM onMessageReceived
+             callback is explicitly exempted from Android 12+ background-start
+             restrictions — no special flag needed.
+        -->
+        <service
+            android:name=".SOSSirenService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -31,11 +50,37 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
+                android:resource="@xml/file_paths" />
         </provider>
+
     </application>
 
-    <!-- Permissions -->
-
+    <!-- ── Network ── -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- ── Location ── -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- ── Wake device when SOS arrives ── -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- ── Foreground / alarm ── -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+    <!-- ── Notifications ── -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- ── Phone calls — SOS auto-dial ── -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+
+    <!-- ── Vibration ── -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
 </manifest>

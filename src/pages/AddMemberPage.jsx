@@ -6,13 +6,8 @@ import { useAuthStore } from '../store/authStore'
 const RELATIONSHIPS = ['Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Spouse', 'Grandfather', 'Grandmother', 'Other']
 const AVATAR_COLORS = ['#4F8EF7','#FF6B6B','#34C759','#FF9500','#AF52DE','#FF2D55','#5AC8FA','#FFCC00']
 
-function generateUUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0
-    const v = c === 'x' ? r : (r & 0x3 | 0x8)
-    return v.toString(16)
-  })
-}
+// NOTE: AddMemberPage creates placeholder members.
+// Real members join via authenticated invite flow.
 
 export default function AddMemberPage() {
   const [displayName, setDisplayName] = useState('')
@@ -30,15 +25,14 @@ export default function AddMemberPage() {
     setError('')
     setLoading(true)
     try {
-      const { error } = await supabase.from('family_members').insert({
-        family_id: familyId,
-        user_id: generateUUID(), // unique ID for each member
-        display_name: displayName,
-        phone: phone ? `+91${phone}` : null,
-        relationship,
-        bet_name: betName || null,
-        avatar_color: selectedColor,
-        role: 'member',
+      // SECURE: add_family_contact() RPC — server generates UUID, validates admin membership
+      const { error } = await supabase.rpc('add_family_contact', {
+        p_family_id:    familyId,
+        p_display_name: displayName.trim(),
+        p_phone:        phone ? `+91${phone}` : null,
+        p_relationship: relationship || null,
+        p_bet_name:     betName || null,
+        p_avatar_color: selectedColor || '#951345',
       })
       if (error) throw error
       navigate('/')

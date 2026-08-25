@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1050374864802",
+    "project_id": "family-guard-b343f",
+    "storage_bucket": "family-guard-b343f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1050374864802:android:278e4c8b1c9f1707137cfb",
+        "android_client_info": {
+          "package_name": "com.scoopfamily.familyguard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCA1O9NZwE6dtZHpeaMARblIvSwOaHqHm8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,34 +1,54 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
-export default function JoinFamilyPage() {
-  const [code, setCode] = useState('')
-  const [displayName, setDisplayName] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const { user, loadFamily } = useAuthStore()
-  const navigate = useNavigate()
+// ── SECURE JoinFamilyPage ────────────────────────────────────────────────────
+// The old version did a direct family_members INSERT — bypassing admin approval.
+// This version submits a join_request which an admin must explicitly accept.
+// The join_request RLS ensures: requester_id = auth.uid() (server-enforced).
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const handleJoin = async (e) => {
+export default function JoinFamilyPage() {
+  const [code, setCode]           = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState('')
+  const [requested, setRequested] = useState(false)
+  const [targetFamily, setTargetFamily] = useState(null)
+  const { user, familyId }        = useAuthStore()
+
+  const handleJoinRequest = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
+
     try {
-      const { data: family, error: fe } = await supabase
-        .from('families').select('id, name')
-        .eq('invite_code', code.toUpperCase().trim()).single()
-      if (fe || !family) throw new Error('Invalid invite code. Please check and try again.')
+      // ── Input validation ─────────────────────────────────────────────────
+      const trimCode = code.toUpperCase().trim()
+      if (trimCode.length < 4 || trimCode.length > 8) {
+        throw new Error('Invite code must be 4–8 characters.')
+      }
+      if (!displayName.trim() || displayName.trim().length > 100) {
+        throw new Error('Please enter your name (max 100 characters).')
+      }
 
-      const { error: me } = await supabase.from('family_members').insert({
-        family_id: family.id, user_id: user.id,
-        display_name: displayName, role: 'member',
+      // ── Look up the family by invite code ─────────────────────────────
+      // ── SECURE: submit_join_request() RPC ──────────────────────────────
+      // All validation done server-side:
+      //   - family lookup by invite_code
+      //   - not already a member
+      //   - no duplicate pending request
+      //   - requester_id = auth.uid() (never from client)
+      const { error: re } = await supabase.rpc('submit_join_request', {
+        p_invite_code:    trimCode,
+        p_requester_name: displayName.trim(),
       })
-      if (me) throw me
 
-      await loadFamily(user.id)
-      navigate('/')
+      if (re) throw new Error(re.message || 'Failed to send join request')
+
+      setTargetFamily({ name: 'the family' })
+      setRequested(true)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -36,6 +56,28 @@ export default function JoinFamilyPage() {
     }
   }
 
+  // ── Success state ────────────────────────────────────────────────────────
+  if (requested) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>⏳</div>
+          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Request Sent!</h2>
+          <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 8 }}>
+            Your request to join <strong>{targetFamily?.name}</strong> has been sent.
+          </p>
+          <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 24 }}>
+            The family admin will review your request. Once accepted you will be added automatically.
+          </p>
+          <button className="btn btn-primary" onClick={() => window.location.href = '/profile'}>
+            Back to Profile
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Form ─────────────────────────────────────────────────────────────────
   return (
     <div className="onboard-page">
       <div className="onboard-card">
@@ -45,23 +87,34 @@ export default function JoinFamilyPage() {
 
         {error && <div className="error-msg">{error}</div>}
 
-        <form onSubmit={handleJoin}>
+        <form onSubmit={handleJoinRequest} noValidate>
           <div className="form-group">
             <label>Invite Code</label>
-            <input className="input" value={code}
+            <input
+              className="input"
+              value={code}
               onChange={e => setCode(e.target.value.toUpperCase())}
-              placeholder="ABC123" maxLength={6}
+              placeholder="ABC123"
+              maxLength={8}
               style={{ textAlign: 'center', fontSize: 24, fontWeight: 800, letterSpacing: 8 }}
-              required />
+              required
+            />
           </div>
           <div className="form-group">
-            <label>Your Name in the group</label>
-            <input className="input" value={displayName}
+            <label>Your Name in the family</label>
+            <input
+              className="input"
+              value={displayName}
               onChange={e => setDisplayName(e.target.value)}
-              placeholder="e.g. Mum" required />
+              placeholder="e.g. Mum"
+              maxLength={100}
+              required
+            />
           </div>
-          <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop: 8 }}>
-            {loading ? 'Joining...' : 'Join Family'}
+          <button className="btn btn-primary" type="submit"
+            disabled={loading || code.length < 4 || !displayName.trim()}
+            style={{ marginTop: 8 }}>
+            {loading ? 'Sending Request...' : 'Send Join Request'}
           </button>
         </form>
 
