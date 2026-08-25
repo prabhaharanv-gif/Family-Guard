@@ -18,6 +18,7 @@ import SettingsPage from './pages/SettingsPage'
 import ProfilePage from './pages/ProfilePage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import { usePushNotifications } from './hooks/usePushNotifications'
+import { useLocationService } from './hooks/useLocationService'
 import { useHeartbeat } from './hooks/useHeartbeat'
 import { initBackHandler, pushCloser, removeCloser } from './lib/backHandler'
 import Layout from './components/Layout'
@@ -425,6 +426,7 @@ export default function App() {
   }, [sosAlert, nativeAlarmOn, stopAllAlarms])
 
   usePushNotifications(user?.id, familyId)
+  useLocationService() // Background GPS foreground service — keeps tracking when app killed
 
   // Device ping listener — plays alarm when another member pings this device
   useEffect(() => {

@@ -65,7 +65,7 @@ function ReplyQuote({ replyToId, messages, members }) {
   const sender = members[original.user_id]
   return (
     <div style={{
-      borderLeft: '3px solid rgba(255,255,255,0.5)',
+      borderLeft: '3px solid rgba(255,255,255,0.45)',
       paddingLeft: 8, marginBottom: 6,
       opacity: 0.85,
     }}>
@@ -246,7 +246,7 @@ function EditModal({ msg, onClose, onSave }) {
           }}>Cancel</button>
           <button onClick={handleSave} disabled={saving || !text.trim()} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: text.trim() ? 'linear-gradient(135deg, #059669, #047857)' : '#D1FAE5',
+            background: text.trim() ? 'linear-gradient(135deg, #951345, #720D35)' : '#F5E8EE',
             border: 'none', color: '#fff', fontWeight: 700,
             cursor: text.trim() ? 'pointer' : 'not-allowed',
             fontFamily: 'inherit', fontSize: 14,
@@ -277,9 +277,9 @@ export default function MessagesPage() {
   const [muteLevel, setMuteLevel] = useState(() => {
     try { return parseInt(localStorage.getItem('msg_mute_level') || '0', 10) } catch { return 0 }
   })
-  const [searchQuery, setSearchQuery]   = useState('')
-  const [showSearch, setShowSearch]     = useState(false)
-  const [typingUsers, setTypingUsers]   = useState({})
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearch, setShowSearch]   = useState(false)
+  const [typingUsers, setTypingUsers] = useState({})
   const bottomRef      = useRef(null)
   const longPressRef   = useRef(null)
   const didLongPress   = useRef(false)
@@ -379,7 +379,6 @@ export default function MessagesPage() {
     return () => { document.removeEventListener('visibilitychange', onVisible); supabase.removeChannel(channel) }
   }, [familyId])
 
-  // ── Typing indicator via Supabase Broadcast ──────────────────────────────
   useEffect(() => {
     if (!familyId || !user) return
     const ch = supabase.channel(`typing:${familyId}`)
@@ -393,8 +392,7 @@ export default function MessagesPage() {
             return u
           })
         }, 3000)
-      })
-      .subscribe()
+      }).subscribe()
     typingChRef.current = ch
     return () => supabase.removeChannel(ch)
   }, [familyId, user])
@@ -483,54 +481,50 @@ export default function MessagesPage() {
       <div className="top-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div className="top-bar-title">💬 Messages</div>
-              <button onClick={handleMuteToggle} title={MUTE_STATES[muteLevel].tip} style={{
-                background: muteLevel === 0 ? 'rgba(255,255,255,0.15)' : muteLevel === 1 ? 'rgba(255,200,0,0.25)' : 'rgba(255,80,80,0.25)',
-                border: muteLevel === 0 ? '1px solid rgba(255,255,255,0.2)' : muteLevel === 1 ? '1px solid rgba(255,200,0,0.5)' : '1px solid rgba(255,80,80,0.5)',
-                borderRadius: 8, padding: '3px 8px', cursor: 'pointer', fontSize: 15, lineHeight: 1,
-                display: 'flex', alignItems: 'center', gap: 4,
-              }}>
-                {MUTE_STATES[muteLevel].icon}
-                <span style={{ fontSize: 9, fontWeight: 800, color: muteLevel === 0 ? 'rgba(255,255,255,0.7)' : muteLevel === 1 ? '#FFD700' : '#FF8080', letterSpacing: 0.3 }}>
-                  {muteLevel === 0 ? 'ON' : muteLevel === 1 ? 'SOUND OFF' : 'MUTED'}
+            <div className="top-bar-title">💬 Messages</div>
+            <button onClick={handleMuteToggle} title={MUTE_STATES[muteLevel].tip} style={{
+              marginTop: 3, background: 'none', border: 'none',
+              cursor: 'pointer', padding: 0,
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <span style={{ fontSize: 15 }}>{MUTE_STATES[muteLevel].icon}</span>
+              {muteLevel > 0 && (
+                <span style={{ fontSize: 10, fontWeight: 700,
+                  color: muteLevel === 1 ? '#FFD700' : '#FF8080' }}>
+                  {muteLevel === 1 ? 'Sound off' : 'Muted'}
                 </span>
-              </button>
-            </div>
-            <div className="top-bar-sub">
-              {muteLevel === 0 && 'Family group chat'}
-              {muteLevel === 1 && 'Notification sound muted'}
-              {muteLevel === 2 && 'All notifications muted'}
-            </div>
+              )}
+            </button>
           </div>
         </div>
-        {messages.length > 0 && (
-          <button onClick={handleClearMessages} disabled={clearing} style={{
-            background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
-            color: '#951345', borderRadius: 10, padding: '7px 12px',
-            fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
-            whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+          {messages.length > 0 && (
+            <button onClick={handleClearMessages} disabled={clearing} style={{
+              background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
+              color: '#951345', borderRadius: 10, padding: '7px 12px',
+              fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
+              whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+              {clearing ? 'Clearing...' : 'Clear Chat'}
+            </button>
+          )}
+          <button onClick={() => setShowSearch(s => !s)} style={{
+            background: showSearch ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)',
+            border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10,
+            padding: '7px 10px', cursor: 'pointer', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke={showSearch ? '#951345' : '#fff'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            {clearing ? 'Clearing...' : 'Clear Chat'}
           </button>
-        )}
-        <button onClick={() => setShowSearch(s => !s)} style={{
-          background: showSearch ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)',
-          border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10,
-          width: 36, height: 36, cursor: 'pointer', flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke={showSearch ? '#951345' : '#fff'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-        </button>
+        </div>
       </div>
 
-      {/* Search bar */}
       {showSearch && (
         <div style={{ padding: '8px 16px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF' }}>
           <div style={{ position: 'relative' }}>
@@ -552,16 +546,13 @@ export default function MessagesPage() {
         </div>
       )}
 
-      {/* Typing indicator */}
       {Object.keys(typingUsers).length > 0 && (
         <div style={{ padding: '6px 20px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF',
           display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
             {[0,1,2].map(i => (
-              <div key={i} style={{
-                width: 6, height: 6, borderRadius: '50%', background: '#7C3AED',
-                animation: `tdot 1.2s ${i*0.2}s ease-in-out infinite`,
-              }} />
+              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#7C3AED',
+                animation: `tdot 1.2s ${i*0.2}s ease-in-out infinite` }} />
             ))}
           </div>
           <style>{`@keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}`}</style>
@@ -662,7 +653,7 @@ export default function MessagesPage() {
               {!isOwn && (
                 <div style={{
                   width: 32, height: 32, borderRadius: '50%',
-                  background: member?.avatar_color || '#4F8EF7',
+                  background: member?.avatar_color || '#951345',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#fff', fontWeight: 800, fontSize: 13, flexShrink: 0,
                 }}>
@@ -687,7 +678,7 @@ export default function MessagesPage() {
                   onTouchMove={cancelLongPress}
                   onClick={() => { if (didLongPress.current) { didLongPress.current = false; return } }}
                   style={{
-                    background: isOwn ? 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' : '#fff',
+                    background: isOwn ? 'linear-gradient(135deg, #951345 0%, #B01650 100%)' : '#fff',
                     color: isOwn ? '#fff' : '#0D0C1D',
                     padding: '10px 14px',
                     borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
@@ -755,8 +746,8 @@ export default function MessagesPage() {
           disabled={!text.trim() || sending}
           style={{
             width: 44, height: 44, borderRadius: '50%',
-            background: text.trim() ? 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' : '#E8E5FF',
-            border: 'none', color: text.trim() ? '#fff' : '#8480B0',
+            background: text.trim() ? 'linear-gradient(135deg, #951345 0%, #B01650 100%)' : '#DDB8C4',
+            border: 'none', color: text.trim() ? '#fff' : '#951345',
             fontSize: 18, cursor: text.trim() ? 'pointer' : 'default',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'background 0.2s', flexShrink: 0,
@@ -830,7 +821,7 @@ export default function MessagesPage() {
                   <div style={{ marginBottom: 4 }}>
                     {pending.map(m => (
                       <div key={m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', opacity: 0.7 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: m.avatar_color || '#4F8EF7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: m.avatar_color || '#951345', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
                           {m.display_name?.[0]?.toUpperCase() || '?'}
                         </div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{m.display_name || 'Member'}</div>

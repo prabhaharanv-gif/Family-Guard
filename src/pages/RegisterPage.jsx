@@ -66,27 +66,48 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">🛡️</div>
-        <h1 className="auth-title">Create Account</h1>
-        <p className="auth-subtitle">Join FamilyGuard to keep your family safe</p>
+      <div className="auth-card" style={{ borderRadius: 28, padding: "28px 28px", maxHeight: "92vh", overflowY: "auto" }}>
+        <div className="auth-logo" style={{ background: 'none', boxShadow: 'none', width: 'auto', height: 'auto', marginBottom: 14 }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: 22,
+            background: 'linear-gradient(145deg, #951345 0%, #720D35 55%, #4A0820 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto',
+            boxShadow:
+              'inset 0 2px 0 rgba(255,255,255,0.22), inset 0 0 0 1.5px rgba(232,201,106,0.45), 0 16px 44px rgba(66,12,36,0.60), 0 0 50px rgba(149,19,69,0.35)',
+          }}>
+            <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+              <path d="M24 4L8 11V24C8 33.6 15.2 42.4 24 44C32.8 42.4 40 33.6 40 24V11L24 4Z" fill="url(#shieldGradR)"/>
+              <path d="M24 7L10 13.2V24C10 32.5 16.4 40.4 24 42C31.6 40.4 38 32.5 38 24V13.2L24 7Z"
+                fill="none" stroke="rgba(232,201,106,0.50)" strokeWidth="1.2"/>
+              <path d="M17 24.5L21.5 29L31 19" stroke="white" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <defs>
+                <linearGradient id="shieldGradR" x1="8" y1="4" x2="40" y2="44" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#C0185A"/><stop offset="100%" stopColor="#4A0820"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+        <h1 className="auth-title" style={{ fontSize: 26, marginBottom: 4 }}>Create Account</h1>
+        <p className="auth-subtitle" style={{ marginBottom: 20 }}>Join FamilyGuard to keep your family safe</p>
 
         {error && <div className="error-msg">{error}</div>}
 
         <form onSubmit={handleRegister} noValidate>
-          <div className="form-group">
-            <label>Your Name</label>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Your name</label>
             <input className="input" type="text" value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g. Prabhakaran" required />
           </div>
 
-          <div className="form-group">
-            <label>Mobile Number</label>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Mobile number</label>
             <div style={{ display: 'flex', gap: 8 }}>
               <div style={{
                 background: '#F5F4FB', border: '1.5px solid #E9E6FB',
-                borderRadius: 12, padding: '12px 14px',
+                borderRadius: 12, padding: '10px 12px',
                 fontWeight: 700, fontSize: 14, color: '#3A1020',
                 whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6,
               }}>
@@ -98,8 +119,8 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Password</label>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Password</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showPassword ? 'text' : 'password'} value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -116,8 +137,8 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Confirm Password</label>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Confirm password</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showConfirm ? 'text' : 'password'} value={confirm}
                 onChange={e => setConfirm(e.target.value)}

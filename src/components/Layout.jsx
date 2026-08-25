@@ -1,14 +1,17 @@
 import { Outlet, NavLink } from 'react-router-dom'
 
+// Premium custom SVG nav icons — pixel-perfect, brand-aligned
 const NAV_ITEMS = [
   {
     to: '/', end: true, label: 'Family',
     icon: (active) => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" fill={active ? '#951345' : '#9CA3AF'}/>
-        <path d="M17 9C18.6569 9 20 7.65685 20 6C20 4.34315 18.6569 3 17 3C15.3431 3 14 4.34315 14 6C14 7.65685 15.3431 9 17 9Z" fill={active ? '#951345' : '#9CA3AF'}/>
-        <path d="M9 13C5.68629 13 3 15.6863 3 19V21H15V19C15 15.6863 12.3137 13 9 13Z" fill={active ? '#951345' : '#9CA3AF'}/>
-        <path d="M17 11C14.7 11 13 12.5 13 14.5V21H21V14.5C21 12.5 19.3 11 17 11Z" fill={active ? '#951345' : '#C4C4C4'}/>
+        {/* Parent figure */}
+        <circle cx="9" cy="7" r="3" fill={active ? '#951345' : '#A0A0B0'}/>
+        <path d="M3 20C3 16.134 5.686 13 9 13C12.314 13 15 16.134 15 20H3Z" fill={active ? '#951345' : '#A0A0B0'}/>
+        {/* Child figure */}
+        <circle cx="17.5" cy="8.5" r="2.2" fill={active ? '#C0185A' : '#C4C4D0'}/>
+        <path d="M13.5 20C13.5 17.239 15.239 15 17.5 15C19.761 15 21.5 17.239 21.5 20H13.5Z" fill={active ? '#C0185A' : '#C4C4D0'}/>
       </svg>
     ),
   },
@@ -16,19 +19,32 @@ const NAV_ITEMS = [
     to: '/messages', label: 'Messages',
     icon: (active) => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill={active ? '#951345' : '#9CA3AF'}/>
-        <circle cx="8" cy="10" r="1.5" fill="white"/>
-        <circle cx="12" cy="10" r="1.5" fill="white"/>
-        <circle cx="16" cy="10" r="1.5" fill="white"/>
+        <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"
+          fill={active ? '#951345' : '#A0A0B0'} stroke="none"/>
+        <circle cx="8" cy="10" r="1.4" fill="#fff"/>
+        <circle cx="12" cy="10" r="1.4" fill="#fff"/>
+        <circle cx="16" cy="10" r="1.4" fill="#fff"/>
       </svg>
     ),
   },
   {
     to: '/sos', label: 'SOS',
-    icon: (active) => (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" fill="#E11D48"/>
-        <text x="12" y="16" textAnchor="middle" fontSize="9" fontWeight="900" fill="white" fontFamily="Arial">SOS</text>
+    icon: () => (
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+        {/* Outer pulse ring */}
+        <circle cx="15" cy="15" r="14" fill="url(#sosGrad)" opacity="0.18"/>
+        {/* Main button */}
+        <circle cx="15" cy="15" r="11" fill="url(#sosGrad)"/>
+        {/* Inner ring for depth */}
+        <circle cx="15" cy="15" r="11" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/>
+        <text x="15" y="19.5" textAnchor="middle" fontSize="8.5" fontWeight="900"
+          fill="white" fontFamily="Sora,Arial,sans-serif" letterSpacing="0.8">SOS</text>
+        <defs>
+          <radialGradient id="sosGrad" cx="40%" cy="35%">
+            <stop offset="0%" stopColor="#F43F5E"/>
+            <stop offset="100%" stopColor="#BE123C"/>
+          </radialGradient>
+        </defs>
       </svg>
     ),
   },
@@ -36,9 +52,15 @@ const NAV_ITEMS = [
     to: '/map-all', label: 'Map',
     icon: (active) => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M9 4L3 7V20L9 17L15 20L21 17V4L15 7L9 4Z" fill={active ? '#951345' : '#9CA3AF'}/>
-        <line x1="9" y1="4" x2="9" y2="17" stroke="white" strokeWidth="1.5"/>
-        <line x1="15" y1="7" x2="15" y2="20" stroke="white" strokeWidth="1.5"/>
+        {/* Map scroll */}
+        <path d="M9 4L3 7.5V20L9 16.5L15 20L21 16.5V4L15 7.5L9 4Z"
+          fill={active ? '#951345' : '#A0A0B0'}/>
+        {/* Fold lines */}
+        <line x1="9" y1="4" x2="9" y2="16.5" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="15" y1="7.5" x2="15" y2="20" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" strokeLinecap="round"/>
+        {/* Location dot */}
+        <circle cx="12" cy="11" r="2" fill="#fff" opacity="0.9"/>
+        <circle cx="12" cy="11" r="1" fill={active ? '#951345' : '#A0A0B0'}/>
       </svg>
     ),
   },
@@ -46,8 +68,11 @@ const NAV_ITEMS = [
     to: '/profile', label: 'Profile',
     icon: (active) => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="8" r="4" fill={active ? '#951345' : '#9CA3AF'}/>
-        <path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20" stroke={active ? '#951345' : '#9CA3AF'} strokeWidth="2.5" strokeLinecap="round"/>
+        {/* Head */}
+        <circle cx="12" cy="8" r="3.8" fill={active ? '#951345' : '#A0A0B0'}/>
+        {/* Shoulders */}
+        <path d="M4 20C4 16.134 7.582 13 12 13C16.418 13 20 16.134 20 20"
+          stroke={active ? '#951345' : '#A0A0B0'} strokeWidth="2.5" strokeLinecap="round"/>
       </svg>
     ),
   },
@@ -73,7 +98,7 @@ export default function Layout({ unreadMessages = 0 }) {
                     </span>
                   )}
                 </div>
-                {item.label}
+                <span style={{ position: 'relative', zIndex: 1 }}>{item.label}</span>
               </>
             )}
           </NavLink>

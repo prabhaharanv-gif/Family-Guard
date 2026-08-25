@@ -42,6 +42,9 @@ dependencies {
     // ── Firebase Cloud Messaging — required for background SOS notifications ──
     implementation platform('com.google.firebase:firebase-bom:33.8.0')
     implementation 'com.google.firebase:firebase-messaging'
+
+    // Fused Location Provider — required for LocationForegroundService
+    implementation 'com.google.android.gms:play-services-location:21.3.0'
 }
 
 apply from: 'capacitor.build.gradle'

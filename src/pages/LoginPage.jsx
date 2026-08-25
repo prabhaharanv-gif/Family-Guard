@@ -27,12 +27,12 @@ function ForgotPasswordModal({ onClose }) {
 
   const handleContinue = async () => {
     setError('')
-    const digits = mobile.replace(/\D/g, '')
-    if (!digits || digits.length < 10) { setError('Enter a valid 10-digit mobile number'); return }
+    const digits = mobile.replace(/[^0-9]/g, '')
+    if (!digits || digits.length !== 10) { setError('Enter a valid 10-digit mobile number'); return }
     setLoading(true)
     // Check if user exists by attempting sign-in with wrong password
     const { error: e } = await supabase.auth.signInWithPassword({
-      email: `${digits}@familyguard.app`, password: '___x___',
+      email: `91${digits}@familyguard.app`, password: '___x___',
     })
     setLoading(false)
     if (e?.message?.includes('Invalid login credentials')) {
@@ -48,7 +48,7 @@ function ForgotPasswordModal({ onClose }) {
     if (newPassword !== confirmPw) { setError('Passwords do not match'); return }
     setLoading(true)
     const { error: rpcErr } = await supabase.rpc('reset_user_password', {
-      p_mobile: mobile.replace(/\D/g, ''),
+      p_mobile: '91' + mobile.replace(/[^0-9]/g, ''),
       p_new_password: newPassword,
     })
     setLoading(false)
@@ -150,10 +150,10 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault()
     setError('')
-    const digits = mobile.replace(/\D/g, '')
-    if (!digits) { setError('Enter your mobile number'); return }
+    const digits = mobile.replace(/[^0-9]/g, '')
+    if (!digits || digits.length !== 10) { setError('Enter a valid 10-digit mobile number'); return }
     if (!password) { setError('Enter your password'); return }
-    const email = `${digits}@familyguard.app`
+    const email = `91${digits}@familyguard.app`
     const { error: authErr } = await supabase.auth.signInWithPassword({ email, password })
     if (authErr) { setError('Invalid mobile number or password'); return }
     navigate('/')
@@ -161,22 +161,49 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">🛡️</div>
-        <h1 className="auth-title">Welcome Back</h1>
-        <p className="auth-sub">Sign in to FamilyGuard</p>
+      <div className="auth-card" style={{ borderRadius: 28, padding: "40px 32px" }}>
+        {/* Brand shield — maroon + gold, no emoji to avoid OS colour override */}
+        <div className="auth-logo" style={{ background: 'none', boxShadow: 'none', width: 'auto', height: 'auto', marginBottom: 20 }}>
+          <div style={{
+            width: 96, height: 96, borderRadius: 28,
+            background: 'linear-gradient(145deg, #951345 0%, #720D35 55%, #4A0820 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto',
+            boxShadow:
+              'inset 0 2px 0 rgba(255,255,255,0.22), inset 0 0 0 1.5px rgba(232,201,106,0.45), 0 16px 44px rgba(66,12,36,0.60), 0 0 50px rgba(149,19,69,0.35)',
+          }}>
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              {/* Shield body */}
+              <path d="M24 4L8 11V24C8 33.6 15.2 42.4 24 44C32.8 42.4 40 33.6 40 24V11L24 4Z"
+                fill="url(#shieldGrad)" />
+              {/* Gold inner rim */}
+              <path d="M24 7L10 13.2V24C10 32.5 16.4 40.4 24 42C31.6 40.4 38 32.5 38 24V13.2L24 7Z"
+                fill="none" stroke="rgba(232,201,106,0.50)" strokeWidth="1.2"/>
+              {/* Checkmark */}
+              <path d="M17 24.5L21.5 29L31 19"
+                stroke="white" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <defs>
+                <linearGradient id="shieldGrad" x1="8" y1="4" x2="40" y2="44" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#C0185A"/>
+                  <stop offset="100%" stopColor="#4A0820"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+        <h1 className="auth-title" style={{ marginBottom: 24 }}>Welcome Back</h1>
 
         {error && <div className="error-msg">{error}</div>}
 
         <form onSubmit={handleLogin}>
           <div className="input-group">
-            <label className="input-label">Mobile Number</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Mobile number</label>
             <input className="input" type="tel" value={mobile}
               onChange={e => setMobile(e.target.value)}
               placeholder="9876543210" autoComplete="tel" />
           </div>
           <div className="input-group">
-            <label className="input-label">Password</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Password</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showPassword ? 'text' : 'password'}
                 value={password} onChange={e => setPassword(e.target.value)}

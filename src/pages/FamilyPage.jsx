@@ -6,7 +6,7 @@ import MemberPopup from '../components/MemberPopup'
 import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 
-const AVATAR_COLORS = ['#951345','#720D35','#C0185A','#F59E0B','#10B981','#0EA5E9','#F43F5E']
+const AVATAR_COLORS = ['#951345','#720D35','#C0185A','#A01040','#B01650','#8A0F3A','#6B0B2C']
 
 function formatLastSeen(ts) {
   if (!ts) return null
@@ -80,7 +80,7 @@ function MemberActionSheet({ member, displayName, isOwner, onClose, onEditName, 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #F0E4EA' }}>
           <div style={{
             width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
-            background: member.avatar_color || '#951345',
+            background: member.avatar_color && member.avatar_color !== '#4F8EF7' ? member.avatar_color : '#951345',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Sora, sans-serif',
           }}>
@@ -191,7 +191,7 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
 }
 
 export default function FamilyPage() {
-  const { user, familyId, familyName, inviteCode, updateFamilyName } = useAuthStore()
+  const { user, familyId, familyName, inviteCode, updateFamilyName, allFamilies, switchFamily } = useAuthStore()
   const [members, setMembers]           = useState([])
   const [membersLoaded, setMembersLoaded] = useState(false)   // false until first fetch returns
   const [nicknames, setNicknames]       = useState({})        // { [target_user_id]: nickname } — private to me
@@ -201,6 +201,7 @@ export default function FamilyPage() {
   const [actionMember, setActionMember]     = useState(null)   // long-press → action sheet
   const [editNameMember, setEditNameMember] = useState(null)   // → edit modal
   const [editingFamilyName, setEditingFamilyName] = useState(false)
+  const [showFamilySwitcher, setShowFamilySwitcher] = useState(false)
   const [newFamilyName, setNewFamilyName]           = useState('')
   const [sosAlert, setSosAlert]         = useState(null)
   const [sosAlertMember, setSosAlertMember] = useState(null)
@@ -423,6 +424,62 @@ export default function FamilyPage() {
       {sosAlert && <SOSAlert alert={sosAlert} memberName={sosAlertMember} onDismiss={() => setSosAlert(null)} />}
 
       {/* Long-press action sheet */}
+      {/* ── Family Switcher Sheet ── */}
+      {showFamilySwitcher && (
+        <div className="overlay" onClick={() => setShowFamilySwitcher(false)}>
+          <div className="popup" onClick={e => e.stopPropagation()}>
+            <div className="popup-handle" />
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
+              Switch Family
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+              {allFamilies.map(fam => {
+                const isActive = fam.family_id === familyId
+                return (
+                  <button key={fam.family_id}
+                    onClick={() => { switchFamily(fam.family_id); setShowFamilySwitcher(false) }}
+                    style={{
+                      width: '100%', padding: '14px 16px', borderRadius: 16,
+                      background: isActive ? 'linear-gradient(135deg, #951345, #720D35)' : '#F8F7FF',
+                      border: isActive ? 'none' : '1.5px solid #EDE9FF',
+                      color: isActive ? '#fff' : '#0D0C1D',
+                      fontWeight: isActive ? 800 : 600, fontSize: 14,
+                      fontFamily: 'inherit', cursor: isActive ? 'default' : 'pointer',
+                      textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12,
+                      boxShadow: isActive ? '0 6px 20px rgba(149,19,69,0.35)' : 'none',
+                    }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                      background: isActive ? 'rgba(255,255,255,0.18)' : '#F0EEFF',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <circle cx="9" cy="7" r="3" fill={isActive ? '#fff' : '#951345'}/>
+                        <path d="M3 20C3 16.134 5.686 13 9 13C12.314 13 15 16.134 15 20H3Z" fill={isActive ? '#fff' : '#951345'}/>
+                        <circle cx="17.5" cy="8.5" r="2.2" fill={isActive ? 'rgba(255,255,255,0.7)' : '#C0185A'}/>
+                        <path d="M13.5 20C13.5 17.239 15.239 15 17.5 15C19.761 15 21.5 17.239 21.5 20H13.5Z" fill={isActive ? 'rgba(255,255,255,0.7)' : '#C0185A'}/>
+                      </svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>{fam.name}</div>
+                      <div style={{ fontSize: 11, opacity: isActive ? 0.75 : 0.5, fontWeight: 500 }}>
+                        {fam.role === 'admin' ? '👑 Admin' : '👤 Member'} · {fam.invite_code}
+                      </div>
+                    </div>
+                    {isActive && (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {actionMember && (
         <MemberActionSheet
           member={actionMember}
@@ -447,7 +504,8 @@ export default function FamilyPage() {
 
       {/* Top Bar */}
       <div className="top-bar">
-        <div style={{ flex: 1, position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative', zIndex: 1 }}>
+        <div style={{ flex: 1 }}>
           {editingFamilyName ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <input className="input" value={newFamilyName}
@@ -469,18 +527,67 @@ export default function FamilyPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <div className="top-bar-title">{familyName}</div>
                   {isOwner && (
-                    <button onClick={() => { setNewFamilyName(familyName); setEditingFamilyName(true) }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'rgba(255,255,255,0.45)', padding: 0 }}>✏️</button>
+                    <button
+                      onClick={() => { setNewFamilyName(familyName); setEditingFamilyName(true) }}
+                      title="Rename family"
+                      style={{
+                        background: 'rgba(255,255,255,0.14)',
+                        border: '1px solid rgba(255,255,255,0.28)',
+                        borderRadius: 8, cursor: 'pointer',
+                        padding: '4px 7px', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0, transition: 'all 0.18s',
+                      }}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                        stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
                   )}
                 </div>
                 {inviteCode && (
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 1, letterSpacing: 2, fontWeight: 700 }}>
                     Family Code: {inviteCode}
+
                   </div>
                 )}
               </div>
             </div>
           )}
+        </div>
+
+        {/* Switch Family button — right side, matches Clear Chat style */}
+        {allFamilies.length > 1 && (
+          <button
+            onClick={() => setShowFamilySwitcher(true)}
+            style={{
+              background: 'rgba(255,255,255,0.92)',
+              border: '1.5px solid #fff',
+              color: '#951345',
+              borderRadius: 10,
+              padding: '7px 12px',
+              fontWeight: 800,
+              fontSize: 12,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              display: 'flex', alignItems: 'center', gap: 6,
+              flexShrink: 0,
+              zIndex: 1,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="17 1 21 5 17 9"/>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+              <polyline points="7 23 3 19 7 15"/>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+            </svg>
+            Switch
+          </button>
+        )}
         </div>
       </div>
 
@@ -531,9 +638,9 @@ export default function FamilyPage() {
         )}
 
         {/* Members list */}
-        <div className="section-title">
-          Family Members ({members.length})
-          <span style={{ marginLeft: 8, fontSize: 10, color: 'var(--muted2)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', letterSpacing: 0.3, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          Family members ({members.length})
+          <span style={{ fontSize: 10, color: 'var(--muted2)', fontWeight: 500 }}>
             · Hold to edit or remove
           </span>
         </div>
@@ -565,7 +672,7 @@ export default function FamilyPage() {
           </div>
         ) : (
           members.map((m, i) => {
-            const loc = locations[m.user_id]
+            const loc = locations[m.user_id] || {}
             const activeTs = m.last_active || loc?.updatedAt || null
             const online = isOnline(activeTs) && m.show_online !== false
             const lastSeen = formatLastSeen(activeTs)
@@ -588,7 +695,7 @@ export default function FamilyPage() {
                       boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
                     }} />
                   ) : (
-                    <div className="avatar" style={{ background: m.avatar_color || AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
+                    <div className="avatar" style={{ background: m.avatar_color && m.avatar_color !== '#4F8EF7' ? m.avatar_color : AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
                       {nameFor(m)?.[0]?.toUpperCase()}
                     </div>
                   )}
@@ -621,33 +728,8 @@ export default function FamilyPage() {
                 <div style={{
                   marginLeft: 'auto', flexShrink: 0,
                   display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', gap: 4,
+                  alignItems: 'center', gap: 3,
                 }}>
-                  {/* Battery */}
-                  {loc?.battery !== null && loc?.battery !== undefined && (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 3,
-                      background: loc.battery <= 20 ? '#FEF2F2' : loc.isCharging ? '#F0FDF4' : '#F8F7FF',
-                      borderRadius: 6, padding: '2px 6px',
-                      border: `1px solid ${loc.battery <= 20 ? '#FCA5A5' : loc.isCharging ? '#BBF7D0' : '#EDE9FF'}`,
-                    }}>
-                      <span style={{ fontSize: 10 }}>{loc.isCharging ? '⚡' : loc.battery <= 20 ? '🪫' : '🔋'}</span>
-                      <span style={{ fontSize: 9, fontWeight: 800, color: loc.battery <= 20 ? '#DC2626' : loc.isCharging ? '#16A34A' : '#6B7280' }}>
-                        {loc.battery}%
-                      </span>
-                    </div>
-                  )}
-                  {/* Driving */}
-                  {loc?.speed > 15 && (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 3,
-                      background: '#EFF6FF', borderRadius: 6, padding: '2px 6px',
-                      border: '1px solid #BFDBFE',
-                    }}>
-                      <span style={{ fontSize: 10 }}>🚗</span>
-                      <span style={{ fontSize: 9, fontWeight: 800, color: '#1D4ED8' }}>{Math.round(loc.speed)}km/h</span>
-                    </div>
-                  )}
                   <div style={{ position: 'relative', width: 28, height: 28 }}>
                     {/* Map pin SVG */}
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">

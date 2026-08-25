@@ -263,7 +263,7 @@ export default function MapAllPage() {
               key={uid}
               position={[loc.lat, loc.lng]}
               icon={createIcon(
-                loc.avatarColor || '#4F8EF7',
+                loc.avatarColor || '#951345',
                 loc.displayName?.[0]?.toUpperCase() || '?',
                 loc.avatarUrl || null
               )}

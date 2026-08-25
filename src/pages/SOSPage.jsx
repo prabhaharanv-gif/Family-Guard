@@ -4,14 +4,14 @@ import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 
 const QUICK_MESSAGES = [
-  { label: 'Need Ambulance',    icon: '🚑', color: '#FF3B30', call: '108' },
-  { label: 'Need Police Help',  icon: '🚔', color: '#4F8EF7', call: '100' },
-  { label: 'Fire Around Me',    icon: '🔥', color: '#FF6B00', call: '112' },
-  { label: 'Under Violence',    icon: '🛑', color: '#CC0000', call: '100' },
-  { label: 'Under Harassment',  icon: '⚠️', color: '#FF3B30', call: '100' },
-  { label: 'Natural Disasters', icon: '🌪️', color: '#0891B2', call: '108' },
-  { label: 'Theft',             icon: '🦹', color: '#8B008B', call: '100' },
-  { label: 'Need Money',        icon: '💰', color: '#FF9500', call: null  },
+  { label: 'Need Ambulance',    icon: '🚑', color: '#951345', bg: '#FDF0F5', call: '108' },
+  { label: 'Need Police Help',  icon: '🚔', color: '#720D35', bg: '#F5EBF0', call: '100' },
+  { label: 'Fire Around Me',    icon: '🔥', color: '#B01650', bg: '#FDF2F6', call: '112' },
+  { label: 'Under Violence',    icon: '🛑', color: '#8A0F3A', bg: '#F8ECF1', call: '100' },
+  { label: 'Under Harassment',  icon: '⚠️', color: '#C0185A', bg: '#FEF0F6', call: '100' },
+  { label: 'Natural Disasters', icon: '🌪️', color: '#6B0B2C', bg: '#F2E8EC', call: '108' },
+  { label: 'Theft',             icon: '🦹', color: '#A01040', bg: '#FAF0F4', call: '100' },
+  { label: 'Need Money',        icon: '💰', color: '#951345', bg: '#FDF0F5', call: null  },
 ]
 
 // ── Looping alarm — keeps sounding until stopSenderAlarm() is called ──────────
@@ -237,7 +237,7 @@ export default function SOSPage() {
       <div style={{ display: 'flex', background: '#fff', borderBottom: '1px solid #E8E5FF', flexShrink: 0 }}>
         {[
           { key: 'send',    label: '🆘 Send SOS' },
-          { key: 'history', label: '📋 History' + (activeCount > 0 ? ' (' + activeCount + ')' : '') },
+          { key: 'history', label: '📋 SOS History' + (activeCount > 0 ? ' (' + activeCount + ')' : '') },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
             flex: 1, padding: '12px 0', background: 'none', border: 'none',
@@ -273,7 +273,7 @@ export default function SOSPage() {
                 onClick={() => sendSOS(msg)}
                 disabled={sending}
                 style={{
-                  background: sending ? '#f5f5f5' : msg.color + '10',
+                  background: sending ? '#f5f5f5' : msg.bg,
                   border: '2px solid ' + (sending ? '#E5E7EB' : msg.color + '60'),
                   borderRadius: 18, padding: '18px 10px',
                   cursor: sending ? 'not-allowed' : 'pointer',
@@ -323,7 +323,7 @@ export default function SOSPage() {
                 onClick={async () => {
                   if (!window.confirm(`Clear resolved alerts? This cannot be undone.`)) return
                   const { error } = await supabase.rpc('clear_sos_history', { p_family_id: familyId })
-                  if (error) { alert('Error: ' + error.message); return }
+                  if (error) { alert('Sorry — Only an Admin of the family can do this.'); return }
                   setAlerts(prev => prev.filter(a => !a.is_resolved))
                 }}
                 style={{
@@ -373,7 +373,17 @@ export default function SOSPage() {
                       target="_blank" rel="noopener noreferrer"
                       style={{ color: '#4F46E5', fontWeight: 600 }}>View on Google Maps</a><br /></span>
                   )}
-                  🕐 {new Date(alert.created_at).toLocaleString()}
+                  {(() => {
+                    const d = new Date(alert.created_at)
+                    const now = new Date()
+                    const isToday = d.toDateString() === now.toDateString()
+                    const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1)
+                    const isYesterday = d.toDateString() === yesterday.toDateString()
+                    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    if (isToday) return `🕐 Today ${time}`
+                    if (isYesterday) return `🕐 Yesterday ${time}`
+                    return `🕐 ${d.toLocaleDateString([], { day: 'numeric', month: 'short' })}, ${time}`
+                  })()}
                 </div>
                 {!alert.is_resolved && isOwn && (
                   <button

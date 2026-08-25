@@ -12,13 +12,16 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SOSAlarmPlugin.class);
         registerPlugin(MessagesPagePlugin.class);
+        registerPlugin(LocationPlugin.class);
 
         super.onCreate(savedInstanceState);
 
+        // Ensure all notification channels exist before first FCM message
         MyFirebaseMessagingService.ensureSosChannelStatic(getApplicationContext());
         MyFirebaseMessagingService.ensureMessageChannelStatic(getApplicationContext());
         MyFirebaseMessagingService.ensureSilentChannelStatic(getApplicationContext());
         SOSSirenService.ensureSosPopupChannelStatic(getApplicationContext());
+        LocationForegroundService.ensureChannel(getApplicationContext());
 
         handleSOSIntent(getIntent());
     }
@@ -33,12 +36,9 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onStop() {
         super.onStop();
-        // App went to background — mark Messages page as closed so FCM
-        // notifications fire normally when the user isn't looking at the chat.
         setMessagesPageOpen(false);
     }
 
-    /** Called by MessagesPagePlugin from JS to mark page open/closed. */
     public void setMessagesPageOpen(boolean open) {
         SharedPreferences prefs = getApplicationContext()
             .getSharedPreferences(MyFirebaseMessagingService.PREF_NAME, MODE_PRIVATE);
@@ -48,8 +48,7 @@ public class MainActivity extends BridgeActivity {
     private void handleSOSIntent(Intent intent) {
         if (intent == null) return;
 
-        if (SOSSirenService.isRunning
-                || intent.getBooleanExtra("sos_notification", false)) {
+        if (SOSSirenService.isRunning || intent.getBooleanExtra("sos_notification", false)) {
             SOSSirenService.stopService(getApplicationContext());
         }
 

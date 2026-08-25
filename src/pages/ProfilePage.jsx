@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import { registerPlugin, Capacitor } from '@capacitor/core'
+const LocationService = registerPlugin('LocationService')
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
@@ -68,7 +70,7 @@ function ChangePasswordModal({ onClose, userEmail }) {
     <div className="overlay" onClick={onClose}>
       <div className="popup" onClick={e => e.stopPropagation()}>
         <div className="popup-handle" />
-        <div style={{ fontSize: 11, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 14 }}>
           Change Password
         </div>
 
@@ -401,6 +403,11 @@ export default function ProfilePage() {
       const { error: locErr } = await supabase.rpc('sync_location_sharing_all_families', {
         p_is_sharing: showLocation,
       })
+      // Stop background location service when user disables location sharing
+      if (!showLocation && Capacitor.isNativePlatform()) {
+        try { await LocationService.stop() } catch (e) {}
+      }
+
       if (locErr) {
         for (const fam of allFamilies) {
           await supabase.rpc('upsert_location', {
@@ -566,18 +573,18 @@ export default function ProfilePage() {
 
         {/* ── EDIT INFO ── */}
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 10 }}>
             Edit Info
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 10, fontWeight: 800, color: '#3A1020', textTransform: 'uppercase', letterSpacing: 0.8, display: 'block', marginBottom: 5 }}>Display Name</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6 }}>Display Name</label>
             <input className="input" style={{ padding: '11px 14px', fontSize: 14 }}
               value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your name" />
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 10, fontWeight: 800, color: '#3A1020', textTransform: 'uppercase', letterSpacing: 0.8, display: 'block', marginBottom: 5 }}>Mobile Number</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6 }}>Mobile Number</label>
             <div style={{ display: 'flex', gap: 7 }}>
               <span style={{ padding: '10px 9px', background: '#F8F7FF', border: '1.5px solid #E8E5FF', borderRadius: 14, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>🇮🇳 +91</span>
               <input className="input" type="tel" style={{ padding: '11px 14px', fontSize: 14, flex: 1 }}
@@ -590,7 +597,7 @@ export default function ProfilePage() {
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
           {myInviteCode && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 8 }}>
                 My Code
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -616,7 +623,7 @@ export default function ProfilePage() {
         {/* ── MY FAMILIES ── */}
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2 }}>
               My Families
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -702,7 +709,7 @@ export default function ProfilePage() {
 
         {/* ── PRIVACY ── */}
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 12 }}>
             Privacy
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -800,7 +807,7 @@ export default function ProfilePage() {
           <div className="popup" onClick={e => e.stopPropagation()} style={{ paddingBottom: 28 }}>
             <div className="popup-handle" />
 
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
               Share My Code
             </div>
             <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 8, color: '#000', marginBottom: 4 }}>
