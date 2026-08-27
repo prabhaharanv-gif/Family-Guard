@@ -744,9 +744,13 @@ export default function FamilyPage() {
                   </div>
                 </div>
 
-                {/* Location sharing indicator — right side */}
+                {/* Location sharing indicator — right side.
+                    Fixed minWidth keeps the pin centered at the same x for every
+                    row, whether or not the "km away" line (widest content) is
+                    present — otherwise rows without it (e.g. your own) sit
+                    further right than rows with a distance line. */}
                 <div style={{
-                  marginLeft: 'auto', flexShrink: 0,
+                  marginLeft: 'auto', flexShrink: 0, minWidth: 64,
                   display: 'flex', flexDirection: 'column',
                   alignItems: 'center', gap: 3,
                 }}>
