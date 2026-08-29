@@ -988,8 +988,11 @@ export default function FamilyPage() {
         )}
 
         {/* Decorative filler for the empty space below a short member list */}
+        {/* paddingBottom clears the invite FAB, which sits 18px up and is 56px
+            tall. Without it the button lands on the right-hand parent figure and
+            the artwork reads as damaged rather than decorative. */}
         <div style={{
-          marginTop: 'auto', paddingTop: 30, paddingBottom: 6,
+          marginTop: 'auto', paddingTop: 30, paddingBottom: 84,
           display: 'flex', justifyContent: 'center', flexShrink: 0,
         }}>
           <FamilyIllustration />
