@@ -22,6 +22,7 @@ import NativeAlarmBanner   from './components/NativeAlarmBanner'
 import GlobalSOSAlert      from './components/GlobalSOSAlert'
 import GlobalIncomingCall  from './components/GlobalIncomingCall'
 import SosReliabilitySetup from './components/SosReliabilitySetup'
+import BackgroundLocationDisclosure from './components/BackgroundLocationDisclosure'
 import Layout              from './components/Layout'
 
 // Pages
@@ -53,7 +54,7 @@ export default function App() {
   // ── Always-on services ───────────────────────────────────────────────────
   useHeartbeat(user?.id, familyId)
   usePushNotifications(user?.id, familyId)
-  useLocationService()
+  const { disclosureOpen, acceptDisclosure, declineDisclosure } = useLocationService()
   useLocationBroadcast(user?.id, familyId)
   useDevicePing(user, familyId)
 
@@ -112,6 +113,11 @@ export default function App() {
         onDecline={declineIncoming}
       />
       <SosReliabilitySetup />
+      <BackgroundLocationDisclosure
+        open={disclosureOpen}
+        onAccept={acceptDisclosure}
+        onDecline={declineDisclosure}
+      />
 
       <Routes>
         <Route path="/login"   element={<LoginPage />} />

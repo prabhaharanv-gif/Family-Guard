@@ -1,9 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { registerPlugin, Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
 const LocationService = registerPlugin('LocationService')
+
+const DISCLOSURE_DECLINED_KEY = 'bg_location_disclosure_declined'
+const declinedBefore  = () => { try { return localStorage.getItem(DISCLOSURE_DECLINED_KEY) === '1' } catch { return false } }
+const rememberDeclined = () => { try { localStorage.setItem(DISCLOSURE_DECLINED_KEY, '1') } catch { /* private mode */ } }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -12,6 +16,22 @@ export function useLocationService() {
   const { user, familyId } = useAuthStore()
   const tokenRef     = useRef(null)
   const refreshTimer = useRef(null)
+
+  // Play policy requires a prominent disclosure BEFORE the system
+  // background-location prompt. startService() below parks on this promise
+  // until the user answers, so the two are guaranteed to be in that order.
+  const [disclosureOpen, setDisclosureOpen] = useState(false)
+  const disclosureResolver = useRef(null)
+
+  const answerDisclosure = useCallback((accepted) => {
+    setDisclosureOpen(false)
+    const resolve = disclosureResolver.current
+    disclosureResolver.current = null
+    if (resolve) resolve(accepted)
+  }, [])
+
+  const acceptDisclosure  = useCallback(() => answerDisclosure(true),  [answerDisclosure])
+  const declineDisclosure = useCallback(() => answerDisclosure(false), [answerDisclosure])
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
@@ -51,7 +71,19 @@ export function useLocationService() {
         // We request it here, after foreground is already granted.
         try {
           const bg = await LocationService.hasBackgroundPermission()
-          if (!bg?.granted) {
+          if (!bg?.granted && !declinedBefore()) {
+            // Disclosure first, always. If the user says no we do not prompt at
+            // all, and we remember it rather than asking again every launch.
+            const accepted = await new Promise((resolve) => {
+              disclosureResolver.current = resolve
+              setDisclosureOpen(true)
+            })
+            if (cancelled) return
+            if (!accepted) {
+              rememberDeclined()
+              console.warn('[LocationService] background location disclosure declined')
+              return
+            }
             const res = await LocationService.requestBackgroundPermission()
             if (res?.granted) console.log('[LocationService] ✅ Background location granted')
             else console.warn('[LocationService] ⚠️ Background location NOT granted — pin will freeze when app is backgrounded')
@@ -132,5 +164,5 @@ export function useLocationService() {
     } catch (e) {}
   }
 
-  return { stopService }
+  return { stopService, disclosureOpen, acceptDisclosure, declineDisclosure }
 }

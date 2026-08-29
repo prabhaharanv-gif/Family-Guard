@@ -7,7 +7,7 @@
  * Extracted from App.jsx.
  */
 
-const LAST_UPDATED = '29 August 2026'
+const LAST_UPDATED = '30 August 2026'
 
 // Every retention period below is stated to match the scheduled cleanup jobs
 // that actually run on the database, rather than an aspirational figure:
@@ -24,6 +24,7 @@ const SECTIONS = [
       'Call records: who called whom, time, duration and whether voice or video',
       'A device notification token, so alerts and calls can reach your phone',
       'Basic device details needed to deliver calls and alerts reliably',
+      'Crash and diagnostic reports, if the app stops working — see below',
     ],
   },
   {
@@ -48,10 +49,19 @@ const SECTIONS = [
     ],
   },
   {
+    icon: '🐞', title: 'Crash and Diagnostic Reports', color: '#DC2626',
+    items: [
+      'When the app crashes or stops responding, a report is sent to Firebase Crashlytics so the fault can be found and fixed',
+      'A report contains the technical fault, your device model and Android version, and an anonymous account identifier',
+      'It does not contain your location, your messages, your name or your phone number',
+      'Nothing is collected until you accept this policy, and reports are never used for advertising or profiling',
+    ],
+  },
+  {
     icon: '🤝', title: 'Who Else Is Involved', color: '#0EA5E9',
     items: [
       'Supabase — hosts the database and handles sign-in',
-      'Google Firebase — delivers push notifications for alerts and calls',
+      'Google Firebase — delivers push notifications, and receives crash reports via Crashlytics',
       'Agora — carries live call audio and video',
       'These providers process data only to run the service, never for their own purposes',
     ],
