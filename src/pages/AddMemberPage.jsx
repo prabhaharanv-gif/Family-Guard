@@ -83,7 +83,7 @@ export default function AddMemberPage() {
                 padding: '13px 10px', background: 'var(--bg)',
                 border: '1.5px solid var(--border)', borderRadius: 'var(--radius)',
                 fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap'
-              }}>🇮🇳 +91</span>
+              }}>+91</span>
               <input className="input" type="tel" value={phone}
                 onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="9876543210" maxLength={10} style={{ flex: 1 }} />

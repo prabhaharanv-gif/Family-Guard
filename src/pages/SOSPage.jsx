@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import { Geolocation } from '@capacitor/geolocation'
+import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
@@ -58,50 +60,59 @@ const Icons = {
   ),
 }
 
+// Call-number badge backgrounds — same maroon family, distinct shade per emergency number
+const CALL_BADGE_BG = { '100': '#6B0B2C', '108': '#951345', '112': '#C0185A' }
+
 const QUICK_MESSAGES = [
-  { label: 'Need Ambulance',    Icon: Icons.Ambulance,   color: '#951345', bg: '#FDF0F5', call: '108', emergency: true  },
   { label: 'Need Police Help',  Icon: Icons.Police,      color: '#720D35', bg: '#F5EBF0', call: '100', emergency: true  },
-  { label: 'Fire Around Me',    Icon: Icons.Fire,        color: '#B01650', bg: '#FDF2F6', call: '112', emergency: true  },
   { label: 'Under Violence',    Icon: Icons.Violence,    color: '#8A0F3A', bg: '#F8ECF1', call: '100', emergency: true  },
   { label: 'Under Harassment',  Icon: Icons.Harassment,  color: '#C0185A', bg: '#FEF0F6', call: '100', emergency: true  },
+  { label: 'Need Ambulance',    Icon: Icons.Ambulance,   color: '#951345', bg: '#FDF0F5', call: '108', emergency: true  },
   { label: 'Natural Disaster',  Icon: Icons.Disaster,    color: '#6B0B2C', bg: '#F2E8EC', call: '108', emergency: true  },
+  { label: 'Fire Around Me',    Icon: Icons.Fire,        color: '#B01650', bg: '#FDF2F6', call: '112', emergency: true  },
   { label: 'Theft',             Icon: Icons.Theft,       color: '#A01040', bg: '#FAF0F4', call: '100', emergency: false },
   { label: 'Need Money',        Icon: Icons.Money,       color: '#951345', bg: '#FDF0F5', call: null,  emergency: false },
 ]
 
-// ── Alarm ────────────────────────────────────────────────────────────────────
-let senderAlarmInterval = null
-let senderAudioCtx = null
+// ── Alarm — factory returns start/stop bound to private refs ─────────────────
+// Using a factory instead of module-level variables prevents stale audio context
+// leaks when the component unmounts and remounts (e.g. tab switching).
+function createSenderAlarm() {
+  let intervalId = null
+  let audioCtx = null
 
-function startSenderAlarm() {
-  stopSenderAlarm()
-  try {
-    senderAudioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    const playOneCycle = () => {
-      if (!senderAudioCtx) return
-      const beepAt = (t, freq, dur) => {
-        try {
-          const osc = senderAudioCtx.createOscillator()
-          const gain = senderAudioCtx.createGain()
-          osc.connect(gain); gain.connect(senderAudioCtx.destination)
-          osc.frequency.value = freq; osc.type = 'square'
-          gain.gain.setValueAtTime(0.35, senderAudioCtx.currentTime + t)
-          gain.gain.exponentialRampToValueAtTime(0.001, senderAudioCtx.currentTime + t + dur)
-          osc.start(senderAudioCtx.currentTime + t)
-          osc.stop(senderAudioCtx.currentTime + t + dur)
-        } catch (e) {}
+  function start() {
+    stop()
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+      const playOneCycle = () => {
+        if (!audioCtx) return
+        const beepAt = (t, freq, dur) => {
+          try {
+            const osc = audioCtx.createOscillator()
+            const gain = audioCtx.createGain()
+            osc.connect(gain); gain.connect(audioCtx.destination)
+            osc.frequency.value = freq; osc.type = 'square'
+            gain.gain.setValueAtTime(0.35, audioCtx.currentTime + t)
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + dur)
+            osc.start(audioCtx.currentTime + t)
+            osc.stop(audioCtx.currentTime + t + dur)
+          } catch (e) {}
+        }
+        ;[0, 0.25, 0.5, 0.75, 1.0].forEach(t => beepAt(t, 880, 0.2))
+        ;[0, 0.25, 0.5, 0.75, 1.0].forEach(t => beepAt(t + 0.12, 660, 0.12))
       }
-      ;[0, 0.25, 0.5, 0.75, 1.0].forEach(t => beepAt(t, 880, 0.2))
-      ;[0, 0.25, 0.5, 0.75, 1.0].forEach(t => beepAt(t + 0.12, 660, 0.12))
-    }
-    playOneCycle()
-    senderAlarmInterval = setInterval(playOneCycle, 1500)
-  } catch (e) {}
-}
+      playOneCycle()
+      intervalId = setInterval(playOneCycle, 1500)
+    } catch (e) {}
+  }
 
-function stopSenderAlarm() {
-  if (senderAlarmInterval) { clearInterval(senderAlarmInterval); senderAlarmInterval = null }
-  if (senderAudioCtx) { try { senderAudioCtx.close() } catch (e) {} senderAudioCtx = null }
+  function stop() {
+    if (intervalId) { clearInterval(intervalId); intervalId = null }
+    if (audioCtx) { try { audioCtx.close() } catch (e) {} audioCtx = null }
+  }
+
+  return { start, stop }
 }
 
 // ── Confirmation overlay ─────────────────────────────────────────────────────
@@ -303,8 +314,13 @@ export default function SOSPage() {
   const [dialog, setDialog]             = useState(null)
 
   const prevAlertIds = useRef(new Set())
+  const alarmRef     = useRef(null)
 
-  useEffect(() => { return () => stopSenderAlarm() }, [])
+  // Create alarm instance once per component mount; destroy on unmount
+  useEffect(() => {
+    alarmRef.current = createSenderAlarm()
+    return () => alarmRef.current?.stop()
+  }, [])
 
   const reloadAlerts = async () => {
     if (!familyId) return
@@ -326,7 +342,7 @@ export default function SOSPage() {
           setAlerts(prev => [p.new, ...prev])
           if (p.new.user_id !== user?.id && !prevAlertIds.current.has(p.new.id)) {
             prevAlertIds.current.add(p.new.id)
-            startSenderAlarm(); setAlarmOn(true)
+            alarmRef.current?.start(); setAlarmOn(true)
           }
         })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sos_alerts', filter: 'family_id=eq.' + familyId },
@@ -351,13 +367,33 @@ export default function SOSPage() {
     if (msg.call) window.open(`tel:${msg.call}`, '_system')
 
     try {
-      const pos = await new Promise((res) =>
-        navigator.geolocation.getCurrentPosition(res, () => res(null), { timeout: 5000 })
-      )
+      // Use Capacitor Geolocation on native (same as MapPage / LocationBroadcast).
+      // navigator.geolocation falls back to network/IP on Android WebView and can
+      // be several km off — Capacitor calls the native GPS API directly.
+      let lat = 0, lng = 0
+      try {
+        if (Capacitor.isNativePlatform()) {
+          const pos = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true, timeout: 8000, maximumAge: 30000,
+          })
+          lat = pos.coords.latitude
+          lng = pos.coords.longitude
+        } else {
+          // Web fallback
+          const pos = await new Promise((res, rej) =>
+            navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 })
+          )
+          lat = pos.coords.latitude
+          lng = pos.coords.longitude
+        }
+      } catch (gpsErr) {
+        console.warn('[SOS] GPS unavailable, sending with 0,0:', gpsErr?.message)
+      }
+
       const { error: sosErr } = await supabase.rpc('send_sos', {
         p_family_id: familyId,
-        p_lat:       pos ? pos.coords.latitude  : 0,
-        p_lng:       pos ? pos.coords.longitude : 0,
+        p_lat:       lat,
+        p_lng:       lng,
         p_message:   msg.label,
       })
       if (sosErr) throw sosErr
@@ -417,6 +453,47 @@ export default function SOSPage() {
           </div>
           <div className="top-bar-sub">Tap to alert your family instantly</div>
         </div>
+
+        {/* Clear Resolved — right side, matches Switch / Sign Out style */}
+        {activeTab === 'history' && alerts.some(a => a.is_resolved) && (
+          <button
+            onClick={() => {
+              setDialog({
+                type: 'confirm',
+                title: 'Clear Resolved Alerts',
+                message: 'This will permanently delete all resolved SOS alerts for your family.',
+                confirmLabel: 'Clear',
+                onConfirm: async () => {
+                  const { error } = await supabase.rpc('clear_sos_history', { p_family_id: familyId })
+                  if (error) {
+                    setDialog({ type: 'error', title: 'Admin Only', message: 'Only a family Admin can clear alert history.' })
+                    return
+                  }
+                  setAlerts(prev => prev.filter(a => !a.is_resolved))
+                },
+              })
+            }}
+            style={{
+              background: 'rgba(255,255,255,0.92)',
+              border: '1.5px solid #fff',
+              color: '#951345',
+              borderRadius: 10,
+              padding: '7px 12px',
+              fontWeight: 800,
+              fontSize: 12,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              display: 'flex', alignItems: 'center', gap: 6,
+              flexShrink: 0,
+              zIndex: 1,
+            }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            </svg>
+            Clear Resolved ({alerts.filter(a => a.is_resolved).length})
+          </button>
+        )}
       </div>
 
       {/* Alarm active banner */}
@@ -428,7 +505,7 @@ export default function SOSPage() {
           flexShrink: 0, gap: 10,
         }}>
           <span style={{ fontWeight: 700, fontSize: 14 }}>🚨 Family alert received</span>
-          <button onClick={() => { stopSenderAlarm(); setAlarmOn(false) }} style={{
+          <button onClick={() => { alarmRef.current?.stop(); setAlarmOn(false) }} style={{
             background: 'rgba(255,255,255,0.2)', border: '1.5px solid #fff',
             color: '#fff', borderRadius: 20, padding: '6px 14px',
             fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
@@ -490,40 +567,6 @@ export default function SOSPage() {
       {activeTab === 'history' && (
         <PullToRefresh onRefresh={reloadAlerts}>
         <div style={{ padding: 16 }}>
-          {alerts.some(a => a.is_resolved) && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-              <button
-                onClick={() => {
-                  setDialog({
-                    type: 'confirm',
-                    title: 'Clear Resolved Alerts',
-                    message: 'This will permanently delete all resolved SOS alerts for your family.',
-                    confirmLabel: 'Clear',
-                    onConfirm: async () => {
-                      const { error } = await supabase.rpc('clear_sos_history', { p_family_id: familyId })
-                      if (error) {
-                        setDialog({ type: 'error', title: 'Admin Only', message: 'Only a family Admin can clear alert history.' })
-                        return
-                      }
-                      setAlerts(prev => prev.filter(a => !a.is_resolved))
-                    },
-                  })
-                }}
-                style={{
-                  background: '#FFF0F3', border: '1px solid #951345',
-                  color: '#951345', borderRadius: 10,
-                  padding: '7px 14px', fontWeight: 700, fontSize: 12,
-                  cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'flex', alignItems: 'center', gap: 6,
-                }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                </svg>
-                Clear Resolved ({alerts.filter(a => a.is_resolved).length})
-              </button>
-            </div>
-          )}
-
           {alerts.length === 0 && (
             <div className="empty-state">
               <div style={{ margin: '0 auto 18px', width: 80, height: 80 }}>
@@ -580,7 +623,9 @@ export default function SOSPage() {
                     {alert.is_resolved ? '✅ Safe' : '🚨 Active'}
                   </span>
                 </div>
-                <div className="alert-message">{alert.message}</div>
+                {alert.message && alert.message !== '0' && !(/^-?\d+(\.\d+)?$/.test(alert.message)) && (
+                  <div className="alert-message">{alert.message}</div>
+                )}
                 {alert.lat && alert.lat !== 0 && (
                   <a href={`https://www.google.com/maps?q=${alert.lat},${alert.lng}`}
                     target="_blank" rel="noopener noreferrer"
@@ -638,7 +683,7 @@ function SOSButton({ msg, onTap, disabled }) {
       {msg.call && (
         <div style={{
           position: 'absolute', top: 8, right: 8,
-          background: msg.color, borderRadius: 8,
+          background: CALL_BADGE_BG[msg.call] || msg.color, borderRadius: 8,
           padding: '2px 7px', fontSize: 9, fontWeight: 800,
           color: '#fff', letterSpacing: 0.3,
         }}>

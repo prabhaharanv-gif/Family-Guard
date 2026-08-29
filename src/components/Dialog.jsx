@@ -35,7 +35,7 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
+        position: 'fixed', inset: 0, zIndex: 600,
         background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         padding: '0 0 env(safe-area-inset-bottom, 0)',

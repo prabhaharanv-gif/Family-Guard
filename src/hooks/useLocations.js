@@ -13,6 +13,11 @@ export function useLocations(familyId) {
   useEffect(() => {
     if (!familyId) return
 
+    // Guards a family switch: an in-flight fetch for the previous family must
+    // not resolve afterwards and repaint the map with the old family's members
+    // while the UI already says the new one.
+    let cancelled = false
+
     async function fetchAll() {
       const [{ data: locs }, { data: members }] = await Promise.all([
         supabase
@@ -26,6 +31,7 @@ export function useLocations(familyId) {
           .eq('family_id', familyId),
       ])
 
+      if (cancelled) return
       if (locs && members) {
         const memberMap = {}
         members.forEach(m => { memberMap[m.user_id] = m })
@@ -49,7 +55,7 @@ export function useLocations(familyId) {
         setLocations(map)
         cacheSet(`locations:${familyId}`, map)
       }
-      setLoading(false)
+      if (!cancelled) setLoading(false)
     }
 
     fetchAll()
@@ -149,6 +155,7 @@ export function useLocations(familyId) {
     const pollTimer = setInterval(fetchAll, 30_000)
 
     return () => {
+      cancelled = true
       supabase.removeChannel(channel)
       clearInterval(pollTimer)
     }

@@ -15,7 +15,7 @@ export default function SettingsPage() {
     setDialog({
       type: 'confirm',
       title: 'Sign Out',
-      message: 'Are you sure you want to sign out of FamilyGuard?',
+      message: 'Are you sure you want to sign out of Famora?',
       confirmLabel: 'Sign Out',
       onConfirm: signOut,
     })
@@ -86,8 +86,8 @@ export default function SettingsPage() {
             About
           </div>
           {[
-            { label: 'App', value: 'FamilyGuard' },
-            { label: 'Version', value: '1.0.0' },
+            { label: 'App', value: 'Famora' },
+            { label: 'Version', value: import.meta.env.VITE_APP_VERSION || '1.0.0' },
             { label: 'Platform', value: 'Web (PWA Ready)' },
           ].map(item => (
             <div key={item.label} style={{
@@ -98,6 +98,20 @@ export default function SettingsPage() {
               <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{item.value}</span>
             </div>
           ))}
+        </div>
+
+        {/* User Guide */}
+        <div className="settings-card" style={{ cursor: 'pointer' }} onClick={() => window.location.href = '/manual'}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 20 }}>📖</span>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>User Guide</div>
+                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>How every feature works</div>
+              </div>
+            </div>
+            <span style={{ color: '#9C6B7A', fontSize: 16 }}>›</span>
+          </div>
         </div>
 
         {/* Privacy Policy */}

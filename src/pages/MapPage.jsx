@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
-import { Geolocation } from '@capacitor/geolocation'
-import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useLocations } from '../hooks/useLocations'
+import { supabase } from '../lib/supabase'
 import SmoothMarker from '../components/SmoothMarker'
 
 delete L.Icon.Default.prototype._getIconUrl
@@ -53,7 +52,6 @@ export default function MapPage() {
   const { user, familyId } = useAuthStore()
   const { locations } = useLocations(familyId)
   const [member, setMember] = useState(null)
-  const watchRef = useRef(null)
 
   useEffect(() => {
     if (!targetUserId || !familyId) return
@@ -61,73 +59,8 @@ export default function MapPage() {
       .eq('user_id', targetUserId).eq('family_id', familyId).single()
       .then(({ data }) => { if (data) setMember(data) })
   }, [targetUserId, familyId])
-
-  // Share own location using Capacitor (native GPS) — same as MapAllPage
-  useEffect(() => {
-    if (!user || !familyId) return
-
-    const update = async (lat, lng, accuracy) => {
-      const now = new Date().toISOString()
-      // FIX: onConflict must include family_id so multi-family users
-      // upsert into the correct row (was 'user_id' only — wrong).
-      await supabase.from('locations').upsert({
-        user_id: user.id, family_id: familyId,
-        lat, lng, accuracy: accuracy || 0,
-        is_sharing: true, updated_at: now,
-      }, { onConflict: 'user_id,family_id' })
-      await supabase.from('family_members')
-        .update({ last_active: now })
-        .eq('user_id', user.id)
-        .eq('family_id', familyId)
-    }
-
-    // FIX: Use Capacitor Geolocation (native GPS) instead of navigator.geolocation
-    // (browser API). On Android WebView, navigator.geolocation falls back to
-    // network/IP location which can be several km off. Capacitor calls the
-    // native Android GPS API directly — same source WhatsApp uses.
-    const startTracking = async () => {
-      try {
-        const perm = await Geolocation.requestPermissions()
-        if (perm.location !== 'granted') return
-
-        // Get an immediate fix
-        const pos = await Geolocation.getCurrentPosition({
-          enableHighAccuracy: true, timeout: 20000, maximumAge: 30000,
-        })
-        await update(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy)
-
-        // Watch for continuous updates
-        if (!watchRef.current) {
-          watchRef.current = await Geolocation.watchPosition(
-            { enableHighAccuracy: true },
-            async (p, err) => {
-              if (err) { console.warn('Watch error:', err); return }
-              if (p) await update(p.coords.latitude, p.coords.longitude, p.coords.accuracy)
-            }
-          )
-        }
-      } catch (e) {
-        console.warn('MapPage GPS error:', e)
-        // Fallback: browser geolocation (web/desktop)
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => update(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
-            null,
-            { enableHighAccuracy: true, timeout: 15000 }
-          )
-        }
-      }
-    }
-
-    startTracking()
-
-    return () => {
-      if (watchRef.current) {
-        Geolocation.clearWatch({ id: watchRef.current })
-        watchRef.current = null
-      }
-    }
-  }, [user, familyId])
+  // NOTE: own location is handled globally by useLocationBroadcast in App.jsx —
+  // no duplicate writer needed here.
 
   const targetLoc = targetUserId ? locations[targetUserId] : null
 

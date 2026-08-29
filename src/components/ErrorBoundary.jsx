@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import { recordError } from '../lib/crashReporting'
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -12,6 +13,10 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('[ErrorBoundary] Caught:', error, info)
+    // The process survives a render throw, so Crashlytics never sees it unless
+    // we say so — otherwise this is a blank screen we only hear about if the
+    // user happens to tell us.
+    recordError(error, 'ErrorBoundary: ' + String(info && info.componentStack || '').slice(0, 500))
   }
 
   render() {
@@ -42,7 +47,7 @@ export default class ErrorBoundary extends Component {
           fontSize: 14, color: '#6B7280', lineHeight: 1.6,
           marginBottom: 28, maxWidth: 300,
         }}>
-          FamilyGuard ran into a problem on this page. Your data is safe.
+          Famora ran into a problem on this page. Your data is safe.
         </div>
         <button
           onClick={() => this.setState({ hasError: false, error: null })}

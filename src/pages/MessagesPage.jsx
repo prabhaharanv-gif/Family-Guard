@@ -4,6 +4,11 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 import Dialog from '../components/Dialog'
+import CallsPanel from '../components/CallsPanel'
+import PersonalChatPanel from '../components/PersonalChatPanel'
+import {
+  SingleTick, DoubleTick, ReplyBar, ReplyQuote, MessageActionSheet, EditModal,
+} from '../components/MessageActions'
 
 const MessagesPageNative = registerPlugin('MessagesPage')
 function notifyNativePageOpen(open) {
@@ -13,261 +18,6 @@ function notifyNativePageOpen(open) {
 function setNativeMuteLevel(level) {
   if (!Capacitor.isNativePlatform()) return
   try { MessagesPageNative.setMuteLevel({ level }) } catch (e) {}
-}
-
-function SingleTick() {
-  return (
-    <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-      <path d="M2 6.5 L5.5 10 L11 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-function DoubleTick() {
-  return (
-    <svg width="18" height="12" viewBox="0 0 18 12" fill="none">
-      <path d="M1 6.5 L4.5 10 L10 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M6 6.5 L9.5 10 L15 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-// ── Reply preview strip shown above the input ─────────────────────────────────
-function ReplyBar({ replyTo, members, onCancel }) {
-  if (!replyTo) return null
-  const sender = members[replyTo.user_id]
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 8,
-      padding: '8px 16px',
-      background: '#F0EEFF',
-      borderTop: '1px solid #D6D0FF',
-      borderLeft: '3px solid #7C3AED',
-    }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: '#7C3AED', marginBottom: 2 }}>
-          Replying to {sender?.display_name || 'Family'}
-        </div>
-        <div style={{ fontSize: 12, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {replyTo.content}
-        </div>
-      </div>
-      <button onClick={onCancel} style={{
-        background: 'none', border: 'none', cursor: 'pointer',
-        fontSize: 18, color: '#8480B0', padding: '0 4px', flexShrink: 0,
-      }}>✕</button>
-    </div>
-  )
-}
-
-// ── Quoted reply block shown inside a message bubble ─────────────────────────
-function ReplyQuote({ replyToId, messages, members }) {
-  const original = messages.find(m => m.id === replyToId)
-  if (!original) return null
-  const sender = members[original.user_id]
-  return (
-    <div style={{
-      borderLeft: '3px solid rgba(255,255,255,0.45)',
-      paddingLeft: 8, marginBottom: 6,
-      opacity: 0.85,
-    }}>
-      <div style={{ fontSize: 10, fontWeight: 800, marginBottom: 2 }}>
-        {sender?.display_name || 'Family'}
-      </div>
-      <div style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {original.content}
-      </div>
-    </div>
-  )
-}
-
-// ── Action sheet — long press on any message ──────────────────────────────────
-function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onInfo, onClose }) {
-  const actions = [
-    {
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
-        </svg>
-      ),
-      label: 'Reply', sub: 'Reply to this message',
-      color: '#4F46E5', bg: '#EEF2FF', fn: onReply, show: true,
-    },
-    {
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-      ),
-      label: 'Edit', sub: 'Edit this message',
-      color: '#059669', bg: '#F0FDF4', fn: onEdit, show: isOwn,
-    },
-    {
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-          <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-        </svg>
-      ),
-      label: 'Delete', sub: 'Remove for everyone',
-      color: '#DC2626', bg: '#FEF2F2', fn: onDelete, show: isOwn,
-    },
-    {
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-      ),
-      label: 'Message Info', sub: 'See who has read this',
-      color: '#6B7280', bg: '#F9FAFB', fn: onInfo, show: isOwn,
-    },
-  ].filter(a => a.show)
-
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="popup" onClick={e => e.stopPropagation()} style={{ padding: '20px 16px 28px' }}>
-        <div className="popup-handle" />
-
-        {/* Message preview */}
-        <div style={{
-          background: 'linear-gradient(135deg, #FDF7FA 0%, #F8F0F5 100%)',
-          borderRadius: 16, padding: '14px 16px',
-          marginBottom: 20,
-          border: '1.5px solid #EEE0E6',
-          boxShadow: '0 2px 8px rgba(149,19,69,0.06)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <div style={{
-              width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-              background: isOwn ? '#951345' : '#6B7280',
-            }} />
-            <div style={{ fontSize: 11, fontWeight: 700, color: isOwn ? '#951345' : '#6B7280', letterSpacing: 0.2 }}>
-              {isOwn ? 'Your message' : 'Message'}
-            </div>
-          </div>
-          <div style={{ fontSize: 13, color: '#0D0C1D', lineHeight: 1.5, maxHeight: 72, overflow: 'hidden' }}>
-            {msg.content}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {actions.map((a, i) => (
-            <button key={a.label} onClick={() => { a.fn(); onClose() }} style={{
-              width: '100%', padding: '13px 16px', borderRadius: 14,
-              background: a.bg, border: `1px solid ${a.color}20`,
-              cursor: 'pointer', fontFamily: 'inherit',
-              display: 'flex', alignItems: 'center', gap: 14,
-              transition: 'all 0.15s',
-            }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-                background: a.color + '15', border: `1.5px solid ${a.color}25`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {a.icon}
-              </div>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: a.color }}>{a.label}</div>
-                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>{a.sub}</div>
-              </div>
-              <svg style={{ marginLeft: 'auto', opacity: 0.3 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={a.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-            </button>
-          ))}
-
-          {/* Divider */}
-          <div style={{ height: 1, background: '#F0EAF5', margin: '4px 0' }} />
-
-          <button onClick={onClose} style={{
-            width: '100%', padding: '13px 16px', borderRadius: 14,
-            background: '#F8F7FF', border: '1px solid #EDE9FF',
-            color: '#6B7280', fontWeight: 600, fontSize: 14,
-            fontFamily: 'inherit', cursor: 'pointer',
-          }}>
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Edit modal ────────────────────────────────────────────────────────────────
-function EditModal({ msg, onClose, onSave }) {
-  const [text, setText] = useState(msg.content)
-  const [saving, setSaving] = useState(false)
-
-  const handleSave = async () => {
-    if (!text.trim() || text.trim() === msg.content) { onClose(); return }
-    setSaving(true)
-    await onSave(msg.id, text.trim())
-    setSaving(false)
-    onClose()
-  }
-
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="popup" onClick={e => e.stopPropagation()} style={{ padding: '20px 16px 28px' }}>
-        <div className="popup-handle" />
-
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 12,
-            background: '#F0FDF4', border: '1.5px solid #BBF7D0',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0D0C1D' }}>Edit Message</div>
-            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>Changes are visible to all family members</div>
-          </div>
-        </div>
-
-        <textarea
-          value={text}
-          onChange={e => setText(e.target.value)}
-          autoFocus
-          style={{
-            width: '100%', padding: '14px 16px', borderRadius: 14,
-            border: '1.5px solid #E5E7EB', fontSize: 14,
-            fontFamily: 'inherit', resize: 'none', outline: 'none',
-            minHeight: 90, boxSizing: 'border-box', marginBottom: 16,
-            background: '#FAFAFA', lineHeight: 1.5,
-            transition: 'border-color 0.2s',
-          }}
-          onFocus={e => e.target.style.borderColor = '#059669'}
-          onBlur={e => e.target.style.borderColor = '#E5E7EB'}
-        />
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onClose} style={{
-            flex: 1, padding: 14, borderRadius: 14,
-            background: '#F8F7FF', border: '1px solid #EDE9FF',
-            color: '#6B7280', fontWeight: 700, cursor: 'pointer',
-            fontFamily: 'inherit', fontSize: 14,
-          }}>Cancel</button>
-          <button onClick={handleSave} disabled={saving || !text.trim()} style={{
-            flex: 1, padding: 14, borderRadius: 14,
-            background: text.trim() ? 'linear-gradient(135deg, #951345, #720D35)' : '#F5E8EE',
-            border: 'none', color: '#fff', fontWeight: 700,
-            cursor: text.trim() ? 'pointer' : 'not-allowed',
-            fontFamily: 'inherit', fontSize: 14,
-            boxShadow: text.trim() ? '0 4px 14px rgba(5,150,105,0.35)' : 'none',
-            transition: 'all 0.2s',
-          }}>
-            {saving ? 'Saving...' : '✓ Save Changes'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
 }
 
 export default function MessagesPage() {
@@ -289,6 +39,13 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch]   = useState(false)
   const [dialog, setDialog]           = useState(null) // { type, title, message, onConfirm }
+  // 'chat' = family-wide room, 'personal' = one-to-one threads, 'calls' = history
+  const [activeTab, setActiveTab]     = useState('chat')
+  // Bumped when the Personal tab is tapped while already open — closes an
+  // open thread, which is how you get back to the list now that the header
+  // has no back arrow (hardware back does the same on Android).
+  const [personalReset, setPersonalReset] = useState(0)
+  const [callControls, setCallControls] = useState(null) // reported by CallsPanel
   const [typingUsers, setTypingUsers] = useState({})
   const bottomRef      = useRef(null)
   const longPressRef   = useRef(null)
@@ -386,8 +143,18 @@ export default function MessagesPage() {
         })
       .subscribe()
 
-    return () => { document.removeEventListener('visibilitychange', onVisible); supabase.removeChannel(channel) }
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      supabase.removeChannel(channel)
+    }
   }, [familyId])
+
+  // Clear the typing throttle timer on unmount to prevent the leak
+  useEffect(() => {
+    return () => {
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     if (!familyId || !user) return
@@ -413,14 +180,17 @@ export default function MessagesPage() {
   const sendMessage = async () => {
     if (!text.trim() || sending) return
     setSending(true)
-    await supabase.from('messages').insert({
-      family_id:   familyId,
-      user_id:     user.id,
-      content:     text.trim(),
-      reply_to_id: replyTo?.id || null,
+    const { error } = await supabase.rpc('send_message', {
+      p_family_id:   familyId,
+      p_content:     text.trim(),
+      p_reply_to_id: replyTo?.id || null,
     })
-    setText('')
-    setReplyTo(null)
+    if (error) {
+      setDialog({ type: 'error', message: 'Could not send message. Please try again.' })
+    } else {
+      setText('')
+      setReplyTo(null)
+    }
     setSending(false)
   }
 
@@ -480,10 +250,11 @@ export default function MessagesPage() {
     setNativeMuteLevel(next)
   }
   const MUTE_STATES = [
-    { icon: '🔔', tip: 'Notifications on' },
-    { icon: '🔕', tip: 'Sound muted' },
-    { icon: '🚫', tip: 'All muted' },
+    { tip: 'Notifications on' },
+    { tip: 'Sound muted' },
+    { tip: 'All muted' },
   ]
+  const MUTE_COLOR = muteLevel === 1 ? 'var(--gold)' : muteLevel === 2 ? 'var(--rose)' : '#fff'
 
   // ── Long press ──────────────────────────────────────────────────────────────
   const startLongPress = (msg) => {
@@ -511,10 +282,14 @@ export default function MessagesPage() {
               cursor: 'pointer', padding: 0,
               display: 'flex', alignItems: 'center', gap: 5,
             }}>
-              <span style={{ fontSize: 15 }}>{MUTE_STATES[muteLevel].icon}</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke={MUTE_COLOR} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6.5 2.5 7.5a1 1 0 0 1-.7 1.7H4.2a1 1 0 0 1-.7-1.7C4.5 14.5 6 12.5 6 8z"/>
+                <path d="M10 20.5a2 2 0 0 0 4 0"/>
+                {muteLevel > 0 && <line x1="4" y1="4" x2="20" y2="20"/>}
+              </svg>
               {muteLevel > 0 && (
-                <span style={{ fontSize: 10, fontWeight: 700,
-                  color: muteLevel === 1 ? '#FFD700' : '#FF8080' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: MUTE_COLOR }}>
                   {muteLevel === 1 ? 'Sound off' : 'Muted'}
                 </span>
               )}
@@ -522,7 +297,42 @@ export default function MessagesPage() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
-          {messages.length > 0 && (
+          {activeTab === 'calls' && callControls?.selectMode && (
+            <>
+              <button onClick={callControls.cancelSelection} style={{
+                background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)',
+                color: '#fff', borderRadius: 10, padding: '7px 12px',
+                fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}>Cancel</button>
+              <button onClick={callControls.deleteSelected}
+                disabled={callControls.busy || callControls.selectedCount === 0} style={{
+                background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
+                color: '#951345', borderRadius: 10, padding: '7px 12px',
+                fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
+                whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
+                </svg>
+                Delete ({callControls.selectedCount})
+              </button>
+            </>
+          )}
+          {activeTab === 'calls' && !callControls?.selectMode && callControls?.clearableCount > 0 && (
+            <button onClick={callControls.clearAll} disabled={callControls.busy} style={{
+              background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
+              color: '#951345', borderRadius: 10, padding: '7px 12px',
+              fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
+              whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+              {callControls.busy ? 'Clearing...' : `Clear (${callControls.clearableCount})`}
+            </button>
+          )}
+          {activeTab === 'chat' && messages.length > 0 && (
             <button onClick={handleClearMessages} disabled={clearing} style={{
               background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
               color: '#951345', borderRadius: 10, padding: '7px 12px',
@@ -535,6 +345,7 @@ export default function MessagesPage() {
               {clearing ? 'Clearing...' : 'Clear Chat'}
             </button>
           )}
+          {activeTab === 'chat' && (
           <button onClick={() => setShowSearch(s => !s)} style={{
             background: showSearch ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)',
             border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10,
@@ -546,10 +357,31 @@ export default function MessagesPage() {
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
           </button>
+          )}
         </div>
       </div>
 
-      {showSearch && (
+      {/* Chat / Personal / Calls tabs */}
+      <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #F0E4EA', flexShrink: 0 }}>
+        {[{ key: 'chat', label: 'Family' }, { key: 'personal', label: 'Personal' }, { key: 'calls', label: 'Calls' }].map(tab => (
+          <button key={tab.key} onClick={() => {
+            if (tab.key === 'personal' && activeTab === 'personal') setPersonalReset(n => n + 1)
+            setActiveTab(tab.key)
+          }} style={{
+            flex: 1, padding: '12px 0', background: 'none', border: 'none',
+            borderBottom: activeTab === tab.key ? '2.5px solid #951345' : '2.5px solid transparent',
+            color: activeTab === tab.key ? '#951345' : '#9C6B7A',
+            fontWeight: activeTab === tab.key ? 800 : 600,
+            fontSize: 14, fontFamily: 'inherit', cursor: 'pointer',
+          }}>{tab.label}</button>
+        ))}
+      </div>
+
+      {activeTab === 'calls' && <CallsPanel onDialog={setDialog} onControls={setCallControls} />}
+
+      {activeTab === 'personal' && <PersonalChatPanel onDialog={setDialog} resetSignal={personalReset} />}
+
+      {activeTab === 'chat' && showSearch && (
         <div style={{ padding: '8px 16px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF' }}>
           <div style={{ position: 'relative' }}>
             <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
@@ -570,7 +402,7 @@ export default function MessagesPage() {
         </div>
       )}
 
-      {Object.keys(typingUsers).length > 0 && (
+      {activeTab === 'chat' && Object.keys(typingUsers).length > 0 && (
         <div style={{ padding: '6px 20px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF',
           display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
@@ -588,6 +420,8 @@ export default function MessagesPage() {
         </div>
       )}
 
+      {activeTab === 'chat' && (
+      <>
       {/* Messages list */}
       <PullToRefresh onRefresh={reloadMessages}>
       <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -728,7 +562,10 @@ export default function MessagesPage() {
                 >
                   {/* Reply quote */}
                   {msg.reply_to_id && (
-                    <ReplyQuote replyToId={msg.reply_to_id} messages={messages} members={members} />
+                    <ReplyQuote
+                      original={messages.find(x => x.id === msg.reply_to_id)}
+                      senderName={members[messages.find(x => x.id === msg.reply_to_id)?.user_id]?.display_name}
+                    />
                   )}
                   {msg.content}
                 </div>
@@ -760,7 +597,7 @@ export default function MessagesPage() {
       </PullToRefresh>
 
       {/* Reply bar above input */}
-      <ReplyBar replyTo={replyTo} members={members} onCancel={() => setReplyTo(null)} />
+      <ReplyBar replyTo={replyTo} senderName={members[replyTo?.user_id]?.display_name} onCancel={() => setReplyTo(null)} />
 
       {/* Input */}
       <div style={{
@@ -793,6 +630,8 @@ export default function MessagesPage() {
           }}
         >➤</button>
       </div>
+      </>
+      )}
 
       {/* ── Action sheet (long press) ── */}
       {actionMsg && (
@@ -800,7 +639,7 @@ export default function MessagesPage() {
           msg={actionMsg}
           isOwn={actionMsg.user_id === user?.id}
           onReply={() => { setReplyTo(actionMsg); setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100) }}
-          onEdit={() => setEditMsg(actionMsg)}
+          onEdit={() => { setEditMsg(actionMsg); setActionMsg(null) }}
           onDelete={() => handleDelete(actionMsg)}
           onInfo={() => setDetailMsg(actionMsg)}
           onClose={() => setActionMsg(null)}

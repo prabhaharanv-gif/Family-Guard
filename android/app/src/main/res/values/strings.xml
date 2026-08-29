@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">FamilyGuard</string>
-    <string name="title_activity_main">FamilyGuard</string>
+    <string name="app_name">Famora</string>
+    <string name="title_activity_main">Famora</string>
     <string name="package_name">com.scoopfamily.familyguard</string>
     <string name="custom_url_scheme">com.scoopfamily.familyguard</string>
 </resources>

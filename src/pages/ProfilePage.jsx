@@ -227,7 +227,7 @@ function DeleteAccountModal({ onClose, onConfirm }) {
 }
 
 export default function ProfilePage() {
-  const { user, familyId, familyName: activeFamilyName, allFamilies, leaveFamily, switchFamily, loadFamily, signOut } = useAuthStore()
+  const { user, familyId, familyName: activeFamilyName, allFamilies, leaveFamily, loadFamily, signOut } = useAuthStore()
   const navigate = useNavigate()
 
   const [member, setMember]             = useState(null)
@@ -253,11 +253,25 @@ export default function ProfilePage() {
   const [showInviteSheet, setShowInviteSheet]   = useState(false)
   const [codeCopied, setCodeCopied]             = useState(false)
   const [selectedFam, setSelectedFam]           = useState(null) // family action sheet
+  const [viewFam, setViewFam]                   = useState(null) // { fam, members, loading } — read-only member list
   const fileRef = useRef()
 
   // Hardware back button closes open sheets instead of exiting the app
   useBackButton(showInviteSheet, () => setShowInviteSheet(false))
   useBackButton(!!selectedFam, () => setSelectedFam(null))
+  useBackButton(!!viewFam, () => setViewFam(null))
+
+  const openViewFamily = async (fam) => {
+    setSelectedFam(null)
+    setViewFam({ fam, members: [], loading: true })
+    const { data, error: err } = await supabase
+      .from('family_members')
+      .select('*')
+      .eq('family_id', fam.family_id)
+      .order('role', { ascending: true })
+    setViewFam({ fam, members: err ? [] : (data || []), loading: false })
+    if (err) setError(err.message)
+  }
 
   const loadProfile = async () => {
     if (!user || !familyId) return
@@ -609,7 +623,19 @@ export default function ProfilePage() {
           <div style={{ marginBottom: 10 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6 }}>Mobile Number</label>
             <div style={{ display: 'flex', gap: 7 }}>
-              <span style={{ padding: '10px 9px', background: '#F8F7FF', border: '1.5px solid #E8E5FF', borderRadius: 14, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>🇮🇳 +91</span>
+              {/* Plain "+91" — the 🇮🇳 flag emoji used to sit here, but MIUI
+                  and several other Android ROMs ship no regional-indicator
+                  glyphs, so the pair fell back to rendering its two underlying
+                  letters as boxed capitals: the strange "IN +91". Padding and
+                  font now match the input beside it so the two read as one
+                  field. */}
+              <span style={{
+                display: 'flex', alignItems: 'center',
+                padding: '11px 14px', background: '#F8F7FF',
+                border: '1.5px solid #E8E5FF', borderRadius: 14,
+                fontSize: 14, fontWeight: 700, color: '#5B4652',
+                whiteSpace: 'nowrap', flexShrink: 0,
+              }}>+91</span>
               <input className="input" type="tel" style={{ padding: '11px 14px', fontSize: 14, flex: 1 }}
                 value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))} placeholder="9876543210" maxLength={10} />
             </div>
@@ -804,6 +830,33 @@ export default function ProfilePage() {
           </button>
         </div>
 
+        {/* ── USER GUIDE ── */}
+        <div
+          className="settings-card"
+          onClick={() => navigate('/manual')}
+          style={{ marginTop: 10, padding: '14px 16px', cursor: 'pointer' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                background: '#F5E8EF', border: '1px solid #EDD0DA',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0D0C1D' }}>User Guide</div>
+                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>How every feature works</div>
+              </div>
+            </div>
+            <span style={{ color: '#9C6B7A', fontSize: 16 }}>›</span>
+          </div>
+        </div>
+
         {/* ── PRIVACY POLICY ── */}
         <div
           className="settings-card"
@@ -818,9 +871,8 @@ export default function ProfilePage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  <circle cx="12" cy="16" r="1.2" fill="#951345"/>
+                  <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" fill="none"/>
+                  <polyline points="9 12 11 14 15 10" fill="none"/>
                 </svg>
               </div>
               <div>
@@ -887,7 +939,7 @@ export default function ProfilePage() {
 
             {/* WhatsApp */}
             <button onClick={() => {
-              const msg = encodeURIComponent(`Join me on FamilyGuard! Enter my code *${myInviteCode}* when adding me as a member. Download the app and stay connected with family 🛡️`)
+              const msg = encodeURIComponent(`Join me on Famora! Enter my code *${myInviteCode}* when adding me as a member. Download the app and stay connected with family 🛡️`)
               window.open(`https://wa.me/?text=${msg}`, '_blank')
             }} style={{
               width: '100%', padding: '14px 16px', borderRadius: 14,
@@ -905,7 +957,7 @@ export default function ProfilePage() {
 
             {/* SMS */}
             <button onClick={() => {
-              const msg = encodeURIComponent(`Join me on FamilyGuard! My code is ${myInviteCode} — enter it when adding me as a member.`)
+              const msg = encodeURIComponent(`Join me on Famora! My code is ${myInviteCode} — enter it when adding me as a member.`)
               window.open(`sms:?body=${msg}`, '_blank')
             }} style={{
               width: '100%', padding: '14px 16px', borderRadius: 14,
@@ -972,12 +1024,8 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Go to Family */}
-            <button onClick={() => {
-              // Switching is done from Family page — here just show details
-              setSelectedFam(null)
-              navigate('/')
-            }} style={{
+            {/* View Family — read-only member list, does not switch active family */}
+            <button onClick={() => openViewFamily(selectedFam)} style={{
               width: '100%', padding: '14px 16px', borderRadius: 14,
               background: '#951345', border: 'none',
               color: '#fff', fontWeight: 800, fontSize: 15,
@@ -1017,6 +1065,69 @@ export default function ProfilePage() {
               Leave Family
             </button>
 
+          </div>
+        </div>
+      )}
+
+      {/* ── VIEW FAMILY — read-only member list, does not touch the active family ── */}
+      {viewFam && (
+        <div className="overlay" onClick={() => setViewFam(null)}>
+          <div className="popup" onClick={e => e.stopPropagation()} style={{ paddingBottom: 28, maxHeight: '75vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="popup-handle" />
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: '#000' }}>{viewFam.fam.name}</div>
+              <button onClick={() => setViewFam(null)} style={{
+                background: '#F5EBF0', border: 'none', borderRadius: 10,
+                width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {viewFam.loading ? (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: '#9C6B7A', fontSize: 13 }}>Loading members…</div>
+              ) : viewFam.members.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: '#9C6B7A', fontSize: 13 }}>No members found</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {viewFam.members.map((m) => (
+                    <div key={m.user_id || m.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 12px', borderRadius: 12,
+                      background: '#F8F7FF', border: '1.5px solid #E8E5FF',
+                    }}>
+                      {m.avatar_url ? (
+                        <img src={m.avatar_url} alt={m.display_name} style={{
+                          width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0,
+                        }} />
+                      ) : (
+                        <div style={{
+                          width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                          background: m.avatar_color && m.avatar_color !== '#4F8EF7' ? m.avatar_color : '#951345',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: '#fff', fontWeight: 800, fontSize: 16,
+                        }}>
+                          {m.display_name?.[0]?.toUpperCase() || '?'}
+                        </div>
+                      )}
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {m.display_name || 'Unknown'}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
+                          {m.role === 'admin' ? '👑 Admin' : '👤 Member'}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

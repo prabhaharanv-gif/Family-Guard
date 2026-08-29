@@ -55,8 +55,23 @@ Write-Host "        Sync complete" -ForegroundColor Green
 # ── STEP 5: Set JAVA_HOME for Gradle ─────────────────────────────────────────
 Write-Host "[ 5/5 ] Building APK (Gradle)..." -ForegroundColor Yellow
 
-# Update this path if your JDK is installed elsewhere
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+# Android Studio's bundled JBR moved to Java 25, which Gradle 8.x rejects with
+# "Unsupported class file major version 69". Prefer a JDK 17-21 and only fall
+# back to the JBR, so this keeps working across Android Studio updates.
+$JdkCandidates = @(
+    "C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot",
+    "C:\Program Files\Microsoft\jdk-21.0.12.8-hotspot",
+    "C:\Program Files\Android\Android Studio\jbr"
+)
+$env:JAVA_HOME = $null
+foreach ($candidate in $JdkCandidates) {
+    if (Test-Path "$candidate\bin\java.exe") { $env:JAVA_HOME = $candidate; break }
+}
+if (-not $env:JAVA_HOME) {
+    Write-Host "`n[ERROR] No usable JDK found. Install a JDK 21 or set JAVA_HOME." -ForegroundColor Red
+    exit 1
+}
+Write-Host "        JDK: $env:JAVA_HOME" -ForegroundColor Gray
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 
 Set-Location "$ProjectRoot\android"

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import MemberPopup from '../components/MemberPopup'
 import Dialog from '../components/Dialog'
+import FamilyIllustration from '../components/FamilyIllustration'
 import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 
@@ -19,9 +20,21 @@ function formatLastSeen(ts) {
   return `${Math.floor(diff / 86400)}d ago`
 }
 
-function isOnline(ts) {
-  if (!ts) return false
-  return (Date.now() - new Date(ts)) < 2 * 60 * 1000
+// Presence needs BOTH the explicit flag and a fresh heartbeat.
+//
+// is_online alone would strand a member Online forever if their process was
+// killed hard enough never to send the offline signal (force-stop, battery
+// killer, crash). A fresh last_active alone is what caused the original bug —
+// background location pushes kept refreshing it with the app closed.
+//
+// The window is 75s against a 30s heartbeat: two beats may be missed to a
+// flaky connection before a genuinely-present member is shown offline.
+const ONLINE_STALE_MS = 75 * 1000
+
+function isOnline(member) {
+  if (!member || member.is_online !== true) return false
+  if (!member.last_active) return false
+  return (Date.now() - new Date(member.last_active)) < ONLINE_STALE_MS
 }
 
 // Haversine distance in km between two lat/lng points
@@ -70,6 +83,70 @@ function SOSAlert({ alert, memberName, onDismiss }) {
 }
 
 // ── Long-press action sheet: Edit Name + Remove ──
+// ── Action sheet icons ──────────────────────────────────────────────────────
+// Inline SVG rather than emoji: emoji are font glyphs, so they render
+// differently on every device, sit off the text baseline, and cannot take the
+// maroon theme. Same reason the call controls were converted.
+const sheetIcon = {
+  viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
+  strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round',
+}
+const PencilIcon = () => (
+  <svg width="18" height="18" {...sheetIcon}>
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+)
+const RadarIcon = () => (
+  <svg width="18" height="18" {...sheetIcon}>
+    <circle cx="12" cy="12" r="2.5" />
+    <path d="M7.8 16.2a6 6 0 0 1 0-8.4" />
+    <path d="M16.2 7.8a6 6 0 0 1 0 8.4" />
+    <path d="M4.9 19.1a10 10 0 0 1 0-14.2" />
+    <path d="M19.1 4.9a10 10 0 0 1 0 14.2" />
+  </svg>
+)
+const TrashIcon = () => (
+  <svg width="18" height="18" {...sheetIcon}>
+    <path d="M3 6h18" />
+    <path d="M8 6V4h8v2" />
+    <path d="M6 6l1 14h10l1-14" />
+    <path d="M10 11v5M14 11v5" />
+  </svg>
+)
+
+/**
+ * One action row: tinted icon tile, label, one-line explanation, chevron.
+ *
+ * Rows share a neutral background and carry colour only in the icon tile, so
+ * the destructive action can be set apart by tone instead of every action
+ * competing as a full-width coloured block.
+ */
+function ActionRow({ icon, label, sub, color, onClick, danger }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: '100%', padding: '12px 6px',
+        background: 'none', border: 'none', cursor: 'pointer',
+        fontFamily: 'inherit', textAlign: 'left',
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}
+    >
+      <div style={{
+        width: 38, height: 38, borderRadius: 11, flexShrink: 0,
+        background: `${color}14`, color,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>{icon}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14.5, fontWeight: 700, color: danger ? color : '#0D0C1D' }}>{label}</div>
+        <div style={{ fontSize: 11.5, color: '#9C6B7A', marginTop: 1.5, lineHeight: 1.45 }}>{sub}</div>
+      </div>
+      <span style={{ color: '#D8C3CD', fontSize: 17, flexShrink: 0 }}>›</span>
+    </button>
+  )
+}
+
 function MemberActionSheet({ member, displayName, isOwner, onClose, onEditName, onRemove, onFindDevice }) {
   const shown = displayName || member.display_name
   return (
@@ -77,65 +154,66 @@ function MemberActionSheet({ member, displayName, isOwner, onClose, onEditName, 
       <div className="popup" onClick={e => e.stopPropagation()}>
         <div className="popup-handle" />
 
-        {/* Member info header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #F0E4EA' }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
-            background: member.avatar_color && member.avatar_color !== '#4F8EF7' ? member.avatar_color : '#951345',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Sora, sans-serif',
-          }}>
-            {shown?.[0]?.toUpperCase()}
-          </div>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 17, color: '#000' }}>{shown}</div>
+        {/* Member info header. Uses the real profile photo — the sheet used to
+            draw an initials circle while the list behind it showed the actual
+            photo, which read as two different people. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8, paddingBottom: 16, borderBottom: '1px solid #F0E4EA' }}>
+          {member.avatar_url ? (
+            <img
+              src={member.avatar_url}
+              alt={shown}
+              style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid #951345' }}
+            />
+          ) : (
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
+              background: member.avatar_color && member.avatar_color !== '#4F8EF7' ? member.avatar_color : '#951345',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Sora, sans-serif',
+            }}>
+              {shown?.[0]?.toUpperCase()}
+            </div>
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 800, fontSize: 17, color: '#0D0C1D' }}>{shown}</div>
             <div style={{ fontSize: 12, color: '#9C6B7A', marginTop: 3 }}>{member.phone || 'No phone saved'}</div>
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <button onClick={onEditName} style={{
-            width: '100%', padding: '14px 18px', borderRadius: 14,
-            background: '#F5E6EC', border: '1px solid #951345',
-            color: '#951345', fontWeight: 700, fontSize: 15,
-            cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-            display: 'flex', alignItems: 'center', gap: 12,
-          }}>
-            ✏️ Set Nickname
-          </button>
+        {/* Everyday actions */}
+        <ActionRow
+          icon={<PencilIcon />} color="#951345"
+          label="Set Nickname" sub="A private name only you see"
+          onClick={onEditName}
+        />
+        <div style={{ height: 1, background: '#F7EFF3' }} />
+        <ActionRow
+          icon={<RadarIcon />} color="#951345"
+          label="Find My Device" sub="Ring their phone, even on silent"
+          onClick={onFindDevice}
+        />
 
-          <button onClick={onFindDevice} style={{
-            width: '100%', padding: '14px 18px', borderRadius: 14,
-            background: '#EFF6FF', border: '1px solid #3B82F6',
-            color: '#3B82F6', fontWeight: 700, fontSize: 15,
-            cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-            display: 'flex', alignItems: 'center', gap: 12,
-          }}>
-            📡 Find My Device
-          </button>
+        {/* Destructive action, deliberately separated and quieter than the
+            everyday ones — it is irreversible and rarely what you came for. */}
+        {isOwner && (
+          <>
+            <div style={{ height: 1, background: '#F0E4EA', margin: '8px 0' }} />
+            <ActionRow
+              icon={<TrashIcon />} color="#E11D48" danger
+              label="Remove from Family" sub="They lose access to this family"
+              onClick={onRemove}
+            />
+          </>
+        )}
 
-          {isOwner && (
-            <button onClick={onRemove} style={{
-              width: '100%', padding: '14px 18px', borderRadius: 14,
-              background: '#FFF0F3', border: '1px solid #E11D48',
-              color: '#E11D48', fontWeight: 700, fontSize: 15,
-              cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-              display: 'flex', alignItems: 'center', gap: 12,
-            }}>
-              🗑 Remove from Family
-            </button>
-          )}
-
-          <button onClick={onClose} style={{
-            width: '100%', padding: '13px 18px', borderRadius: 14,
-            background: '#F5F4FB', border: '1px solid #E9E6FB',
-            color: '#3A1020', fontWeight: 600, fontSize: 14,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}>
-            Cancel
-          </button>
-        </div>
+        <button onClick={onClose} style={{
+          width: '100%', padding: '13px 18px', borderRadius: 14, marginTop: 14,
+          background: '#F7F4F8', border: '1px solid #EEE6EC',
+          color: '#5B4652', fontWeight: 700, fontSize: 14,
+          cursor: 'pointer', fontFamily: 'inherit',
+        }}>
+          Cancel
+        </button>
       </div>
     </div>
   )
@@ -212,6 +290,17 @@ export default function FamilyPage() {
   const didLongPress = useRef(false)
   const navigate = useNavigate()
 
+  // Presence and "last seen" are derived from timestamps, so they go stale with
+  // no incoming event to re-render them. A member whose process was force-stopped
+  // sends no offline signal and no further heartbeats — without this tick they
+  // would sit on screen as Online indefinitely. 15s keeps the 75s staleness
+  // window accurate to within a fifth of itself.
+  const [, setPresenceTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setPresenceTick(n => n + 1), 15_000)
+    return () => clearInterval(t)
+  }, [])
+
   // Hardware back closes open sheets/modals instead of exiting the app.
   // (MemberPopup handles its own back for selectedMember.)
   useBackButton(!!actionMember, () => setActionMember(null))
@@ -235,7 +324,7 @@ export default function FamilyPage() {
       supabase.from('family_members').select('*').eq('family_id', familyId),
       supabase.from('member_nicknames').select('target_user_id, nickname')
         .eq('family_id', familyId).eq('owner_user_id', user.id),
-      supabase.from('locations').select('user_id, lat, lng, updated_at, is_sharing')
+      supabase.from('locations').select('user_id, lat, lng, updated_at, is_sharing, location_enabled')
         .eq('family_id', familyId),
       supabase.from('join_requests').select('*')
         .eq('family_id', familyId).eq('status', 'pending'),
@@ -251,7 +340,7 @@ export default function FamilyPage() {
     }
     if (locRes.data) {
       const map = {}
-      locRes.data.forEach(l => { map[l.user_id] = { lat: l.lat, lng: l.lng, updatedAt: l.updated_at, isSharing: l.is_sharing } })
+      locRes.data.forEach(l => { map[l.user_id] = { lat: l.lat, lng: l.lng, updatedAt: l.updated_at, isSharing: l.is_sharing, locEnabled: l.location_enabled !== false } })
       setLocations(map)
     }
     if (reqRes.data) setJoinRequests(reqRes.data)
@@ -260,38 +349,8 @@ export default function FamilyPage() {
   useEffect(() => {
     if (!familyId || !user) return
 
-    // Check if this user is the owner of this family
-    supabase.from('families').select('created_by').eq('id', familyId).single()
-      .then(({ data }) => { if (data) setIsOwner(data.created_by === user.id) })
-
-    supabase.from('family_members').select('*').eq('family_id', familyId)
-      .then(({ data }) => { if (data) setMembers(data); setMembersLoaded(true) })
-
-    // My own private nicknames for this family (only I can read these via RLS)
-    supabase.from('member_nicknames')
-      .select('target_user_id, nickname')
-      .eq('family_id', familyId).eq('owner_user_id', user.id)
-      .then(({ data }) => {
-        if (data) {
-          const map = {}
-          data.forEach(n => { map[n.target_user_id] = n.nickname })
-          setNicknames(map)
-        }
-      })
-
-    supabase.from('locations').select('user_id, lat, lng, updated_at, is_sharing')
-      .eq('family_id', familyId)
-      .then(({ data }) => {
-        if (data) {
-          const map = {}
-          data.forEach(l => { map[l.user_id] = { lat: l.lat, lng: l.lng, updatedAt: l.updated_at, isSharing: l.is_sharing } })
-          setLocations(map)
-        }
-      })
-
-    supabase.from('join_requests').select('*')
-      .eq('family_id', familyId).eq('status', 'pending')
-      .then(({ data }) => { if (data) setJoinRequests(data) })
+    // Single parallel load — replaces the 5 individual queries that ran on mount
+    loadData()
 
     const channel = supabase
       .channel(`family-page:${familyId}`)
@@ -308,7 +367,7 @@ export default function FamilyPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'locations', filter: `family_id=eq.${familyId}` },
         (payload) => {
           if (payload.new) {
-            setLocations(prev => ({ ...prev, [payload.new.user_id]: { lat: payload.new.lat, lng: payload.new.lng, updatedAt: payload.new.updated_at, isSharing: payload.new.is_sharing } }))
+            setLocations(prev => ({ ...prev, [payload.new.user_id]: { lat: payload.new.lat, lng: payload.new.lng, updatedAt: payload.new.updated_at, isSharing: payload.new.is_sharing, locEnabled: payload.new.location_enabled !== false } }))
           }
         })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'family_members', filter: `family_id=eq.${familyId}` },
@@ -316,7 +375,7 @@ export default function FamilyPage() {
           if (payload.new) {
             setMembers(prev => prev.map(m =>
               m.user_id === payload.new.user_id
-                ? { ...m, last_active: payload.new.last_active, avatar_url: payload.new.avatar_url || m.avatar_url, display_name: payload.new.display_name }
+                ? { ...m, last_active: payload.new.last_active, is_online: payload.new.is_online, avatar_url: payload.new.avatar_url || m.avatar_url, display_name: payload.new.display_name }
                 : m
             ))
           }
@@ -378,6 +437,18 @@ export default function FamilyPage() {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
   }, [])
 
+  const handleStartCall = async (member, callType) => {
+    setActionMember(null)
+    setSelectedMember(null)
+    const { data, error } = await supabase.rpc('create_call', {
+      p_family_id:  familyId,
+      p_callee_id:  member.user_id,
+      p_call_type:  callType,
+    })
+    if (error) { setDialog({ type: 'error', message: error.message }); return }
+    navigate(`/call/${data.id}`)
+  }
+
   const handleFindDevice = async (member) => {
     setActionMember(null)
     // SECURE: send_device_ping RPC forces sent_by = auth.uid() server-side
@@ -386,7 +457,7 @@ export default function FamilyPage() {
       p_target_user_id: member.user_id,
     })
     if (pingErr) { setDialog({ type: 'error', message: pingErr.message }); return }
-    setDialog({ type: 'alert', title: 'Ping Sent', message: `A sound alert has been sent to ${member.display_name}'s device.` })
+    setDialog({ type: 'alert', title: 'Ping Sent', message: `${member.display_name}'s phone will ring for 30 seconds, even if it's on silent.` })
   }
 
   const handleSaveMemberName = async (member, newName) => {
@@ -612,7 +683,17 @@ export default function FamilyPage() {
       </div>
 
       <PullToRefresh onRefresh={loadData}>
-      <div className="page-content-inner" style={{ padding: '18px 16px' }}>
+      {/* minHeight 100% + flex column so the decorative illustration at the
+          bottom can take the leftover space with marginTop:auto. With a long
+          member list there is no leftover space and it simply follows the
+          list, adding no scroll of its own. */}
+      <div
+        className="page-content-inner"
+        style={{
+          padding: '18px 16px', minHeight: '100%', boxSizing: 'border-box',
+          display: 'flex', flexDirection: 'column',
+        }}
+      >
 
         {/* Join Requests */}
         {joinRequests.length > 0 && (
@@ -693,9 +774,11 @@ export default function FamilyPage() {
         ) : (
           members.map((m, i) => {
             const loc = locations[m.user_id] || {}
-            const activeTs = m.last_active || loc?.updatedAt || null
-            const online = isOnline(activeTs) && m.show_online !== false
-            const lastSeen = formatLastSeen(activeTs)
+            // No `|| loc.updatedAt` fallback: a location timestamp says the
+            // device is still reporting, not that the person has the app open.
+            // Using it here is what made a closed app read "Online · Just now".
+            const online = isOnline(m) && m.show_online !== false
+            const lastSeen = formatLastSeen(m.last_active)
             return (
               <div
                 key={m.id}
@@ -749,31 +832,52 @@ export default function FamilyPage() {
                   marginLeft: 'auto', flexShrink: 0,
                   display: 'flex', flexDirection: 'column',
                   alignItems: 'center', gap: 3,
+                  alignSelf: 'flex-start', paddingTop: 4,
+                  minWidth: 64,
                 }}>
-                  <div style={{ position: 'relative', width: 28, height: 28 }}>
-                    {/* Map pin SVG */}
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
-                        fill={loc?.isSharing ? '#10B981' : '#D1D5DB'} />
-                      <circle cx="12" cy="9" r="2.5" fill="#fff" />
-                    </svg>
-                    {/* Strike-through X overlay when not sharing */}
-                    {!loc?.isSharing && (
-                      <svg width="28" height="28" viewBox="0 0 24 24"
-                        style={{ position: 'absolute', top: 0, left: 0 }}>
-                        <line x1="4" y1="4" x2="20" y2="20"
-                          stroke="#E11D48" strokeWidth="2.5" strokeLinecap="round" />
-                        <line x1="20" y1="4" x2="4" y2="20"
-                          stroke="#E11D48" strokeWidth="2.5" strokeLinecap="round" />
-                      </svg>
-                    )}
-                  </div>
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, letterSpacing: 0.2,
-                    color: loc?.isSharing ? '#10B981' : '#E11D48',
-                  }}>
-                    {loc?.isSharing ? 'Live' : 'Off'}
-                  </span>
+                  {/* Three distinct location states, because "not sharing" and
+                      "phone GPS switched off" are different problems with
+                      different fixes, and previously both looked the same:
+                        sharing + GPS on  → green pin, "Live"
+                        sharing + GPS off → RED pin,   "No GPS"
+                        not sharing       → grey pin + red X, "Off"
+                      gpsOff is only meaningful while sharing is on — with
+                      sharing off the device stops reporting the flag at all. */}
+                  {(() => {
+                    const sharing = !!loc?.isSharing
+                    const gpsOff  = sharing && loc?.locEnabled === false
+                    const pinFill = !sharing ? '#D1D5DB' : (gpsOff ? '#E11D48' : '#10B981')
+                    const label   = !sharing ? 'Off' : (gpsOff ? 'No GPS' : 'Live')
+                    const labelColor = sharing && !gpsOff ? '#10B981' : '#E11D48'
+                    return (
+                      <>
+                        <div style={{ position: 'relative', width: 28, height: 28 }}>
+                          {/* Map pin SVG */}
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+                              fill={pinFill} />
+                            <circle cx="12" cy="9" r="2.5" fill="#fff" />
+                          </svg>
+                          {/* Strike-through X overlay when not sharing */}
+                          {!sharing && (
+                            <svg width="28" height="28" viewBox="0 0 24 24"
+                              style={{ position: 'absolute', top: 0, left: 0 }}>
+                              <line x1="4" y1="4" x2="20" y2="20"
+                                stroke="#E11D48" strokeWidth="2.5" strokeLinecap="round" />
+                              <line x1="20" y1="4" x2="4" y2="20"
+                                stroke="#E11D48" strokeWidth="2.5" strokeLinecap="round" />
+                            </svg>
+                          )}
+                        </div>
+                        <span style={{
+                          fontSize: 9, fontWeight: 700, letterSpacing: 0.2,
+                          color: labelColor,
+                        }}>
+                          {label}
+                        </span>
+                      </>
+                    )
+                  })()}
                   {(() => {
                     // Show distance from me to this member (not for myself)
                     if (m.user_id === user?.id) return null
@@ -797,13 +901,24 @@ export default function FamilyPage() {
             )
           })
         )}
+
+        {/* Decorative filler for the empty space below a short member list */}
+        <div style={{
+          marginTop: 'auto', paddingTop: 30, paddingBottom: 6,
+          display: 'flex', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <FamilyIllustration />
+        </div>
       </div>
       </PullToRefresh>
 
       {selectedMember && (
         <MemberPopup
           member={selectedMember}
+          isSelf={selectedMember.user_id === user?.id}
           onClose={() => setSelectedMember(null)}
+          onVoiceCall={() => handleStartCall(selectedMember, 'voice')}
+          onVideoCall={() => handleStartCall(selectedMember, 'video')}
         />
       )}
     </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
@@ -20,7 +20,10 @@ function EyeIcon({ open }) {
   )
 }
 
+const toE164 = (mobile) => `+91${mobile.replace(/[^0-9]/g, '')}`
+
 export default function RegisterPage() {
+  const [step, setStep] = useState(1)   // 1 = details form, 2 = OTP verification
   const [name, setName] = useState('')
   const [mobile, setMobile] = useState('')
   const [password, setPassword] = useState('')
@@ -30,9 +33,12 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [agreed, setAgreed] = useState(false)
+  const [otp, setOtp] = useState('')
+  const [resendIn, setResendIn] = useState(0)
   const { createOwnFamily } = useAuthStore()
 
-  const handleRegister = async (e) => {
+  // Step 1 → send OTP to the entered mobile number, move to step 2
+  const handleSendOtp = async (e) => {
     e.preventDefault()
     setError('')
     if (!name.trim()) { setError('Please enter your name'); return }
@@ -45,24 +51,72 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: toEmail(mobile), password,
-        options: { data: { display_name: name } },
+      const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: toE164(mobile) })
+      if (otpErr) throw otpErr
+      setStep(2)
+      setResendIn(30)
+    } catch (err) {
+      setError(err.message || 'Could not send verification code. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Step 2 → verify the OTP, then attach email/password to the now-authenticated session
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault()
+    setError('')
+    if (otp.replace(/[^0-9]/g, '').length !== 6) { setError('Enter the 6-digit code'); return }
+
+    setLoading(true)
+    try {
+      const { data: verifyData, error: verifyErr } = await supabase.auth.verifyOtp({
+        phone: toE164(mobile), token: otp, type: 'sms',
       })
-      if (signUpError) {
-        if (signUpError.message.includes('already registered')) {
+      if (verifyErr) throw new Error('Incorrect or expired code. Please try again.')
+      if (!verifyData.user) throw new Error('Verification failed')
+
+      const { data: updateData, error: updateErr } = await supabase.auth.updateUser({
+        email: toEmail(mobile), password,
+        data: { display_name: name },
+      })
+      if (updateErr) {
+        if (updateErr.message.includes('already registered') || updateErr.message.includes('already been registered')) {
           throw new Error('This mobile number is already registered. Please sign in.')
         }
-        throw signUpError
+        throw updateErr
       }
-      if (!data.user) throw new Error('Registration failed')
-      await createOwnFamily(data.user.id, name)
+      if (!updateData.user) throw new Error('Registration failed')
+
+      await createOwnFamily(updateData.user.id, name)
       window.location.href = '/onboarding'
     } catch (err) {
       setError(err.message)
       setLoading(false)
     }
   }
+
+  const handleResendOtp = async () => {
+    if (resendIn > 0) return
+    setError('')
+    setLoading(true)
+    try {
+      const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: toE164(mobile) })
+      if (otpErr) throw otpErr
+      setResendIn(30)
+    } catch (err) {
+      setError(err.message || 'Could not resend code.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Resend cooldown ticker
+  useEffect(() => {
+    if (resendIn <= 0) return
+    const t = setInterval(() => setResendIn(s => (s > 0 ? s - 1 : 0)), 1000)
+    return () => clearInterval(t)
+  }, [resendIn])
 
   return (
     <div className="auth-page">
@@ -90,11 +144,44 @@ export default function RegisterPage() {
           </div>
         </div>
         <h1 className="auth-title" style={{ fontSize: 26, marginBottom: 4 }}>Create Account</h1>
-        <p className="auth-subtitle" style={{ marginBottom: 20 }}>Join FamilyGuard to keep your family safe</p>
+        <p className="auth-subtitle" style={{ marginBottom: 20 }}>
+          {step === 1 ? 'Join Famora to keep your family safe' : `Enter the code sent to +91 ${mobile}`}
+        </p>
 
         {error && <div className="error-msg">{error}</div>}
 
-        <form onSubmit={handleRegister} noValidate>
+        {step === 2 ? (
+          <form onSubmit={handleVerifyOtp} noValidate>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Verification code</label>
+              <input className="input" type="text" inputMode="numeric" value={otp} autoFocus
+                onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                placeholder="6-digit code" required
+                style={{ textAlign: 'center', fontSize: 22, fontWeight: 800, letterSpacing: 6 }} />
+            </div>
+
+            <button className="btn btn-primary" type="submit"
+              disabled={loading || otp.length !== 6} style={{ marginTop: 4 }}>
+              {loading ? 'Verifying...' : 'Verify & Create Account'}
+            </button>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+              <button type="button" onClick={() => { setStep(1); setOtp(''); setError('') }}
+                style={{ background: 'none', border: 'none', color: '#6B7280', fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0 }}>
+                ← Change number
+              </button>
+              <button type="button" onClick={handleResendOtp} disabled={resendIn > 0 || loading}
+                style={{
+                  background: 'none', border: 'none', fontWeight: 700, fontSize: 13, padding: 0,
+                  color: resendIn > 0 ? '#B0AAC8' : '#951345',
+                  cursor: resendIn > 0 ? 'default' : 'pointer',
+                }}>
+                {resendIn > 0 ? `Resend in ${resendIn}s` : 'Resend code'}
+              </button>
+            </div>
+          </form>
+        ) : (
+        <form onSubmit={handleSendOtp} noValidate>
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Your name</label>
             <input className="input" type="text" value={name}
@@ -111,7 +198,7 @@ export default function RegisterPage() {
                 fontWeight: 700, fontSize: 14, color: '#3A1020',
                 whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6,
               }}>
-                🇮🇳 +91
+                +91
               </div>
               <input className="input" type="tel" value={mobile}
                 onChange={e => setMobile(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
@@ -187,15 +274,16 @@ export default function RegisterPage() {
               >
                 Privacy Policy & Terms
               </Link>
-              {' '}of FamilyGuard
+              {' '}of Famora
             </div>
           </div>
 
           <button className="btn btn-primary" type="submit"
             disabled={loading || !agreed} style={{ marginTop: 4, opacity: agreed ? 1 : 0.6 }}>
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? 'Sending code...' : 'Send Verification Code'}
           </button>
         </form>
+        )}
 
         <p className="auth-link">
           Already have an account? <Link to="/login">Sign In</Link>

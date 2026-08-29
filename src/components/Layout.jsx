@@ -6,10 +6,8 @@ const NAV_ITEMS = [
     to: '/', end: true, label: 'Family',
     icon: (active) => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        {/* Parent figure */}
         <circle cx="9" cy="7" r="3" fill={active ? '#951345' : '#A0A0B0'}/>
         <path d="M3 20C3 16.134 5.686 13 9 13C12.314 13 15 16.134 15 20H3Z" fill={active ? '#951345' : '#A0A0B0'}/>
-        {/* Child figure */}
         <circle cx="17.5" cy="8.5" r="2.2" fill={active ? '#C0185A' : '#C4C4D0'}/>
         <path d="M13.5 20C13.5 17.239 15.239 15 17.5 15C19.761 15 21.5 17.239 21.5 20H13.5Z" fill={active ? '#C0185A' : '#C4C4D0'}/>
       </svg>
@@ -31,12 +29,10 @@ const NAV_ITEMS = [
     to: '/sos', label: 'SOS',
     icon: () => (
       <div style={{ position: 'relative', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {/* Outer maroon ring */}
         <div style={{
           position: 'absolute', inset: -3, borderRadius: '50%',
           border: '2px solid #951345', opacity: 0.3,
         }} />
-        {/* Red SOS circle — same size as other icons' visual area */}
         <div style={{
           width: 28, height: 28, borderRadius: '50%',
           background: 'linear-gradient(145deg, #F43F5E 0%, #BE123C 100%)',
@@ -48,6 +44,7 @@ const NAV_ITEMS = [
             fontSize: 9, fontWeight: 900,
             color: '#fff', letterSpacing: 0.4,
             lineHeight: 1, userSelect: 'none',
+            position: 'relative', top: 1,
           }}>SOS</span>
         </div>
       </div>
@@ -57,13 +54,10 @@ const NAV_ITEMS = [
     to: '/map-all', label: 'Map',
     icon: (active) => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        {/* Map scroll */}
         <path d="M9 4L3 7.5V20L9 16.5L15 20L21 16.5V4L15 7.5L9 4Z"
           fill={active ? '#951345' : '#A0A0B0'}/>
-        {/* Fold lines */}
         <line x1="9" y1="4" x2="9" y2="16.5" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" strokeLinecap="round"/>
         <line x1="15" y1="7.5" x2="15" y2="20" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" strokeLinecap="round"/>
-        {/* Location dot */}
         <circle cx="12" cy="11" r="2" fill="#fff" opacity="0.9"/>
         <circle cx="12" cy="11" r="1" fill={active ? '#951345' : '#A0A0B0'}/>
       </svg>
@@ -73,9 +67,7 @@ const NAV_ITEMS = [
     to: '/profile', label: 'Profile',
     icon: (active) => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        {/* Head */}
         <circle cx="12" cy="8" r="3.8" fill={active ? '#951345' : '#A0A0B0'}/>
-        {/* Shoulders */}
         <path d="M4 20C4 16.134 7.582 13 12 13C16.418 13 20 16.134 20 20"
           stroke={active ? '#951345' : '#A0A0B0'} strokeWidth="2.5" strokeLinecap="round"/>
       </svg>
@@ -93,10 +85,6 @@ export default function Layout({ unreadMessages = 0 }) {
         {NAV_ITEMS.map(item => (
           <NavLink key={item.to} to={item.to} end={item.end}
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-            // Prevent the Android/iOS WebView long-press context menu that
-            // shows the href (e.g. "http://localhost/profile"). NavLink renders
-            // as an <a> tag, so the browser treats it as a link and shows a
-            // "Open in new tab / Copy link" popup on long press.
             onContextMenu={e => e.preventDefault()}
             draggable={false}
             style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}

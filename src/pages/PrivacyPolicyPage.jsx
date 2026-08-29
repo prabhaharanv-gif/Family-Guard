@@ -122,7 +122,7 @@ export default function PrivacyPolicyPage() {
         }}>
           <div style={{ fontSize: 22, marginBottom: 8 }}>🛡️</div>
           <div style={{ fontSize: 14, color: '#3A1020', lineHeight: 1.6, fontWeight: 500 }}>
-            FamilyGuard is built on a simple promise:{' '}
+            Famora is built on a simple promise:{' '}
             <strong style={{ color: '#951345' }}>your data belongs to you and your family — nobody else.</strong>
             {' '}We collect only what is necessary to keep your family safe and connected.
           </div>
