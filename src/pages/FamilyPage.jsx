@@ -281,6 +281,8 @@ export default function FamilyPage() {
   const [editNameMember, setEditNameMember] = useState(null)   // → edit modal
   const [editingFamilyName, setEditingFamilyName] = useState(false)
   const [showFamilySwitcher, setShowFamilySwitcher] = useState(false)
+  const [showInviteSheet, setShowInviteSheet]       = useState(false)
+  const [codeCopied, setCodeCopied]                 = useState(false)
   const [newFamilyName, setNewFamilyName]           = useState('')
   const [sosAlert, setSosAlert]         = useState(null)
   const [sosAlertMember, setSosAlertMember] = useState(null)
@@ -306,6 +308,7 @@ export default function FamilyPage() {
   useBackButton(!!actionMember, () => setActionMember(null))
   useBackButton(!!editNameMember, () => setEditNameMember(null))
   useBackButton(editingFamilyName, () => setEditingFamilyName(false))
+  useBackButton(showInviteSheet, () => setShowInviteSheet(false))
 
   // My own location (used as the reference point for distance calc)
   const myLoc = user ? locations[user.id] : null
@@ -515,6 +518,85 @@ export default function FamilyPage() {
       )}
 
       {/* Long-press action sheet */}
+      {/* ── Invite Sheet ── */}
+      {/* Shares THIS family's invite code. Whoever enters it on the Join Family
+          screen creates a join_request that an admin here must accept, so the
+          code alone never grants access. */}
+      {showInviteSheet && (
+        <div className="overlay" onClick={() => setShowInviteSheet(false)}>
+          <div className="popup" onClick={e => e.stopPropagation()} style={{ paddingBottom: 28 }}>
+            <div className="popup-handle" />
+
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
+              Invite to {familyName}
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 5, color: '#0D0C1D', fontFamily: 'Sora, sans-serif', marginBottom: 4 }}>
+              {inviteCode}
+            </div>
+            <div style={{ fontSize: 12, color: '#9C6B7A', marginBottom: 20, lineHeight: 1.5 }}>
+              Ask them to install Famora, then enter this code on the Join Family
+              screen. You'll get a request to approve before they can see anything.
+            </div>
+
+            {/* WhatsApp */}
+            <button onClick={() => {
+              const msg = encodeURIComponent(`Join our family on Famora! Enter the code *${inviteCode}* on the Join Family screen and I'll approve you. 🛡️`)
+              window.open(`https://wa.me/?text=${msg}`, '_blank')
+            }} style={{
+              width: '100%', padding: '14px 16px', borderRadius: 14,
+              background: '#25D366', border: 'none',
+              color: '#fff', fontWeight: 800, fontSize: 15,
+              fontFamily: 'inherit', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10,
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.553 4.118 1.522 5.852L.057 23.25a.75.75 0 0 0 .916.916l5.404-1.464A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.502-5.17-1.381l-.37-.218-3.835 1.04 1.04-3.834-.218-.371A9.953 9.953 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+              </svg>
+              Share via WhatsApp
+            </button>
+
+            {/* SMS */}
+            <button onClick={() => {
+              const msg = encodeURIComponent(`Join our family on Famora! Enter the code ${inviteCode} on the Join Family screen and I'll approve you.`)
+              window.open(`sms:?body=${msg}`, '_blank')
+            }} style={{
+              width: '100%', padding: '14px 16px', borderRadius: 14,
+              background: '#0EA5E9', border: 'none',
+              color: '#fff', fontWeight: 800, fontSize: 15,
+              fontFamily: 'inherit', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10,
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Share via SMS
+            </button>
+
+            {/* Copy */}
+            <button onClick={() => {
+              // Best-effort: clipboard is unavailable in some WebView configs,
+              // and the code is on screen anyway, so a failure is not worth an error.
+              try { navigator.clipboard?.writeText(inviteCode) } catch { /* shown above */ }
+              setCodeCopied(true)
+              setTimeout(() => { setCodeCopied(false); setShowInviteSheet(false) }, 1200)
+            }} style={{
+              width: '100%', padding: '14px 16px', borderRadius: 14,
+              background: codeCopied ? '#D1FAE5' : '#F5F4FB',
+              border: codeCopied ? '1.5px solid #10B981' : '1.5px solid #E9E6FB',
+              color: codeCopied ? '#059669' : '#3A1020', fontWeight: 800, fontSize: 15,
+              fontFamily: 'inherit', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 12, transition: 'all 0.2s',
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : '#951345'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              {codeCopied ? '✓ Copied!' : 'Copy Code'}
+            </button>
+
+          </div>
+        </div>
+      )}
+
       {/* ── Family Switcher Sheet ── */}
       {showFamilySwitcher && (
         <div className="overlay" onClick={() => setShowFamilySwitcher(false)}>
@@ -649,6 +731,34 @@ export default function FamilyPage() {
           )}
         </div>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, zIndex: 1 }}>
+
+        {/* Invite button — shares this family's code so others can request to join */}
+        {inviteCode && (
+          <button
+            onClick={() => setShowInviteSheet(true)}
+            title="Invite a family member"
+            aria-label="Invite a family member"
+            style={{
+              background: 'rgba(255,255,255,0.92)',
+              border: '1.5px solid #fff',
+              borderRadius: 10,
+              padding: '7px 10px',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 5,
+              flexShrink: 0,
+              color: '#951345', fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Invite
+          </button>
+        )}
+
         {/* Switch Family button — right side, matches Clear Chat style */}
         {allFamilies.length > 1 && (
           <button
@@ -679,6 +789,7 @@ export default function FamilyPage() {
             Switch
           </button>
         )}
+        </div>
         </div>
       </div>
 
