@@ -87,7 +87,7 @@ export default function SettingsPage() {
           </div>
           {[
             { label: 'App', value: 'Famora' },
-            { label: 'Version', value: import.meta.env.VITE_APP_VERSION || '1.0.0' },
+            { label: 'Version', value: import.meta.env.VITE_APP_VERSION || '1.1.0' },
             { label: 'Platform', value: 'Web (PWA Ready)' },
           ].map(item => (
             <div key={item.label} style={{
