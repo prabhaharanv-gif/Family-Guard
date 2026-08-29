@@ -31,6 +31,14 @@ function Toggle({ on, onToggle }) {
   )
 }
 
+// Defined at module scope, not inside ChangePasswordModal. A component declared
+// during render is a new type on every render, so React unmounted and remounted
+// it each time — meaning every keystroke in a password field destroyed and
+// rebuilt this icon's DOM.
+const EyeIcon = ({ off }) => off
+  ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
+  : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+
 // ── Change password modal ──
 function ChangePasswordModal({ onClose, userEmail }) {
   const [oldPw, setOldPw]       = useState('')
@@ -44,10 +52,6 @@ function ChangePasswordModal({ onClose, userEmail }) {
   const [ok, setOk]             = useState(false)
 
   useBackButton(true, onClose)
-
-  const EyeIcon = ({ off }) => off
-    ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
-    : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
 
   const handleSave = async () => {
     setErr('')
@@ -227,11 +231,10 @@ function DeleteAccountModal({ onClose, onConfirm }) {
 }
 
 export default function ProfilePage() {
-  const { user, familyId, familyName: activeFamilyName, allFamilies, leaveFamily, loadFamily, signOut } = useAuthStore()
+  const { user, familyId, allFamilies, leaveFamily, signOut } = useAuthStore()
   const navigate = useNavigate()
 
   const [member, setMember]             = useState(null)
-  const [myFamilyName, setMyFamilyName] = useState('')
   const [myInviteCode, setMyInviteCode] = useState('')
 
   const [displayName, setDisplayName]   = useState('')
@@ -241,7 +244,6 @@ export default function ProfilePage() {
   const [showLocation, setShowLocation] = useState(true)
   const [showLastSeen, setShowLastSeen] = useState(true)
   const [showOnline, setShowOnline]     = useState(true)
-  const [savingToggle, setSavingToggle] = useState(false)
 
   const [uploading, setUploading]       = useState(false)
   const [saving, setSaving]             = useState(false)
@@ -501,20 +503,6 @@ export default function ProfilePage() {
       setShowLastSeen(!newVal)
       setError(err.message)
     }
-  }
-
-  const handleLeaveFamily = () => {
-    const label = myFamilyName || familyId || 'this family'
-    setDialog({
-      type: 'confirm',
-      title: 'Leave Family',
-      message: `Are you sure you want to leave "${label}"? You will need a new invite to rejoin.`,
-      confirmLabel: 'Leave',
-      onConfirm: async () => {
-        try { await leaveFamily(user.id, familyId); navigate('/onboarding') }
-        catch (err) { setError(err.message) }
-      },
-    })
   }
 
   const initial = displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?'
