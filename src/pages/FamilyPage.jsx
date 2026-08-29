@@ -502,7 +502,7 @@ export default function FamilyPage() {
   }
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
 
       {sosAlert && <SOSAlert alert={sosAlert} memberName={sosAlertMember} onDismiss={() => setSosAlert(null)} />}
 
@@ -732,32 +732,6 @@ export default function FamilyPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, zIndex: 1 }}>
-
-        {/* Invite button — shares this family's code so others can request to join */}
-        {inviteCode && (
-          <button
-            onClick={() => setShowInviteSheet(true)}
-            title="Invite a family member"
-            aria-label="Invite a family member"
-            style={{
-              background: 'rgba(255,255,255,0.92)',
-              border: '1.5px solid #fff',
-              borderRadius: 10,
-              padding: '7px 10px',
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 5,
-              flexShrink: 0,
-              color: '#951345', fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Invite
-          </button>
-        )}
 
         {/* Switch Family button — right side, matches Clear Chat style */}
         {allFamilies.length > 1 && (
@@ -1031,6 +1005,32 @@ export default function FamilyPage() {
           onVoiceCall={() => handleStartCall(selectedMember, 'voice')}
           onVideoCall={() => handleStartCall(selectedMember, 'video')}
         />
+      )}
+
+      {/* ── Invite FAB ── */}
+      {/* Absolute inside this page's root, which ends where the bottom nav
+          begins, so it floats clear of the nav without needing its height. */}
+      {inviteCode && (
+        <button
+          onClick={() => setShowInviteSheet(true)}
+          title="Invite a family member"
+          aria-label="Invite a family member"
+          style={{
+            position: 'absolute', right: 18, bottom: 18, zIndex: 20,
+            width: 56, height: 56, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #951345, #720D35)',
+            border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 6px 20px rgba(149,19,69,0.42)',
+            padding: 0,
+          }}
+        >
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+            stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
       )}
     </div>
   )
