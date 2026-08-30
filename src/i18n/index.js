@@ -20,6 +20,7 @@ import { UI } from './ui'
 export const UI_LANGUAGES = [
   { code: 'en', native: 'English' },
   { code: 'ta', native: 'தமிழ்' },
+  { code: 'hi', native: 'हिन्दी' },
 ]
 
 const LANG_KEY = 'famora_lang'
