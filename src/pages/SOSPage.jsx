@@ -342,7 +342,11 @@ export default function SOSPage() {
           setAlerts(prev => [p.new, ...prev])
           if (p.new.user_id !== user?.id && !prevAlertIds.current.has(p.new.id)) {
             prevAlertIds.current.add(p.new.id)
-            alarmRef.current?.start(); setAlarmOn(true)
+            // Web only. On Android SOSSirenService already plays the siren and
+            // SOSAlertActivity already shows the alert, so starting this too
+            // gave a second, different-sounding alarm plus a banner the user had
+            // to stop separately after dealing with the native one.
+            if (!Capacitor.isNativePlatform()) { alarmRef.current?.start(); setAlarmOn(true) }
           }
         })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sos_alerts', filter: 'family_id=eq.' + familyId },

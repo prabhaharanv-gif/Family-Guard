@@ -34,7 +34,11 @@ import java.util.Map;
  */
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
-    public  static final String SOS_CHANNEL_ID   = "sos_alerts_v3";
+    // v4: the channel used to carry the device's default ALARM ringtone, which
+    // played on top of SOSSirenService's synthesized siren — two different
+    // sounds for one alert. A channel's sound cannot be changed after creation,
+    // so the id is bumped to force a silent one on existing installs.
+    public  static final String SOS_CHANNEL_ID   = "sos_alerts_v4";
     private static final String SOS_CHANNEL_NAME = "SOS Emergency Alerts";
     public  static final int    SOS_NOTIFICATION_ID = 911;
 
@@ -255,17 +259,11 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         );
         channel.setDescription("Emergency SOS alerts from family members");
 
-        android.net.Uri alarmUri = android.media.RingtoneManager
-            .getDefaultUri(android.media.RingtoneManager.TYPE_ALARM);
-        if (alarmUri == null) {
-            alarmUri = android.media.RingtoneManager
-                .getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION);
-        }
-        android.media.AudioAttributes attrs = new android.media.AudioAttributes.Builder()
-            .setUsage(android.media.AudioAttributes.USAGE_ALARM)
-            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build();
-        channel.setSound(alarmUri, attrs);
+        // Silent by design. SOSSirenService plays the actual alarm — a
+        // synthesized siren on STREAM_ALARM at max volume. A channel sound here
+        // layered the stock ringtone over it, which is the second, non-siren
+        // sound heard on every alert.
+        channel.setSound(null, null);
         channel.enableVibration(true);
         channel.setVibrationPattern(new long[]{0, 500, 250, 500, 250, 500});
         channel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
