@@ -996,7 +996,12 @@ export default function FamilyPage() {
                     if (pct == null || Number.isNaN(pct)) return null
                     const level = Math.max(0, Math.min(100, Math.round(pct)))
                     const charging = !!loc?.isCharging
-                    const color = charging ? '#10B981' : level <= 15 ? '#E11D48' : level <= 30 ? '#D97706' : '#6B7280'
+                    // Charging no longer tints this green: it sat next to the
+                    // green "Live" pin and the two read as one blob. Charging is
+                    // now signalled only by the bolt, in grey like the rest.
+                    // Level colour is a different axis and stays — red at 15% or
+                    // below is worth seeing on a safety app.
+                    const color = level <= 15 ? '#E11D48' : level <= 30 ? '#D97706' : '#6B7280'
                     // This reading is only as fresh as the last location write.
                     // A member who stopped sharing keeps their last value
                     // forever, and since a battery only drains, a stale number
@@ -1023,7 +1028,15 @@ export default function FamilyPage() {
                           <rect x="3.5" y="3.5" width={Math.max(2, (level / 100) * 16)} height="7" rx="1.5" fill={color} />
                           <path d="M24 5 v4" stroke={color} strokeWidth="3" strokeLinecap="round" />
                         </svg>
-                        {level}%{charging ? ' ⚡' : ''}
+                        {level}%
+                        {/* SVG rather than the ⚡ emoji: an emoji paints its own
+                            colours and stayed orange no matter what colour the
+                            rest of the indicator used. */}
+                        {charging && (
+                          <svg width="8" height="12" viewBox="0 0 8 12" fill={color} aria-hidden="true">
+                            <path d="M4.6 0 0 6.6h2.7L2.2 12 7.4 5.1H4.4L4.6 0z" />
+                          </svg>
+                        )}
                       </span>
                     )
                   })()}
