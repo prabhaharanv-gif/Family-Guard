@@ -886,14 +886,7 @@ export default function FamilyPage() {
                 onTouchEnd={cancelLongPress}
                 onTouchMove={cancelLongPress}
               >
-                {/* Avatar and battery share a column: the battery is a
-                    property of the person's phone, so it reads better under
-                    their picture than mixed in with their name and status. */}
-                <div style={{
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', gap: 4, flexShrink: 0,
-                }}>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', flexShrink: 0 }}>
                   {m.avatar_url ? (
                     <img src={m.avatar_url} alt={nameFor(m)} style={{
                       width: 50, height: 50, borderRadius: '50%', objectFit: 'cover',
@@ -913,12 +906,30 @@ export default function FamilyPage() {
                     transition: 'all 0.3s',
                   }} />
                 </div>
+                <div className="member-info">
+                  <div className="member-name" style={{ color: '#0D0C1D' }}>{nameFor(m)}</div>
+                  <div className="member-meta" style={{ color: '#8480B0' }}>
+                    {online ? (
+                      <span style={{ color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+                        Online
+                      </span>
+                    ) : lastSeen ? (
+                      <span>Last seen {lastSeen}</span>
+                    ) : (
+                      <span>No activity yet</span>
+                    )}
+                  </div>
+                  {/* Battery on its own row beneath the status, so the two lines
+                      align down the card rather than competing for one line.
+                      Rendered even with no reading — a blank row keeps every
+                      card the same height, which is what made the list ragged. */}
                 {(() => {
                   // Battery has been collected and stored since the location
                   // service landed, but was never surfaced anywhere.
                   const pct = loc?.battery
                   if (pct == null || Number.isNaN(pct)) {
-                    return <div style={{ fontSize: 10.5, lineHeight: '13px' }}>&nbsp;</div>
+                    return <div style={{ fontSize: 11, lineHeight: '13px', marginTop: 3 }}>&nbsp;</div>
                   }
                   const level = Math.max(0, Math.min(100, Math.round(pct)))
                   const charging = !!loc?.isCharging
@@ -941,7 +952,8 @@ export default function FamilyPage() {
                       title={stale ? 'Last known battery — this member has not reported recently' : undefined}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 4,
-                        fontSize: 10.5, fontWeight: 800, color, whiteSpace: 'nowrap',
+                        fontSize: 11, fontWeight: 800, color, whiteSpace: 'nowrap',
+                        marginTop: 3,
                       }}>
                       <svg width="21" height="12" viewBox="0 0 26 14" fill="none" aria-hidden="true">
                         <rect x="1" y="1" width="21" height="12" rx="3"
@@ -973,21 +985,6 @@ export default function FamilyPage() {
                     </span>
                   )
                 })()}
-                </div>
-                <div className="member-info">
-                  <div className="member-name" style={{ color: '#0D0C1D' }}>{nameFor(m)}</div>
-                  <div className="member-meta" style={{ color: '#8480B0' }}>
-                    {online ? (
-                      <span style={{ color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
-                        Online
-                      </span>
-                    ) : lastSeen ? (
-                      <span>Last seen {lastSeen}</span>
-                    ) : (
-                      <span>No activity yet</span>
-                    )}
-                  </div>
                 </div>
 
                 {/* Location sharing indicator — right side */}
