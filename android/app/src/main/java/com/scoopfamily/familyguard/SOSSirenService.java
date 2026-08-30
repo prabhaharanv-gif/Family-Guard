@@ -46,7 +46,12 @@ public class SOSSirenService extends Service {
     // Silent-but-high-importance channel for the heads-up banner.
     // IMPORTANCE_HIGH = shows as peek banner. setSound(null) = no channel melody
     // (AudioTrack in startSiren() provides the only audio).
-    public  static final String SOS_POPUP_CHANNEL_ID   = "sos_popup_v1";
+    // v2: was IMPORTANCE_HIGH, which made Android heads-up this notification as
+    // a banner. That banner appeared alongside the full-screen alert — the same
+    // emergency announced twice. IMPORTANCE_LOW keeps the service's required
+    // ongoing notification in the shade without a banner. Channel importance is
+    // fixed at creation, so the id had to change for existing installs.
+    public  static final String SOS_POPUP_CHANNEL_ID   = "sos_popup_v2";
     private static final String SOS_POPUP_CHANNEL_NAME = "SOS Alert Banner";
 
     // ── Shared state — read by SOSAlarmPlugin and MainActivity ───────────────
@@ -298,7 +303,9 @@ public class SOSSirenService extends Service {
             .setStyle(new NotificationCompat.BigTextStyle()
                 .bigText("⚠️ " + senderName + " needs help!\n\n"
                        + message + "\n\nTap to open Famora."))
-            .setPriority(NotificationCompat.PRIORITY_MAX)
+            // PRIORITY_LOW to match the channel. Left at MAX this still asks for
+            // a heads-up on pre-O devices, which is the banner being removed.
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
@@ -319,7 +326,7 @@ public class SOSSirenService extends Service {
 
         NotificationChannel ch = new NotificationChannel(
             SOS_POPUP_CHANNEL_ID, SOS_POPUP_CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_HIGH
+            NotificationManager.IMPORTANCE_LOW
         );
         ch.setDescription("SOS alert banner — audio is provided by the app");
         ch.setSound(null, null);
