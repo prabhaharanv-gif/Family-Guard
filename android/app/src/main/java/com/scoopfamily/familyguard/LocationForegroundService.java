@@ -114,6 +114,7 @@ public class LocationForegroundService extends Service {
         fusedClient = LocationServices.getFusedLocationProviderClient(this);
         ensureChannel(this);
         registerLocationToggleReceiver();
+        registerPowerReceiver();
     }
 
     // ── Location services on/off reporting ───────────────────────────────────
@@ -122,7 +123,42 @@ public class LocationForegroundService extends Service {
     // pin would just silently go stale and stay green. This receiver reports
     // the change directly instead, with no fix required.
     private android.content.BroadcastReceiver locToggleReceiver = null;
+    private android.content.BroadcastReceiver powerReceiver = null;
     private Boolean lastReportedLocEnabled = null;
+
+    /**
+     * Push immediately when the charger goes in or out.
+     *
+     * Battery and charging only reach the database as part of a location write,
+     * so between writes the stored charging flag is simply stale. Unplug and
+     * walk away and the app keeps showing the charging bolt until the next
+     * write happens — which, if the phone is idle or offline, can be minutes.
+     * Verified: the reading itself is correct within 20s ("native reports
+     * charging=false" right after an unplug), so the gap was never detection,
+     * only how long the old value sat in the database.
+     *
+     * ACTION_POWER_CONNECTED / _DISCONNECTED fire the moment the state changes,
+     * so we reuse the last known fix to push the new charging state at once.
+     */
+    private void registerPowerReceiver() {
+        try {
+            powerReceiver = new android.content.BroadcastReceiver() {
+                @Override
+                public void onReceive(Context ctx, Intent intent) {
+                    final Location loc = lastPushedLocation;
+                    if (loc == null || executor == null || executor.isShutdown()) return;
+                    Log.i(TAG, "Power state changed (" + intent.getAction() + ") — pushing now");
+                    executor.submit(() -> pushLocation(loc));
+                }
+            };
+            android.content.IntentFilter f = new android.content.IntentFilter();
+            f.addAction(Intent.ACTION_POWER_CONNECTED);
+            f.addAction(Intent.ACTION_POWER_DISCONNECTED);
+            registerReceiver(powerReceiver, f);
+        } catch (Exception e) {
+            Log.w(TAG, "Could not register power receiver: " + e.getMessage());
+        }
+    }
 
     private void registerLocationToggleReceiver() {
         try {
@@ -235,6 +271,12 @@ public class LocationForegroundService extends Service {
             if (locToggleReceiver != null) {
                 unregisterReceiver(locToggleReceiver);
                 locToggleReceiver = null;
+            }
+        } catch (Exception e) { /* ignore */ }
+        try {
+            if (powerReceiver != null) {
+                unregisterReceiver(powerReceiver);
+                powerReceiver = null;
             }
         } catch (Exception e) { /* ignore */ }
         if (executor != null) executor.shutdownNow();
