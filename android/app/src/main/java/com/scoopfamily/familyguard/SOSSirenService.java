@@ -61,6 +61,7 @@ public class SOSSirenService extends Service {
     private static volatile boolean sirenRunning = false;
     private static Thread     sirenThread   = null;
     private static AudioTrack sirenTrack    = null;
+    private static android.media.MediaPlayer sirenPlayer = null;
 
     // ── Vibrator reference — needed to cancel vibration in onDestroy ─────────
     private Vibrator vibrator = null;
@@ -357,11 +358,42 @@ public class SOSSirenService extends Service {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    //  Synthesized emergency siren
+    //  Emergency siren — res/raw/emergency_alert.mp3, falling back to a
+    //  synthesized sweep if it cannot be played.
     // ─────────────────────────────────────────────────────────────────────────
     private void startSiren() {
         stopSiren();
+        forceAlarmVolumeToMax();
 
+        // The recording is the intended sound. Looped on the ALARM stream so it
+        // behaves the same as the synthesized siren did: audible through silent
+        // mode, and unaffected by media or ringer volume.
+        try {
+            android.media.MediaPlayer mp =
+                android.media.MediaPlayer.create(this, R.raw.emergency_alert);
+            if (mp != null) {
+                mp.setAudioAttributes(new android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build());
+                mp.setLooping(true);
+                mp.setVolume(1.0f, 1.0f);
+                mp.start();
+                sirenPlayer  = mp;
+                sirenRunning = true;
+                return;
+            }
+            android.util.Log.w("FamoraSOS", "emergency_alert.mp3 failed to load — using synthesized siren");
+        } catch (Exception e) {
+            android.util.Log.w("FamoraSOS", "MediaPlayer siren failed — using synthesized siren: " + e.getMessage());
+        }
+
+        // Fallback only. A missing or unplayable asset must never leave an SOS
+        // silent, so the original 600->1600Hz sweep stays as a backstop.
+        startSynthesizedSiren();
+    }
+
+    private void forceAlarmVolumeToMax() {
         try {
             AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
             if (am != null) {
@@ -369,7 +401,9 @@ public class SOSSirenService extends Service {
                     am.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0);
             }
         } catch (Exception e) { e.printStackTrace(); }
+    }
 
+    private void startSynthesizedSiren() {
         sirenRunning = true;
         sirenThread  = new Thread(() -> {
             final int    SAMPLE_RATE  = 44100;
@@ -451,6 +485,12 @@ public class SOSSirenService extends Service {
 
     private static void stopSiren() {
         sirenRunning = false;
+        try {
+            if (sirenPlayer != null) {
+                if (sirenPlayer.isPlaying()) sirenPlayer.stop();
+                sirenPlayer.release();
+            }
+        } catch (Exception ignored) {} finally { sirenPlayer = null; }
         try {
             if (sirenTrack != null) {
                 sirenTrack.pause();
