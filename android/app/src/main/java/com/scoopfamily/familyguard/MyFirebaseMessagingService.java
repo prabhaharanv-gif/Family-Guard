@@ -97,11 +97,20 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 appCtx.startService(sirenIntent);
             }
 
-            // Also post a heads-up notification on the sos_alerts_v3 channel.
-            // This is what MIUI shows on the lock screen when the app is killed —
-            // the siren service handles audio, this handles the VISUAL.
-            // Tapping it opens MainActivity and routes to /sos via the intent extra.
-            showSosNotification(appCtx, sender, message, lat, lng);
+            // Heads-up notification, but only when the app is NOT in front.
+            //
+            // It exists as the visual fallback for when SOSAlertActivity cannot
+            // launch — Android blocks background activity starts without the
+            // overlay permission, and demotes the full-screen intent to this
+            // banner. With the app already open the Activity always launches, so
+            // posting this too showed a banner over the full-screen alert: the
+            // same emergency announced twice on one screen.
+            //
+            // Same flag the call path uses to decide whether to launch its
+            // ringing Activity.
+            if (!MainActivity.isAppInForeground) {
+                showSosNotification(appCtx, sender, message, lat, lng);
+            }
 
         } else if ("call".equals(type)) {
             String callId     = data.containsKey("call_id")     ? data.get("call_id")     : "";
