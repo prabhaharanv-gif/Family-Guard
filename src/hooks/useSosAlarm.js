@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { playSOSAlarm, stopSOSAlarm } from '../lib/sosAudio'
 import { stopNativeSOSAlarm, isNativeSOSAlarmPlaying, triggerNativeSOSAlert } from '../lib/nativeSosAlarm'
@@ -86,7 +87,13 @@ export function useSosAlarm(user, familyId) {
             .single()
           const name = data?.display_name || 'A family member'
           setSosAlert({ ...payload.new, _senderName: name })
-          playSOSAlarm()
+          // Web Audio beeps are the WEB fallback only. On Android
+          // triggerNativeSOSAlert() below starts SOSSirenService, whose
+          // synthesized 600->1600Hz sweep plays on STREAM_ALARM at forced max
+          // volume — running both meant two overlapping sirens. The native one
+          // is kept because it is louder, wakes the screen, and is the same
+          // service the killed-app push path uses.
+          if (!Capacitor.isNativePlatform()) playSOSAlarm()
           // Wake the screen / show the full-screen alert. playSOSAlarm() is Web
           // Audio only and cannot turn the display on, so an SOS arriving over
           // this websocket used to make noise at a dark screen.

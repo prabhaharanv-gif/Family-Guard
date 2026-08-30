@@ -101,7 +101,11 @@ export function usePushNotifications(userId, familyId) {
     // is shown. Previously only audio played — the visual alert was missing.
     PushNotifications.addListener('pushNotificationReceived', (notification) => {
       if (notification.data?.type === 'sos') {
-        playSOSAlarm()
+        // Web only, same reason as the realtime path: MyFirebaseMessagingService
+        // starts SOSSirenService for every "sos" push regardless of whether the
+        // app is foreground (unlike the call branch, which does check), so the
+        // native siren is already sounding by the time this runs.
+        if (!Capacitor.isNativePlatform()) playSOSAlarm()
         navigateWhenReady(notification.data?.route || '/sos')
       }
     }).then(l => listeners.push(l))
