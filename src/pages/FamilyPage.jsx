@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
-import MemberPopup from '../components/MemberPopup'
+import AnchoredMenu from '../components/AnchoredMenu'
 import Dialog from '../components/Dialog'
 import FamilyIllustration from '../components/FamilyIllustration'
 import PullToRefresh from '../components/PullToRefresh'
@@ -83,149 +83,6 @@ function SOSAlert({ alert, memberName, onDismiss }) {
 }
 
 // ── Long-press action sheet: Edit Name + Remove ──
-// ── Action sheet icons ──────────────────────────────────────────────────────
-// Inline SVG rather than emoji: emoji are font glyphs, so they render
-// differently on every device, sit off the text baseline, and cannot take the
-// maroon theme. Same reason the call controls were converted.
-const sheetIcon = {
-  viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
-  strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round',
-}
-const PencilIcon = () => (
-  <svg width="18" height="18" {...sheetIcon}>
-    <path d="M12 20h9" />
-    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-  </svg>
-)
-const RadarIcon = () => (
-  <svg width="18" height="18" {...sheetIcon}>
-    <circle cx="12" cy="12" r="2.5" />
-    <path d="M7.8 16.2a6 6 0 0 1 0-8.4" />
-    <path d="M16.2 7.8a6 6 0 0 1 0 8.4" />
-    <path d="M4.9 19.1a10 10 0 0 1 0-14.2" />
-    <path d="M19.1 4.9a10 10 0 0 1 0 14.2" />
-  </svg>
-)
-const TrashIcon = () => (
-  <svg width="18" height="18" {...sheetIcon}>
-    <path d="M3 6h18" />
-    <path d="M8 6V4h8v2" />
-    <path d="M6 6l1 14h10l1-14" />
-    <path d="M10 11v5M14 11v5" />
-  </svg>
-)
-
-/**
- * One action row: tinted icon tile, label, one-line explanation, chevron.
- *
- * Rows share a neutral background and carry colour only in the icon tile, so
- * the destructive action can be set apart by tone instead of every action
- * competing as a full-width coloured block.
- */
-function ActionRow({ icon, label, sub, color, onClick, danger }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        width: '100%', padding: '12px 6px',
-        background: 'none', border: 'none', cursor: 'pointer',
-        fontFamily: 'inherit', textAlign: 'left',
-        display: 'flex', alignItems: 'center', gap: 12,
-      }}
-    >
-      <div style={{
-        width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-        background: `${color}14`, color,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>{icon}</div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14.5, fontWeight: 700, color: danger ? color : '#0D0C1D' }}>{label}</div>
-        <div style={{ fontSize: 11.5, color: '#9C6B7A', marginTop: 1.5, lineHeight: 1.45 }}>{sub}</div>
-      </div>
-      <span style={{ color: '#D8C3CD', fontSize: 17, flexShrink: 0 }}>›</span>
-    </button>
-  )
-}
-
-function MemberActionSheet({ member, displayName, isOwner, isSelf, onClose, onEditName, onRemove, onFindDevice }) {
-  const shown = displayName || member.display_name
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="popup" onClick={e => e.stopPropagation()}>
-        <div className="popup-handle" />
-
-        {/* Member info header. Uses the real profile photo — the sheet used to
-            draw an initials circle while the list behind it showed the actual
-            photo, which read as two different people. */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8, paddingBottom: 16, borderBottom: '1px solid #F0E4EA' }}>
-          {member.avatar_url ? (
-            <img
-              src={member.avatar_url}
-              alt={shown}
-              style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid #951345' }}
-            />
-          ) : (
-            <div style={{
-              width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
-              background: member.avatar_color && member.avatar_color !== '#4F8EF7' ? member.avatar_color : '#951345',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Sora, sans-serif',
-            }}>
-              {shown?.[0]?.toUpperCase()}
-            </div>
-          )}
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: 800, fontSize: 17, color: '#0D0C1D' }}>{shown}</div>
-            <div style={{ fontSize: 12, color: '#9C6B7A', marginTop: 3 }}>{member.phone || 'No phone saved'}</div>
-          </div>
-        </div>
-
-        {/* Everyday actions — neither applies to yourself. A nickname is a
-            private label for someone else, and ringing your own phone to find
-            it makes no sense while you are holding it. */}
-        {!isSelf && (
-          <>
-            <ActionRow
-              icon={<PencilIcon />} color="#951345"
-              label="Set Nickname" sub="A private name only you see"
-              onClick={onEditName}
-            />
-            <div style={{ height: 1, background: '#F7EFF3' }} />
-            <ActionRow
-              icon={<RadarIcon />} color="#951345"
-              label="Find My Device" sub="Ring their phone, even on silent"
-              onClick={onFindDevice}
-            />
-          </>
-        )}
-
-        {/* Destructive action, deliberately separated and quieter than the
-            everyday ones — it is irreversible and rarely what you came for. */}
-        {isOwner && (
-          <>
-            <div style={{ height: 1, background: '#F0E4EA', margin: '8px 0' }} />
-            <ActionRow
-              icon={<TrashIcon />} color="#E11D48" danger
-              label="Remove from Family" sub="They lose access to this family"
-              onClick={onRemove}
-            />
-          </>
-        )}
-
-        <button onClick={onClose} style={{
-          width: '100%', padding: '13px 18px', borderRadius: 14, marginTop: 14,
-          background: '#F7F4F8', border: '1px solid #EEE6EC',
-          color: '#5B4652', fontWeight: 700, fontSize: 14,
-          cursor: 'pointer', fontFamily: 'inherit',
-        }}>
-          Cancel
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// ── Edit name modal ──
 function EditNameModal({ member, currentNickname, onClose, onSave }) {
   const [name, setName] = useState(currentNickname || '')
   const [saving, setSaving] = useState(false)
@@ -279,11 +136,12 @@ export default function FamilyPage() {
   const [nicknames, setNicknames]       = useState({})        // { [target_user_id]: nickname } — private to me
   const [locations, setLocations]       = useState({})
   const [joinRequests, setJoinRequests] = useState([])
-  const [selectedMember, setSelectedMember] = useState(null)   // tap → MemberPopup
+  const [selectedMember, setSelectedMember] = useState(null)   // tap → call menu
   const [actionMember, setActionMember]     = useState(null)   // long-press → action sheet
   const [editNameMember, setEditNameMember] = useState(null)   // → edit modal
   const [editingFamilyName, setEditingFamilyName] = useState(false)
   const [showFamilySwitcher, setShowFamilySwitcher] = useState(false)
+  const [memberAnchor, setMemberAnchor] = useState(null)
   const [showInviteSheet, setShowInviteSheet]       = useState(false)
   const [codeCopied, setCodeCopied]                 = useState(false)
   const [newFamilyName, setNewFamilyName]           = useState('')
@@ -307,7 +165,9 @@ export default function FamilyPage() {
   }, [])
 
   // Hardware back closes open sheets/modals instead of exiting the app.
-  // (MemberPopup handles its own back for selectedMember.)
+  // selectedMember is listed here now: its back handling used to live inside
+  // MemberPopup, which the anchored menu replaced.
+  useBackButton(!!selectedMember, () => setSelectedMember(null))
   useBackButton(!!actionMember, () => setActionMember(null))
   useBackButton(!!editNameMember, () => setEditNameMember(null))
   useBackButton(editingFamilyName, () => setEditingFamilyName(false))
@@ -439,9 +299,13 @@ export default function FamilyPage() {
   }
 
   // Long press → action sheet
-  const startLongPress = useCallback((member) => {
+  const startLongPress = useCallback((member, e) => {
     didLongPress.current = false
+    // Read here, not in the timeout: React nulls currentTarget once the handler
+    // returns, so measuring 600ms later always yields null.
+    const rect = e?.currentTarget?.getBoundingClientRect?.() ?? null
     longPressTimer.current = setTimeout(() => {
+      setMemberAnchor(rect)
       didLongPress.current = true
       // Haptic feedback — short vibration on Android WebView
       try { if (navigator.vibrate) navigator.vibrate(40) } catch (e) {}
@@ -672,16 +536,45 @@ export default function FamilyPage() {
         </div>
       )}
 
-      {actionMember && (
-        <MemberActionSheet
-          member={actionMember}
-          displayName={nameFor(actionMember)}
-          isOwner={isOwner && actionMember.user_id !== user?.id}
-          isSelf={actionMember.user_id === user?.id}
+      {/* Long-press a member → management actions, anchored to their card.
+          Nothing here applies to your own card, so it does not open on one. */}
+      {actionMember && actionMember.user_id !== user?.id && (
+        <AnchoredMenu
+          anchor={memberAnchor}
           onClose={() => setActionMember(null)}
-          onEditName={() => { setEditNameMember(actionMember); setActionMember(null) }}
-          onRemove={() => handleRemoveMember(actionMember)}
-          onFindDevice={() => handleFindDevice(actionMember)}
+          items={[
+            {
+              label: 'Set Nickname', sub: 'A private name only you see',
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              ),
+              onClick: () => setEditNameMember(actionMember),
+            },
+            {
+              label: 'Find My Device', sub: 'Ring their phone, even on silent',
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.25a6 6 0 0 1 0-8.49"/>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/>
+                </svg>
+              ),
+              onClick: () => handleFindDevice(actionMember),
+            },
+            isOwner && {
+              // Irreversible, so it sits last and is coloured as destructive.
+              label: 'Remove from Family', danger: true, color: '#E11D48',
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+              ),
+              onClick: () => handleRemoveMember(actionMember),
+            },
+          ]}
         />
       )}
 
@@ -886,11 +779,15 @@ export default function FamilyPage() {
               <div
                 key={m.id}
                 className="member-card"
-                onClick={() => { if (didLongPress.current) { didLongPress.current = false; return }; setSelectedMember(m) }}
-                onMouseDown={() => startLongPress(m)}
+                onClick={e => {
+                  if (didLongPress.current) { didLongPress.current = false; return }
+                  setMemberAnchor(e.currentTarget.getBoundingClientRect())
+                  setSelectedMember(m)
+                }}
+                onMouseDown={e => startLongPress(m, e)}
                 onMouseUp={cancelLongPress}
                 onMouseLeave={cancelLongPress}
-                onTouchStart={() => startLongPress(m)}
+                onTouchStart={e => startLongPress(m, e)}
                 onTouchEnd={cancelLongPress}
                 onTouchMove={cancelLongPress}
               >
@@ -1094,15 +991,50 @@ export default function FamilyPage() {
       </div>
       </PullToRefresh>
 
-      {selectedMember && (
-        <MemberPopup
-          member={selectedMember}
-          isSelf={selectedMember.user_id === user?.id}
-          onClose={() => setSelectedMember(null)}
-          onVoiceCall={() => handleStartCall(selectedMember, 'voice')}
-          onVideoCall={() => handleStartCall(selectedMember, 'video')}
-        />
-      )}
+      {/* Tap a member → call options, anchored to their card. */}
+      {selectedMember && selectedMember.user_id !== user?.id && (() => {
+        const digits = selectedMember.phone ? selectedMember.phone.replace(/[^0-9+]/g, '') : ''
+        const hasPhone = digits.length >= 10
+        return (
+          <AnchoredMenu
+            anchor={memberAnchor}
+            onClose={() => setSelectedMember(null)}
+            items={[
+              {
+                label: 'Voice Call', color: '#16A34A',
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
+                  </svg>
+                ),
+                onClick: () => handleStartCall(selectedMember, 'voice'),
+              },
+              {
+                label: 'Video Call', color: '#951345',
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+                  </svg>
+                ),
+                onClick: () => handleStartCall(selectedMember, 'video'),
+              },
+              {
+                // Hands off to the dialer and costs call charges, so it sits
+                // below the two free in-app options.
+                label: hasPhone ? 'Phone Call' : 'No number saved',
+                sub: hasPhone ? selectedMember.phone : undefined,
+                color: '#059669', disabled: !hasPhone,
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+                  </svg>
+                ),
+                onClick: () => { if (hasPhone) window.location.href = 'tel:' + digits },
+              },
+            ]}
+          />
+        )
+      })()}
 
       {/* ── Invite FAB ── */}
       {/* Absolute inside this page's root, which ends where the bottom nav
