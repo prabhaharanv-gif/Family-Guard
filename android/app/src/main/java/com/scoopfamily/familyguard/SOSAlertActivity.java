@@ -3,6 +3,7 @@ package com.scoopfamily.familyguard;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.Context;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
@@ -50,6 +51,22 @@ public class SOSAlertActivity extends Activity {
                 WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
             );
         }
+
+        // This screen is now showing the alert, so the heads-up banner that
+        // announced the same thing is redundant — dismiss it.
+        //
+        // Cancelling from here rather than deciding in advance whether to post
+        // it: the banner exists as the fallback for when this Activity cannot
+        // launch, and whether it launches depends on the overlay permission, the
+        // Android version and the OEM. Guessing that up front gets it wrong on
+        // some devices in both directions. Reacting to the Activity actually
+        // appearing is correct everywhere — banner alone if it never shows, no
+        // banner the moment it does.
+        try {
+            NotificationManager nm =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.cancel(MyFirebaseMessagingService.SOS_NOTIFICATION_ID);
+        } catch (Exception e) { e.printStackTrace(); }
 
         String sender  = getIntent().getStringExtra(EXTRA_SENDER);
         String message = getIntent().getStringExtra(EXTRA_MESSAGE);
