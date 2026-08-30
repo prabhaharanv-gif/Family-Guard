@@ -533,8 +533,12 @@ export default function FamilyPage() {
           alone never grants access. */}
       {showInviteSheet && (
         <div className="overlay" onClick={() => setShowInviteSheet(false)}>
-          <div className="popup" onClick={e => e.stopPropagation()} style={{ paddingBottom: 16 }}>
-            <div className="popup-handle" />
+          {/* .popup ships 6px/22px/44px padding and .popup-handle another
+              14+24px of margin — about 66px of fixed chrome that dwarfed this
+              sheet's four short rows. Overridden here only; the other sheets
+              have far more content and still want the room. */}
+          <div className="popup" onClick={e => e.stopPropagation()} style={{ padding: '4px 20px 14px' }}>
+            <div className="popup-handle" style={{ margin: '9px auto 13px' }} />
 
             <div style={{
               fontSize: 10.5, fontWeight: 700, color: '#951345',
