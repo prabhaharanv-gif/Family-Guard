@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useHiddenMessages } from '../hooks/useHiddenMessages'
 import { useBackButton } from '../hooks/useBackButton'
 import {
   SingleTick, DoubleTick, ReplyBar, ReplyQuote, MessageActionSheet, EditModal,
@@ -63,6 +64,7 @@ function Avatar({ member, size = 44 }) {
 
 export default function PersonalChatPanel({ onDialog, resetSignal, onControls }) {
   const { user, familyId } = useAuthStore()
+  const { hidden: hiddenMsgs, hide: hideMessage } = useHiddenMessages('direct', user?.id)
   const [members, setMembers]   = useState([])
   const [messages, setMessages] = useState([])   // every DM I am part of
   const [openWith, setOpenWith] = useState(null) // member object, or null for the list
@@ -151,7 +153,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
     [messages, user?.id]
   )
 
-  const thread = openWith ? threadFor(openWith.user_id) : []
+  const thread = (openWith ? threadFor(openWith.user_id) : []).filter(m => !hiddenMsgs.has(m.id))
 
   useEffect(() => {
     if (openWith) endRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -432,6 +434,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
             onReply={() => { setReplyTo(actionMsg); setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 100) }}
             onEdit={() => { setEditMsg(actionMsg); setActionMsg(null) }}
             onDelete={() => handleDeleteMessage(actionMsg)}
+            onHide={() => hideMessage(actionMsg.id)}
             onInfo={() => setDetailMsg(actionMsg)}
             onClose={() => setActionMsg(null)}
           />

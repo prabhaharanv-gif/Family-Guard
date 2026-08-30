@@ -122,7 +122,7 @@ function ActionRow({ icon, label, color, onClick, danger }) {
  *
  * `anchor` is the pressed bubble's bounding rect in viewport coordinates.
  */
-export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDelete, onInfo, onClose }) {
+export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDelete, onHide, onInfo, onClose }) {
   const actions = [
     {
       label: 'Reply', color: '#951345', fn: onReply, show: true,
@@ -158,6 +158,18 @@ export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDele
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      ),
+    },
+    {
+      // Only on someone else's message. Your own already has Delete, which
+      // removes it for everyone; offering both on one message would be two
+      // similar-sounding actions with very different consequences.
+      label: 'Delete for me', color: '#E11D48', fn: onHide, show: !isOwn, danger: true,
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24"/>
+          <line x1="2" y1="2" x2="22" y2="22"/>
         </svg>
       ),
     },

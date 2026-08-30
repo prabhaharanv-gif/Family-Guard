@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 import Dialog from '../components/Dialog'
 import CallsPanel from '../components/CallsPanel'
+import { useHiddenMessages } from '../hooks/useHiddenMessages'
 import PersonalChatPanel from '../components/PersonalChatPanel'
 import {
   SingleTick, DoubleTick, ReplyBar, ReplyQuote, MessageActionSheet, EditModal,
@@ -24,6 +25,7 @@ function setNativeMuteLevel(level) {
 export default function MessagesPage() {
   const navigate = useNavigate()
   const { user, familyId } = useAuthStore()
+  const { hidden: hiddenMsgs, hide: hideMessage } = useHiddenMessages('family', user?.id)
   const [messages, setMessages]   = useState([])
   const [members, setMembers]     = useState({})
   const [msgsLoaded, setMsgsLoaded] = useState(false)
@@ -506,9 +508,12 @@ export default function MessagesPage() {
 
         {msgsLoaded && (() => {
           let lastDateLabel = null
+          // Hidden-for-me messages drop out before search, so a hidden message
+          // cannot resurface by matching a query.
+          const visible = messages.filter(m => !hiddenMsgs.has(m.id))
           const filtered = searchQuery
-            ? messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
-            : messages
+            ? visible.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
+            : visible
           return filtered.map((msg, idx) => {
             const isOwn  = msg.user_id === user?.id
             const member = members[msg.user_id]
@@ -688,6 +693,7 @@ export default function MessagesPage() {
           onReply={() => { setReplyTo(actionMsg); setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100) }}
           onEdit={() => { setEditMsg(actionMsg); setActionMsg(null) }}
           onDelete={() => handleDelete(actionMsg)}
+          onHide={() => hideMessage(actionMsg.id)}
           onInfo={() => setDetailMsg(actionMsg)}
           onClose={() => setActionMsg(null)}
         />
