@@ -37,44 +37,43 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
       style={{
         position: 'fixed', inset: 0, zIndex: 600,
         background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        padding: '0 0 env(safe-area-inset-bottom, 0)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 24,
       }}
     >
       <div
         onClick={e => e.stopPropagation()}
         style={{
           background: '#fff',
-          borderRadius: '24px 24px 0 0',
-          padding: '8px 20px 32px',
+          borderRadius: 20,
+          padding: '22px 20px 18px',
           width: '100%',
-          maxWidth: 480,
-          boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
-          animation: 'slideUp 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+          maxWidth: 320,
+          boxShadow: '0 18px 50px rgba(0,0,0,0.3)',
+          animation: 'dialogIn 0.18s cubic-bezier(0.34,1.4,0.64,1)',
         }}
       >
-        <style>{`@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}`}</style>
-
-        {/* Handle */}
-        <div style={{
-          width: 40, height: 4, borderRadius: 2,
-          background: '#E5E7EB', margin: '12px auto 24px',
-        }} />
+        {/* A centred card rather than a full-width sheet. As a sheet this ran
+            ~280px tall for a single sentence, most of it a drag handle, a 56px
+            icon and sheet padding — none of which a one-line confirmation needs.
+            Scale-in suits a centred card; the old slide-up belonged to a sheet
+            anchored to the bottom edge. */}
+        <style>{`@keyframes dialogIn{from{opacity:0;transform:scale(0.94)}to{opacity:1;transform:scale(1)}}`}</style>
 
         {/* Icon */}
         <div style={{
-          width: 56, height: 56, borderRadius: 16,
+          width: 40, height: 40, borderRadius: 12,
           background: iconBg, border: `1.5px solid ${iconBorder}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 26, margin: '0 auto 16px',
+          fontSize: 19, margin: '0 auto 12px',
         }}>
           {icon}
         </div>
 
         {/* Title */}
         <div style={{
-          textAlign: 'center', fontSize: 17, fontWeight: 800,
-          color: '#0D0C1D', marginBottom: 8, fontFamily: 'Sora, sans-serif',
+          textAlign: 'center', fontSize: 15.5, fontWeight: 800,
+          color: '#0D0C1D', marginBottom: 6, fontFamily: 'Sora, sans-serif',
         }}>
           {resolvedTitle}
         </div>
@@ -82,8 +81,8 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
         {/* Message */}
         {message && (
           <div style={{
-            textAlign: 'center', fontSize: 14, color: '#6B7280',
-            lineHeight: 1.55, marginBottom: 24, padding: '0 8px',
+            textAlign: 'center', fontSize: 13, color: '#6B7280',
+            lineHeight: 1.5, marginBottom: 16,
           }}>
             {message}
           </div>
@@ -93,9 +92,9 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
         <div style={{ display: 'flex', gap: 10 }}>
           {isConfirm && (
             <button onClick={onClose} style={{
-              flex: 1, padding: '14px 0', borderRadius: 14,
+              flex: 1, padding: '11px 0', borderRadius: 12,
               background: '#F5F4FB', border: '1px solid #EDE9FF',
-              color: '#6B7280', fontWeight: 700, fontSize: 14,
+              color: '#6B7280', fontWeight: 700, fontSize: 13.5,
               fontFamily: 'inherit', cursor: 'pointer',
             }}>
               Cancel
@@ -105,9 +104,9 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
             ref={okRef}
             onClick={() => { onConfirm?.(); onClose() }}
             style={{
-              flex: 1, padding: '14px 0', borderRadius: 14,
+              flex: 1, padding: '11px 0', borderRadius: 12,
               background: `linear-gradient(135deg, ${accent}, ${isError ? '#B91C1C' : '#720D35'})`,
-              border: 'none', color: '#fff', fontWeight: 700, fontSize: 14,
+              border: 'none', color: '#fff', fontWeight: 700, fontSize: 13.5,
               fontFamily: 'inherit', cursor: 'pointer',
               boxShadow: `0 4px 14px ${accent}40`,
             }}
