@@ -66,8 +66,8 @@ public class SOSAlertActivity extends Activity {
         String message = getIntent().getStringExtra(EXTRA_MESSAGE);
         final String lat = getIntent().getStringExtra(EXTRA_LAT);
         final String lng = getIntent().getStringExtra(EXTRA_LNG);
-        if (sender  == null || sender.isEmpty())  sender  = "A family member";
-        if (message == null || message.isEmpty()) message = "SOS Alert";
+        if (sender  == null || sender.isEmpty())  sender  = getString(R.string.a_family_member);
+        if (message == null || message.isEmpty()) message = getString(R.string.sos_alert);
 
         setContentView(buildLayout(sender, message, lat, lng));
     }
@@ -88,7 +88,7 @@ public class SOSAlertActivity extends Activity {
 
         // Title
         TextView title = new TextView(this);
-        title.setText(sender + " needs help!");
+        title.setText(getString(R.string.sos_needs_help, sender));
         title.setTextColor(Color.WHITE);
         title.setTextSize(26);
         title.setGravity(Gravity.CENTER);
@@ -111,7 +111,7 @@ public class SOSAlertActivity extends Activity {
         // View Location button (only if coords present)
         if (lat != null && !lat.isEmpty() && !"0".equals(lat) && lng != null && !lng.isEmpty()) {
             Button locBtn = new Button(this);
-            locBtn.setText("📍 View Location");
+            locBtn.setText(R.string.sos_view_location);
             locBtn.setTextColor(Color.parseColor("#951345"));
             locBtn.setBackgroundColor(Color.WHITE);
             locBtn.setTextSize(16);
@@ -133,7 +133,7 @@ public class SOSAlertActivity extends Activity {
 
         // Open App button
         Button openBtn = new Button(this);
-        openBtn.setText("Open FamilyGuard");
+        openBtn.setText(R.string.sos_open_app);
         openBtn.setTextColor(Color.WHITE);
         openBtn.setBackgroundColor(Color.parseColor("#720D35"));
         openBtn.setTextSize(16);
@@ -153,7 +153,7 @@ public class SOSAlertActivity extends Activity {
 
         // Dismiss / Stop Alarm button
         Button stopBtn = new Button(this);
-        stopBtn.setText("✋ I Understand — Stop Alarm");
+        stopBtn.setText(R.string.sos_stop_alarm);
         stopBtn.setTextColor(Color.WHITE);
         stopBtn.setBackgroundColor(Color.parseColor("#4A0820"));
         stopBtn.setTextSize(16);

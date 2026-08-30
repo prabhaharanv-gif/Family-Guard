@@ -42,7 +42,6 @@ public class CallRingingService extends Service {
     // fix pattern as sos_alerts_v3/family_messages_v3 in
     // MyFirebaseMessagingService. Old channel is deleted in ensureCallRingChannelStatic.
     public  static final String CALL_RING_CHANNEL_ID   = "incoming_calls_v2";
-    private static final String CALL_RING_CHANNEL_NAME = "Incoming Calls";
 
     public static volatile boolean isRunning = false;
 
@@ -58,7 +57,7 @@ public class CallRingingService extends Service {
     private PowerManager.WakeLock screenWakeLock = null;
 
     private String callId     = "";
-    private String callerName = "A family member";
+    private String callerName = getString(R.string.a_family_member);
     private String callType   = "voice";
     private String callerAvatar = "";
     private boolean launchActivity = true;
@@ -105,7 +104,7 @@ public class CallRingingService extends Service {
         callerAvatar = (intent != null) ? intent.getStringExtra("caller_avatar") : null;
         if (callerAvatar == null) callerAvatar = "";
         if (callId == null) callId = "";
-        if (callerName == null || callerName.isEmpty()) callerName = "A family member";
+        if (callerName == null || callerName.isEmpty()) callerName = getString(R.string.a_family_member);
         if (callType == null || callType.isEmpty()) callType = "voice";
         // Defaults true (FCM/backgrounded path — no visible UI to fall back
         // on, so the native full-screen Activity is what brings the app
@@ -279,13 +278,15 @@ public class CallRingingService extends Service {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        String label = "voice".equals(callType) ? "Voice call" : "Video call";
+        String label = getString("voice".equals(callType)
+            ? R.string.notif_call_voice_label
+            : R.string.notif_call_video_label);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CALL_RING_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_notify)
             .setColor(android.graphics.Color.parseColor("#951345"))
-            .setContentTitle("📞 " + label + " from " + callerName)
-            .setContentText("Tap to answer")
+            .setContentTitle(getString(R.string.notif_call_title, label, callerName))
+            .setContentText(getString(R.string.notif_tap_to_answer))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -323,12 +324,17 @@ public class CallRingingService extends Service {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager nm =
             (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm == null || nm.getNotificationChannel(CALL_RING_CHANNEL_ID) != null) return;
+        if (nm == null) return;
+        if (nm.getNotificationChannel(CALL_RING_CHANNEL_ID) != null) {
+            NotificationChannels.refreshText(ctx, nm, CALL_RING_CHANNEL_ID,
+                R.string.ch_call_ring_name, R.string.ch_call_ring_desc);
+            return;
+        }
 
         NotificationChannel ch = new NotificationChannel(
-            CALL_RING_CHANNEL_ID, CALL_RING_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH
+            CALL_RING_CHANNEL_ID, ctx.getString(R.string.ch_call_ring_name), NotificationManager.IMPORTANCE_HIGH
         );
-        ch.setDescription("Incoming voice/video calls from family members");
+        ch.setDescription(ctx.getString(R.string.ch_call_ring_desc));
         ch.setSound(null, null);
         ch.enableVibration(false);
         ch.setBypassDnd(true);

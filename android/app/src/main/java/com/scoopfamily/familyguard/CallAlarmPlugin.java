@@ -37,7 +37,7 @@ public class CallAlarmPlugin extends Plugin {
             Context ctx = getContext();
             Intent i = new Intent(ctx, CallRingingService.class);
             i.putExtra("call_id",     call.getString("callId", ""));
-            i.putExtra("caller_name", call.getString("callerName", "A family member"));
+            i.putExtra("caller_name", call.getString("callerName", getContext().getString(R.string.a_family_member)));
             i.putExtra("call_type",   call.getString("callType", "voice"));
             i.putExtra("caller_avatar", call.getString("callerAvatar", ""));
             i.putExtra("launch_activity", !MainActivity.isAppInForeground);

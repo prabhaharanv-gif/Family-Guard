@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useT } from '../i18n'
 import { useBackButton } from '../hooks/useBackButton'
 import { joinChannel, leaveChannel, setMuted, setCameraOff, switchCamera } from '../lib/agora'
 import {
@@ -20,6 +21,7 @@ function formatDuration(sec) {
 }
 
 export default function CallPage() {
+  const t = useT()
   const { callId } = useParams()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -363,7 +365,7 @@ export default function CallPage() {
             </>
           )}
           {status === 'ringing' && isCaller && (
-            <button style={{ ...styles.circleBtn, ...styles.endBtn }} onClick={handleEnd} aria-label="Cancel call">
+            <button style={{ ...styles.circleBtn, ...styles.endBtn }} onClick={handleEnd} aria-label={t('calls.cancelCall')}>
               <PhoneOffIcon />
             </button>
           )}
@@ -405,7 +407,7 @@ export default function CallPage() {
                   </button>
                 </>
               )}
-              <button style={{ ...styles.circleBtn, ...styles.endBtn }} onClick={handleEnd} aria-label="End call">
+              <button style={{ ...styles.circleBtn, ...styles.endBtn }} onClick={handleEnd} aria-label={t('calls.endCall')}>
                 <PhoneOffIcon />
               </button>
             </>

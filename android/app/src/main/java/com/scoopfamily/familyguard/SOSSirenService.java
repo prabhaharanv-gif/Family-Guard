@@ -52,7 +52,6 @@ public class SOSSirenService extends Service {
     // ongoing notification in the shade without a banner. Channel importance is
     // fixed at creation, so the id had to change for existing installs.
     public  static final String SOS_POPUP_CHANNEL_ID   = "sos_popup_v2";
-    private static final String SOS_POPUP_CHANNEL_NAME = "SOS Alert Banner";
 
     // ── Shared state — read by SOSAlarmPlugin and MainActivity ───────────────
     public static volatile boolean isRunning = false;
@@ -96,12 +95,15 @@ public class SOSSirenService extends Service {
 
         String senderName = (intent != null) ? intent.getStringExtra("sender")  : null;
         String message    = (intent != null) ? intent.getStringExtra("message") : null;
-        if (senderName == null || senderName.isEmpty()) senderName = "A family member";
-        if (message    == null || message.isEmpty())    message    = "SOS Alert";
+        if (senderName == null || senderName.isEmpty()) senderName = getString(R.string.a_family_member);
+        if (message    == null || message.isEmpty())    message    = getString(R.string.sos_alert);
 
         sosLat = (intent != null && intent.getStringExtra("lat") != null) ? intent.getStringExtra("lat") : "";
         sosLng = (intent != null && intent.getStringExtra("lng") != null) ? intent.getStringExtra("lng") : "";
 
+        // A repeat push for an alert that is already sounding must not touch
+        // the volume — see raiseAlarmVolumeForAlert().
+        final boolean freshAlert = !isRunning;
         isRunning = true;
 
         // ── Must call startForeground within 5 s of onStartCommand ──────────
@@ -140,6 +142,10 @@ public class SOSSirenService extends Service {
         // the sole audio source. Restarting is safe: startSiren() stops any
         // existing siren first, so repeated onMessageReceived calls give one
         // continuous siren rather than overlapping copies.
+        // Every new alert starts loud. Repeat pushes for the same alert skip
+        // this, which is what lets the volume keys work while it is sounding.
+        if (freshAlert) raiseAlarmVolumeForAlert();
+
         startSiren();
         startVibration();
 
@@ -194,6 +200,9 @@ public class SOSSirenService extends Service {
         releaseWakeLock();
         stopSiren();
         cancelVibration();
+        // Before isRunning flips: the alert is over, so hand the alarm volume
+        // back at whatever level the person had it on.
+        restoreAlarmVolume();
         isRunning = false;
 
         try {
@@ -319,11 +328,10 @@ public class SOSSirenService extends Service {
         return new NotificationCompat.Builder(this, SOS_POPUP_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_notify)
             .setColor(android.graphics.Color.parseColor("#951345"))
-            .setContentTitle("🚨 SOS — " + senderName + " needs help!")
+            .setContentTitle(getString(R.string.notif_sos_title, senderName))
             .setContentText(message)
             .setStyle(new NotificationCompat.BigTextStyle()
-                .bigText("⚠️ " + senderName + " needs help!\n\n"
-                       + message + "\n\nTap to open Famora."))
+                .bigText(getString(R.string.notif_sos_big, senderName, message)))
             // PRIORITY_LOW to match the channel. Left at MAX this still asks for
             // a heads-up on pre-O devices, which is the banner being removed.
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -343,13 +351,18 @@ public class SOSSirenService extends Service {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager nm =
             (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm == null || nm.getNotificationChannel(SOS_POPUP_CHANNEL_ID) != null) return;
+        if (nm == null) return;
+        if (nm.getNotificationChannel(SOS_POPUP_CHANNEL_ID) != null) {
+            NotificationChannels.refreshText(ctx, nm, SOS_POPUP_CHANNEL_ID,
+                R.string.ch_sos_banner_name, R.string.ch_sos_banner_desc);
+            return;
+        }
 
         NotificationChannel ch = new NotificationChannel(
-            SOS_POPUP_CHANNEL_ID, SOS_POPUP_CHANNEL_NAME,
+            SOS_POPUP_CHANNEL_ID, ctx.getString(R.string.ch_sos_banner_name),
             NotificationManager.IMPORTANCE_LOW
         );
-        ch.setDescription("SOS alert banner — audio is provided by the app");
+        ch.setDescription(ctx.getString(R.string.ch_sos_banner_desc));
         ch.setSound(null, null);
         ch.enableVibration(false);
         ch.setBypassDnd(true);
@@ -363,7 +376,6 @@ public class SOSSirenService extends Service {
     // ─────────────────────────────────────────────────────────────────────────
     private void startSiren() {
         stopSiren();
-        forceAlarmVolumeToMax();
 
         // The recording is the intended sound. Looped on the ALARM stream so it
         // behaves the same as the synthesized siren did: audible through silent
@@ -402,13 +414,63 @@ public class SOSSirenService extends Service {
         startSynthesizedSiren();
     }
 
-    private void forceAlarmVolumeToMax() {
+    // ── Alarm volume ─────────────────────────────────────────────────────────
+    // An SOS has to be heard through a phone that has been silenced or turned
+    // down, so a new alert raises the alarm stream to maximum. STREAM_ALARM is
+    // already exempt from ringer silent and vibrate, so this is about the alarm
+    // volume itself being low, not about the ringer.
+    //
+    //   - Raised once per ALERT, keyed to the service not already running.
+    //     startSiren() runs again for every repeat push, and raising there meant
+    //     each new push slammed the volume back to maximum, undoing the
+    //     volume-down the person had just pressed. Keying it to the alert is
+    //     what makes "loud by default, then reducible" actually hold.
+    //   - The level found is restored when the alert ends, so an SOS borrows the
+    //     alarm volume rather than keeping it. Without this the phone was left
+    //     at maximum and the next morning's alarm clock went off at full blast.
+    //
+    // The baseline lives in SharedPreferences, not a static field. A static is
+    // lost if the process is killed mid-siren — which is exactly when MIUI kills
+    // things — and the level would then never be handed back.
+    private static final String KEY_SAVED_ALARM_VOL = "sos_saved_alarm_volume";
+
+    private void raiseAlarmVolumeForAlert() {
         try {
             AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-            if (am != null) {
-                am.setStreamVolume(AudioManager.STREAM_ALARM,
-                    am.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0);
+            if (am == null) return;
+
+            int current = am.getStreamVolume(AudioManager.STREAM_ALARM);
+            int max     = am.getStreamMaxVolume(AudioManager.STREAM_ALARM);
+
+            android.content.SharedPreferences sp = getSharedPreferences(
+                MyFirebaseMessagingService.PREF_NAME, Context.MODE_PRIVATE);
+
+            // Only record a baseline when none survives from an alert that never
+            // got to clean up. Overwriting it there would store OUR maximum as
+            // though it were the user's own setting.
+            if (sp.getInt(KEY_SAVED_ALARM_VOL, -1) == -1) {
+                sp.edit().putInt(KEY_SAVED_ALARM_VOL, current).apply();
             }
+
+            if (current < max) {
+                am.setStreamVolume(AudioManager.STREAM_ALARM, max, 0);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    /** Hand the alarm volume back. Safe to call when nothing was raised. */
+    private void restoreAlarmVolume() {
+        try {
+            android.content.SharedPreferences sp = getSharedPreferences(
+                MyFirebaseMessagingService.PREF_NAME, Context.MODE_PRIVATE);
+            int saved = sp.getInt(KEY_SAVED_ALARM_VOL, -1);
+            if (saved == -1) return;
+
+            AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            if (am != null) {
+                am.setStreamVolume(AudioManager.STREAM_ALARM, saved, 0);
+            }
+            sp.edit().remove(KEY_SAVED_ALARM_VOL).apply();
         } catch (Exception e) { e.printStackTrace(); }
     }
 

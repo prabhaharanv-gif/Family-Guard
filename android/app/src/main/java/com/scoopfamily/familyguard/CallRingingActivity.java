@@ -68,7 +68,7 @@ public class CallRingingActivity extends Activity {
         String callerName   = getIntent().getStringExtra(EXTRA_CALLER_NAME);
         String callType     = getIntent().getStringExtra(EXTRA_CALL_TYPE);
         String avatarUrl    = getIntent().getStringExtra(EXTRA_CALLER_AVATAR);
-        if (callerName == null || callerName.isEmpty()) callerName = "A family member";
+        if (callerName == null || callerName.isEmpty()) callerName = getString(R.string.a_family_member);
         if (callType == null || callType.isEmpty()) callType = "voice";
 
         setContentView(buildLayout(callId, callerName, callType, avatarUrl));
@@ -150,7 +150,9 @@ public class CallRingingActivity extends Activity {
         root.addView(title);
 
         TextView sub = new TextView(this);
-        sub.setText(("video".equals(callType) ? "Incoming video call" : "Incoming voice call") + "…");
+        sub.setText(getString("video".equals(callType)
+            ? R.string.call_incoming_video
+            : R.string.call_incoming_voice) + "…");
         sub.setTextColor(Color.parseColor("#FFD9E6"));
         sub.setTextSize(16);
         sub.setGravity(Gravity.CENTER);
@@ -164,7 +166,7 @@ public class CallRingingActivity extends Activity {
         buttonRow.setLayoutParams(rowLp);
 
         Button declineBtn = new Button(this);
-        declineBtn.setText("✕ Decline");
+        declineBtn.setText(R.string.call_decline);
         declineBtn.setTextColor(Color.WHITE);
         declineBtn.setBackgroundColor(Color.parseColor("#4A0820"));
         declineBtn.setTextSize(16);
@@ -177,7 +179,7 @@ public class CallRingingActivity extends Activity {
         buttonRow.addView(declineBtn);
 
         Button acceptBtn = new Button(this);
-        acceptBtn.setText("✓ Accept");
+        acceptBtn.setText(R.string.call_accept);
         acceptBtn.setTextColor(Color.parseColor("#951345"));
         acceptBtn.setBackgroundColor(Color.WHITE);
         acceptBtn.setTextSize(16);

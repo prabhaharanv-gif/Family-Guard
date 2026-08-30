@@ -64,8 +64,8 @@ public class SOSAlarmPlugin extends Plugin {
         try {
             Context ctx = getContext();
             Intent i = new Intent(ctx, SOSSirenService.class);
-            i.putExtra("sender",  call.getString("sender",  "A family member"));
-            i.putExtra("message", call.getString("message", "SOS Alert"));
+            i.putExtra("sender",  call.getString("sender",  getContext().getString(R.string.a_family_member)));
+            i.putExtra("message", call.getString("message", getContext().getString(R.string.sos_alert)));
             i.putExtra("lat",     call.getString("lat",     ""));
             i.putExtra("lng",     call.getString("lng",     ""));
 

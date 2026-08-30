@@ -4,4 +4,78 @@
     <string name="title_activity_main">Famora</string>
     <string name="package_name">com.scoopfamily.familyguard</string>
     <string name="custom_url_scheme">com.scoopfamily.familyguard</string>
+
+    <!--
+      Notification channel names and descriptions.
+
+      These are the labels Android itself renders in Settings › Apps › Famora ›
+      Notifications, so they follow the DEVICE language, not the in-app picker —
+      native code cannot read the browser localStorage the picker writes to.
+      A Tamil phone gets values-ta automatically.
+
+      Ids are deliberately absent from here: a channel's sound and importance
+      are fixed at creation and can only be changed by using a NEW id, so the
+      ids stay in Java where the comments explaining each bump live.
+    -->
+    <string name="ch_sos_name">SOS Emergency Alerts</string>
+    <string name="ch_sos_desc">Emergency SOS alerts from family members</string>
+
+    <string name="ch_sos_banner_name">SOS Alert Banner</string>
+    <string name="ch_sos_banner_desc">SOS alert banner — audio is provided by the app</string>
+
+    <string name="ch_calls_name">Incoming Calls</string>
+    <string name="ch_calls_desc">Incoming voice and video calls from family members</string>
+
+    <string name="ch_call_ring_name">Incoming Calls</string>
+    <string name="ch_call_ring_desc">Incoming voice/video calls from family members</string>
+
+    <string name="ch_messages_name">Family Messages</string>
+    <string name="ch_messages_desc">New messages from family members</string>
+
+    <string name="ch_messages_silent_name">Family Messages (Silent)</string>
+    <string name="ch_messages_silent_desc">Family messages — silent mode</string>
+
+    <string name="ch_location_name">Location Tracking</string>
+    <string name="ch_location_desc">Shows while Famora is tracking your location</string>
+
+    <string name="ch_ping_name">Find My Phone</string>
+    <string name="ch_ping_desc">Rings this phone when a family member uses Find My Phone</string>
+
+    <!--
+      Native UI and notification text.
+
+      These reach the user from Java, not from the React app, so they follow the
+      DEVICE language rather than the in-app picker. That matters most for the
+      SOS and call screens below: they are Activities drawn over the lock
+      screen, which is the only place Android lets us show anything while the
+      phone is locked, so they are what a family member actually reads when an
+      alert wakes them.
+    -->
+    <string name="a_family_member">A family member</string>
+    <string name="sos_alert">SOS Alert</string>
+
+    <!-- SOSAlertActivity — full-screen alert over the lock screen -->
+    <string name="sos_needs_help">%1$s needs help!</string>
+    <string name="sos_view_location">📍 View Location</string>
+    <string name="sos_open_app">Open Famora</string>
+    <string name="sos_stop_alarm">✋ I Understand — Stop Alarm</string>
+
+    <!-- CallRingingActivity — full-screen incoming call over the lock screen -->
+    <string name="call_incoming_voice">Incoming voice call</string>
+    <string name="call_incoming_video">Incoming video call</string>
+    <string name="call_decline">✕ Decline</string>
+    <string name="call_accept">✓ Accept</string>
+
+    <!-- Notifications built natively -->
+    <string name="notif_sos_title">🚨 SOS — %1$s needs help!</string>
+    <string name="notif_sos_big">⚠️ %1$s needs help!\n\n%2$s\n\nTap to open Famora.</string>
+    <string name="notif_call_voice_label">Voice call</string>
+    <string name="notif_call_video_label">Video call</string>
+    <string name="notif_call_title">📞 %1$s from %2$s</string>
+    <string name="notif_tap_to_answer">Tap to answer</string>
+    <string name="notif_ping_title">📡 Found it!</string>
+    <string name="notif_ping_body">%1$s is looking for this phone</string>
+    <string name="notif_ping_big">%1$s is looking for this phone.\n\nTap Stop to silence it.</string>
+    <string name="notif_location_body">Protecting your family · location active</string>
+    <string name="notif_tap_to_open">Tap to open</string>
 </resources>

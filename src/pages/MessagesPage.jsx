@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 import Dialog from '../components/Dialog'
+import { useT } from '../i18n'
 import CallsPanel from '../components/CallsPanel'
 import { useHiddenMessages } from '../hooks/useHiddenMessages'
 import PersonalChatPanel from '../components/PersonalChatPanel'
@@ -23,6 +24,7 @@ function setNativeMuteLevel(level) {
 }
 
 export default function MessagesPage() {
+  const t = useT()
   const navigate = useNavigate()
   const { user, familyId } = useAuthStore()
   const { hidden: hiddenMsgs, hide: hideMessage } = useHiddenMessages('family', user?.id)
@@ -192,7 +194,7 @@ export default function MessagesPage() {
       p_reply_to_id: replyTo?.id || null,
     })
     if (error) {
-      setDialog({ type: 'error', message: 'Could not send message. Please try again.' })
+      setDialog({ type: 'error', message: t('messages.sendFailed') })
     } else {
       setText('')
       setReplyTo(null)
@@ -206,19 +208,19 @@ export default function MessagesPage() {
       p_message_id:  msgId,
       p_new_content: newContent,
     })
-    if (error) setDialog({ type: 'error', message: 'Could not edit message. Please try again.' })
+    if (error) setDialog({ type: 'error', message: t('messages.editFailed') })
   }
 
   // ── Delete ──────────────────────────────────────────────────────────────────
   const handleDelete = (msg) => {
     setDialog({
       type: 'confirm',
-      title: 'Delete Message',
-      message: 'This will delete the message for everyone in the family.',
-      confirmLabel: 'Delete',
+      title: t('messages.deleteTitle'),
+      message: t('messages.deleteMsg'),
+      confirmLabel: t('common.delete'),
       onConfirm: async () => {
         const { error } = await supabase.rpc('delete_message', { p_message_id: msg.id })
-        if (error) setDialog({ type: 'error', message: 'Could not delete message. Please try again.' })
+        if (error) setDialog({ type: 'error', message: t('messages.deleteFailed') })
         else setMessages(prev => prev.filter(m => m.id !== msg.id))
       },
     })
@@ -228,9 +230,9 @@ export default function MessagesPage() {
   const handleClearMessages = () => {
     setDialog({
       type: 'confirm',
-      title: 'Clear All Messages',
-      message: 'This will delete all messages for everyone in this family and cannot be undone.',
-      confirmLabel: 'Clear Chat',
+      title: t('messages.clearTitle'),
+      message: t('messages.clearMsg'),
+      confirmLabel: t('messages.clearChat'),
       onConfirm: async () => {
         setClearing(true)
         await supabase.from('messages').delete().eq('family_id', familyId)
@@ -256,9 +258,9 @@ export default function MessagesPage() {
     setNativeMuteLevel(next)
   }
   const MUTE_STATES = [
-    { tip: 'Notifications on' },
-    { tip: 'Sound muted' },
-    { tip: 'All muted' },
+    { tip: t('messages.notificationsOn') },
+    { tip: t('messages.soundMuted') },
+    { tip: t('messages.allMuted') },
   ]
   const MUTE_COLOR = muteLevel === 1 ? 'var(--gold)' : muteLevel === 2 ? 'var(--rose)' : '#fff'
 
@@ -301,7 +303,7 @@ export default function MessagesPage() {
       <div className="top-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div>
-            <div className="top-bar-title">💬 Messages</div>
+            <div className="top-bar-title">💬 {t('messages.title')}</div>
             <button onClick={handleMuteToggle} title={MUTE_STATES[muteLevel].tip} style={{
               marginTop: 3, background: 'none', border: 'none',
               cursor: 'pointer', padding: 0,
@@ -315,7 +317,7 @@ export default function MessagesPage() {
               </svg>
               {muteLevel > 0 && (
                 <span style={{ fontSize: 10, fontWeight: 700, color: MUTE_COLOR }}>
-                  {muteLevel === 1 ? 'Sound off' : 'Muted'}
+                  {muteLevel === 1 ? t('messages.soundOff') : t('messages.muted')}
                 </span>
               )}
             </button>
@@ -354,7 +356,7 @@ export default function MessagesPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
-              {callControls.busy ? 'Clearing...' : `Clear (${callControls.clearableCount})`}
+              {callControls.busy ? t('messages.clearing') : t('messages.clearCount', { n: callControls.clearableCount })}
             </button>
           )}
           {activeTab === 'chat' && messages.length > 0 && (
@@ -367,7 +369,7 @@ export default function MessagesPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
-              {clearing ? 'Clearing...' : 'Clear Chat'}
+              {clearing ? t('messages.clearing') : t('messages.clearChat')}
             </button>
           )}
           {/* Same button for an open personal thread. The panel reports the
@@ -384,7 +386,7 @@ export default function MessagesPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
-              {personalControls.clearing ? 'Clearing...' : 'Clear Chat'}
+              {personalControls.clearing ? t('messages.clearing') : t('messages.clearChat')}
             </button>
           )}
           {activeTab === 'chat' && (
@@ -405,7 +407,7 @@ export default function MessagesPage() {
 
       {/* Chat / Personal / Calls tabs */}
       <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #F0E4EA', flexShrink: 0 }}>
-        {[{ key: 'chat', label: 'Family' }, { key: 'personal', label: 'Personal' }, { key: 'calls', label: 'Calls' }].map(tab => (
+        {[{ key: 'chat', label: t('messages.tabFamily') }, { key: 'personal', label: t('messages.tabPersonal') }, { key: 'calls', label: t('messages.tabCalls') }].map(tab => (
           <button key={tab.key} onClick={() => {
             if (tab.key === 'personal' && activeTab === 'personal') setPersonalReset(n => n + 1)
             setActiveTab(tab.key)
@@ -462,8 +464,8 @@ export default function MessagesPage() {
           <style>{`@keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}`}</style>
           <span style={{ fontSize: 12, color: '#7C3AED', fontWeight: 600 }}>
             {Object.keys(typingUsers).length === 1
-              ? `${members[Object.keys(typingUsers)[0]]?.display_name || 'Someone'} is typing...`
-              : 'Several people are typing...'}
+              ? t('messages.isTyping', { name: members[Object.keys(typingUsers)[0]]?.display_name || t('messages.someone') })
+              : t('messages.severalTyping')}
           </span>
         </div>
       )}
@@ -493,16 +495,16 @@ export default function MessagesPage() {
         {msgsLoaded && messages.length === 0 && (
           <div className="empty-state">
             <div className="empty-emoji">💬</div>
-            <div className="empty-text">No messages yet</div>
-            <div className="empty-sub">Send the first message to your family!</div>
+            <div className="empty-text">{t('messages.noMessages')}</div>
+            <div className="empty-sub">{t('messages.sendFirst')}</div>
           </div>
         )}
 
         {msgsLoaded && searchQuery && messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
           <div className="empty-state">
             <div className="empty-emoji">🔍</div>
-            <div className="empty-text">No results</div>
-            <div className="empty-sub">No messages match "{searchQuery}"</div>
+            <div className="empty-text">{t('messages.noResults')}</div>
+            <div className="empty-sub">{t('messages.noMatch', { query: searchQuery })}</div>
           </div>
         )}
 
@@ -540,8 +542,8 @@ export default function MessagesPage() {
             const msgDateStr = msgDate.toDateString()
             if (msgDateStr !== lastDateLabel) {
               lastDateLabel = msgDateStr
-              if (isSameDay(msgDate, today)) dateLabel = 'Today'
-              else if (isSameDay(msgDate, yesterday)) dateLabel = 'Yesterday'
+              if (isSameDay(msgDate, today)) dateLabel = t('messages.today')
+              else if (isSameDay(msgDate, yesterday)) dateLabel = t('messages.yesterday')
               else dateLabel = msgDate.toLocaleDateString([], { day: 'numeric', month: 'short', year: msgDate.getFullYear() !== today.getFullYear() ? 'numeric' : undefined })
             }
 
@@ -588,7 +590,7 @@ export default function MessagesPage() {
                 {/* Sender name — only on first bubble of a run */}
                 {!isOwn && showSenderInfo && (
                   <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 3, paddingLeft: 4 }}>
-                    {member?.display_name || 'Family'}
+                    {member?.display_name || t('messages.family')}
                   </div>
                 )}
 
@@ -659,7 +661,7 @@ export default function MessagesPage() {
         <textarea
           value={text}
           onChange={handleTextChange}
-          placeholder={replyTo ? 'Write a reply...' : 'Type a message...'}
+          placeholder={replyTo ? t('messages.writeReply') : t('messages.typeMessage')}
           rows={1}
           style={{
             flex: 1, padding: '12px 14px', borderRadius: 24,
@@ -722,17 +724,17 @@ export default function MessagesPage() {
           <div className="popup" onClick={e => e.stopPropagation()}>
             <div className="popup-handle" />
             <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
-              Message Info
+              {t('messages.messageInfo')}
             </div>
             <div style={{ background: '#F5F4FB', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#0D0C1D', marginBottom: 16 }}>
               {detailMsg.content}
             </div>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#34B7F1', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ color: '#34B7F1', display: 'inline-flex' }}><DoubleTick /></span>
-              Read by {(reads[detailMsg.id] || []).length}
+              {t('messages.readBy', { n: (reads[detailMsg.id] || []).length })}
             </div>
             {(reads[detailMsg.id] || []).length === 0 ? (
-              <div style={{ fontSize: 13, color: '#8480B0', marginBottom: 14 }}>No one has read this yet.</div>
+              <div style={{ fontSize: 13, color: '#8480B0', marginBottom: 14 }}>{t('messages.noneRead')}</div>
             ) : (
               <div style={{ marginBottom: 14 }}>
                 {(reads[detailMsg.id] || []).map(r => {
@@ -743,7 +745,7 @@ export default function MessagesPage() {
                         {m?.display_name?.[0]?.toUpperCase() || '?'}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{m?.display_name || 'Member'}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{m?.display_name || t('messages.member')}</div>
                         <div style={{ fontSize: 11, color: '#8480B0' }}>{new Date(r.read_at).toLocaleString()}</div>
                       </div>
                     </div>
@@ -759,7 +761,7 @@ export default function MessagesPage() {
                 <>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#8480B0', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ display: 'inline-flex' }}><SingleTick /></span>
-                    Delivered · not read ({pending.length})
+                    {t('messages.deliveredNotRead', { n: pending.length })}
                   </div>
                   <div style={{ marginBottom: 4 }}>
                     {pending.map(m => (
@@ -767,7 +769,7 @@ export default function MessagesPage() {
                         <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: m.avatar_color || '#951345', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
                           {m.display_name?.[0]?.toUpperCase() || '?'}
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{m.display_name || 'Member'}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{m.display_name || t('messages.member')}</div>
                       </div>
                     ))}
                   </div>

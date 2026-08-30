@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { Geolocation } from '@capacitor/geolocation'
 import { useAuthStore } from '../store/authStore'
+import { useT } from '../i18n'
 import { useLocations } from '../hooks/useLocations'
 import { supabase } from '../lib/supabase'
 import { startBatteryReporting } from '../hooks/useBattery'
@@ -200,6 +201,7 @@ function SpeedBadge({ loc, size = 28 }) {
 }
 
 export default function MapAllPage() {
+  const t = useT()
   const { user, familyId } = useAuthStore()
   const { locations } = useLocations(familyId)
   const batteryRef = useRef({ level: null, charging: false })
@@ -328,12 +330,12 @@ export default function MapAllPage() {
       {/* Top Bar */}
       <div className="top-bar" style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
         <div style={{ flex: 1 }}>
-          <div className="top-bar-title">🗺️ Family Map</div>
+          <div className="top-bar-title">🗺️ {t('map.title')}</div>
         </div>
         {/* Find Fam button */}
         <button
           onClick={() => setShowFindFam(s => !s)}
-          aria-label="Find family member"
+          aria-label={t('map.findMember')}
           style={{
             background: showFindFam ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)',
             border: '1.5px solid rgba(255,255,255,0.4)',
@@ -357,7 +359,7 @@ export default function MapAllPage() {
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          aria-label="Refresh map"
+          aria-label={t('map.refresh')}
           style={{
             background: 'rgba(255,255,255,0.92)',
             border: '1.5px solid #fff',
@@ -509,7 +511,7 @@ export default function MapAllPage() {
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
-              <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>Find Family Member</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{t('map.findMemberTitle')}</span>
             </div>
 
             {/* Member list */}

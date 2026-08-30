@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useT } from '../i18n'
 import { useAuthStore } from '../store/authStore'
 import { useHiddenMessages } from '../hooks/useHiddenMessages'
 import PullToRefresh from '../components/PullToRefresh'
@@ -64,6 +65,7 @@ function Avatar({ member, size = 44 }) {
 }
 
 export default function PersonalChatPanel({ onDialog, resetSignal, onControls }) {
+  const t = useT()
   const { user, familyId } = useAuthStore()
   const { hidden: hiddenMsgs, hide: hideMessage } = useHiddenMessages('direct', user?.id)
   // Held in a ref rather than state: the pull-to-refresh handler needs to call
@@ -221,7 +223,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
       p_message_id:  msgId,
       p_new_content: newContent,
     })
-    if (error) { onDialog?.({ type: 'error', message: 'Could not edit message. Please try again.' }); return }
+    if (error) { onDialog?.({ type: 'error', message: t('messages.editFailed') }); return }
     setMessages(prev => prev.map(m =>
       m.id === msgId ? { ...m, content: newContent, is_edited: true, edited_at: new Date().toISOString() } : m
     ))
@@ -233,12 +235,12 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
   const handleDeleteMessage = (msg) => {
     onDialog?.({
       type: 'confirm',
-      title: 'Delete Message',
-      message: `This will delete the message for both you and ${openWith?.display_name || 'the other person'}.`,
-      confirmLabel: 'Delete',
+      title: t('messages.deleteTitle'),
+      message: t('personal.deleteMsg', { name: openWith?.display_name || t('personal.theOtherPerson') }),
+      confirmLabel: t('common.delete'),
       onConfirm: async () => {
         const { error } = await supabase.rpc('delete_direct_message', { p_message_id: msg.id })
-        if (error) { onDialog?.({ type: 'error', message: 'Could not delete message. Please try again.' }); return }
+        if (error) { onDialog?.({ type: 'error', message: t('messages.deleteFailed') }); return }
         setMessages(prev => prev.filter(m => m.id !== msg.id))
         setReplyTo(prev => (prev?.id === msg.id ? null : prev))
       },
@@ -251,9 +253,9 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
     if (!openWith) return
     onDialog?.({
       type: 'confirm',
-      title: 'Clear This Chat',
-      message: `This will delete every message between you and ${openWith.display_name}, for both of you. It cannot be undone.`,
-      confirmLabel: 'Clear Chat',
+      title: t('personal.clearTitle'),
+      message: t('personal.clearMsg', { name: openWith.display_name }),
+      confirmLabel: t('messages.clearChat'),
       onConfirm: async () => {
         setClearing(true)
         const other = openWith.user_id
@@ -304,7 +306,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
   }, [openWith, thread.length, clearing, onControls])
 
   const senderNameOf = (msg) =>
-    (msg?.sender_id === user?.id ? 'You' : openWith?.display_name)
+    (msg?.sender_id === user?.id ? t('common.you') : openWith?.display_name)
 
   // ── Thread view ───────────────────────────────────────────────────────────
   if (openWith) {
@@ -412,7 +414,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleSend() }}
-            placeholder={replyTo ? 'Write a reply...' : `Message ${openWith.display_name}...`}
+            placeholder={replyTo ? t('messages.writeReply') : t('personal.messagePlaceholder', { name: openWith.display_name })}
             style={{ flex: 1, borderRadius: 22, padding: '11px 16px', fontSize: 14 }}
           />
           <button
@@ -481,7 +483,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
                 <span style={{ color: detailMsg.read_at ? '#34B7F1' : '#8480B0', display: 'inline-flex' }}><DoubleTick /></span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>
-                    {detailMsg.read_at ? `Read by ${openWith.display_name}` : 'Not read yet'}
+                    {detailMsg.read_at ? t('personal.readBy', { name: openWith.display_name }) : t('personal.notReadYet')}
                   </div>
                   <div style={{ fontSize: 11, color: '#8480B0' }}>
                     {detailMsg.read_at
@@ -545,8 +547,8 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
                 fontStyle: last ? 'normal' : 'italic',
               }}>
                 {last
-                  ? `${last.sender_id === user?.id ? 'You: ' : ''}${last.content}`
-                  : 'Start a private chat'}
+                  ? `${last.sender_id === user?.id ? t('personal.youPrefix') : ''}${last.content}`
+                  : t('personal.startChat')}
               </div>
             </div>
             {last && (

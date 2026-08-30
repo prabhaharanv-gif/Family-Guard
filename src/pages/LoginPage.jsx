@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useT } from '../i18n'
 
 function EyeIcon({ open }) {
   return open ? (
@@ -17,6 +18,7 @@ function EyeIcon({ open }) {
 }
 
 function ForgotPasswordModal({ onClose }) {
+  const t = useT()
   const [mobile, setMobile]             = useState('')
   const [otp, setOtp]                   = useState('')
   const [newPassword, setNewPassword]   = useState('')
@@ -29,15 +31,15 @@ function ForgotPasswordModal({ onClose }) {
 
   useEffect(() => {
     if (resendIn <= 0) return
-    const t = setInterval(() => setResendIn(s => (s > 0 ? s - 1 : 0)), 1000)
-    return () => clearInterval(t)
+    const id = setInterval(() => setResendIn(s => (s > 0 ? s - 1 : 0)), 1000)
+    return () => clearInterval(id)
   }, [resendIn])
 
   // Step 1 — confirm an account exists for this number, then send an OTP to prove ownership
   const handleContinue = async () => {
     setError('')
     const digits = mobile.replace(/[^0-9]/g, '')
-    if (!digits || digits.length !== 10) { setError('Enter a valid 10-digit mobile number'); return }
+    if (!digits || digits.length !== 10) { setError(t('auth.enterValidMobile')); return }
     setLoading(true)
     // Check if user exists by attempting sign-in with wrong password
     const { error: e } = await supabase.auth.signInWithPassword({
@@ -45,12 +47,12 @@ function ForgotPasswordModal({ onClose }) {
     })
     if (!e?.message?.includes('Invalid login credentials')) {
       setLoading(false)
-      setError('No account found for this mobile number')
+      setError(t('reset.noAccountForMobile'))
       return
     }
     const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: `+91${digits}` })
     setLoading(false)
-    if (otpErr) { setError(otpErr.message || 'Could not send verification code'); return }
+    if (otpErr) { setError(otpErr.message || t('reset.couldNotSend')); return }
     setStep(2)
     setResendIn(30)
   }
@@ -62,7 +64,7 @@ function ForgotPasswordModal({ onClose }) {
     const digits = mobile.replace(/[^0-9]/g, '')
     const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: `+91${digits}` })
     setLoading(false)
-    if (otpErr) { setError(otpErr.message || 'Could not resend code'); return }
+    if (otpErr) { setError(otpErr.message || t('reset.couldNotResend')); return }
     setResendIn(30)
   }
 
@@ -70,14 +72,14 @@ function ForgotPasswordModal({ onClose }) {
   // session's verified phone claim is what step 3's RPC trusts (never a client-supplied number).
   const handleVerifyOtp = async () => {
     setError('')
-    if (otp.replace(/[^0-9]/g, '').length !== 6) { setError('Enter the 6-digit code'); return }
+    if (otp.replace(/[^0-9]/g, '').length !== 6) { setError(t('reset.enterSixDigit')); return }
     setLoading(true)
     const digits = mobile.replace(/[^0-9]/g, '')
     const { error: verifyErr } = await supabase.auth.verifyOtp({
       phone: `+91${digits}`, token: otp, type: 'sms',
     })
     setLoading(false)
-    if (verifyErr) { setError('Incorrect or expired code. Please try again.'); return }
+    if (verifyErr) { setError(t('reset.incorrectCode')); return }
     setStep(3)
   }
 
@@ -85,14 +87,14 @@ function ForgotPasswordModal({ onClose }) {
   // this session's server-verified JWT claim, not from any client-supplied parameter.
   const handleReset = async () => {
     setError('')
-    if (!newPassword || newPassword.length < 6) { setError('Password must be at least 6 characters'); return }
-    if (newPassword !== confirmPw) { setError('Passwords do not match'); return }
+    if (!newPassword || newPassword.length < 6) { setError(t('reset.passwordMin6')); return }
+    if (newPassword !== confirmPw) { setError(t('reset.passwordsNoMatch')); return }
     setLoading(true)
     const { error: rpcErr } = await supabase.rpc('reset_password_verified', {
       p_new_password: newPassword,
     })
     setLoading(false)
-    if (rpcErr) { setError('Could not reset: ' + rpcErr.message); return }
+    if (rpcErr) { setError(t('reset.couldNotReset', { reason: rpcErr.message })); return }
     setSuccess(true)
   }
 
@@ -107,11 +109,11 @@ function ForgotPasswordModal({ onClose }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
           }}>🔑</div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0D0C1D' }}>Reset Password</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#0D0C1D' }}>{t('reset.title')}</div>
             <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-              {step === 1 ? 'Enter your registered mobile number'
-                : step === 2 ? `Enter the code sent to +91 ${mobile}`
-                : 'Set your new password'}
+              {step === 1 ? t('reset.step1Sub')
+                : step === 2 ? t('reset.step2Sub', { mobile })
+                : t('reset.step3Sub')}
             </div>
           </div>
         </div>
@@ -119,11 +121,11 @@ function ForgotPasswordModal({ onClose }) {
         {success ? (
           <div style={{ textAlign: 'center', padding: '16px 0' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#16A34A', marginBottom: 8 }}>Password Reset!</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#16A34A', marginBottom: 8 }}>{t('reset.successTitle')}</div>
             <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>
-              You can now sign in with your new password.
+              {t('reset.successBody')}
             </div>
-            <button onClick={onClose} className="btn btn-primary">Back to Sign In</button>
+            <button onClick={onClose} className="btn btn-primary">{t('reset.backToSignIn')}</button>
           </div>
         ) : (
           <>
@@ -132,70 +134,70 @@ function ForgotPasswordModal({ onClose }) {
               <>
                 <input className="input" value={mobile}
                   onChange={e => setMobile(e.target.value)}
-                  placeholder="Mobile number"
+                  placeholder={t('auth.mobileNumber')}
                   autoFocus style={{ marginBottom: 16 }} />
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={onClose} style={{
                     flex: 1, padding: 14, borderRadius: 14, background: '#F8F7FF',
                     border: '1px solid #EDE9FF', color: '#6B7280', fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-                  }}>Cancel</button>
+                  }}>{t('common.cancel')}</button>
                   <button onClick={handleContinue} disabled={loading} style={{
                     flex: 2, padding: 14, borderRadius: 14,
                     background: 'linear-gradient(135deg,#951345,#720D35)',
                     border: 'none', color: '#fff', fontWeight: 800,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-                  }}>{loading ? 'Checking...' : 'Continue →'}</button>
+                  }}>{loading ? t('reset.checking') : t('common.continue') + ' →'}</button>
                 </div>
               </>
             ) : step === 2 ? (
               <>
                 <input className="input" type="text" inputMode="numeric" value={otp} autoFocus
                   onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
-                  placeholder="6-digit code"
+                  placeholder={t('reset.sixDigitCode')}
                   style={{ marginBottom: 16, textAlign: 'center', fontSize: 22, fontWeight: 800, letterSpacing: 6 }} />
                 <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
                   <button onClick={() => setStep(1)} style={{
                     flex: 1, padding: 14, borderRadius: 14, background: '#F8F7FF',
                     border: '1px solid #EDE9FF', color: '#6B7280', fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-                  }}>← Back</button>
+                  }}>← {t('common.back')}</button>
                   <button onClick={handleVerifyOtp} disabled={loading || otp.length !== 6} style={{
                     flex: 2, padding: 14, borderRadius: 14,
                     background: 'linear-gradient(135deg,#951345,#720D35)',
                     border: 'none', color: '#fff', fontWeight: 800,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-                  }}>{loading ? 'Verifying...' : 'Verify →'}</button>
+                  }}>{loading ? t('reset.verifying') : t('reset.verify') + ' →'}</button>
                 </div>
                 <button onClick={handleResendOtp} disabled={resendIn > 0 || loading} style={{
                   display: 'block', margin: '0 auto', background: 'none', border: 'none',
                   fontWeight: 700, fontSize: 13, padding: 0,
                   color: resendIn > 0 ? '#B0AAC8' : '#951345',
                   cursor: resendIn > 0 ? 'default' : 'pointer',
-                }}>{resendIn > 0 ? `Resend in ${resendIn}s` : 'Resend code'}</button>
+                }}>{resendIn > 0 ? t('reset.resendIn', { n: resendIn }) : t('reset.resendCode')}</button>
               </>
             ) : (
               <>
                 <input className="input" type="password" value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
-                  placeholder="New password (min. 6 characters)"
+                  placeholder={t('reset.newPasswordPh')}
                   autoFocus style={{ marginBottom: 10 }} />
                 <input className="input" type="password" value={confirmPw}
                   onChange={e => setConfirmPw(e.target.value)}
-                  placeholder="Confirm new password"
+                  placeholder={t('reset.confirmNewPassword')}
                   style={{ marginBottom: 16 }} />
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={() => setStep(2)} style={{
                     flex: 1, padding: 14, borderRadius: 14, background: '#F8F7FF',
                     border: '1px solid #EDE9FF', color: '#6B7280', fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-                  }}>← Back</button>
+                  }}>← {t('common.back')}</button>
                   <button onClick={handleReset} disabled={loading} style={{
                     flex: 2, padding: 14, borderRadius: 14,
                     background: 'linear-gradient(135deg,#951345,#720D35)',
                     border: 'none', color: '#fff', fontWeight: 800,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-                  }}>{loading ? 'Resetting...' : 'Reset Password'}</button>
+                  }}>{loading ? t('reset.resetting') : t('reset.title')}</button>
                 </div>
               </>
             )}
@@ -207,6 +209,7 @@ function ForgotPasswordModal({ onClose }) {
 }
 
 export default function LoginPage() {
+  const t = useT()
   const [mobile, setMobile]             = useState('')
   const [password, setPassword]         = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -219,11 +222,11 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     const digits = mobile.replace(/[^0-9]/g, '')
-    if (!digits || digits.length !== 10) { setError('Enter a valid 10-digit mobile number'); return }
-    if (!password) { setError('Please enter your password'); return }
+    if (!digits || digits.length !== 10) { setError(t('auth.enterValidMobile')); return }
+    if (!password) { setError(t('auth.enterPassword')); return }
     const email = `91${digits}@familyguard.app`
     const { error: authErr } = await supabase.auth.signInWithPassword({ email, password })
-    if (authErr) { setError('Invalid mobile number or password'); return }
+    if (authErr) { setError(t('auth.invalidCreds')); return }
     navigate('/')
   }
 
@@ -265,17 +268,17 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin}>
           <div className="input-group">
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Mobile number</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.mobileNumber')}</label>
             <input className="input" type="tel" value={mobile}
               onChange={e => setMobile(e.target.value)}
               placeholder="9876543210" autoComplete="tel" />
           </div>
           <div className="input-group">
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Password</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.password')}</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showPassword ? 'text' : 'password'}
                 value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="Your password" style={{ paddingRight: 44 }} />
+                placeholder={t('auth.yourPassword')} style={{ paddingRight: 44 }} />
               <button type="button" onClick={() => setShowPassword(v => !v)} style={{
                 position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
                 background: 'none', border: 'none', cursor: 'pointer',
@@ -287,7 +290,7 @@ export default function LoginPage() {
           </div>
 
           <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop: 8 }}>
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? t('auth.signingIn') : t('auth.signIn')}
           </button>
 
           <button type="button" onClick={() => setShowForgot(true)} style={{
@@ -296,12 +299,12 @@ export default function LoginPage() {
             fontFamily: 'inherit', marginTop: 12, width: '100%',
             display: 'block', textAlign: 'center',
           }}>
-            Forgot Password?
+            {t('auth.forgotPassword')}
           </button>
         </form>
 
         <p className="auth-link">
-          Don't have an account? <Link to="/register">Register</Link>
+          {t('auth.noAccount')} <Link to="/register">{t('auth.register')}</Link>
         </p>
 
         {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}

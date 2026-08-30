@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useT } from '../i18n'
 
 /**
  * MessageActions
@@ -47,7 +48,7 @@ export function ReplyBar({ replyTo, senderName, onCancel }) {
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: '#7C3AED', marginBottom: 2 }}>
-          Replying to {senderName || 'Family'}
+          {t('messages.replyingTo', { name: senderName || t('messages.family') })}
         </div>
         <div style={{ fontSize: 12, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {replyTo.content}
@@ -73,7 +74,7 @@ export function ReplyQuote({ original, senderName }) {
       opacity: 0.85,
     }}>
       <div style={{ fontSize: 10, fontWeight: 800, marginBottom: 2 }}>
-        {senderName || 'Family'}
+        {senderName || t('messages.family')}
       </div>
       <div style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {original.content}
@@ -90,7 +91,7 @@ export function ReplyQuote({ original, senderName }) {
 export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDelete, onHide, onInfo, onClose }) {
   const actions = [
     {
-      label: 'Reply', color: '#951345', fn: onReply, show: true,
+      label: t('messages.reply'), color: '#951345', fn: onReply, show: true,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
@@ -101,7 +102,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDele
       // Any message, sent or received — copying someone else's text is the
       // common case. Clipboard access can be unavailable in a WebView, and the
       // text is on screen regardless, so a failure is not worth an error.
-      label: 'Copy', color: '#951345', show: true,
+      label: t('messages.copy'), color: '#951345', show: true,
       fn: () => { try { navigator.clipboard?.writeText(msg?.content || '') } catch { /* on screen anyway */ } },
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -110,7 +111,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDele
       ),
     },
     {
-      label: 'Edit', color: '#951345', fn: onEdit, show: isOwn,
+      label: t('messages.edit'), color: '#951345', fn: onEdit, show: isOwn,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -119,7 +120,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDele
       ),
     },
     {
-      label: 'Message Info', color: '#951345', fn: onInfo, show: isOwn,
+      label: t('messages.messageInfo'), color: '#951345', fn: onInfo, show: isOwn,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -130,7 +131,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDele
       // Only on someone else's message. Your own already has Delete, which
       // removes it for everyone; offering both on one message would be two
       // similar-sounding actions with very different consequences.
-      label: 'Delete for me', color: '#E11D48', fn: onHide, show: !isOwn, danger: true,
+      label: t('messages.deleteForMe'), color: '#E11D48', fn: onHide, show: !isOwn, danger: true,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -139,7 +140,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDele
       ),
     },
     {
-      label: 'Delete', color: '#E11D48', fn: onDelete, show: isOwn, danger: true,
+      label: t('messages.deleteForEveryone'), color: '#E11D48', fn: onDelete, show: isOwn, danger: true,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -243,9 +244,9 @@ export function EditModal({ msg, onClose, onSave, subtitle }) {
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0D0C1D' }}>Edit Message</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#0D0C1D' }}>{t('messages.editTitle')}</div>
             <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>
-              {subtitle || 'Changes are visible to all family members'}
+              {subtitle || t('messages.editSubtitle')}
             </div>
           </div>
         </div>
@@ -282,7 +283,7 @@ export function EditModal({ msg, onClose, onSave, subtitle }) {
             boxShadow: text.trim() ? '0 4px 14px rgba(5,150,105,0.35)' : 'none',
             transition: 'all 0.2s',
           }}>
-            {saving ? 'Saving...' : '✓ Save Changes'}
+            {saving ? t('common.saving') : '✓ ' + t('messages.saveChanges')}
           </button>
         </div>
       </div>

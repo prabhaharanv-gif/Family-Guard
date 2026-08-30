@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useT } from '../i18n'
 
 /**
  * In-app replacement for alert() and window.confirm().
@@ -13,6 +14,7 @@ import { useEffect, useRef } from 'react'
  *   <Dialog type="error" message="Something went wrong." onClose={() => setDialog(null)} />
  */
 export default function Dialog({ type = 'alert', title, message, confirmLabel, onConfirm, onClose }) {
+  const t = useT()
   const okRef = useRef(null)
 
   useEffect(() => {
@@ -28,8 +30,8 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
   const iconBorder = isError ? '#FCA5A5' : isConfirm ? '#FCD34D' : '#6EE7B7'
   const icon = isError ? '⚠️' : isConfirm ? '❓' : '✓'
 
-  const resolvedTitle = title || (isError ? 'Error' : isConfirm ? 'Are you sure?' : 'Done')
-  const resolvedConfirmLabel = confirmLabel || (isConfirm ? 'Confirm' : 'OK')
+  const resolvedTitle = title || (isError ? t('dialog.error') : isConfirm ? t('dialog.areYouSure') : t('dialog.done'))
+  const resolvedConfirmLabel = confirmLabel || (isConfirm ? t('dialog.confirm') : t('common.ok'))
 
   return (
     <div
@@ -97,7 +99,7 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
               color: '#6B7280', fontWeight: 700, fontSize: 13.5,
               fontFamily: 'inherit', cursor: 'pointer',
             }}>
-              Cancel
+              {t('common.cancel')}
             </button>
           )}
           <button

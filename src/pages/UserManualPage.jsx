@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MANUAL, LANGUAGES, SECTION_META } from '../i18n/manual'
+import { useLangStore } from '../i18n'
 
 /**
  * UserManualPage
@@ -97,12 +98,17 @@ function Section({ meta, content, topicsLabel, open, onToggle }) {
 
 export default function UserManualPage() {
   const navigate = useNavigate()
+  // The guide follows the app language, so switching to Tamil in Settings
+  // opens the guide in Tamil too. Picking a language *here* overrides that for
+  // the guide only — the guide ships in six languages, the interface in two,
+  // so someone can read the guide in Telugu without the UI pretending to be.
+  const appLang = useLangStore(s => s.lang)
   const [lang, setLang] = useState(() => {
     try {
       const saved = localStorage.getItem(LANG_KEY)
       if (saved && MANUAL[saved]) return saved
     } catch (e) {}
-    return 'en'
+    return MANUAL[appLang] ? appLang : 'en'
   })
   // First section open so the page does not read as an empty list of headings.
   const [openIdx, setOpenIdx] = useState(0)

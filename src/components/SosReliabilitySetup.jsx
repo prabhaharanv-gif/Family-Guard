@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { registerPlugin, Capacitor } from '@capacitor/core'
+import { useT } from '../i18n'
 
 const SOSAlarm  = registerPlugin('SOSAlarm')
 const CallAlarm = registerPlugin('CallAlarm')
@@ -19,6 +20,7 @@ const STORAGE_KEY = 'sos_oem_setup_done_v1'
  * nothing on stock Android or once the user has dismissed it.
  */
 export default function SosReliabilitySetup() {
+  const t = useT()
   const [info, setInfo]       = useState(null)
   const [visible, setVisible] = useState(false)
   const [step, setStep]       = useState(0)
@@ -98,25 +100,25 @@ export default function SosReliabilitySetup() {
     {
       title: '🔓 Allow Autostart',
       body: `On ${oemLabel} phones, Famora must be allowed to start on its own so SOS alerts arrive even when the app is closed.`,
-      action: { label: 'Open Autostart Settings', fn: openAutostart },
+      action: { label: t('reliability.openAutostart'), fn: openAutostart },
       hint: 'Find Famora in the list and turn it ON, then come back here.',
     },
     {
       title: '🪟 Allow Pop-up Alerts',
       body: 'Famora needs permission to show the full-screen SOS alert over your lock screen.',
-      action: { label: 'Open App Permissions', fn: openAppDetails },
+      action: { label: t('reliability.openPermissions'), fn: openAppDetails },
       hint: popupHint,
     },
     ...(!overlayOk ? [{
       title: '🔔 Allow Display Over Other Apps',
       body: 'This lets an incoming call take over the screen while you are using the phone, instead of appearing as a small banner.',
-      action: { label: 'Open Setting', fn: openOverlay },
+      action: { label: t('reliability.openSetting'), fn: openOverlay },
       hint: 'Turn ON "Display over other apps" (also called "Appear on top") for Famora, then come back here.',
     }] : []),
     ...(info.canUseFullScreenIntent === false ? [{
       title: '📲 Allow Full-Screen Alerts',
       body: 'Your Android version requires granting full-screen notifications for SOS to appear over the lock screen.',
-      action: { label: 'Open Full-Screen Setting', fn: openFsi },
+      action: { label: t('reliability.openFullScreen'), fn: openFsi },
       hint: 'Turn ON "Allow full screen notifications" for Famora.',
     }] : []),
   ]

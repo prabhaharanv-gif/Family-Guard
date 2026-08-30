@@ -4,20 +4,23 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import AnchoredMenu from '../components/AnchoredMenu'
 import Dialog from '../components/Dialog'
+import { useT } from '../i18n'
 import FamilyIllustration from '../components/FamilyIllustration'
 import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 
 const AVATAR_COLORS = ['#951345','#720D35','#C0185A','#A01040','#B01650','#8A0F3A','#6B0B2C']
 
-function formatLastSeen(ts) {
+// Takes the translator rather than reading the store directly, so these stay
+// pure functions and re-render with the rest of the card on a language switch.
+function formatLastSeen(t, ts) {
   if (!ts) return null
   const diff = Math.floor((Date.now() - new Date(ts)) / 1000)
-  if (diff < 30) return 'Just now'
-  if (diff < 60) return `${diff}s ago`
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
+  if (diff < 30) return t('family.justNow')
+  if (diff < 60) return t('family.secondsAgo', { n: diff })
+  if (diff < 3600) return t('family.minutesAgo', { n: Math.floor(diff / 60) })
+  if (diff < 86400) return t('family.hoursAgo', { n: Math.floor(diff / 3600) })
+  return t('family.daysAgo', { n: Math.floor(diff / 86400) })
 }
 
 // Presence needs BOTH the explicit flag and a fresh heartbeat.
@@ -50,28 +53,29 @@ function distanceKm(lat1, lng1, lat2, lng2) {
   return R * c
 }
 
-function formatDistance(km) {
+function formatDistance(t, km) {
   if (km == null) return null
-  if (km < 0.1) return 'Nearby'
-  if (km < 1) return `${Math.round(km * 1000)} m away`
-  if (km < 10) return `${km.toFixed(1)} km away`
-  return `${Math.round(km)} km away`
+  if (km < 0.1) return t('family.nearby')
+  if (km < 1) return t('family.metersAway', { n: Math.round(km * 1000) })
+  if (km < 10) return t('family.kmAway', { n: km.toFixed(1) })
+  return t('family.kmAway', { n: Math.round(km) })
 }
 
 function SOSAlert({ alert, memberName, onDismiss }) {
+  const t = useT()
   return (
     <div className="sos-blink-overlay" onClick={onDismiss}>
       <div className="sos-alert-banner" onClick={e => e.stopPropagation()}>
         <div className="sos-alert-icon">🆘</div>
-        <div className="sos-alert-title">{memberName || 'A family member'} Is In Trouble!</div>
+        <div className="sos-alert-title">{t('family.inTrouble', { name: memberName || t('family.aFamilyMember') })}</div>
         <div className="sos-alert-sub">
-          {alert.message || 'SOS Alert'}
+          {alert.message || t('family.sosAlert')}
           {alert.lat !== 0 && (
             <><br />
               <a href={`https://www.google.com/maps?q=${alert.lat},${alert.lng}`}
                 target="_blank" rel="noopener noreferrer"
                 style={{ color: '#fff', fontWeight: 700, textDecoration: 'underline' }}>
-                📍 View Location
+                📍 {t('family.viewLocation')}
               </a>
             </>
           )}
@@ -84,6 +88,7 @@ function SOSAlert({ alert, memberName, onDismiss }) {
 
 // ── Long-press action sheet: Edit Name + Remove ──
 function EditNameModal({ member, currentNickname, onClose, onSave }) {
+  const t = useT()
   const [name, setName] = useState(currentNickname || '')
   const [saving, setSaving] = useState(false)
 
@@ -100,16 +105,16 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
       <div className="popup" onClick={e => e.stopPropagation()}>
         <div className="popup-handle" />
         <div style={{ fontSize: 11, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
-          Set Nickname · {member.display_name}
+          {t('family.setNicknameTitle', { name: member.display_name })}
         </div>
         <div style={{ fontSize: 12, color: '#8480B0', marginBottom: 14, lineHeight: 1.4 }}>
-          This nickname is private — only you see it. {member.display_name} and everyone else still see their own name.
+          {t('family.nicknamePrivate', { name: member.display_name })}
         </div>
         <input
           className="input" value={name} autoFocus
           onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSave()}
-          placeholder="Nickname"
+          placeholder={t('family.nickname')}
           style={{ marginBottom: 16 }}
         />
         <div style={{ display: 'flex', gap: 10 }}>
@@ -117,12 +122,12 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
             flex: 1, padding: 14, borderRadius: 14,
             background: '#F5F4FB', border: '1px solid #E9E6FB',
             color: '#3A1020', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-          }}>Cancel</button>
+          }}>{t('common.cancel')}</button>
           <button onClick={handleSave} disabled={saving} style={{
             flex: 1, padding: 14, borderRadius: 14,
             background: '#951345', border: 'none',
             color: '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-          }}>{saving ? 'Saving...' : 'Save'}</button>
+          }}>{saving ? t('common.saving') : t('common.save')}</button>
         </div>
       </div>
     </div>
@@ -130,6 +135,7 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
 }
 
 export default function FamilyPage() {
+  const t = useT()
   const { user, familyId, familyName, inviteCode, updateFamilyName, allFamilies, switchFamily } = useAuthStore()
   const [members, setMembers]           = useState([])
   const [membersLoaded, setMembersLoaded] = useState(false)   // false until first fetch returns
@@ -265,7 +271,10 @@ export default function FamilyPage() {
   useEffect(() => {
     if (!sosAlert) { setSosAlertMember(null); return }
     const m = members.find(m => m.user_id === sosAlert.user_id)
-    setSosAlertMember(m?.display_name || 'A family member')
+    // Only the real name is stored; SOSAlert supplies the translated fallback
+    // at render, so switching language while an alert is on screen relabels it
+    // rather than leaving the previous language frozen in state.
+    setSosAlertMember(m?.display_name || null)
   }, [sosAlert, members])
 
   // SECURE: RPC validates admin role server-side; user_id comes from auth.uid()
@@ -273,7 +282,7 @@ export default function FamilyPage() {
     try {
       const { error } = await supabase.rpc('accept_join_request', { request_id: request.id })
       if (error) throw error
-      setDialog({ type: 'alert', title: 'Member Added', message: `${request.requester_name} has been added to the family!` })
+      setDialog({ type: 'alert', title: t('family.memberAdded'), message: t('family.memberAddedMsg', { name: request.requester_name }) })
     } catch (err) { setDialog({ type: 'error', message: err.message }) }
   }
 
@@ -291,9 +300,9 @@ export default function FamilyPage() {
       setEditingFamilyName(false)
       const msg = err.message || ''
       if (msg.includes('PGRST301') || msg.includes('permission') || msg.includes('not authorized')) {
-        setDialog({ type: 'error', title: 'Admin Only', message: 'Only the family creator can rename the family.' })
+        setDialog({ type: 'error', title: t('family.adminOnly'), message: t('family.renameAdminOnly') })
       } else {
-        setDialog({ type: 'error', message: 'Could not rename family. Please try again.' })
+        setDialog({ type: 'error', message: t('family.renameFailed') })
       }
     }
   }
@@ -336,7 +345,7 @@ export default function FamilyPage() {
       p_target_user_id: member.user_id,
     })
     if (pingErr) { setDialog({ type: 'error', message: pingErr.message }); return }
-    setDialog({ type: 'alert', title: 'Ping Sent', message: `${member.display_name}'s phone will ring for 30 seconds, even if it's on silent.` })
+    setDialog({ type: 'alert', title: t('family.pingSent'), message: t('family.pingSentMsg', { name: member.display_name }) })
   }
 
   const handleSaveMemberName = async (member, newName) => {
@@ -348,7 +357,7 @@ export default function FamilyPage() {
       p_target_user_id: member.user_id,
       p_nickname:       trimmed,
     })
-    if (error) { setDialog({ type: 'error', message: 'Failed to save name. Please try again.' }); return }
+    if (error) { setDialog({ type: 'error', message: t('family.saveNameFailed') }); return }
 
     setNicknames(prev => {
       const next = { ...prev }
@@ -361,9 +370,9 @@ export default function FamilyPage() {
   const handleRemoveMember = (member) => {
     setDialog({
       type: 'confirm',
-      title: 'Remove Member',
-      message: `Remove "${member.display_name}" from the family? They will need a new invite to rejoin.`,
-      confirmLabel: 'Remove',
+      title: t('family.removeMember'),
+      message: t('family.removeMemberMsg', { name: member.display_name }),
+      confirmLabel: t('common.remove'),
       onConfirm: async () => {
         // SECURE: remove_family_member RPC validates admin role server-side
         const { error } = await supabase.rpc('remove_family_member', {
@@ -411,7 +420,7 @@ export default function FamilyPage() {
               fontSize: 10.5, fontWeight: 700, color: '#951345',
               letterSpacing: 0.2, marginBottom: 8,
             }}>
-              Invite to {familyName}
+              {t('family.inviteTo', { family: familyName })}
             </div>
 
             {/* Plain maroon outline, no fill — the code is the only thing in
@@ -433,12 +442,12 @@ export default function FamilyPage() {
             </div>
 
             <div style={{ fontSize: 11, color: '#9C6B7A', marginBottom: 12, lineHeight: 1.4 }}>
-              They enter this on the Join Family screen — you approve first.
+              {t('family.joinScreenNote')}
             </div>
 
             {/* WhatsApp */}
             <button onClick={() => {
-              const msg = encodeURIComponent(`Join our family on Famora! Enter the code *${inviteCode}* on the Join Family screen and I'll approve you. 🛡️`)
+              const msg = encodeURIComponent(t('family.whatsappMsg', { code: inviteCode }))
               window.open(`https://wa.me/?text=${msg}`, '_blank')
             }} style={{
               width: '100%', padding: '11px 14px', borderRadius: 13,
@@ -451,7 +460,7 @@ export default function FamilyPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
                 <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.553 4.118 1.522 5.852L.057 23.25a.75.75 0 0 0 .916.916l5.404-1.464A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.502-5.17-1.381l-.37-.218-3.835 1.04 1.04-3.834-.218-.371A9.953 9.953 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
               </svg>
-              Share via WhatsApp
+              {t('family.shareWhatsapp')}
             </button>
 
             {/* Copy */}
@@ -473,7 +482,7 @@ export default function FamilyPage() {
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : '#951345'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
               </svg>
-              {codeCopied ? 'Copied!' : 'Copy Code'}
+              {codeCopied ? t('family.copied') : t('family.copyCode')}
             </button>
 
           </div>
@@ -486,7 +495,7 @@ export default function FamilyPage() {
           <div className="popup" onClick={e => e.stopPropagation()}>
             <div className="popup-handle" />
             <div style={{ fontSize: 11, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
-              Switch Family
+              {t('family.switchFamily')}
             </div>
             {/* Same flat list as Find Family Member on the map: rows divided by
                 hairlines rather than floating cards, so the sheet stays compact
@@ -531,7 +540,7 @@ export default function FamilyPage() {
                         {fam.name}
                       </div>
                       <div style={{ fontSize: 11, color: '#9C6B7A' }}>
-                        {fam.role === 'admin' ? '👑 Admin' : '👤 Member'} · {fam.invite_code}
+                        {fam.role === 'admin' ? '👑 ' + t('family.admin') : '👤 ' + t('family.member')} · {fam.invite_code}
                       </div>
                     </div>
                     {isActive ? (
@@ -561,7 +570,7 @@ export default function FamilyPage() {
           onClose={() => setActionMember(null)}
           items={[
             {
-              label: 'Set Nickname', sub: 'A private name only you see',
+              label: t('family.setNickname'), sub: t('family.setNicknameSub'),
               icon: (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -571,7 +580,7 @@ export default function FamilyPage() {
               onClick: () => setEditNameMember(actionMember),
             },
             {
-              label: 'Find My Phone', sub: 'Ring their phone, even on silent',
+              label: t('family.findMyPhone'), sub: t('family.findMyPhoneSub'),
               icon: (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.25a6 6 0 0 1 0-8.49"/>
@@ -582,7 +591,7 @@ export default function FamilyPage() {
             },
             isOwner && {
               // Irreversible, so it sits last and is coloured as destructive.
-              label: 'Remove from Family', danger: true, color: '#E11D48',
+              label: t('family.removeFromFamily'), danger: true, color: '#E11D48',
               icon: (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -618,7 +627,7 @@ export default function FamilyPage() {
               <button onClick={handleSaveFamilyName} style={{
                 background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
                 borderRadius: 8, padding: '6px 12px', fontWeight: 700, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit',
-              }}>Save</button>
+              }}>{t('common.save')}</button>
               <button onClick={() => setEditingFamilyName(false)} style={{
                 background: 'none', border: 'none', borderRadius: 8,
                 padding: '6px 10px', cursor: 'pointer', fontSize: 16, color: 'rgba(255,255,255,0.7)',
@@ -632,7 +641,7 @@ export default function FamilyPage() {
                   {isOwner && (
                     <button
                       onClick={() => { setNewFamilyName(familyName); setEditingFamilyName(true) }}
-                      title="Rename family"
+                      title={t('family.renameFamily')}
                       style={{
                         background: 'rgba(255,255,255,0.14)',
                         border: '1px solid rgba(255,255,255,0.28)',
@@ -684,7 +693,7 @@ export default function FamilyPage() {
               <polyline points="7 23 3 19 7 15"/>
               <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
             </svg>
-            Switch
+            {t('family.switchShort')}
           </button>
         )}
         </div>
@@ -708,7 +717,7 @@ export default function FamilyPage() {
         {joinRequests.length > 0 && (
           <div style={{ marginBottom: 20 }}>
             <div className="section-title" style={{ color: 'var(--rose)' }}>
-              🔔 Join Requests ({joinRequests.length})
+              🔔 {t('family.joinRequests', { n: joinRequests.length })}
             </div>
             {joinRequests.map(req => (
               <div key={req.id} style={{
@@ -727,7 +736,7 @@ export default function FamilyPage() {
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: '#000' }}>{req.requester_name}</div>
                     <div style={{ fontSize: 12, color: '#9C6B7A', marginTop: 2 }}>
-                      Wants to join · {new Date(req.created_at).toLocaleTimeString()}
+                      {t('family.wantsToJoin')} · {new Date(req.created_at).toLocaleTimeString()}
                     </div>
                   </div>
                 </div>
@@ -735,12 +744,12 @@ export default function FamilyPage() {
                   <button onClick={() => handleAccept(req)} style={{
                     flex: 1, padding: 11, borderRadius: 12, background: '#059669',
                     color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-                  }}>✅ Accept</button>
+                  }}>✅ {t('family.accept')}</button>
                   <button onClick={() => handleReject(req)} style={{
                     flex: 1, padding: 11, borderRadius: 12, background: '#fff',
                     color: '#E11D48', border: '1.5px solid rgba(225,29,72,0.3)',
                     fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-                  }}>❌ Reject</button>
+                  }}>❌ {t('family.reject')}</button>
                 </div>
               </div>
             ))}
@@ -749,9 +758,9 @@ export default function FamilyPage() {
 
         {/* Members list */}
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', letterSpacing: 0.3, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-          Family members ({members.length})
-          <span style={{ fontSize: 10, color: 'var(--muted2)', fontWeight: 500 }}>
-            · Hold to edit or remove
+          {t('family.familyMembers', { n: members.length })}
+          <span style={{ fontSize: 10, color: 'var(--muted2)', fontWeight: 500, lineHeight: 1.5 }}>
+            · {t('family.holdToEdit')}
           </span>
         </div>
 
@@ -777,8 +786,8 @@ export default function FamilyPage() {
                 <path d="M12 19c0-3 2.2-5 5-5s5 2 5 5" fill="#0EA5E9" />
               </svg>
             </div>
-            <div className="empty-text">No members yet</div>
-            <div className="empty-sub">Share your family code to add members</div>
+            <div className="empty-text">{t('family.noMembers')}</div>
+            <div className="empty-sub">{t('family.shareCodeToAdd')}</div>
           </div>
         ) : (
           members.map((m, i) => {
@@ -791,7 +800,7 @@ export default function FamilyPage() {
             // and then never read here, so turning it off changed nothing on
             // screen. Mirrors how show_online is handled directly above.
             const sharesLastSeen = m.show_last_seen !== false
-            const lastSeen = sharesLastSeen ? formatLastSeen(m.last_active) : null
+            const lastSeen = sharesLastSeen ? formatLastSeen(t, m.last_active) : null
             return (
               <div
                 key={m.id}
@@ -834,18 +843,18 @@ export default function FamilyPage() {
                     {online ? (
                       <span style={{ color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
-                        Online
+                        {t('family.online')}
                       </span>
                     ) : !sharesLastSeen ? (
                       // "Hidden" rather than "not authorised": nothing is being
                       // withheld from this viewer specifically — the member
                       // turned it off for everyone. Naming it as a permission
                       // problem would suggest a fix that does not exist.
-                      <span>Last seen hidden</span>
+                      <span>{t('family.lastSeenHidden')}</span>
                     ) : lastSeen ? (
-                      <span>Last seen {lastSeen}</span>
+                      <span>{t('family.lastSeen', { when: lastSeen })}</span>
                     ) : (
-                      <span>No activity yet</span>
+                      <span>{t('family.noActivity')}</span>
                     )}
                   </div>
                   {/* Battery on its own row beneath the status, so the two lines
@@ -935,7 +944,7 @@ export default function FamilyPage() {
                     const sharing = !!loc?.isSharing
                     const gpsOff  = sharing && loc?.locEnabled === false
                     const pinFill = !sharing ? '#D1D5DB' : (gpsOff ? '#E11D48' : '#10B981')
-                    const label   = !sharing ? 'Off' : (gpsOff ? 'No GPS' : 'Live')
+                    const label   = !sharing ? t('family.gpsOff') : (gpsOff ? t('family.gpsNoFix') : t('family.gpsLive'))
                     const labelColor = sharing && !gpsOff ? '#10B981' : '#E11D48'
                     return (
                       <>
@@ -977,7 +986,7 @@ export default function FamilyPage() {
                     let label = null
                     if (m.user_id !== user?.id && myHasCoords && loc?.isSharing
                         && loc.lat && loc.lng && !(loc.lat === 0 && loc.lng === 0)) {
-                      label = formatDistance(distanceKm(myLoc.lat, myLoc.lng, loc.lat, loc.lng))
+                      label = formatDistance(t, distanceKm(myLoc.lat, myLoc.lng, loc.lat, loc.lng))
                     }
                     return (
                       <span style={{
@@ -1018,7 +1027,7 @@ export default function FamilyPage() {
             onClose={() => setSelectedMember(null)}
             items={[
               {
-                label: 'Voice Call', color: '#16A34A',
+                label: t('family.voiceCall'), color: '#16A34A',
                 icon: (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
@@ -1027,7 +1036,7 @@ export default function FamilyPage() {
                 onClick: () => handleStartCall(selectedMember, 'voice'),
               },
               {
-                label: 'Video Call', color: '#951345',
+                label: t('family.videoCall'), color: '#951345',
                 icon: (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
@@ -1038,7 +1047,7 @@ export default function FamilyPage() {
               {
                 // Hands off to the dialer and costs call charges, so it sits
                 // below the two free in-app options.
-                label: hasPhone ? 'Phone Call' : 'No number saved',
+                label: hasPhone ? t('family.phoneCall') : t('family.noNumberSaved'),
                 sub: hasPhone ? selectedMember.phone : undefined,
                 color: '#059669', disabled: !hasPhone,
                 icon: (
@@ -1059,8 +1068,8 @@ export default function FamilyPage() {
       {inviteCode && (
         <button
           onClick={() => setShowInviteSheet(true)}
-          title="Invite a family member"
-          aria-label="Invite a family member"
+          title={t('messages.inviteMember')}
+          aria-label={t('messages.inviteMember')}
           style={{
             position: 'absolute', right: 18, bottom: 18, zIndex: 20,
             width: 56, height: 56, borderRadius: '50%',

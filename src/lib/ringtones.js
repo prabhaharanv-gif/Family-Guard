@@ -18,11 +18,14 @@ import { registerPlugin, Capacitor } from '@capacitor/core'
 
 const Ringtone = registerPlugin('Ringtone')
 
+// `key` is the identity — it names the stored ringtone preference and the
+// profile.sound.* / profile.soundHint.* translations the settings screen
+// renders. The English text lives in the catalogue, not here.
 export const ALERT_TYPES = [
-  { key: 'message', label: 'Message',    hint: 'New family or private message' },
-  { key: 'sos',     label: 'SOS Alert',  hint: 'Emergency alert from a member' },
-  { key: 'voice',   label: 'Voice Call', hint: 'Incoming voice call' },
-  { key: 'video',   label: 'Video Call', hint: 'Incoming video call' },
+  { key: 'message' },
+  { key: 'sos' },
+  { key: 'voice' },
+  { key: 'video' },
 ]
 
 /** Current selection titles, e.g. { message: 'Chime', sos: 'Default' }. */

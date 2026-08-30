@@ -39,7 +39,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     // sounds for one alert. A channel's sound cannot be changed after creation,
     // so the id is bumped to force a silent one on existing installs.
     public  static final String SOS_CHANNEL_ID   = "sos_alerts_v4";
-    private static final String SOS_CHANNEL_NAME = "SOS Emergency Alerts";
     public  static final int    SOS_NOTIFICATION_ID = 911;
 
     // Audible channel for the FCM `notification` block on an incoming call.
@@ -51,7 +50,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     // Mirrors the sos_alerts_v3 (audible push) + sos_popup_v1 (silent service)
     // pairing that makes SOS work from a closed app.
     public  static final String CALL_CHANNEL_ID   = "incoming_calls_ring_v1";
-    private static final String CALL_CHANNEL_NAME = "Incoming Calls";
 
     private static final String MSG_CHANNEL_BASE = "family_messages_v4";
     private static final String KEY_MSG_CHANNEL  = "msg_channel_id";
@@ -71,10 +69,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             : Integer.toHexString(chosen.toString().hashCode());
         return MSG_CHANNEL_BASE + "_" + tag;
     }
-    private static final String MSG_CHANNEL_NAME = "Family Messages";
     // Silent channel — banner shows but no sound (used for mute level 1)
     private static final String MSG_SILENT_CHANNEL_ID   = "family_messages_silent";
-    private static final String MSG_SILENT_CHANNEL_NAME = "Family Messages (Silent)";
 
     // Shared preference key written by MainActivity when Messages page is open
     public static final String PREF_NAME          = "fg_prefs";
@@ -120,8 +116,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         Context appCtx = getApplicationContext();
 
         if ("sos".equals(type)) {
-            String sender  = data.containsKey("sender")  ? data.get("sender")  : "A family member";
-            String message = data.containsKey("message") ? data.get("message") : "SOS Alert";
+            String sender  = data.containsKey("sender")  ? data.get("sender")  : getString(R.string.a_family_member);
+            String message = data.containsKey("message") ? data.get("message") : getString(R.string.sos_alert);
             String lat     = data.containsKey("lat") ? data.get("lat") : "";
             String lng     = data.containsKey("lng") ? data.get("lng") : "";
 
@@ -155,7 +151,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         } else if ("call".equals(type)) {
             String callId     = data.containsKey("call_id")     ? data.get("call_id")     : "";
-            String callerName = data.containsKey("caller_name") ? data.get("caller_name") : "A family member";
+            String callerName = data.containsKey("caller_name") ? data.get("caller_name") : getString(R.string.a_family_member);
             String callType   = data.containsKey("call_type")   ? data.get("call_type")   : "voice";
 
             Log.d("FamoraCall", "onMessageReceived: starting CallRingingService for call " + callId);
@@ -195,7 +191,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             }
 
         } else if ("ping".equals(type)) {
-            String sender = data.containsKey("sender") ? data.get("sender") : "A family member";
+            String sender = data.containsKey("sender") ? data.get("sender") : getString(R.string.a_family_member);
 
             Log.d("FamoraCall", "onMessageReceived: starting PingRingService");
             PingRingService.ensurePingChannelStatic(appCtx);
@@ -256,7 +252,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
             NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, SOS_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_notify)
-                .setContentTitle("🚨 SOS — " + sender + " needs help!")
+                .setContentTitle(ctx.getString(R.string.notif_sos_title, sender))
                 .setContentText(message)
                 .setStyle(new NotificationCompat.BigTextStyle()
                     .bigText("🆘 " + message))
@@ -302,12 +298,16 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         NotificationManager nm =
             (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
-        if (nm.getNotificationChannel(SOS_CHANNEL_ID) != null) return;
+        if (nm.getNotificationChannel(SOS_CHANNEL_ID) != null) {
+            NotificationChannels.refreshText(ctx, nm, SOS_CHANNEL_ID,
+                R.string.ch_sos_name, R.string.ch_sos_desc);
+            return;
+        }
 
         NotificationChannel channel = new NotificationChannel(
-            SOS_CHANNEL_ID, SOS_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH
+            SOS_CHANNEL_ID, ctx.getString(R.string.ch_sos_name), NotificationManager.IMPORTANCE_HIGH
         );
-        channel.setDescription("Emergency SOS alerts from family members");
+        channel.setDescription(ctx.getString(R.string.ch_sos_desc));
 
         // Silent by design. SOSSirenService plays the actual alarm — a
         // synthesized siren on STREAM_ALARM at max volume. A channel sound here
@@ -338,12 +338,16 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         NotificationManager nm =
             (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
-        if (nm.getNotificationChannel(CALL_CHANNEL_ID) != null) return;
+        if (nm.getNotificationChannel(CALL_CHANNEL_ID) != null) {
+            NotificationChannels.refreshText(ctx, nm, CALL_CHANNEL_ID,
+                R.string.ch_calls_name, R.string.ch_calls_desc);
+            return;
+        }
 
         NotificationChannel channel = new NotificationChannel(
-            CALL_CHANNEL_ID, CALL_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH
+            CALL_CHANNEL_ID, ctx.getString(R.string.ch_calls_name), NotificationManager.IMPORTANCE_HIGH
         );
-        channel.setDescription("Incoming voice and video calls from family members");
+        channel.setDescription(ctx.getString(R.string.ch_calls_desc));
 
         android.net.Uri ringUri = android.media.RingtoneManager
             .getActualDefaultRingtoneUri(ctx, android.media.RingtoneManager.TYPE_RINGTONE);
@@ -381,12 +385,16 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         try { nm.deleteNotificationChannel("family_messages_v3"); } catch (Exception ignored) {}
 
         String channelId = msgChannelId(ctx);
-        if (nm.getNotificationChannel(channelId) != null) return;
+        if (nm.getNotificationChannel(channelId) != null) {
+            NotificationChannels.refreshText(ctx, nm, channelId,
+                R.string.ch_messages_name, R.string.ch_messages_desc);
+            return;
+        }
 
         NotificationChannel ch = new NotificationChannel(
-            channelId, MSG_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH
+            channelId, ctx.getString(R.string.ch_messages_name), NotificationManager.IMPORTANCE_HIGH
         );
-        ch.setDescription("New messages from family members");
+        ch.setDescription(ctx.getString(R.string.ch_messages_desc));
 
         // The user's choice if they made one, otherwise the bundled tone.
         //
@@ -464,13 +472,18 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager nm =
             (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm == null || nm.getNotificationChannel(MSG_SILENT_CHANNEL_ID) != null) return;
+        if (nm == null) return;
+        if (nm.getNotificationChannel(MSG_SILENT_CHANNEL_ID) != null) {
+            NotificationChannels.refreshText(ctx, nm, MSG_SILENT_CHANNEL_ID,
+                R.string.ch_messages_silent_name, R.string.ch_messages_silent_desc);
+            return;
+        }
 
         NotificationChannel ch = new NotificationChannel(
-            MSG_SILENT_CHANNEL_ID, MSG_SILENT_CHANNEL_NAME,
+            MSG_SILENT_CHANNEL_ID, ctx.getString(R.string.ch_messages_silent_name),
             NotificationManager.IMPORTANCE_LOW   // LOW = no sound, no vibration
         );
-        ch.setDescription("Family messages — silent mode");
+        ch.setDescription(ctx.getString(R.string.ch_messages_silent_desc));
         ch.setSound(null, null);
         ch.enableVibration(false);
         ch.setShowBadge(true);

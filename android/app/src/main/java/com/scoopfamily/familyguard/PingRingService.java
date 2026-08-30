@@ -45,7 +45,6 @@ public class PingRingService extends Service {
     // AudioTrack below is the only audio source — a channel sound here would
     // play over the chirp and be cut short when the service stops.
     public  static final String PING_CHANNEL_ID   = "find_my_device_v1";
-    private static final String PING_CHANNEL_NAME = "Find My Phone";
 
     private static final long RING_DURATION_MS = 30_000L;
 
@@ -75,7 +74,7 @@ public class PingRingService extends Service {
         acquireWakeLock();
 
         String senderName = (intent != null) ? intent.getStringExtra("sender") : null;
-        if (senderName == null || senderName.isEmpty()) senderName = "A family member";
+        if (senderName == null || senderName.isEmpty()) senderName = getString(R.string.a_family_member);
 
         isRunning = true;
 
@@ -192,10 +191,10 @@ public class PingRingService extends Service {
             // notification is recognisably from this feature.
             .setSmallIcon(R.drawable.ic_stat_find_phone)
             .setColor(android.graphics.Color.parseColor("#951345"))
-            .setContentTitle("📡 Found it!")
-            .setContentText(senderName + " is looking for this phone")
+            .setContentTitle(getString(R.string.notif_ping_title))
+            .setContentText(getString(R.string.notif_ping_body, senderName))
             .setStyle(new NotificationCompat.BigTextStyle()
-                .bigText(senderName + " is looking for this phone.\n\nTap Stop to silence it."))
+                .bigText(getString(R.string.notif_ping_big, senderName)))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -217,10 +216,10 @@ public class PingRingService extends Service {
         // after the rename. The user's own importance choice is preserved.
 
         NotificationChannel ch = new NotificationChannel(
-            PING_CHANNEL_ID, PING_CHANNEL_NAME,
+            PING_CHANNEL_ID, ctx.getString(R.string.ch_ping_name),
             NotificationManager.IMPORTANCE_HIGH
         );
-        ch.setDescription("Rings this phone when a family member uses Find My Phone");
+        ch.setDescription(ctx.getString(R.string.ch_ping_desc));
         ch.setSound(null, null);
         ch.enableVibration(false);
         ch.setBypassDnd(true);

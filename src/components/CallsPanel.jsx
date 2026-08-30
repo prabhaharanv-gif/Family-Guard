@@ -17,28 +17,30 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import PullToRefresh from '../components/PullToRefresh'
 import { useAuthStore } from '../store/authStore'
+import { useT } from '../i18n'
 
 const FINISHED = ['ended', 'declined', 'missed']
 
-function formatWhen(ts) {
+function formatWhen(t, ts) {
   if (!ts) return ''
   const d = new Date(ts)
   const now = new Date()
   const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
   if (d.toDateString() === now.toDateString()) return time
   const yest = new Date(now); yest.setDate(now.getDate() - 1)
-  if (d.toDateString() === yest.toDateString()) return `Yesterday · ${time}`
+  if (d.toDateString() === yest.toDateString()) return t('calls.yesterdayAt', { time })
   return `${d.toLocaleDateString([], { day: 'numeric', month: 'short' })} · ${time}`
 }
 
-function formatDuration(sec) {
+function formatDuration(t, sec) {
   if (sec == null) return ''
   const m = Math.floor(sec / 60)
   const s = sec % 60
-  return m > 0 ? `${m}m ${s}s` : `${s}s`
+  return m > 0 ? t('calls.minsSecs', { m, s }) : t('calls.secs', { s })
 }
 
 export default function CallsPanel({ onDialog, onControls, onCall }) {
+  const t = useT()
   const { user, familyId } = useAuthStore()
   const [calls, setCalls]       = useState([])
   const [names, setNames]       = useState({})
@@ -89,9 +91,9 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
   const handleClearAll = useCallback(() => {
     onDialog?.({
       type: 'confirm',
-      title: 'Clear Call History',
+      title: t('calls.clearHistoryTitle'),
       message: 'This will delete the call history for everyone in this family and cannot be undone.',
-      confirmLabel: 'Clear History',
+      confirmLabel: t('calls.clearHistory'),
       onConfirm: async () => {
         setBusy(true)
         const { error } = await supabase.rpc('clear_call_history', { p_family_id: familyId })
@@ -107,7 +109,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
     onDialog?.({
       type: 'confirm',
       title: `Delete ${ids.length} call${ids.length > 1 ? 's' : ''}?`,
-      message: 'The selected calls will be removed for everyone in this family.',
+      message: t('calls.clearHistoryMsg'),
       confirmLabel: 'Delete',
       onConfirm: async () => {
         setBusy(true)
@@ -174,8 +176,8 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
         ) : calls.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9C6B7A' }}>
             <div style={{ fontSize: 42, marginBottom: 10 }}>📞</div>
-            <div style={{ fontWeight: 800, color: '#3A1020', marginBottom: 4 }}>No calls yet</div>
-            <div style={{ fontSize: 13 }}>Voice and video calls will appear here</div>
+            <div style={{ fontWeight: 800, color: '#3A1020', marginBottom: 4 }}>{t('calls.noCalls')}</div>
+            <div style={{ fontSize: 13 }}>{t('calls.willAppear')}</div>
           </div>
         ) : calls.map(c => {
           const outgoing = c.caller_id === user?.id
@@ -243,16 +245,16 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>
                   {isVideo ? '📹' : '📞'}{' '}
-                  {outgoing ? '↗ Outgoing' : '↙ Incoming'}
-                  {c.status === 'missed'   && <span style={{ color: '#DC2626' }}> · Missed</span>}
-                  {c.status === 'declined' && <span style={{ color: '#DC2626' }}> · Declined</span>}
+                  {outgoing ? '↗ ' + t('calls.outgoing') : '↙ ' + t('calls.incoming')}
+                  {c.status === 'missed'   && <span style={{ color: '#DC2626' }}> · {t('calls.missed')}</span>}
+                  {c.status === 'declined' && <span style={{ color: '#DC2626' }}> · {t('calls.declined')}</span>}
                   {c.status === 'ended' && c.duration_seconds != null &&
-                    <span> · {formatDuration(c.duration_seconds)}</span>}
+                    <span> · {formatDuration(t, c.duration_seconds)}</span>}
                 </div>
               </div>
 
               <div style={{ fontSize: 11, color: '#9C6B7A', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                {formatWhen(c.started_at)}
+                {formatWhen(t, c.started_at)}
               </div>
 
               {/* Redial. Hidden while selecting, where every tap belongs to the

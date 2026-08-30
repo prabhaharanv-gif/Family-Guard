@@ -1,22 +1,25 @@
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 import Dialog from '../components/Dialog'
+import { useT, useLangStore, UI_LANGUAGES } from '../i18n'
 
 export default function SettingsPage() {
   const { user, familyName, inviteCode, signOut } = useAuthStore()
   const [dialog, setDialog] = useState(null)
+  const t = useT()
+  const setLang = useLangStore(s => s.setLang)
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(inviteCode)
-    setDialog({ type: 'alert', title: 'Code Copied', message: 'Share this code with your family members so they can join.' })
+    setDialog({ type: 'alert', title: t('settings.codeCopied'), message: t('settings.codeCopiedMsg') })
   }
 
   const handleSignOut = () => {
     setDialog({
       type: 'confirm',
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out of Famora?',
-      confirmLabel: 'Sign Out',
+      title: t('settings.signOut'),
+      message: t('settings.signOutConfirm'),
+      confirmLabel: t('settings.signOut'),
       onConfirm: signOut,
     })
   }
@@ -25,8 +28,8 @@ export default function SettingsPage() {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div className="top-bar">
         <div>
-          <div className="top-bar-title">⚙️ Settings</div>
-          <div className="top-bar-sub">Account & Preferences</div>
+          <div className="top-bar-title">⚙️ {t('settings.title')}</div>
+          <div className="top-bar-sub">{t('settings.sub')}</div>
         </div>
       </div>
 
@@ -44,28 +47,64 @@ export default function SettingsPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 24, fontWeight: 800, color: '#fff',
             border: '2px solid rgba(255,255,255,0.3)',
+            flexShrink: 0,
           }}>
             {user?.email?.[0]?.toUpperCase()}
           </div>
-          <div>
-            <div style={{ color: '#fff', fontWeight: 800, fontSize: 16 }}>
-              {user?.user_metadata?.display_name || 'You'}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: '#fff', fontWeight: 800, fontSize: 16, lineHeight: 1.4 }}>
+              {user?.user_metadata?.display_name || t('common.you')}
             </div>
             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, marginTop: 2 }}>
               {user?.email}
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 2 }}>
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 2, lineHeight: 1.5 }}>
               {familyName}
             </div>
+          </div>
+        </div>
+
+        {/* Language — first card, because someone who cannot read the rest of
+            this screen needs to reach it without understanding any of it. The
+            options are written in their own script for the same reason. */}
+        <div className="settings-card">
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+            {t('settings.language')}
+          </div>
+          <div style={{ fontSize: 11, color: '#9C6B7A', marginBottom: 10, lineHeight: 1.5 }}>
+            {t('settings.languageSub')}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {UI_LANGUAGES.map(l => {
+              const active = l.code === t.lang
+              return (
+                <button
+                  key={l.code}
+                  onClick={() => setLang(l.code)}
+                  aria-pressed={active}
+                  style={{
+                    padding: '9px 16px', borderRadius: 999,
+                    background: active ? 'linear-gradient(135deg,#951345,#720D35)' : '#F8F7FF',
+                    border: `1.5px solid ${active ? 'transparent' : '#EDE9FF'}`,
+                    color: active ? '#fff' : '#5B4652',
+                    fontWeight: active ? 800 : 600,
+                    fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {l.native}
+                </button>
+              )
+            })}
           </div>
         </div>
 
         {/* Family Code */}
         <div className="settings-card">
           <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
-            Your Family Invite Code
+            {t('settings.inviteCodeLabel')}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: 6, color: '#000000' }}>
               {inviteCode}
             </div>
@@ -74,8 +113,9 @@ export default function SettingsPage() {
                 background: 'var(--blue-light)', border: 'none', borderRadius: 10,
                 padding: '8px 14px', color: '#000000', fontWeight: 700,
                 fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+                flexShrink: 0,
               }}>
-              📋 Copy
+              📋 {t('settings.copy')}
             </button>
           </div>
         </div>
@@ -83,45 +123,45 @@ export default function SettingsPage() {
         {/* App Info */}
         <div className="settings-card">
           <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
-            About
+            {t('settings.about')}
           </div>
           {[
-            { label: 'App', value: 'Famora' },
-            { label: 'Version', value: import.meta.env.VITE_APP_VERSION || '1.1.0' },
-            { label: 'Platform', value: 'Web (PWA Ready)' },
+            { label: t('settings.app'), value: 'Famora' },
+            { label: t('settings.version'), value: import.meta.env.VITE_APP_VERSION || '1.1.0' },
+            { label: t('settings.platform'), value: t('settings.platformValue') },
           ].map(item => (
             <div key={item.label} style={{
-              display: 'flex', justifyContent: 'space-between',
+              display: 'flex', justifyContent: 'space-between', gap: 12,
               padding: '8px 0', borderBottom: '1px solid var(--border)',
             }}>
-              <span style={{ fontSize: 14, color: 'var(--text2)' }}>{item.label}</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{item.value}</span>
+              <span style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.5 }}>{item.label}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', textAlign: 'right', lineHeight: 1.5 }}>{item.value}</span>
             </div>
           ))}
         </div>
 
         {/* User Guide */}
         <div className="settings-card" style={{ cursor: 'pointer' }} onClick={() => window.location.href = '/manual'}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 20 }}>📖</span>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>User Guide</div>
-                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>How every feature works</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>📖</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#000', lineHeight: 1.45 }}>{t('settings.userGuide')}</div>
+                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1, lineHeight: 1.5 }}>{t('settings.userGuideSub')}</div>
               </div>
             </div>
-            <span style={{ color: '#9C6B7A', fontSize: 16 }}>›</span>
+            <span style={{ color: '#9C6B7A', fontSize: 16, flexShrink: 0 }}>›</span>
           </div>
         </div>
 
         {/* Privacy Policy */}
         <div className="settings-card" style={{ cursor: 'pointer' }} onClick={() => window.location.href = '/privacy'}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 20 }}>🔒</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>Privacy Policy</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>🔒</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#000', lineHeight: 1.45 }}>{t('settings.privacyPolicy')}</span>
             </div>
-            <span style={{ color: '#9C6B7A', fontSize: 16 }}>›</span>
+            <span style={{ color: '#9C6B7A', fontSize: 16, flexShrink: 0 }}>›</span>
           </div>
         </div>
 
@@ -133,13 +173,14 @@ export default function SettingsPage() {
             color: 'var(--red)', fontWeight: 700, fontSize: 15,
             fontFamily: 'inherit', cursor: 'pointer', marginTop: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            lineHeight: 1.5,
           }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
             <line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
-          Sign Out
+          {t('settings.signOut')}
         </button>
       </div>
 

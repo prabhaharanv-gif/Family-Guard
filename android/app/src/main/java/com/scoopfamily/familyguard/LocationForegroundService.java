@@ -758,8 +758,8 @@ public class LocationForegroundService extends Service {
             .setSmallIcon(R.drawable.ic_stat_notify)
             .setColor(android.graphics.Color.parseColor("#951345"))
             .setContentTitle("🛡️ Famora")
-            .setContentText("Protecting your family · location active")
-            .setSubText("Tap to open")
+            .setContentText(getString(R.string.notif_location_body))
+            .setSubText(getString(R.string.notif_tap_to_open))
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setOngoing(true)
@@ -772,10 +772,15 @@ public class LocationForegroundService extends Service {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager nm =
             (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm == null || nm.getNotificationChannel(CHANNEL_ID) != null) return;
+        if (nm == null) return;
+        if (nm.getNotificationChannel(CHANNEL_ID) != null) {
+            NotificationChannels.refreshText(ctx, nm, CHANNEL_ID,
+                R.string.ch_location_name, R.string.ch_location_desc);
+            return;
+        }
         NotificationChannel ch = new NotificationChannel(
-            CHANNEL_ID, "Location Tracking", NotificationManager.IMPORTANCE_LOW);
-        ch.setDescription("Shows while Famora is tracking your location");
+            CHANNEL_ID, ctx.getString(R.string.ch_location_name), NotificationManager.IMPORTANCE_LOW);
+        ch.setDescription(ctx.getString(R.string.ch_location_desc));
         ch.setShowBadge(false);
         ch.setSound(null, null);
         ch.enableVibration(false);

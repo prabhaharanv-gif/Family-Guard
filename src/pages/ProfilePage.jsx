@@ -8,6 +8,7 @@ import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import Dialog from '../components/Dialog'
 import { ALERT_TYPES, getRingtones, pickRingtone, resetRingtone } from '../lib/ringtones'
+import { useT, useLangStore, UI_LANGUAGES } from '../i18n'
 
 function Toggle({ on, onToggle }) {
   return (
@@ -42,6 +43,7 @@ const EyeIcon = ({ off }) => off
 
 // ── Change password modal ──
 function ChangePasswordModal({ onClose, userEmail }) {
+  const t = useT()
   const [oldPw, setOldPw]       = useState('')
   const [pw, setPw]             = useState('')
   const [confirm, setConfirm]   = useState('')
@@ -56,14 +58,14 @@ function ChangePasswordModal({ onClose, userEmail }) {
 
   const handleSave = async () => {
     setErr('')
-    if (!oldPw) { setErr('Please enter your current password'); return }
-    if (pw.length < 6) { setErr('New password must be at least 6 characters'); return }
-    if (pw !== confirm) { setErr('New passwords do not match'); return }
-    if (pw === oldPw) { setErr('New password must be different from current password'); return }
+    if (!oldPw) { setErr(t('profile.enterCurrentPassword')); return }
+    if (pw.length < 6) { setErr(t('profile.newPasswordMin6')); return }
+    if (pw !== confirm) { setErr(t('profile.newPasswordsNoMatch')); return }
+    if (pw === oldPw) { setErr(t('profile.newPasswordSame')); return }
     setBusy(true)
     // Verify old password by re-signing in
     const { error: signInErr } = await supabase.auth.signInWithPassword({ email: userEmail, password: oldPw })
-    if (signInErr) { setBusy(false); setErr('Current password is incorrect'); return }
+    if (signInErr) { setBusy(false); setErr(t('profile.currentPasswordWrong')); return }
     // Update to new password
     const { error } = await supabase.auth.updateUser({ password: pw })
     setBusy(false)
@@ -77,12 +79,12 @@ function ChangePasswordModal({ onClose, userEmail }) {
       <div className="popup" onClick={e => e.stopPropagation()}>
         <div className="popup-handle" />
         <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 14 }}>
-          Change Password
+          {t('profile.changePassword')}
         </div>
 
         {ok ? (
           <div style={{ padding: '20px 0', textAlign: 'center', color: '#059669', fontWeight: 700 }}>
-            ✓ Password updated
+            ✓ {t('profile.passwordUpdated')}
           </div>
         ) : (
           <>
@@ -93,7 +95,7 @@ function ChangePasswordModal({ onClose, userEmail }) {
               <input
                 className="input" type={show ? 'text' : 'password'} value={oldPw} autoFocus
                 onChange={e => setOldPw(e.target.value)}
-                placeholder="Current password"
+                placeholder={t('profile.currentPassword')}
                 style={{ paddingRight: 44 }}
               />
               <button type="button" onClick={() => setShow(s => !s)}
@@ -110,7 +112,7 @@ function ChangePasswordModal({ onClose, userEmail }) {
               <input
                 className="input" type={showNew ? 'text' : 'password'} value={pw}
                 onChange={e => setPw(e.target.value)}
-                placeholder="New password"
+                placeholder={t('profile.newPassword')}
                 style={{ paddingRight: 44 }}
               />
               <button type="button" onClick={() => setShowNew(s => !s)}
@@ -125,7 +127,7 @@ function ChangePasswordModal({ onClose, userEmail }) {
                 className="input" type={showConf ? 'text' : 'password'} value={confirm}
                 onChange={e => setConfirm(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSave()}
-                placeholder="Confirm new password"
+                placeholder={t('profile.confirmNewPassword')}
                 style={{ paddingRight: 44 }}
               />
               <button type="button" onClick={() => setShowConf(s => !s)}
@@ -139,12 +141,12 @@ function ChangePasswordModal({ onClose, userEmail }) {
                 flex: 1, padding: 14, borderRadius: 14,
                 background: '#F5F4FB', border: '1px solid #E9E6FB',
                 color: '#3A1020', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-              }}>Cancel</button>
+              }}>{t('common.cancel')}</button>
               <button onClick={handleSave} disabled={busy} style={{
                 flex: 1, padding: 14, borderRadius: 14,
                 background: '#951345', border: 'none',
                 color: '#fff', fontWeight: 700, cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit', fontSize: 14,
-              }}>{busy ? 'Verifying...' : 'Update'}</button>
+              }}>{busy ? t('reset.verifying') : t('profile.update')}</button>
             </div>
           </>
         )}
@@ -155,6 +157,7 @@ function ChangePasswordModal({ onClose, userEmail }) {
 
 // ── Delete account confirmation modal ──
 function DeleteAccountModal({ onClose, onConfirm }) {
+  const t = useT()
   const [confirmText, setConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
   const CONFIRM_WORD = 'DELETE'
@@ -182,23 +185,23 @@ function DeleteAccountModal({ onClose, onConfirm }) {
           <span style={{ fontSize: 24, flexShrink: 0 }}>⚠️</span>
           <div>
             <div style={{ fontSize: 14, fontWeight: 800, color: '#DC2626', marginBottom: 4 }}>
-              Delete My Account
+              {t('profile.deleteAccount')}
             </div>
             <div style={{ fontSize: 13, color: '#7F1D1D', lineHeight: 1.5 }}>
-              Permanently delete your account and all your data. This cannot be undone.
+              {t('profile.deleteAccountWarn')}
             </div>
           </div>
         </div>
 
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, color: '#374151', fontWeight: 600, marginBottom: 6 }}>
-            Type <strong>DELETE</strong> to confirm
+            {t('profile.typeToConfirm', { word: CONFIRM_WORD })}
           </div>
           <input
             className="input"
             value={confirmText}
             onChange={e => setConfirmText(e.target.value.toUpperCase())}
-            placeholder="Type DELETE here"
+            placeholder={t('profile.typeDeleteHere')}
             autoFocus
             style={{ textAlign: 'center', fontWeight: 800, letterSpacing: 3, fontSize: 15 }}
           />
@@ -210,7 +213,7 @@ function DeleteAccountModal({ onClose, onConfirm }) {
             background: '#F5F4FB', border: '1px solid #E9E6FB',
             color: '#3A1020', fontWeight: 700, cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 14,
-          }}>Cancel</button>
+          }}>{t('common.cancel')}</button>
           <button
             onClick={handleDelete}
             disabled={confirmText !== CONFIRM_WORD || deleting}
@@ -223,7 +226,7 @@ function DeleteAccountModal({ onClose, onConfirm }) {
               transition: 'background 0.2s',
             }}
           >
-            {deleting ? 'Deleting...' : 'Delete Forever'}
+            {deleting ? t('profile.deleting') : t('profile.deleteForever')}
           </button>
         </div>
       </div>
@@ -232,6 +235,8 @@ function DeleteAccountModal({ onClose, onConfirm }) {
 }
 
 export default function ProfilePage() {
+  const t = useT()
+  const setLang = useLangStore(s => s.setLang)
   const { user, familyId, allFamilies, leaveFamily, signOut } = useAuthStore()
   const navigate = useNavigate()
 
@@ -345,7 +350,7 @@ export default function ProfilePage() {
   const handlePhotoChange = async (e) => {
     const file = e.target.files && e.target.files[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { setError('Photo must be under 5MB'); return }
+    if (file.size > 5 * 1024 * 1024) { setError(t('profile.photoTooBig')); return }
     setUploading(true); setError('')
     try {
       // Derive a safe extension from the MIME type (Android file names are unreliable)
@@ -381,7 +386,7 @@ export default function ProfilePage() {
 
       setAvatarUrl(`${publicUrl}?t=${Date.now()}`)
     } catch (err) {
-      setError('Upload failed: ' + (err?.message || 'unknown error'))
+      setError(t('profile.uploadFailed', { reason: err?.message || t('profile.unknownError') }))
     } finally {
       setUploading(false)
       // reset the input so selecting the SAME file again still fires onChange
@@ -390,7 +395,7 @@ export default function ProfilePage() {
   }
 
   const handleSave = async () => {
-    if (!displayName.trim()) { setError('Name cannot be empty'); return }
+    if (!displayName.trim()) { setError(t('profile.nameEmpty')); return }
     setSaving(true); setError('')
     try {
       const cleanPhone = phone ? `+91${phone.replace(/[^0-9]/g, '')}` : null
@@ -530,7 +535,7 @@ export default function ProfilePage() {
       <div className="top-bar" style={{ alignItems: 'center' }}>
         <div
           onClick={() => { if (!uploading) fileRef.current && fileRef.current.click() }}
-          title="Tap to change photo"
+          title={t('profile.tapToChangePhoto')}
           style={{ position: 'relative', flexShrink: 0, marginRight: 12, cursor: uploading ? 'wait' : 'pointer' }}
         >
           {avatarUrl ? (
@@ -576,11 +581,11 @@ export default function ProfilePage() {
         </div>
 
         <div style={{ flex: 1 }}>
-          <div className="top-bar-title" style={{ fontSize: 16 }}>{displayName || 'My Profile'}</div>
+          <div className="top-bar-title" style={{ fontSize: 16 }}>{displayName || t('profile.myProfile')}</div>
         </div>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button onClick={() => setDialog({ type: 'confirm', title: 'Sign Out', message: 'Are you sure you want to sign out?', confirmLabel: 'Sign Out', onConfirm: signOut })} style={{
+          <button onClick={() => setDialog({ type: 'confirm', title: t('profile.signOut'), message: t('profile.signOutConfirm'), confirmLabel: t('profile.signOut'), onConfirm: signOut })} style={{
             background: 'rgba(255,255,255,0.92)',
             border: '1.5px solid #fff',
             color: '#951345', borderRadius: 10,
@@ -608,23 +613,59 @@ export default function ProfilePage() {
             background: '#D1FAE5', border: '1px solid #10B981',
             color: '#059669', padding: '8px 14px', borderRadius: 12,
             fontSize: 13, fontWeight: 700, marginBottom: 10, textAlign: 'center',
-          }}>✅ Profile saved!</div>
+          }}>✅ {t('profile.profileSaved')}</div>
         )}
+
+        {/* ── LANGUAGE ──
+            First card, and on Profile rather than Settings: /settings is a
+            registered route but nothing in the app navigates to it, so a
+            picker there could never be reached. It sits above everything else
+            because someone who cannot read the rest of this screen still has
+            to be able to find it — which is also why the options are written
+            in their own script. */}
+        <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 10 }}>
+            {t('settings.language')}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {UI_LANGUAGES.map(l => {
+              const active = l.code === t.lang
+              return (
+                <button
+                  key={l.code}
+                  onClick={() => setLang(l.code)}
+                  aria-pressed={active}
+                  style={{
+                    padding: '9px 16px', borderRadius: 999,
+                    background: active ? 'linear-gradient(135deg,#951345,#720D35)' : '#F8F7FF',
+                    border: `1.5px solid ${active ? 'transparent' : '#EDE9FF'}`,
+                    color: active ? '#fff' : '#5B4652',
+                    fontWeight: active ? 800 : 600,
+                    fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {l.native}
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
         {/* ── EDIT INFO ── */}
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 10 }}>
-            Edit Info
+            {t('profile.editInfo')}
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6 }}>Display Name</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.displayName')}</label>
             <input className="input" style={{ padding: '11px 14px', fontSize: 14 }}
-              value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your name" />
+              value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={t('profile.yourName')} />
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6 }}>Mobile Number</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.mobileNumber')}</label>
             <div style={{ display: 'flex', gap: 7 }}>
               {/* Plain "+91" — the 🇮🇳 flag emoji used to sit here, but MIUI
                   and several other Android ROMs ship no regional-indicator
@@ -650,7 +691,7 @@ export default function ProfilePage() {
           {myInviteCode && (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 8 }}>
-                My Code
+                {t('profile.myCode')}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 3, color: '#0D0C1D', fontFamily: 'Sora, sans-serif' }}>
@@ -678,7 +719,7 @@ export default function ProfilePage() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : '#951345'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                   </svg>
-                  {codeCopied ? 'Copied' : 'Copy'}
+                  {codeCopied ? t('profile.copied') : t('profile.copy')}
                 </button>
               </div>
             </>
@@ -689,7 +730,7 @@ export default function ProfilePage() {
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2 }}>
-              My Families
+              {t('profile.myFamilies')}
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               <button onClick={() => navigate('/join-family')} style={{
@@ -752,7 +793,7 @@ export default function ProfilePage() {
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 800, color: '#000' }}>{fam.name}</div>
                         <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
-                          {fam.role === 'admin' ? '👑 Admin' : '👤 Member'}
+                          {fam.role === 'admin' ? '👑 ' + t('profile.admin') : '👤 ' + t('profile.member')}
                         </div>
                       </div>
                     </div>
@@ -761,7 +802,7 @@ export default function ProfilePage() {
                         background: '#951345', color: '#fff',
                         fontSize: 10, fontWeight: 800, padding: '3px 8px',
                         borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5,
-                      }}>Active</div>
+                      }}>{t('profile.active')}</div>
                     )}
                   </div>
                 )
@@ -786,10 +827,10 @@ export default function ProfilePage() {
             >
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2 }}>
-                  Alert Sounds
+                  {t('profile.alertSounds')}
                 </div>
-                <div style={{ fontSize: 12.5, color: '#9C6B7A', marginTop: 3 }}>
-                  Message, SOS and call tones
+                <div style={{ fontSize: 12.5, color: '#9C6B7A', marginTop: 3, lineHeight: 1.5 }}>
+                  {t('profile.alertSoundsSub')}
                 </div>
               </div>
               <svg
@@ -805,25 +846,25 @@ export default function ProfilePage() {
               </svg>
             </button>
             {soundsOpen && <div style={{ height: 10 }} />}
-            {soundsOpen && ALERT_TYPES.map((t, i) => (
-              <div key={t.key} style={{
+            {soundsOpen && ALERT_TYPES.map((at, i) => (
+              <div key={at.key} style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '10px 0',
                 borderTop: i === 0 ? 'none' : '1px solid #F7EFF3',
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{t.label}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{t('profile.sound.' + at.key)}</div>
                   <div style={{
                     fontSize: 11.5, color: '#9C6B7A', marginTop: 2,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
-                    {ringtones[t.key] || 'Default'}
+                    {ringtones[at.key] || t('profile.default')}
                   </div>
                 </div>
-                {ringtones[t.key] && ringtones[t.key] !== 'Default' && (
+                {ringtones[at.key] && ringtones[at.key] !== t('profile.default') && (
                   <button
                     onClick={() => handleResetTone(t.key)}
-                    title={`Use the default sound for ${t.label}`}
+                    title={`Use the default sound for ${t('profile.sound.' + at.key)}`}
                     style={{
                       background: 'none', border: 'none', cursor: 'pointer',
                       color: '#9C6B7A', fontSize: 11.5, fontWeight: 700,
@@ -852,7 +893,7 @@ export default function ProfilePage() {
         {/* ── PRIVACY ── */}
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 12 }}>
-            Privacy
+            {t('profile.privacy')}
           </div>
           {[
             {
@@ -862,7 +903,7 @@ export default function ProfilePage() {
                   <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/>
                 </svg>
               ),
-              label: 'Show Me Online', value: showOnline, handler: handleToggleOnline,
+              label: t('profile.showMeOnline'), value: showOnline, handler: handleToggleOnline,
             },
             {
               icon: (
@@ -871,7 +912,7 @@ export default function ProfilePage() {
                   <circle cx="12" cy="10" r="3"/>
                 </svg>
               ),
-              label: 'Show My Location', value: showLocation, handler: handleToggleLocation,
+              label: t('profile.showMyLocation'), value: showLocation, handler: handleToggleLocation,
             },
             {
               icon: (
@@ -880,7 +921,7 @@ export default function ProfilePage() {
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
               ),
-              label: 'Show Last Seen', value: showLastSeen, handler: handleToggleLastSeen,
+              label: t('profile.showLastSeen'), value: showLastSeen, handler: handleToggleLastSeen,
             },
           ].map((item, i, arr) => (
             <div key={item.label}>
@@ -905,9 +946,9 @@ export default function ProfilePage() {
         </div>
 
         {/* ── SAVE + CHANGE PASSWORD side by side ── */}
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1, whiteSpace: 'nowrap' }}>
-            {saving ? 'Saving...' : 'Save Changes'}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'stretch' }}>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
+            {saving ? t('common.saving') : t('profile.saveChanges')}
           </button>
           <button onClick={() => setShowPwModal(true)} style={{
             flex: 1, padding: 14, borderRadius: 14,
@@ -915,13 +956,13 @@ export default function ProfilePage() {
             color: '#951345', fontWeight: 800, fontSize: 13,
             fontFamily: 'inherit', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            whiteSpace: 'nowrap',
+            lineHeight: 1.5, textAlign: 'center',
           }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
-            Change Password
+            {t('profile.changePassword')}
           </button>
         </div>
 
@@ -944,8 +985,8 @@ export default function ProfilePage() {
                 </svg>
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#0D0C1D' }}>User Guide</div>
-                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>How every feature works</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0D0C1D' }}>{t('profile.userGuide')}</div>
+                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>{t('profile.userGuideSub')}</div>
               </div>
             </div>
             <span style={{ color: '#9C6B7A', fontSize: 16 }}>›</span>
@@ -971,8 +1012,8 @@ export default function ProfilePage() {
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>Privacy Policy</div>
-                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>How we protect your data</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>{t('profile.privacyPolicy')}</div>
+                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>{t('profile.privacyPolicySub')}</div>
               </div>
             </div>
             <span style={{ color: '#9C6B7A', fontSize: 18, fontWeight: 300 }}>›</span>
@@ -991,7 +1032,7 @@ export default function ProfilePage() {
             <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
             <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
           </svg>
-          Delete My Account
+          {t('profile.deleteAccount')}
         </button>
 
       </div>
@@ -1010,7 +1051,7 @@ export default function ProfilePage() {
               await signOut()
               window.location.href = '/login'
             } catch (err) {
-              setDialog({ type: 'error', message: 'Failed to delete account. Please try again or contact support.' })
+              setDialog({ type: 'error', message: t('profile.deleteFailed') })
             }
           }}
         />
@@ -1040,7 +1081,7 @@ export default function ProfilePage() {
               <div>
                 <div style={{ fontSize: 18, fontWeight: 900, color: '#000' }}>{selectedFam.name}</div>
                 <div style={{ fontSize: 12, color: '#9C6B7A', marginTop: 2 }}>
-                  {selectedFam.role === 'admin' ? '👑 Admin' : '👤 Member'}
+                  {selectedFam.role === 'admin' ? '👑 ' + t('profile.admin') : '👤 ' + t('profile.member')}
                   {selectedFam.family_id === familyId && <span style={{ marginLeft: 8, background: '#951345', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5 }}>ACTIVE</span>}
                 </div>
               </div>
@@ -1065,9 +1106,9 @@ export default function ProfilePage() {
             <button onClick={() => {
               setDialog({
                 type: 'confirm',
-                title: 'Leave Family',
-                message: `Leave "${selectedFam.name}"? You will need a new invite to rejoin.`,
-                confirmLabel: 'Leave',
+                title: t('profile.leaveFamily'),
+                message: t('profile.leaveFamilyMsg', { name: selectedFam.name }),
+                confirmLabel: t('profile.leave'),
                 onConfirm: async () => {
                   setSelectedFam(null)
                   try { await leaveFamily(user.id, selectedFam.family_id) }
@@ -1112,9 +1153,9 @@ export default function ProfilePage() {
 
             <div style={{ overflowY: 'auto', flex: 1 }}>
               {viewFam.loading ? (
-                <div style={{ textAlign: 'center', padding: '24px 0', color: '#9C6B7A', fontSize: 13 }}>Loading members…</div>
+                <div style={{ textAlign: 'center', padding: '24px 0', color: '#9C6B7A', fontSize: 13 }}>{t('profile.loadingMembers')}</div>
               ) : viewFam.members.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '24px 0', color: '#9C6B7A', fontSize: 13 }}>No members found</div>
+                <div style={{ textAlign: 'center', padding: '24px 0', color: '#9C6B7A', fontSize: 13 }}>{t('profile.noMembersFound')}</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {viewFam.members.map((m) => (
@@ -1139,10 +1180,10 @@ export default function ProfilePage() {
                       )}
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {m.display_name || 'Unknown'}
+                          {m.display_name || t('profile.unknown')}
                         </div>
                         <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
-                          {m.role === 'admin' ? '👑 Admin' : '👤 Member'}
+                          {m.role === 'admin' ? '👑 ' + t('profile.admin') : '👤 ' + t('profile.member')}
                         </div>
                       </div>
                     </div>
