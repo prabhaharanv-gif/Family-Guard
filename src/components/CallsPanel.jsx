@@ -233,17 +233,25 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
                   color: missed ? '#DC2626' : '#0D0C1D',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>{name}</div>
-                <div style={{ fontSize: 12, color: '#8480B0', marginTop: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <span>{isVideo ? '📹' : '📞'}</span>
-                  <span>{outgoing ? '↗ Outgoing' : '↙ Incoming'}</span>
-                  {c.status === 'missed'   && <span style={{ color: '#DC2626' }}>· Missed</span>}
-                  {c.status === 'declined' && <span style={{ color: '#DC2626' }}>· Declined</span>}
+                {/* Plain inline text, not a flex row. As flex children each
+                    span could be squeezed and break mid-phrase once the redial
+                    button took its width, so "Declined" wrapped to a second line
+                    and made those rows taller than the rest. nowrap plus an
+                    ellipsis keeps every row exactly one line. */}
+                <div style={{
+                  fontSize: 12, color: '#8480B0', marginTop: 2,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  {isVideo ? '📹' : '📞'}{' '}
+                  {outgoing ? '↗ Outgoing' : '↙ Incoming'}
+                  {c.status === 'missed'   && <span style={{ color: '#DC2626' }}> · Missed</span>}
+                  {c.status === 'declined' && <span style={{ color: '#DC2626' }}> · Declined</span>}
                   {c.status === 'ended' && c.duration_seconds != null &&
-                    <span>· {formatDuration(c.duration_seconds)}</span>}
+                    <span> · {formatDuration(c.duration_seconds)}</span>}
                 </div>
               </div>
 
-              <div style={{ fontSize: 11, color: '#9C6B7A', flexShrink: 0 }}>
+              <div style={{ fontSize: 11, color: '#9C6B7A', flexShrink: 0, whiteSpace: 'nowrap' }}>
                 {formatWhen(c.started_at)}
               </div>
 
