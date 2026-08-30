@@ -738,8 +738,7 @@ export default function FamilyPage() {
                 </div>
                 {inviteCode && (
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 1, letterSpacing: 2, fontWeight: 700 }}>
-                    Family Code: {inviteCode}
-
+                    {inviteCode}
                   </div>
                 )}
               </div>
