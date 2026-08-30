@@ -456,7 +456,11 @@ public class LocationForegroundService extends Service {
             int level  = batteryIntent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
             int scale  = batteryIntent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
             int status = batteryIntent.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
-            if (level >= 0 && scale > 0) battery = (int)((level / (float) scale) * 100);
+            // Math.round, not an (int) cast: the cast truncates, so 48.9% was
+            // stored as 48 here while the JS writer (Math.round) stored 49 for
+            // the same charge. Both paths write this column, so they have to
+            // agree or the number jumps depending on which one wrote last.
+            if (level >= 0 && scale > 0) battery = Math.round((level / (float) scale) * 100f);
             charging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING
                     || status == android.os.BatteryManager.BATTERY_STATUS_FULL;
         }

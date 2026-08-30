@@ -997,11 +997,24 @@ export default function FamilyPage() {
                     const level = Math.max(0, Math.min(100, Math.round(pct)))
                     const charging = !!loc?.isCharging
                     const color = charging ? '#10B981' : level <= 15 ? '#E11D48' : level <= 30 ? '#D97706' : '#6B7280'
+                    // This reading is only as fresh as the last location write.
+                    // A member who stopped sharing keeps their last value
+                    // forever, and since a battery only drains, a stale number
+                    // always reads higher than reality. Fade it rather than
+                    // hide it — "last known 2%" is worth knowing, "currently
+                    // 2%" would be a lie. presenceTick re-renders every 15s so
+                    // this stays current.
+                    const stale = loc?.updatedAt
+                      ? (Date.now() - new Date(loc.updatedAt)) > 15 * 60 * 1000
+                      : true
                     return (
-                      <span style={{
-                        display: 'flex', alignItems: 'center', gap: 3,
-                        fontSize: 9, fontWeight: 700, color, marginTop: 1, whiteSpace: 'nowrap',
-                      }}>
+                      <span
+                        title={stale ? 'Last known battery — this member has not reported recently' : undefined}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 3,
+                          fontSize: 9, fontWeight: 700, color, marginTop: 1, whiteSpace: 'nowrap',
+                          opacity: stale ? 0.45 : 1,
+                        }}>
                         <svg width="14" height="9" viewBox="0 0 26 14" fill="none" aria-hidden="true">
                           <rect x="0.75" y="0.75" width="21.5" height="12.5" rx="2.5"
                             stroke={color} strokeWidth="1.5" />
