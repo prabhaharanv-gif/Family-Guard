@@ -50,13 +50,21 @@ export const useAuthStore = create((set, get) => ({
 
     if (data && data.length > 0) {
       // Build allFamilies list
+      // Admin families first, then the ones joined as a member, each group
+      // alphabetical. Sorted here rather than in the two screens that render
+      // this list, so the family switcher and the Profile list cannot disagree
+      // about the order.
       const allFamilies = data.map(m => ({
         family_id:  m.family_id,
         name:       m.families?.name || 'Unknown',
         invite_code: m.families?.invite_code,
         created_by: m.families?.created_by,
         role:       m.role,
-      }))
+      })).sort((a, b) => {
+        const rank = f => (f.role === 'admin' ? 0 : 1)
+        if (rank(a) !== rank(b)) return rank(a) - rank(b)
+        return (a.name || '').localeCompare(b.name || '')
+      })
 
       // Pick active family: saved preference → joined family → first
       const saved = (typeof localStorage !== 'undefined')
