@@ -42,6 +42,7 @@ import AddMemberPage    from './pages/AddMemberPage'
 import SettingsPage     from './pages/SettingsPage'
 import ProfilePage      from './pages/ProfilePage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import DeleteAccountPage  from './pages/DeleteAccountPage'
 import UserManualPage    from './pages/UserManualPage'
 
 export default function App() {
@@ -132,6 +133,9 @@ export default function App() {
         <Route path="/login"   element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/privacy"  element={<PrivacyPolicyPage />} />
+        {/* Public, and deliberately outside PrivateRoute: Play requires a
+            deletion route reachable by someone who has uninstalled the app. */}
+        <Route path="/delete-account" element={<DeleteAccountPage />} />
         <Route path="/manual"   element={<UserManualPage />} />
 
         <Route path="/onboarding" element={<PrivateRoute><OnboardingPage /></PrivateRoute>} />

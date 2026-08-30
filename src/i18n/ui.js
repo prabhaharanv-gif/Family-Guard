@@ -407,6 +407,24 @@ export const UI = {
       openFullScreen: 'Open Full-Screen Setting',
     },
 
+
+    // Public account-deletion page. Google Play requires a way to request
+    // deletion from the open web, reachable without installing the app, so
+    // this route sits outside ConsentGate and outside PrivateRoute.
+    deletePage: {
+      title: 'Delete Your Account',
+      sub: 'How to permanently delete your Famora account and everything in it',
+      cannotUndo: 'Deletion is permanent and cannot be undone.',
+      optionInApp: 'Delete it yourself, in the app',
+      optionInAppBody: 'Open Famora and go to Profile → Delete My Account. Type DELETE to confirm. Your account and data are removed straight away.',
+      optionEmail: 'Ask us to delete it',
+      optionEmailBody: 'If you no longer have the app installed, email {email} from the address or mobile number you registered with. We will delete the account and confirm within 30 days.',
+      whatGoes: 'What is deleted',
+      whatGoesBody: 'Your sign-in, your name and profile photo, your location and location history, your messages, your SOS alerts, your call records, and your device notification tokens. Any family you created is deleted along with it.',
+      whatStays: 'What remains',
+      whatStaysBody: 'Nothing that identifies you. Messages you sent are removed for everyone in the family. Crash reports already sent to Firebase Crashlytics carry no name, number or location and cannot be traced back to you.',
+      backToApp: 'Back to Famora',
+    },
     profile: {
       myProfile: 'My Profile',
       tapToChangePhoto: 'Tap to change photo',
@@ -875,6 +893,21 @@ export const UI = {
       openFullScreen: 'முழுத்திரை அமைப்பைத் திற',
     },
 
+
+    deletePage: {
+      title: 'உங்கள் கணக்கை நீக்கு',
+      sub: 'உங்கள் Famora கணக்கையும் அதிலுள்ள அனைத்தையும் நிரந்தரமாக நீக்குவது எப்படி',
+      cannotUndo: 'நீக்குதல் நிரந்தரமானது, மீட்டெடுக்க முடியாது.',
+      optionInApp: 'செயலியிலேயே நீங்களே நீக்கவும்',
+      optionInAppBody: 'Famora-வைத் திறந்து சுயவிவரம் → என் கணக்கை நீக்கு என்பதற்குச் செல்லவும். உறுதிப்படுத்த DELETE எனத் தட்டச்சு செய்யவும். உங்கள் கணக்கும் தரவும் உடனடியாக நீக்கப்படும்.',
+      optionEmail: 'எங்களை நீக்கச் சொல்லுங்கள்',
+      optionEmailBody: 'செயலி இனி நிறுவப்படவில்லை என்றால், நீங்கள் பதிவு செய்த முகவரி அல்லது மொபைல் எண்ணிலிருந்து {email} க்கு மின்னஞ்சல் அனுப்பவும். 30 நாட்களுக்குள் கணக்கை நீக்கி உறுதிப்படுத்துவோம்.',
+      whatGoes: 'எவை நீக்கப்படும்',
+      whatGoesBody: 'உங்கள் உள்நுழைவு, உங்கள் பெயர் மற்றும் சுயவிவரப் படம், உங்கள் இருப்பிடம் மற்றும் இருப்பிட வரலாறு, உங்கள் செய்திகள், உங்கள் SOS எச்சரிக்கைகள், உங்கள் அழைப்புப் பதிவுகள், உங்கள் சாதன அறிவிப்புக் குறியீடுகள். நீங்கள் உருவாக்கிய குடும்பமும் அதனுடன் நீக்கப்படும்.',
+      whatStays: 'எவை எஞ்சும்',
+      whatStaysBody: 'உங்களை அடையாளம் காட்டும் எதுவும் இல்லை. நீங்கள் அனுப்பிய செய்திகள் குடும்பத்தில் உள்ள அனைவருக்கும் நீக்கப்படும். Firebase Crashlytics-க்கு ஏற்கனவே அனுப்பப்பட்ட செயலிழப்பு அறிக்கைகளில் பெயர், எண் அல்லது இருப்பிடம் இல்லை, அவற்றை உங்களுடன் தொடர்புபடுத்த முடியாது.',
+      backToApp: 'Famora-வுக்குத் திரும்பு',
+    },
     profile: {
       myProfile: 'என் சுயவிவரம்',
       tapToChangePhoto: 'படத்தை மாற்ற தட்டவும்',
@@ -1346,6 +1379,21 @@ export const UI = {
       openFullScreen: 'फ़ुल-स्क्रीन सेटिंग खोलें',
     },
 
+
+    deletePage: {
+      title: 'अपना खाता हटाएँ',
+      sub: 'अपना Famora खाता और उसमें मौजूद सब कुछ हमेशा के लिए कैसे हटाएँ',
+      cannotUndo: 'खाता हटाना स्थायी है और इसे वापस नहीं लाया जा सकता।',
+      optionInApp: 'ऐप में ख़ुद हटाएँ',
+      optionInAppBody: 'Famora खोलें और प्रोफ़ाइल → मेरा खाता हटाएँ पर जाएँ। पुष्टि के लिए DELETE टाइप करें। आपका खाता और डेटा तुरंत हट जाएगा।',
+      optionEmail: 'हमसे हटाने के लिए कहें',
+      optionEmailBody: 'यदि ऐप अब इंस्टॉल नहीं है, तो जिस पते या मोबाइल नंबर से आपने पंजीकरण किया था, उससे {email} पर ईमेल करें। हम 30 दिनों के भीतर खाता हटाकर पुष्टि करेंगे।',
+      whatGoes: 'क्या हटाया जाता है',
+      whatGoesBody: 'आपका साइन-इन, आपका नाम और प्रोफ़ाइल फ़ोटो, आपकी लोकेशन और लोकेशन इतिहास, आपके संदेश, आपके SOS अलर्ट, आपके कॉल रिकॉर्ड, और आपके डिवाइस नोटिफ़िकेशन टोकन। आपके बनाए गए किसी भी परिवार को भी उसके साथ हटा दिया जाता है।',
+      whatStays: 'क्या बचा रहता है',
+      whatStaysBody: 'ऐसा कुछ नहीं जो आपकी पहचान बताए। आपके भेजे गए संदेश परिवार के सभी लोगों के लिए हट जाते हैं। Firebase Crashlytics को पहले भेजी जा चुकी क्रैश रिपोर्ट में नाम, नंबर या लोकेशन नहीं होती और उन्हें आपसे नहीं जोड़ा जा सकता।',
+      backToApp: 'Famora पर वापस जाएँ',
+    },
     profile: {
       myProfile: 'मेरी प्रोफ़ाइल',
       tapToChangePhoto: 'फ़ोटो बदलने के लिए टैप करें',
@@ -1818,6 +1866,21 @@ export const UI = {
       openFullScreen: 'ఫుల్-స్క్రీన్ సెట్టింగ్ తెరువు',
     },
 
+
+    deletePage: {
+      title: 'మీ ఖాతాను తొలగించండి',
+      sub: 'మీ Famora ఖాతాను, అందులోని అన్నింటినీ శాశ్వతంగా తొలగించడం ఎలా',
+      cannotUndo: 'తొలగింపు శాశ్వతం, దీన్ని తిరిగి పొందలేరు.',
+      optionInApp: 'యాప్‌లోనే మీరే తొలగించండి',
+      optionInAppBody: 'Famora తెరిచి ప్రొఫైల్ → నా ఖాతా తొలగించు కు వెళ్లండి. నిర్ధారించడానికి DELETE టైప్ చేయండి. మీ ఖాతా, డేటా వెంటనే తొలగించబడతాయి.',
+      optionEmail: 'తొలగించమని మమ్మల్ని అడగండి',
+      optionEmailBody: 'యాప్ ఇక ఇన్‌స్టాల్ చేయకపోతే, మీరు నమోదు చేసిన చిరునామా లేదా మొబైల్ నంబర్ నుండి {email} కు ఇమెయిల్ చేయండి. 30 రోజుల్లోపు ఖాతాను తొలగించి నిర్ధారిస్తాము.',
+      whatGoes: 'ఏమి తొలగించబడుతుంది',
+      whatGoesBody: 'మీ సైన్-ఇన్, మీ పేరు, ప్రొఫైల్ ఫోటో, మీ లొకేషన్, లొకేషన్ చరిత్ర, మీ సందేశాలు, మీ SOS హెచ్చరికలు, మీ కాల్ రికార్డులు, మీ పరికర నోటిఫికేషన్ టోకెన్‌లు. మీరు సృష్టించిన కుటుంబం కూడా దానితో పాటు తొలగించబడుతుంది.',
+      whatStays: 'ఏమి మిగులుతుంది',
+      whatStaysBody: 'మిమ్మల్ని గుర్తించే ఏదీ మిగలదు. మీరు పంపిన సందేశాలు కుటుంబంలోని అందరికీ తొలగించబడతాయి. Firebase Crashlytics కు ఇప్పటికే పంపిన క్రాష్ నివేదికల్లో పేరు, నంబర్ లేదా లొకేషన్ ఉండవు, వాటిని మీతో ముడిపెట్టలేరు.',
+      backToApp: 'Famora కు తిరిగి వెళ్లు',
+    },
     profile: {
       myProfile: 'నా ప్రొఫైల్',
       tapToChangePhoto: 'ఫోటో మార్చడానికి ట్యాప్ చేయండి',
@@ -2290,6 +2353,21 @@ export const UI = {
       openFullScreen: 'ಪೂರ್ಣ-ಪರದೆ ಸೆಟ್ಟಿಂಗ್ ತೆರೆಯಿರಿ',
     },
 
+
+    deletePage: {
+      title: 'ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಅಳಿಸಿ',
+      sub: 'ನಿಮ್ಮ Famora ಖಾತೆ ಮತ್ತು ಅದರಲ್ಲಿರುವ ಎಲ್ಲವನ್ನೂ ಶಾಶ್ವತವಾಗಿ ಅಳಿಸುವುದು ಹೇಗೆ',
+      cannotUndo: 'ಅಳಿಸುವಿಕೆ ಶಾಶ್ವತ, ಇದನ್ನು ಹಿಂಪಡೆಯಲಾಗದು.',
+      optionInApp: 'ಅಪ್ಲಿಕೇಶನ್‌ನಲ್ಲಿ ನೀವೇ ಅಳಿಸಿ',
+      optionInAppBody: 'Famora ತೆರೆದು ಪ್ರೊಫೈಲ್ → ನನ್ನ ಖಾತೆ ಅಳಿಸಿ ಗೆ ಹೋಗಿ. ದೃಢೀಕರಿಸಲು DELETE ಟೈಪ್ ಮಾಡಿ. ನಿಮ್ಮ ಖಾತೆ ಮತ್ತು ಡೇಟಾ ತಕ್ಷಣ ತೆಗೆದುಹಾಕಲ್ಪಡುತ್ತವೆ.',
+      optionEmail: 'ಅಳಿಸಲು ನಮ್ಮನ್ನು ಕೇಳಿ',
+      optionEmailBody: 'ಅಪ್ಲಿಕೇಶನ್ ಇನ್ನು ಇನ್‌ಸ್ಟಾಲ್ ಆಗಿಲ್ಲದಿದ್ದರೆ, ನೀವು ನೋಂದಾಯಿಸಿದ ವಿಳಾಸ ಅಥವಾ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯಿಂದ {email} ಗೆ ಇಮೇಲ್ ಮಾಡಿ. 30 ದಿನಗಳೊಳಗೆ ಖಾತೆಯನ್ನು ಅಳಿಸಿ ದೃಢೀಕರಿಸುತ್ತೇವೆ.',
+      whatGoes: 'ಏನು ಅಳಿಸಲ್ಪಡುತ್ತದೆ',
+      whatGoesBody: 'ನಿಮ್ಮ ಸೈನ್-ಇನ್, ನಿಮ್ಮ ಹೆಸರು ಮತ್ತು ಪ್ರೊಫೈಲ್ ಫೋಟೋ, ನಿಮ್ಮ ಸ್ಥಳ ಮತ್ತು ಸ್ಥಳ ಇತಿಹಾಸ, ನಿಮ್ಮ ಸಂದೇಶಗಳು, ನಿಮ್ಮ SOS ಎಚ್ಚರಿಕೆಗಳು, ನಿಮ್ಮ ಕರೆ ದಾಖಲೆಗಳು, ಮತ್ತು ನಿಮ್ಮ ಸಾಧನ ಅಧಿಸೂಚನೆ ಟೋಕನ್‌ಗಳು. ನೀವು ರಚಿಸಿದ ಯಾವುದೇ ಕುಟುಂಬವೂ ಅದರೊಂದಿಗೆ ಅಳಿಸಲ್ಪಡುತ್ತದೆ.',
+      whatStays: 'ಏನು ಉಳಿಯುತ್ತದೆ',
+      whatStaysBody: 'ನಿಮ್ಮನ್ನು ಗುರುತಿಸುವ ಯಾವುದೂ ಉಳಿಯುವುದಿಲ್ಲ. ನೀವು ಕಳುಹಿಸಿದ ಸಂದೇಶಗಳು ಕುಟುಂಬದ ಎಲ್ಲರಿಗೂ ತೆಗೆದುಹಾಕಲ್ಪಡುತ್ತವೆ. Firebase Crashlytics ಗೆ ಈಗಾಗಲೇ ಕಳುಹಿಸಿದ ಕ್ರ್ಯಾಶ್ ವರದಿಗಳಲ್ಲಿ ಹೆಸರು, ಸಂಖ್ಯೆ ಅಥವಾ ಸ್ಥಳ ಇರುವುದಿಲ್ಲ ಮತ್ತು ಅವನ್ನು ನಿಮಗೆ ಜೋಡಿಸಲಾಗದು.',
+      backToApp: 'Famora ಗೆ ಹಿಂತಿರುಗಿ',
+    },
     profile: {
       myProfile: 'ನನ್ನ ಪ್ರೊಫೈಲ್',
       tapToChangePhoto: 'ಫೋಟೋ ಬದಲಾಯಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ',
@@ -2762,6 +2840,21 @@ export const UI = {
       openFullScreen: 'ഫുൾ-സ്ക്രീൻ ക്രമീകരണം തുറക്കുക',
     },
 
+
+    deletePage: {
+      title: 'നിങ്ങളുടെ അക്കൗണ്ട് ഇല്ലാതാക്കുക',
+      sub: 'നിങ്ങളുടെ Famora അക്കൗണ്ടും അതിലുള്ളതെല്ലാം ശാശ്വതമായി ഇല്ലാതാക്കുന്നത് എങ്ങനെ',
+      cannotUndo: 'ഇല്ലാതാക്കൽ ശാശ്വതമാണ്, ഇത് പഴയപടിയാക്കാൻ കഴിയില്ല.',
+      optionInApp: 'ആപ്പിൽ നിങ്ങൾ തന്നെ ഇല്ലാതാക്കുക',
+      optionInAppBody: 'Famora തുറന്ന് പ്രൊഫൈൽ → എന്റെ അക്കൗണ്ട് ഇല്ലാതാക്കുക എന്നതിലേക്ക് പോകുക. സ്ഥിരീകരിക്കാൻ DELETE ടൈപ്പ് ചെയ്യുക. നിങ്ങളുടെ അക്കൗണ്ടും ഡാറ്റയും ഉടനടി നീക്കം ചെയ്യപ്പെടും.',
+      optionEmail: 'ഇല്ലാതാക്കാൻ ഞങ്ങളോട് ആവശ്യപ്പെടുക',
+      optionEmailBody: 'ആപ്പ് ഇനി ഇൻസ്റ്റാൾ ചെയ്തിട്ടില്ലെങ്കിൽ, നിങ്ങൾ രജിസ്റ്റർ ചെയ്ത വിലാസത്തിൽ നിന്നോ മൊബൈൽ നമ്പറിൽ നിന്നോ {email} ലേക്ക് ഇമെയിൽ അയയ്ക്കുക. 30 ദിവസത്തിനകം അക്കൗണ്ട് ഇല്ലാതാക്കി സ്ഥിരീകരിക്കും.',
+      whatGoes: 'എന്താണ് ഇല്ലാതാകുന്നത്',
+      whatGoesBody: 'നിങ്ങളുടെ സൈൻ-ഇൻ, പേരും പ്രൊഫൈൽ ഫോട്ടോയും, ലൊക്കേഷനും ലൊക്കേഷൻ ചരിത്രവും, സന്ദേശങ്ങൾ, SOS മുന്നറിയിപ്പുകൾ, കോൾ രേഖകൾ, ഉപകരണ അറിയിപ്പ് ടോക്കണുകൾ. നിങ്ങൾ സൃഷ്ടിച്ച ഏതു കുടുംബവും അതോടൊപ്പം ഇല്ലാതാകും.',
+      whatStays: 'എന്ത് അവശേഷിക്കുന്നു',
+      whatStaysBody: 'നിങ്ങളെ തിരിച്ചറിയുന്ന ഒന്നും അവശേഷിക്കുന്നില്ല. നിങ്ങൾ അയച്ച സന്ദേശങ്ങൾ കുടുംബത്തിലെ എല്ലാവർക്കും നീക്കം ചെയ്യപ്പെടും. Firebase Crashlytics ലേക്ക് നേരത്തെ അയച്ച ക്രാഷ് റിപ്പോർട്ടുകളിൽ പേരോ നമ്പറോ ലൊക്കേഷനോ ഇല്ല, അവ നിങ്ങളുമായി ബന്ധിപ്പിക്കാനും കഴിയില്ല.',
+      backToApp: 'Famora ലേക്ക് മടങ്ങുക',
+    },
     profile: {
       myProfile: 'എന്റെ പ്രൊഫൈൽ',
       tapToChangePhoto: 'ഫോട്ടോ മാറ്റാൻ ടാപ്പ് ചെയ്യുക',
