@@ -908,9 +908,7 @@ export default function FamilyPage() {
                 </div>
                 <div className="member-info">
                   <div className="member-name" style={{ color: '#0D0C1D' }}>{nameFor(m)}</div>
-                  <div className="member-meta" style={{
-                    color: '#8480B0', display: 'flex', alignItems: 'center', gap: 7,
-                  }}>
+                  <div className="member-meta" style={{ color: '#8480B0' }}>
                     {online ? (
                       <span style={{ color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
@@ -921,15 +919,18 @@ export default function FamilyPage() {
                     ) : (
                       <span>No activity yet</span>
                     )}
-                    {/* Battery lives here rather than in the right-hand status
-                        column: there it added a fourth row that only some
-                        members had, so cards ended up different heights. On this
-                        line it grows sideways and every card stays level. */}
+                  </div>
+                  {/* Battery on its own row beneath the status, so the two lines
+                      align down the card rather than competing for one line.
+                      Rendered even with no reading — a blank row keeps every
+                      card the same height, which is what made the list ragged. */}
                 {(() => {
                   // Battery has been collected and stored since the location
                   // service landed, but was never surfaced anywhere.
                   const pct = loc?.battery
-                  if (pct == null || Number.isNaN(pct)) return null
+                  if (pct == null || Number.isNaN(pct)) {
+                    return <div style={{ fontSize: 11, lineHeight: '13px' }}>&nbsp;</div>
+                  }
                   const level = Math.max(0, Math.min(100, Math.round(pct)))
                   const charging = !!loc?.isCharging
                   // The app's muted rose, already used for secondary text
@@ -983,7 +984,6 @@ export default function FamilyPage() {
                     </span>
                   )
                 })()}
-                  </div>
                 </div>
 
                 {/* Location sharing indicator — right side */}
