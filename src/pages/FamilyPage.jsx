@@ -929,7 +929,7 @@ export default function FamilyPage() {
                   // service landed, but was never surfaced anywhere.
                   const pct = loc?.battery
                   if (pct == null || Number.isNaN(pct)) {
-                    return <div style={{ fontSize: 11, lineHeight: '13px' }}>&nbsp;</div>
+                    return <div style={{ fontSize: 11, lineHeight: '13px', marginTop: 3 }}>&nbsp;</div>
                   }
                   const level = Math.max(0, Math.min(100, Math.round(pct)))
                   const charging = !!loc?.isCharging
@@ -953,6 +953,7 @@ export default function FamilyPage() {
                       style={{
                         display: 'flex', alignItems: 'center', gap: 4,
                         fontSize: 11, fontWeight: 800, color, whiteSpace: 'nowrap',
+                        marginTop: 3,
                       }}>
                       <svg width="21" height="12" viewBox="0 0 26 14" fill="none" aria-hidden="true">
                         <rect x="1" y="1" width="21" height="12" rx="3"
