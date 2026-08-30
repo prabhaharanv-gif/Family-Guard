@@ -533,36 +533,36 @@ export default function FamilyPage() {
           alone never grants access. */}
       {showInviteSheet && (
         <div className="overlay" onClick={() => setShowInviteSheet(false)}>
-          <div className="popup" onClick={e => e.stopPropagation()} style={{ paddingBottom: 20 }}>
+          <div className="popup" onClick={e => e.stopPropagation()} style={{ paddingBottom: 16 }}>
             <div className="popup-handle" />
 
             <div style={{
-              fontSize: 11, fontWeight: 700, color: '#951345',
-              letterSpacing: 0.2, marginBottom: 10,
+              fontSize: 10.5, fontWeight: 700, color: '#951345',
+              letterSpacing: 0.2, marginBottom: 8,
             }}>
               Invite to {familyName}
             </div>
 
-            {/* The code as a torn-ticket chip — makes it read as something to
-                hand over, and lets the surrounding copy shrink. */}
+            {/* Plain maroon outline, no fill — the code is the only thing in
+                the box, so the border just frames it rather than decorating. */}
             <div style={{
-              background: 'linear-gradient(135deg, #FFF6F9, #FDEDF3)',
-              border: '1.5px dashed #EFBBCF',
-              borderRadius: 14,
-              padding: '11px 14px',
-              marginBottom: 10,
+              background: 'transparent',
+              border: '2px solid #951345',
+              borderRadius: 16,
+              padding: '9px 12px',
+              marginBottom: 9,
               textAlign: 'center',
             }}>
               <div style={{
-                fontSize: 25, fontWeight: 900, letterSpacing: 5,
-                color: '#951345', fontFamily: 'Sora, sans-serif', lineHeight: 1.1,
+                fontSize: 22, fontWeight: 900, letterSpacing: 4,
+                color: '#951345', fontFamily: 'Sora, sans-serif', lineHeight: 1.15,
               }}>
                 {inviteCode}
               </div>
             </div>
 
-            <div style={{ fontSize: 11.5, color: '#9C6B7A', marginBottom: 14, lineHeight: 1.45 }}>
-              They enter this on the Join Family screen — you approve before they see anything.
+            <div style={{ fontSize: 11, color: '#9C6B7A', marginBottom: 12, lineHeight: 1.4 }}>
+              They enter this on the Join Family screen — you approve first.
             </div>
 
             {/* WhatsApp */}
@@ -570,9 +570,9 @@ export default function FamilyPage() {
               const msg = encodeURIComponent(`Join our family on Famora! Enter the code *${inviteCode}* on the Join Family screen and I'll approve you. 🛡️`)
               window.open(`https://wa.me/?text=${msg}`, '_blank')
             }} style={{
-              width: '100%', padding: '12px 14px', borderRadius: 13,
+              width: '100%', padding: '11px 14px', borderRadius: 13,
               background: '#25D366', border: 'none',
-              color: '#fff', fontWeight: 800, fontSize: 14,
+              color: '#fff', fontWeight: 800, fontSize: 13.5,
               fontFamily: 'inherit', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
               marginBottom: 8,
@@ -591,7 +591,7 @@ export default function FamilyPage() {
               setCodeCopied(true)
               setTimeout(() => { setCodeCopied(false); setShowInviteSheet(false) }, 1200)
             }} style={{
-              width: '100%', padding: '11px 14px', borderRadius: 13,
+              width: '100%', padding: '10px 14px', borderRadius: 13,
               background: codeCopied ? '#D1FAE5' : '#F7F4F8',
               border: codeCopied ? '1.5px solid #10B981' : '1.5px solid #EDE7EF',
               color: codeCopied ? '#059669' : '#3A1020', fontWeight: 800, fontSize: 13.5,
