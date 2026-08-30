@@ -19,6 +19,7 @@ import { initBackHandler }       from './lib/backHandler'
 import ConsentGate         from './components/ConsentGate'
 import PrivateRoute        from './components/PrivateRoute'
 import NativeAlarmBanner   from './components/NativeAlarmBanner'
+import { Capacitor }       from '@capacitor/core'
 import GlobalSOSAlert      from './components/GlobalSOSAlert'
 import GlobalIncomingCall  from './components/GlobalIncomingCall'
 import SosReliabilitySetup from './components/SosReliabilitySetup'
@@ -103,7 +104,15 @@ export default function App() {
   return (
     <ConsentGate>
       <NativeAlarmBanner visible={nativeAlarmOn} onStop={stopAllAlarms} />
-      <GlobalSOSAlert alert={sosAlert} onDismiss={stopAllAlarms} />
+      {/* Web only. On Android SOSAlertActivity is the SOS screen in all three
+          states — app open, app closed, screen locked — because it is the only
+          one that can appear over a lock screen. Rendering this as well put two
+          full-screen warnings on top of each other, each with its own
+          "I Understand", so dismissing one revealed the other. */}
+      <GlobalSOSAlert
+        alert={Capacitor.isNativePlatform() ? null : sosAlert}
+        onDismiss={stopAllAlarms}
+      />
       {/* CallPage renders its own ringing/accept UI once you're on it — showing
           this overlay too meant answering a call needed two taps on two
           stacked screens. */}

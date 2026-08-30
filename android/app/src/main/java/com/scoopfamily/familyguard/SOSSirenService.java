@@ -143,15 +143,13 @@ public class SOSSirenService extends Service {
         // is not honoured) it gets demoted to a silent notification and the
         // screen never wakes. We force the display on with a screen wakelock
         // and attempt to launch the alert activity directly.
-        // Only wake the screen and throw up the native alert when the app is
-        // NOT already in front. With it open, GlobalSOSAlert is showing the same
-        // alert inside the app, so doing both stacked two full-screen warnings
-        // with two "I Understand" buttons — dismissing one revealed the other.
-        // The call path already gates its ringing Activity on this same flag.
-        if (!MainActivity.isAppInForeground) {
-            forceScreenOn();
-            launchAlertActivity(senderName, message);
-        }
+        // Launched unconditionally: this Activity is the SOS alert in all three
+        // states — app open, app closed, screen locked — so the recipient sees
+        // the same screen however the alert reaches them. It is the only one of
+        // the two that can appear over a lock screen, so it is the one kept;
+        // the in-app overlay is suppressed on Android to match.
+        forceScreenOn();
+        launchAlertActivity(senderName, message);
 
         // Safety net: auto-stop after 60 s even if the user never responds
         new android.os.Handler(android.os.Looper.getMainLooper())
@@ -306,9 +304,7 @@ public class SOSSirenService extends Service {
             .setOngoing(true)
             .setAutoCancel(false)
             .setContentIntent(contentPi)
-            // Attached only when the app is closed. A full-screen intent while
-            // the app is open would relaunch the very Activity suppressed above.
-            .setFullScreenIntent(MainActivity.isAppInForeground ? null : fsPi, true)
+            .setFullScreenIntent(fsPi, true)
             .build();
     }
 

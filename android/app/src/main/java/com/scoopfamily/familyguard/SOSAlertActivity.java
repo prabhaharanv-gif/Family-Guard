@@ -151,7 +151,15 @@ public class SOSAlertActivity extends Activity {
             LinearLayout.LayoutParams.MATCH_PARENT, dp(52));
         stopBtn.setLayoutParams(sbp);
         stopBtn.setOnClickListener(v -> {
+            // Stop the siren, then open the app rather than just closing. Ending
+            // here dropped the user back to the launcher or a lock screen with
+            // no idea what had happened beyond a name — the alert is the start
+            // of dealing with an emergency, not the end of it.
             SOSSirenService.stopService(getApplicationContext());
+            Intent open = new Intent(this, MainActivity.class);
+            open.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            open.putExtra("sos_notification", true);
+            startActivity(open);
             finish();
         });
         root.addView(stopBtn);
