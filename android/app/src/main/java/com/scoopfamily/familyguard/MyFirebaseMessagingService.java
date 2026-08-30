@@ -97,20 +97,19 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 appCtx.startService(sirenIntent);
             }
 
-            // Heads-up notification, but only when the app is NOT in front.
+            // No heads-up banner. SOSAlertActivity is the SOS alert in every
+            // state, and this posted a second announcement of the same emergency
+            // on top of it.
             //
-            // It exists as the visual fallback for when SOSAlertActivity cannot
-            // launch — Android blocks background activity starts without the
-            // overlay permission, and demotes the full-screen intent to this
-            // banner. With the app already open the Activity always launches, so
-            // posting this too showed a banner over the full-screen alert: the
-            // same emergency announced twice on one screen.
+            // Removing it does not affect the full-screen alert: this
+            // notification carries no full-screen intent. The Activity is
+            // launched by SOSSirenService — its foreground notification's
+            // setFullScreenIntent, plus a direct launchAlertActivity() call as a
+            // fallback — neither of which is touched here.
             //
-            // Same flag the call path uses to decide whether to launch its
-            // ringing Activity.
-            if (!MainActivity.isAppInForeground) {
-                showSosNotification(appCtx, sender, message, lat, lng);
-            }
+            // showSosNotification() itself is left in place; the shade entry
+            // from SOSSirenService's own notification remains, so a user who
+            // misses the Activity still has something to tap.
 
         } else if ("call".equals(type)) {
             String callId     = data.containsKey("call_id")     ? data.get("call_id")     : "";
