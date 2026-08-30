@@ -1028,8 +1028,17 @@ export default function FamilyPage() {
                           <rect x="1" y="1" width="21" height="12" rx="3"
                             stroke={color} strokeWidth="2" />
                           {/* Minimum 2px of fill so a nearly-flat battery still
-                              reads as "some charge" rather than an empty shell. */}
-                          <rect x="3.5" y="3.5" width={Math.max(2, (level / 100) * 16)} height="7" rx="1.5" fill={color} />
+                              reads as "some charge" rather than an empty shell.
+                              While charging the width is animated from this
+                              level up to full; --bat-w hands the keyframe each
+                              member's own starting point. */}
+                          <rect
+                            className={charging ? 'battery-fill-charging' : undefined}
+                            x="3.5" y="3.5"
+                            width={Math.max(2, (level / 100) * 16)}
+                            height="7" rx="1.5" fill={color}
+                            style={charging ? { '--bat-w': `${Math.max(2, (level / 100) * 16)}px` } : undefined}
+                          />
                           <path d="M24 5 v4" stroke={color} strokeWidth="3" strokeLinecap="round" />
                         </svg>
                         {level}%

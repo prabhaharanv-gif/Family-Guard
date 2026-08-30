@@ -1021,3 +1021,23 @@ body {
   -webkit-user-select: none;
   user-select: none;
 }
+
+/* ── Charging battery fill ──────────────────────────────────────────────────
+   Sweeps the fill from the real level up to full and repeats, the way a phone's
+   own status bar does. The percentage beside it still shows the true value, so
+   the bar reads as "charging" rather than as a live measurement.
+
+   --bat-w is set inline per member, since each starts from its own level. */
+@keyframes batteryCharge {
+  0%   { width: var(--bat-w, 2px); }
+  70%  { width: 16px; }
+  100% { width: 16px; opacity: 0.35; }
+}
+.battery-fill-charging {
+  animation: batteryCharge 1.8s ease-in-out infinite;
+}
+/* Respect a reduced-motion preference — the bolt already signals charging, so
+   nothing is lost by holding the bar still. */
+@media (prefers-reduced-motion: reduce) {
+  .battery-fill-charging { animation: none; }
+}
