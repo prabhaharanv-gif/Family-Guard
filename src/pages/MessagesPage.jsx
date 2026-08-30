@@ -27,6 +27,7 @@ export default function MessagesPage() {
   const [msgsLoaded, setMsgsLoaded] = useState(false)
   const [reads, setReads]         = useState({})
   const [detailMsg, setDetailMsg] = useState(null)   // read-info popup
+  const [actionAnchor, setActionAnchor] = useState(null)
   const [actionMsg, setActionMsg] = useState(null)   // long-press action sheet
   const [editMsg, setEditMsg]     = useState(null)   // edit modal
   const [replyTo, setReplyTo]     = useState(null)   // message being replied to
@@ -257,11 +258,16 @@ export default function MessagesPage() {
   const MUTE_COLOR = muteLevel === 1 ? 'var(--gold)' : muteLevel === 2 ? 'var(--rose)' : '#fff'
 
   // ── Long press ──────────────────────────────────────────────────────────────
-  const startLongPress = (msg) => {
+  const startLongPress = (msg, e) => {
     didLongPress.current = false
+    // The rect is read here, not inside the timeout: React nulls
+    // currentTarget once the handler returns, so by the time the long press
+    // fires there is nothing left to measure.
+    const rect = e?.currentTarget?.getBoundingClientRect?.() ?? null
     longPressRef.current = setTimeout(() => {
       didLongPress.current = true
       try { if (navigator.vibrate) navigator.vibrate(40) } catch (e) {}
+      setActionAnchor(rect)
       setActionMsg(msg)
     }, 500)
   }
@@ -543,10 +549,10 @@ export default function MessagesPage() {
 
                 {/* Bubble — long press for action sheet */}
                 <div
-                  onMouseDown={() => startLongPress(msg)}
+                  onMouseDown={e => startLongPress(msg, e)}
                   onMouseUp={cancelLongPress}
                   onMouseLeave={cancelLongPress}
-                  onTouchStart={() => startLongPress(msg)}
+                  onTouchStart={e => startLongPress(msg, e)}
                   onTouchEnd={cancelLongPress}
                   onTouchMove={cancelLongPress}
                   onClick={() => { if (didLongPress.current) { didLongPress.current = false; return } }}
@@ -636,6 +642,7 @@ export default function MessagesPage() {
       {/* ── Action sheet (long press) ── */}
       {actionMsg && (
         <MessageActionSheet
+          anchor={actionAnchor}
           msg={actionMsg}
           isOwn={actionMsg.user_id === user?.id}
           onReply={() => { setReplyTo(actionMsg); setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100) }}

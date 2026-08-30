@@ -111,12 +111,23 @@ function ActionRow({ icon, label, color, onClick, danger }) {
   )
 }
 
-export function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onInfo, onClose }) {
+/**
+ * Anchored dropdown shown on a long press, positioned next to the bubble that
+ * was pressed rather than sliding up from the bottom of the screen.
+ *
+ * A bottom sheet put the actions as far from the message as the screen allows,
+ * and needed a copy of the message text plus a Cancel button just to re-explain
+ * what was being acted on. Anchoring it to the bubble makes the target obvious,
+ * so both can go and the menu is roughly a third the height.
+ *
+ * `anchor` is the pressed bubble's bounding rect in viewport coordinates.
+ */
+export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDelete, onInfo, onClose }) {
   const actions = [
     {
       label: 'Reply', color: '#951345', fn: onReply, show: true,
       icon: (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
         </svg>
       ),
@@ -124,7 +135,7 @@ export function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onIn
     {
       label: 'Edit', color: '#951345', fn: onEdit, show: isOwn,
       icon: (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
@@ -133,66 +144,80 @@ export function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onIn
     {
       label: 'Message Info', color: '#951345', fn: onInfo, show: isOwn,
       icon: (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      ),
+    },
+    {
+      label: 'Delete', color: '#E11D48', fn: onDelete, show: isOwn, danger: true,
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
         </svg>
       ),
     },
   ].filter(a => a.show)
 
+  const WIDTH  = 186
+  const ROW_H  = 40
+  const PAD    = 12
+  const height = actions.length * ROW_H + PAD
+
+  const vw = typeof window === 'undefined' ? 360 : window.innerWidth
+  const vh = typeof window === 'undefined' ? 640 : window.innerHeight
+  const M  = 10  // keep clear of the screen edges
+
+  // Align to the bubble's own side so the menu reads as belonging to it: own
+  // messages sit right, others left.
+  let left = anchor
+    ? (isOwn ? anchor.right - WIDTH : anchor.left)
+    : (vw - WIDTH) / 2
+  left = Math.max(M, Math.min(left, vw - WIDTH - M))
+
+  // Below the bubble by default, flipped above when there is not room. Both
+  // clamped, so a bubble near an edge still yields a fully visible menu.
+  let top = anchor ? anchor.bottom + 6 : (vh - height) / 2
+  if (top + height > vh - M) {
+    top = anchor ? anchor.top - height - 6 : top
+    if (top < M) top = Math.max(M, vh - height - M)
+  }
+
   return (
-    <div className="overlay" onClick={onClose}>
-      <div className="popup" onClick={e => e.stopPropagation()} style={{ padding: '6px 18px 18px' }}>
-        {/* The shared .popup-handle reserves 38px of margin, sized for sheets
-            that open with a member header. This one is a short action list, so
-            it uses a tighter handle of its own. */}
-        <div style={{ width: 44, height: 4, background: '#E4D6DD', borderRadius: 2, margin: '9px auto 12px' }} />
-
-        {/* Which message this is about — the sheet is opened by a long press,
-            so without it there is nothing on screen tying the actions to one
-            bubble. */}
-        <div style={{ marginBottom: 4, paddingBottom: 10, borderBottom: '1px solid #F0E4EA' }}>
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 2 }}>
-            {isOwn ? 'Your message' : 'Message'}
-          </div>
-          <div style={{ fontSize: 13.5, color: '#0D0C1D', lineHeight: 1.45, maxHeight: 58, overflow: 'hidden' }}>
-            {msg.content}
-          </div>
-        </div>
-
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(13,12,29,0.16)' }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'fixed', top, left, width: WIDTH,
+          background: '#fff', borderRadius: 14,
+          border: '1px solid #F0E4EA',
+          boxShadow: '0 14px 36px rgba(20,8,24,0.24)',
+          padding: 6, overflow: 'hidden',
+        }}
+      >
         {actions.map((a, i) => (
           <div key={a.label}>
-            {i > 0 && <div style={{ height: 1, background: '#F7EFF3' }} />}
-            <ActionRow icon={a.icon} label={a.label} color={a.color} onClick={() => { a.fn(); onClose() }} />
+            {i > 0 && <div style={{ height: 1, background: '#F7EFF3', margin: '0 6px' }} />}
+            <button
+              onClick={() => { a.fn(); onClose() }}
+              style={{
+                width: '100%', height: ROW_H, padding: '0 8px',
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: 'inherit', textAlign: 'left',
+                display: 'flex', alignItems: 'center', gap: 10,
+                color: a.danger ? a.color : '#0D0C1D',
+                fontSize: 13.5, fontWeight: 700,
+              }}
+            >
+              <span style={{ color: a.color, display: 'flex', flexShrink: 0 }}>{a.icon}</span>
+              {a.label}
+            </button>
           </div>
         ))}
-
-        {/* Destructive action, separated and quieter than the everyday ones —
-            it removes the message for everyone and cannot be undone. */}
-        {isOwn && (
-          <>
-            <div style={{ height: 1, background: '#F0E4EA', margin: '5px 0' }} />
-            <ActionRow
-              danger color="#E11D48" label="Delete"
-              icon={(
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                  <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                </svg>
-              )}
-              onClick={() => { onDelete(); onClose() }}
-            />
-          </>
-        )}
-
-        <button onClick={onClose} style={{
-          width: '100%', padding: '11px 18px', borderRadius: 12, marginTop: 10,
-          background: '#F7F4F8', border: '1px solid #EEE6EC',
-          color: '#5B4652', fontWeight: 700, fontSize: 13.5,
-          cursor: 'pointer', fontFamily: 'inherit',
-        }}>
-          Cancel
-        </button>
       </div>
     </div>
   )
