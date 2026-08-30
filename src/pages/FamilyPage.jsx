@@ -873,7 +873,11 @@ export default function FamilyPage() {
             // device is still reporting, not that the person has the app open.
             // Using it here is what made a closed app read "Online · Just now".
             const online = isOnline(m) && m.show_online !== false
-            const lastSeen = formatLastSeen(m.last_active)
+            // show_last_seen was written to the database by the privacy toggle
+            // and then never read here, so turning it off changed nothing on
+            // screen. Mirrors how show_online is handled directly above.
+            const sharesLastSeen = m.show_last_seen !== false
+            const lastSeen = sharesLastSeen ? formatLastSeen(m.last_active) : null
             return (
               <div
                 key={m.id}
@@ -914,6 +918,12 @@ export default function FamilyPage() {
                         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
                         Online
                       </span>
+                    ) : !sharesLastSeen ? (
+                      // "Hidden" rather than "not authorised": nothing is being
+                      // withheld from this viewer specifically — the member
+                      // turned it off for everyone. Naming it as a permission
+                      // problem would suggest a fix that does not exist.
+                      <span>Last seen hidden</span>
                     ) : lastSeen ? (
                       <span>Last seen {lastSeen}</span>
                     ) : (
