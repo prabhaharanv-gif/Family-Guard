@@ -342,8 +342,16 @@ public class CallRingingService extends Service {
     private void startRingtone() {
         stopRingtone();
 
-        Uri ringUri = RingtoneManager.getActualDefaultRingtoneUri(
-            this, RingtoneManager.TYPE_RINGTONE);
+        // Voice and video calls can be given different sounds, so the two are
+        // distinguishable without looking at the screen. Falls through to the
+        // device's default ringtone when neither has been set, which is the
+        // previous behaviour.
+        Uri ringUri = RingtonePlugin.getUri(this,
+            "video".equals(callType) ? RingtonePlugin.KEY_VIDEO : RingtonePlugin.KEY_VOICE);
+        if (ringUri == null) {
+            ringUri = RingtoneManager.getActualDefaultRingtoneUri(
+                this, RingtoneManager.TYPE_RINGTONE);
+        }
         if (ringUri == null) {
             ringUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
         }

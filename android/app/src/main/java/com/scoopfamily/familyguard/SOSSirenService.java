@@ -369,8 +369,17 @@ public class SOSSirenService extends Service {
         // behaves the same as the synthesized siren did: audible through silent
         // mode, and unaffected by media or ringer volume.
         try {
-            android.media.MediaPlayer mp =
-                android.media.MediaPlayer.create(this, R.raw.emergency_alert);
+            android.net.Uri chosen = RingtonePlugin.getUri(this, RingtonePlugin.KEY_SOS);
+            android.media.MediaPlayer mp = (chosen != null)
+                ? android.media.MediaPlayer.create(this, chosen)
+                : android.media.MediaPlayer.create(this, R.raw.emergency_alert);
+            if (mp == null && chosen != null) {
+                // A chosen sound can disappear — an SD card removed, a file
+                // deleted, a URI whose permission was revoked. Falling back
+                // rather than going silent.
+                android.util.Log.w("FamoraSOS", "chosen SOS sound unavailable — using bundled default");
+                mp = android.media.MediaPlayer.create(this, R.raw.emergency_alert);
+            }
             if (mp != null) {
                 mp.setAudioAttributes(new android.media.AudioAttributes.Builder()
                     .setUsage(android.media.AudioAttributes.USAGE_ALARM)

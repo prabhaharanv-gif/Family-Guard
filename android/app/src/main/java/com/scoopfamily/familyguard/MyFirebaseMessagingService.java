@@ -61,6 +61,23 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     // Shared preference key written by MainActivity when Messages page is open
     public static final String PREF_NAME          = "fg_prefs";
+
+    /**
+     * Delete and recreate the message channel so a newly chosen tone takes
+     * effect. A NotificationChannel's sound is fixed once created — updating it
+     * in place is silently ignored — so this is the only way to change it
+     * without inventing a new channel id on every selection.
+     */
+    public static void rebuildMessageChannel(Context ctx) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        try {
+            NotificationManager nm =
+                (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+            nm.deleteNotificationChannel(MSG_CHANNEL_ID);
+            ensureMessageChannelStatic(ctx);
+        } catch (Exception e) { e.printStackTrace(); }
+    }
     public static final String KEY_MESSAGES_OPEN  = "messages_page_open";
     // 0 = all on, 1 = sound muted, 2 = sound + banner fully muted
     public static final String KEY_MUTE_LEVEL     = "msg_mute_level";
@@ -338,9 +355,13 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         );
         ch.setDescription("New messages from family members");
 
-        android.net.Uri notifUri = android.net.Uri.parse(
-            "android.resource://" + ctx.getPackageName() + "/" + R.raw.message_tone
-        );
+        // The user's choice if they made one, otherwise the bundled tone.
+        android.net.Uri notifUri = RingtonePlugin.getUri(ctx, RingtonePlugin.KEY_MESSAGE);
+        if (notifUri == null) {
+            notifUri = android.net.Uri.parse(
+                "android.resource://" + ctx.getPackageName() + "/" + R.raw.message_tone
+            );
+        }
         android.media.AudioAttributes attrs = new android.media.AudioAttributes.Builder()
             .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
             .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)

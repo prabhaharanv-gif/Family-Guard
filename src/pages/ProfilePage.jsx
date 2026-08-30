@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import Dialog from '../components/Dialog'
+import { ALERT_TYPES, getRingtones, pickRingtone, resetRingtone } from '../lib/ringtones'
 
 function Toggle({ on, onToggle }) {
   return (
@@ -236,6 +237,9 @@ export default function ProfilePage() {
 
   const [member, setMember]             = useState(null)
   const [myInviteCode, setMyInviteCode] = useState('')
+  // null while unknown or on web, where there is no native picker; the card is
+  // hidden in that case rather than offering something that cannot work.
+  const [ringtones, setRingtones] = useState(null)
 
   const [displayName, setDisplayName]   = useState('')
   const [phone, setPhone]               = useState('')
@@ -498,6 +502,20 @@ export default function ProfilePage() {
     }
   }
 
+  useEffect(() => { getRingtones().then(setRingtones) }, [])
+
+  const handlePickTone = async (type) => {
+    const res = await pickRingtone(type)
+    // Only re-read when something actually changed — backing out of the picker
+    // should leave the row exactly as it was.
+    if (res?.changed) setRingtones(await getRingtones())
+  }
+
+  const handleResetTone = async (type) => {
+    await resetRingtone(type)
+    setRingtones(await getRingtones())
+  }
+
   const initial = displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?'
   const avatarColor = member?.avatar_color || '#951345'
 
@@ -723,6 +741,58 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
+        {/* ── ALERT SOUNDS ── */}
+        {/* Native only: the picker is a system Activity, so there is nothing to
+            offer on web. */}
+        {ringtones && (
+          <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 12 }}>
+              Alert Sounds
+            </div>
+            {ALERT_TYPES.map((t, i) => (
+              <div key={t.key} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '10px 0',
+                borderTop: i === 0 ? 'none' : '1px solid #F7EFF3',
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{t.label}</div>
+                  <div style={{
+                    fontSize: 11.5, color: '#9C6B7A', marginTop: 2,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {ringtones[t.key] || 'Default'}
+                  </div>
+                </div>
+                {ringtones[t.key] && ringtones[t.key] !== 'Default' && (
+                  <button
+                    onClick={() => handleResetTone(t.key)}
+                    title={`Reset ${t.label} to the default sound`}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: '#9C6B7A', fontSize: 11.5, fontWeight: 700,
+                      fontFamily: 'inherit', padding: '6px 2px', flexShrink: 0,
+                    }}
+                  >
+                    Reset
+                  </button>
+                )}
+                <button
+                  onClick={() => handlePickTone(t.key)}
+                  style={{
+                    background: '#FDF0F5', border: '1.5px solid #F0D8E3',
+                    color: '#951345', borderRadius: 10, padding: '7px 13px',
+                    fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
+                    cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
+                  }}
+                >
+                  Change
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* ── PRIVACY ── */}
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>

@@ -56,6 +56,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(CallAlarmPlugin.class);
         registerPlugin(CallAudioPlugin.class);
         registerPlugin(CrashReportingPlugin.class);
+        registerPlugin(RingtonePlugin.class);
 
         showWhenLockedAndTurnScreenOn();
 
