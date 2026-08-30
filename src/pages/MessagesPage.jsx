@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { registerPlugin, Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
@@ -21,6 +22,7 @@ function setNativeMuteLevel(level) {
 }
 
 export default function MessagesPage() {
+  const navigate = useNavigate()
   const { user, familyId } = useAuthStore()
   const [messages, setMessages]   = useState([])
   const [members, setMembers]     = useState({})
@@ -276,6 +278,20 @@ export default function MessagesPage() {
     if (longPressRef.current) clearTimeout(longPressRef.current)
   }
 
+  // Redial from the call history. Mirrors handleStartCall on the family screen:
+  // create_call resolves the caller from auth.uid() server-side, so only the
+  // callee and type are passed.
+  const handleQuickCall = async (calleeId, callType) => {
+    if (!familyId || !calleeId) return
+    const { data, error } = await supabase.rpc('create_call', {
+      p_family_id: familyId,
+      p_callee_id: calleeId,
+      p_call_type: callType,
+    })
+    if (error) { setDialog({ type: 'error', message: error.message }); return }
+    navigate(`/call/${data.id}`)
+  }
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
@@ -401,7 +417,13 @@ export default function MessagesPage() {
         ))}
       </div>
 
-      {activeTab === 'calls' && <CallsPanel onDialog={setDialog} onControls={setCallControls} />}
+      {activeTab === 'calls' && (
+        <CallsPanel
+          onDialog={setDialog}
+          onControls={setCallControls}
+          onCall={handleQuickCall}
+        />
+      )}
 
       {activeTab === 'personal' && <PersonalChatPanel onDialog={setDialog} resetSignal={personalReset} onControls={setPersonalControls} />}
 

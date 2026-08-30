@@ -37,7 +37,7 @@ function formatDuration(sec) {
   return m > 0 ? `${m}m ${s}s` : `${s}s`
 }
 
-export default function CallsPanel({ onDialog, onControls }) {
+export default function CallsPanel({ onDialog, onControls, onCall }) {
   const { user, familyId } = useAuthStore()
   const [calls, setCalls]       = useState([])
   const [names, setNames]       = useState({})
@@ -244,6 +244,34 @@ export default function CallsPanel({ onDialog, onControls }) {
               <div style={{ fontSize: 11, color: '#9C6B7A', flexShrink: 0 }}>
                 {formatWhen(c.started_at)}
               </div>
+
+              {/* Redial. Hidden while selecting, where every tap belongs to the
+                  selection, and for a row about yourself. Repeats the same kind
+                  of call the row records — ringing back a video call as voice
+                  would be a quiet surprise. */}
+              {!selectMode && otherId && otherId !== user?.id && (
+                <button
+                  onClick={e => { e.stopPropagation(); onCall?.(otherId, c.call_type === 'video' ? 'video' : 'voice') }}
+                  title={isVideo ? `Video call ${name}` : `Call ${name}`}
+                  aria-label={isVideo ? `Video call ${name}` : `Call ${name}`}
+                  style={{
+                    width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+                    background: '#FDF0F5', border: '1.5px solid #F0D8E3',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', padding: 0, marginLeft: 4,
+                  }}
+                >
+                  {isVideo ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                  )}
+                </button>
+              )}
             </div>
           )
         })}

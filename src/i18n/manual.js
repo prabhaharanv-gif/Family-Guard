@@ -64,7 +64,7 @@ export const MANUAL = {
           ['Who is online', 'A green dot means that person has the app open right now. Grey means closed. Under each name you can see when they were last active.'],
           ['Battery level', 'Each member shows their phone battery, so you know if someone is about to go offline.'],
           ['Tap a member', 'Opens their card with voice call and video call buttons.'],
-          ['Press and hold a member', 'Opens the actions sheet: Set Nickname, Find My Device, and (owners only) Remove from Family.'],
+          ['Press and hold a member', 'Opens the actions sheet: Set Nickname, Find My Phone, and (owners only) Remove from Family.'],
           ['Set Nickname', 'A private name only you see. It never changes what the rest of the family sees.'],
           ['Pull down to refresh', 'Reloads everyone\'s status immediately.'],
           ['The location pin', 'Green pin means they are sharing location and their phone GPS is on. A RED pin means they are sharing, but their phone location is switched OFF, so their position cannot update. A grey pin with a red X means they have turned location sharing off in the app.'],
@@ -120,10 +120,10 @@ export const MANUAL = {
         ],
       },
       find: {
-        title: 'Find My Device',
+        title: 'Find My Phone',
         intro: 'Ring a misplaced phone, even on silent.',
         steps: [
-          ['How to use it', 'Family tab, press and hold the member whose phone is lost, then tap Find My Device.'],
+          ['How to use it', 'Family tab, press and hold the member whose phone is lost, then tap Find My Phone.'],
           ['What happens', 'That phone rings loudly for 30 seconds and the screen wakes up, even if it is on silent, locked, or the app is closed.'],
           ['Stopping it', 'Whoever finds the phone taps Stop on the notification, or it stops by itself after 30 seconds.'],
           ['Waiting between pings', 'You must wait 30 seconds before pinging the same phone again.'],
@@ -266,7 +266,7 @@ export const MANUAL = {
         title: 'என் சாதனத்தைக் கண்டுபிடி',
         intro: 'தொலைந்த கைபேசியை, சைலண்டில் இருந்தாலும் ஒலிக்கச் செய்யுங்கள்.',
         steps: [
-          ['எப்படிப் பயன்படுத்துவது', 'குடும்பத் தாவலில், கைபேசி தொலைந்த உறுப்பினரை அழுத்திப் பிடித்து, Find My Device-ஐத் தட்டுங்கள்.'],
+          ['எப்படிப் பயன்படுத்துவது', 'குடும்பத் தாவலில், கைபேசி தொலைந்த உறுப்பினரை அழுத்திப் பிடித்து, Find My Phone-ஐத் தட்டுங்கள்.'],
           ['என்ன நடக்கும்', 'அந்தக் கைபேசி 30 வினாடிகள் உரக்க ஒலிக்கும், திரையும் விழிக்கும் — சைலண்டில் இருந்தாலும், பூட்டப்பட்டிருந்தாலும், செயலி மூடப்பட்டிருந்தாலும்.'],
           ['நிறுத்துவது', 'கைபேசியைக் கண்டுபிடிப்பவர் அறிவிப்பில் Stop-ஐத் தட்டலாம், அல்லது 30 வினாடிகளுக்குப் பிறகு தானாகவே நிற்கும்.'],
           ['மீண்டும் அனுப்ப இடைவெளி', 'அதே கைபேசிக்கு மீண்டும் அனுப்ப 30 வினாடிகள் காத்திருக்க வேண்டும்.'],
@@ -409,7 +409,7 @@ export const MANUAL = {
         title: 'నా ఫోన్‌ను కనుగొను',
         intro: 'పోగొట్టుకున్న ఫోన్‌ను, సైలెంట్‌లో ఉన్నా మోగించండి.',
         steps: [
-          ['ఎలా వాడాలి', 'కుటుంబ ట్యాబ్‌లో, ఫోన్ పోగొట్టుకున్న సభ్యుడిని నొక్కి పట్టుకుని, Find My Device నొక్కండి.'],
+          ['ఎలా వాడాలి', 'కుటుంబ ట్యాబ్‌లో, ఫోన్ పోగొట్టుకున్న సభ్యుడిని నొక్కి పట్టుకుని, Find My Phone నొక్కండి.'],
           ['ఏమి జరుగుతుంది', 'ఆ ఫోన్ 30 సెకన్లు గట్టిగా మోగుతుంది, స్క్రీన్ కూడా వెలుగుతుంది — సైలెంట్‌లో ఉన్నా, లాక్ అయినా, యాప్ మూసి ఉన్నా.'],
           ['ఆపడం', 'ఫోన్ దొరికిన వారు నోటిఫికేషన్‌పై Stop నొక్కవచ్చు, లేదా 30 సెకన్ల తర్వాత దానంతట అదే ఆగిపోతుంది.'],
           ['మళ్లీ పంపడానికి విరామం', 'అదే ఫోన్‌కు మళ్లీ పంపాలంటే 30 సెకన్లు ఆగాలి.'],
@@ -552,7 +552,7 @@ export const MANUAL = {
         title: 'ನನ್ನ ಸಾಧನವನ್ನು ಹುಡುಕಿ',
         intro: 'ಕಳೆದುಹೋದ ಫೋನ್ ಅನ್ನು, ಸೈಲೆಂಟ್‌ನಲ್ಲಿದ್ದರೂ ಮೊಳಗಿಸಿ.',
         steps: [
-          ['ಹೇಗೆ ಬಳಸುವುದು', 'ಕುಟುಂಬ ಟ್ಯಾಬ್‌ನಲ್ಲಿ, ಫೋನ್ ಕಳೆದುಹೋದ ಸದಸ್ಯರನ್ನು ಒತ್ತಿ ಹಿಡಿದು, Find My Device ಒತ್ತಿ.'],
+          ['ಹೇಗೆ ಬಳಸುವುದು', 'ಕುಟುಂಬ ಟ್ಯಾಬ್‌ನಲ್ಲಿ, ಫೋನ್ ಕಳೆದುಹೋದ ಸದಸ್ಯರನ್ನು ಒತ್ತಿ ಹಿಡಿದು, Find My Phone ಒತ್ತಿ.'],
           ['ಏನಾಗುತ್ತದೆ', 'ಆ ಫೋನ್ 30 ಸೆಕೆಂಡುಗಳ ಕಾಲ ಜೋರಾಗಿ ಮೊಳಗುತ್ತದೆ ಮತ್ತು ಪರದೆ ಬೆಳಗುತ್ತದೆ — ಸೈಲೆಂಟ್‌ನಲ್ಲಿದ್ದರೂ, ಲಾಕ್ ಆಗಿದ್ದರೂ, ಆ್ಯಪ್ ಮುಚ್ಚಿದ್ದರೂ.'],
           ['ನಿಲ್ಲಿಸುವುದು', 'ಫೋನ್ ಸಿಕ್ಕವರು ಅಧಿಸೂಚನೆಯಲ್ಲಿ Stop ಒತ್ತಬಹುದು, ಅಥವಾ 30 ಸೆಕೆಂಡುಗಳ ನಂತರ ತಾನಾಗಿಯೇ ನಿಲ್ಲುತ್ತದೆ.'],
           ['ಮತ್ತೆ ಕಳುಹಿಸಲು ಕಾಯುವಿಕೆ', 'ಅದೇ ಫೋನ್‌ಗೆ ಮತ್ತೆ ಕಳುಹಿಸಲು 30 ಸೆಕೆಂಡು ಕಾಯಬೇಕು.'],
@@ -695,7 +695,7 @@ export const MANUAL = {
         title: 'എന്റെ ഫോൺ കണ്ടെത്തുക',
         intro: 'നഷ്ടപ്പെട്ട ഫോൺ, സൈലന്റിലാണെങ്കിലും മുഴക്കുക.',
         steps: [
-          ['എങ്ങനെ ഉപയോഗിക്കാം', 'കുടുംബ ടാബിൽ, ഫോൺ നഷ്ടപ്പെട്ട അംഗത്തെ അമർത്തിപ്പിടിച്ച്, Find My Device ടാപ്പ് ചെയ്യുക.'],
+          ['എങ്ങനെ ഉപയോഗിക്കാം', 'കുടുംബ ടാബിൽ, ഫോൺ നഷ്ടപ്പെട്ട അംഗത്തെ അമർത്തിപ്പിടിച്ച്, Find My Phone ടാപ്പ് ചെയ്യുക.'],
           ['എന്ത് സംഭവിക്കും', 'ആ ഫോൺ 30 സെക്കൻഡ് ഉച്ചത്തിൽ മുഴങ്ങും, സ്ക്രീനും തെളിയും — സൈലന്റിലായാലും, ലോക്ക് ആയാലും, ആപ്പ് അടച്ചിരുന്നാലും.'],
           ['നിർത്തുന്നത്', 'ഫോൺ കണ്ടെത്തുന്നയാൾ അറിയിപ്പിലെ Stop ടാപ്പ് ചെയ്യാം, അല്ലെങ്കിൽ 30 സെക്കൻഡിന് ശേഷം സ്വയം നിൽക്കും.'],
           ['വീണ്ടും അയക്കാൻ കാത്തിരിപ്പ്', 'അതേ ഫോണിലേക്ക് വീണ്ടും അയക്കാൻ 30 സെക്കൻഡ് കാത്തിരിക്കണം.'],
@@ -838,7 +838,7 @@ export const MANUAL = {
         title: 'मेरा फ़ोन ढूँढें',
         intro: 'खोया हुआ फ़ोन, साइलेंट पर होने पर भी बजाएँ।',
         steps: [
-          ['कैसे इस्तेमाल करें', 'परिवार टैब में, जिसका फ़ोन खोया है उस सदस्य को दबाकर रखें, फिर Find My Device पर टैप करें।'],
+          ['कैसे इस्तेमाल करें', 'परिवार टैब में, जिसका फ़ोन खोया है उस सदस्य को दबाकर रखें, फिर Find My Phone पर टैप करें।'],
           ['क्या होता है', 'वह फ़ोन 30 सेकंड तक ज़ोर से बजता है और स्क्रीन भी जगती है — चाहे साइलेंट पर हो, लॉक हो, या ऐप बंद हो।'],
           ['बंद करना', 'जिसे फ़ोन मिले वह सूचना पर Stop दबा सकता है, या 30 सेकंड बाद यह अपने आप बंद हो जाता है।'],
           ['दोबारा भेजने से पहले प्रतीक्षा', 'उसी फ़ोन पर दोबारा भेजने के लिए 30 सेकंड रुकना होगा।'],

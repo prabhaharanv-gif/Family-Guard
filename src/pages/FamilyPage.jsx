@@ -488,28 +488,35 @@ export default function FamilyPage() {
             <div style={{ fontSize: 11, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
               Switch Family
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
-              {allFamilies.map(fam => {
+            {/* Same flat list as Find Family Member on the map: rows divided by
+                hairlines rather than floating cards, so the sheet stays compact
+                as families are added. The active one is marked with a tick and a
+                tint instead of a filled card, which was carrying most of the
+                height. */}
+            <div style={{
+              border: '1px solid #F3E8EE', borderRadius: 14,
+              overflow: 'hidden', marginBottom: 8,
+            }}>
+              {allFamilies.map((fam, i) => {
                 const isActive = fam.family_id === familyId
                 return (
                   <button key={fam.family_id}
                     onClick={() => { switchFamily(fam.family_id); setShowFamilySwitcher(false) }}
                     style={{
-                      width: '100%', padding: '14px 16px', borderRadius: 16,
-                      background: isActive ? 'linear-gradient(135deg, #951345, #720D35)' : '#F8F7FF',
-                      border: isActive ? 'none' : '1.5px solid #EDE9FF',
-                      color: isActive ? '#fff' : '#0D0C1D',
-                      fontWeight: isActive ? 800 : 600, fontSize: 14,
-                      fontFamily: 'inherit', cursor: isActive ? 'default' : 'pointer',
-                      textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12,
-                      boxShadow: isActive ? '0 6px 20px rgba(149,19,69,0.35)' : 'none',
+                      width: '100%', padding: '11px 14px',
+                      background: isActive ? '#FDF0F5' : 'none',
+                      border: 'none',
+                      borderTop: i === 0 ? 'none' : '1px solid #F8F0F4',
+                      cursor: isActive ? 'default' : 'pointer',
+                      fontFamily: 'inherit', textAlign: 'left',
+                      display: 'flex', alignItems: 'center', gap: 10,
                     }}>
                     <div style={{
-                      width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                      background: isActive ? 'rgba(255,255,255,0.18)' : '#F0EEFF',
+                      width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                      background: isActive ? '#951345' : '#F5EFF6',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
                         <circle cx="9" cy="7" r="3" fill={isActive ? '#fff' : '#951345'}/>
                         <path d="M3 20C3 16.134 5.686 13 9 13C12.314 13 15 16.134 15 20H3Z" fill={isActive ? '#fff' : '#951345'}/>
                         <circle cx="17.5" cy="8.5" r="2.2" fill={isActive ? 'rgba(255,255,255,0.7)' : '#C0185A'}/>
@@ -517,15 +524,25 @@ export default function FamilyPage() {
                       </svg>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>{fam.name}</div>
-                      <div style={{ fontSize: 11, opacity: isActive ? 0.75 : 0.5, fontWeight: 500 }}>
+                      <div style={{
+                        fontSize: 13, fontWeight: 700, color: '#0D0C1D', marginBottom: 2,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {fam.name}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#9C6B7A' }}>
                         {fam.role === 'admin' ? '👑 Admin' : '👤 Member'} · {fam.invite_code}
                       </div>
                     </div>
-                    {isActive && (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                        stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    {isActive ? (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke="#951345" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="9 18 15 12 9 6"/>
                       </svg>
                     )}
                   </button>
@@ -554,7 +571,7 @@ export default function FamilyPage() {
               onClick: () => setEditNameMember(actionMember),
             },
             {
-              label: 'Find My Device', sub: 'Ring their phone, even on silent',
+              label: 'Find My Phone', sub: 'Ring their phone, even on silent',
               icon: (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.25a6 6 0 0 1 0-8.49"/>

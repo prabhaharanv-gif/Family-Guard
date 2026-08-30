@@ -60,13 +60,13 @@ export function useDevicePing(user, familyId) {
 
         if ('Notification' in window) {
           if (Notification.permission === 'granted') {
-            new Notification('📡 Find My Device', { body: 'Someone is looking for your device!' })
+            new Notification('📡 Find My Phone', { body: 'Someone is looking for your device!' })
           } else if (Notification.permission === 'default') {
             // Never asked on this browser — request now rather than dropping
             // the alert. The sound above still plays either way.
             Notification.requestPermission().then((perm) => {
               if (perm === 'granted') {
-                new Notification('📡 Find My Device', { body: 'Someone is looking for your device!' })
+                new Notification('📡 Find My Phone', { body: 'Someone is looking for your device!' })
               }
             }).catch(() => {})
           }

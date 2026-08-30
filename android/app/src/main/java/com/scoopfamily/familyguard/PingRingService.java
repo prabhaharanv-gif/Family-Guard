@@ -21,7 +21,7 @@ import android.os.VibratorManager;
 import androidx.core.app.NotificationCompat;
 
 /**
- * Foreground service that rings this phone for "Find My Device".
+ * Foreground service that rings this phone for "Find My Phone".
  *
  * Structure deliberately mirrors SOSSirenService — same WakeLock-first
  * ordering (MIUI/ColorOS can suspend the process between onMessageReceived()
@@ -45,7 +45,7 @@ public class PingRingService extends Service {
     // AudioTrack below is the only audio source — a channel sound here would
     // play over the chirp and be cut short when the service stops.
     public  static final String PING_CHANNEL_ID   = "find_my_device_v1";
-    private static final String PING_CHANNEL_NAME = "Find My Device";
+    private static final String PING_CHANNEL_NAME = "Find My Phone";
 
     private static final long RING_DURATION_MS = 30_000L;
 
@@ -188,7 +188,9 @@ public class PingRingService extends Service {
         );
 
         return new NotificationCompat.Builder(this, PING_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_notify)
+            // The Find My Phone radar, not the generic app glyph, so the
+            // notification is recognisably from this feature.
+            .setSmallIcon(R.drawable.ic_stat_find_phone)
             .setColor(android.graphics.Color.parseColor("#951345"))
             .setContentTitle("📡 Found it!")
             .setContentText(senderName + " is looking for this phone")
@@ -208,13 +210,17 @@ public class PingRingService extends Service {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager nm =
             (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm == null || nm.getNotificationChannel(PING_CHANNEL_ID) != null) return;
+        if (nm == null) return;
+        // Not returning early when the channel exists: name and description are
+        // updatable in place (only sound and a raised importance are locked), so
+        // recreating keeps the wording in system settings in step with the app
+        // after the rename. The user's own importance choice is preserved.
 
         NotificationChannel ch = new NotificationChannel(
             PING_CHANNEL_ID, PING_CHANNEL_NAME,
             NotificationManager.IMPORTANCE_HIGH
         );
-        ch.setDescription("Rings this phone when a family member uses Find My Device");
+        ch.setDescription("Rings this phone when a family member uses Find My Phone");
         ch.setSound(null, null);
         ch.enableVibration(false);
         ch.setBypassDnd(true);
