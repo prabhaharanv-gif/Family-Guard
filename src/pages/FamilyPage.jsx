@@ -908,7 +908,9 @@ export default function FamilyPage() {
                 </div>
                 <div className="member-info">
                   <div className="member-name" style={{ color: '#0D0C1D' }}>{nameFor(m)}</div>
-                  <div className="member-meta" style={{ color: '#8480B0' }}>
+                  <div className="member-meta" style={{
+                    color: '#8480B0', display: 'flex', alignItems: 'center', gap: 7,
+                  }}>
                     {online ? (
                       <span style={{ color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
@@ -919,6 +921,68 @@ export default function FamilyPage() {
                     ) : (
                       <span>No activity yet</span>
                     )}
+                    {/* Battery lives here rather than in the right-hand status
+                        column: there it added a fourth row that only some
+                        members had, so cards ended up different heights. On this
+                        line it grows sideways and every card stays level. */}
+                {(() => {
+                  // Battery has been collected and stored since the location
+                  // service landed, but was never surfaced anywhere.
+                  const pct = loc?.battery
+                  if (pct == null || Number.isNaN(pct)) return null
+                  const level = Math.max(0, Math.min(100, Math.round(pct)))
+                  const charging = !!loc?.isCharging
+                  // The app's muted rose, already used for secondary text
+                  // elsewhere on this screen. Full maroon was too heavy for a
+                  // supporting detail and competed with the member name; grey
+                  // would read as disabled. Green is avoided because it sat
+                  // beside the green "Live" pin and the two merged.
+                  const color = '#9C6B7A'
+                  // Stale readings were previously faded to 55% opacity, on
+                  // the reasoning that a battery only drains so an old value
+                  // always reads high. In practice it just looked like two
+                  // members had different coloured indicators, so the signal
+                  // cost more than it bought. Kept as a tooltip only.
+                  const stale = loc?.updatedAt
+                    ? (Date.now() - new Date(loc.updatedAt)) > 15 * 60 * 1000
+                    : true
+                  return (
+                    <span
+                      title={stale ? 'Last known battery — this member has not reported recently' : undefined}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        fontSize: 11, fontWeight: 800, color, whiteSpace: 'nowrap',
+                      }}>
+                      <svg width="21" height="12" viewBox="0 0 26 14" fill="none" aria-hidden="true">
+                        <rect x="1" y="1" width="21" height="12" rx="3"
+                          stroke={color} strokeWidth="2" />
+                        {/* Minimum 2px of fill so a nearly-flat battery still
+                            reads as "some charge" rather than an empty shell.
+                            While charging the width is animated from this
+                            level up to full; --bat-w hands the keyframe each
+                            member's own starting point. */}
+                        <rect
+                          className={charging ? 'battery-fill-charging' : undefined}
+                          x="3.5" y="3.5"
+                          width={Math.max(2, (level / 100) * 16)}
+                          height="7" rx="1.5" fill={color}
+                          style={charging ? { '--bat-w': `${Math.max(2, (level / 100) * 16)}px` } : undefined}
+                        />
+                        <path d="M24 5 v4" stroke={color} strokeWidth="3" strokeLinecap="round" />
+                      </svg>
+                      {level}%
+                      {/* SVG, not the ⚡ emoji: an emoji paints its own
+                          colours and cannot be tinted. Electric blue against
+                          the muted rose so charging is readable at a glance
+                          without competing with the green "Live" pin. */}
+                      {charging && (
+                        <svg width="9" height="13" viewBox="0 0 8 12" fill="#2563EB" aria-hidden="true">
+                          <path d="M4.6 0 0 6.6h2.7L2.2 12 7.4 5.1H4.4L4.6 0z" />
+                        </svg>
+                      )}
+                    </span>
+                  )
+                })()}
                   </div>
                 </div>
 
@@ -974,77 +1038,24 @@ export default function FamilyPage() {
                     )
                   })()}
                   {(() => {
-                    // Show distance from me to this member (not for myself)
-                    if (m.user_id === user?.id) return null
-                    if (!myHasCoords || !loc?.isSharing) return null
-                    if (!loc.lat || !loc.lng || (loc.lat === 0 && loc.lng === 0)) return null
-                    const km = distanceKm(myLoc.lat, myLoc.lng, loc.lat, loc.lng)
-                    const label = formatDistance(km)
-                    if (!label) return null
+                    // Distance from me to this member — never shown for myself,
+                    // and unavailable until both of us have a fix.
+                    //
+                    // The row is rendered even when there is nothing to say,
+                    // holding a non-breaking space. Returning null collapsed it
+                    // and made that member's card a line shorter than the rest,
+                    // which is why the list looked ragged.
+                    let label = null
+                    if (m.user_id !== user?.id && myHasCoords && loc?.isSharing
+                        && loc.lat && loc.lng && !(loc.lat === 0 && loc.lng === 0)) {
+                      label = formatDistance(distanceKm(myLoc.lat, myLoc.lng, loc.lat, loc.lng))
+                    }
                     return (
                       <span style={{
                         fontSize: 9, fontWeight: 600, color: '#6B7280',
                         marginTop: 1, whiteSpace: 'nowrap',
                       }}>
-                        {label}
-                      </span>
-                    )
-                  })()}
-                  {(() => {
-                    // Battery has been collected and stored since the location
-                    // service landed, but was never surfaced anywhere.
-                    const pct = loc?.battery
-                    if (pct == null || Number.isNaN(pct)) return null
-                    const level = Math.max(0, Math.min(100, Math.round(pct)))
-                    const charging = !!loc?.isCharging
-                    // The app's muted rose, already used for secondary text
-                    // elsewhere on this screen. Full maroon was too heavy for a
-                    // supporting detail and competed with the member name; grey
-                    // would read as disabled. Green is avoided because it sat
-                    // beside the green "Live" pin and the two merged.
-                    const color = '#9C6B7A'
-                    // Stale readings were previously faded to 55% opacity, on
-                    // the reasoning that a battery only drains so an old value
-                    // always reads high. In practice it just looked like two
-                    // members had different coloured indicators, so the signal
-                    // cost more than it bought. Kept as a tooltip only.
-                    const stale = loc?.updatedAt
-                      ? (Date.now() - new Date(loc.updatedAt)) > 15 * 60 * 1000
-                      : true
-                    return (
-                      <span
-                        title={stale ? 'Last known battery — this member has not reported recently' : undefined}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 4,
-                          fontSize: 11, fontWeight: 800, color, marginTop: 3, whiteSpace: 'nowrap',
-                        }}>
-                        <svg width="21" height="12" viewBox="0 0 26 14" fill="none" aria-hidden="true">
-                          <rect x="1" y="1" width="21" height="12" rx="3"
-                            stroke={color} strokeWidth="2" />
-                          {/* Minimum 2px of fill so a nearly-flat battery still
-                              reads as "some charge" rather than an empty shell.
-                              While charging the width is animated from this
-                              level up to full; --bat-w hands the keyframe each
-                              member's own starting point. */}
-                          <rect
-                            className={charging ? 'battery-fill-charging' : undefined}
-                            x="3.5" y="3.5"
-                            width={Math.max(2, (level / 100) * 16)}
-                            height="7" rx="1.5" fill={color}
-                            style={charging ? { '--bat-w': `${Math.max(2, (level / 100) * 16)}px` } : undefined}
-                          />
-                          <path d="M24 5 v4" stroke={color} strokeWidth="3" strokeLinecap="round" />
-                        </svg>
-                        {level}%
-                        {/* SVG, not the ⚡ emoji: an emoji paints its own
-                            colours and cannot be tinted. Electric blue against
-                            the muted rose so charging is readable at a glance
-                            without competing with the green "Live" pin. */}
-                        {charging && (
-                          <svg width="9" height="13" viewBox="0 0 8 12" fill="#2563EB" aria-hidden="true">
-                            <path d="M4.6 0 0 6.6h2.7L2.2 12 7.4 5.1H4.4L4.6 0z" />
-                          </svg>
-                        )}
+                        {label || ' '}
                       </span>
                     )
                   })()}
