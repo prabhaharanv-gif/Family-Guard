@@ -27,6 +27,16 @@ import android.widget.TextView;
  */
 public class SOSAlertActivity extends Activity {
 
+    /**
+     * True while this screen is on display.
+     *
+     * SOSSirenService checks it shortly after trying to launch us, and posts a
+     * heads-up notification only if we never appeared. Whether the launch
+     * succeeds depends on SYSTEM_ALERT_WINDOW, the Android version and the OEM,
+     * so it cannot be predicted — but it can be observed.
+     */
+    public static volatile boolean isShowing = false;
+
     public static final String EXTRA_SENDER  = "sos_sender";
     public static final String EXTRA_MESSAGE = "sos_message";
     public static final String EXTRA_LAT     = "sos_lat";
@@ -34,6 +44,7 @@ public class SOSAlertActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        isShowing = true;
         super.onCreate(savedInstanceState);
 
         // ── Show over lock screen + wake screen ──────────────────────────────
@@ -174,5 +185,11 @@ public class SOSAlertActivity extends Activity {
     @Override
     public void onBackPressed() {
         // Prevent accidental dismiss — user must tap Stop Alarm
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        isShowing = false;
     }
 }

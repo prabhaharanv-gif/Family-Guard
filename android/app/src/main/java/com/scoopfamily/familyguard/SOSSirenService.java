@@ -154,7 +154,27 @@ public class SOSSirenService extends Service {
         // the two that can appear over a lock screen, so it is the one kept;
         // the in-app overlay is suppressed on Android to match.
         forceScreenOn();
+        SOSAlertActivity.isShowing = false;
         launchAlertActivity(senderName, message);
+
+        // Fallback: if the alert never appeared, post a heads-up notification so
+        // the recipient at least sees who needs help.
+        //
+        // The launch is blocked by Android's background-activity-start rules
+        // unless SYSTEM_ALERT_WINDOW is granted — "Abort background activity
+        // starts" in logcat — and that depends on the permission, the Android
+        // version and the OEM, so it cannot be decided up front. Posting the
+        // banner unconditionally showed it alongside a successful alert; not
+        // posting it left a siren with a blank screen when the launch failed.
+        // Checking whether the Activity actually came up settles both.
+        final String fbSender  = senderName;
+        final String fbMessage = message;
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            if (SOSAlertActivity.isShowing) return;
+            android.util.Log.w("FamoraSOS", "Alert activity did not appear — posting fallback notification");
+            MyFirebaseMessagingService.showSosNotification(
+                getApplicationContext(), fbSender, fbMessage, sosLat, sosLng);
+        }, 1200);
 
         // Safety net: auto-stop after 60 s even if the user never responds
         new android.os.Handler(android.os.Looper.getMainLooper())

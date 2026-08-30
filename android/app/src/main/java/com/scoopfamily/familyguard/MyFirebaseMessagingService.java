@@ -192,7 +192,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     // Posted from onMessageReceived() alongside the siren service.
     // Uses the sos_alerts_v3 channel (alarm sound + bypass DND + max priority)
     // so MIUI shows it on the lock screen. Tapping opens MainActivity → /sos.
-    private static void showSosNotification(Context ctx, String sender, String message,
+    public static void showSosNotification(Context ctx, String sender, String message,
                                             String lat, String lng) {
         try {
             NotificationManager nm =
