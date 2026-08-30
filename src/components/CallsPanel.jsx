@@ -15,6 +15,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import PullToRefresh from '../components/PullToRefresh'
 import { useAuthStore } from '../store/authStore'
 
 const FINISHED = ['ended', 'declined', 'missed']
@@ -166,6 +167,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
         </div>
       )}
 
+      <PullToRefresh onRefresh={load}>
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 30, color: '#9C6B7A', fontSize: 13 }}>Loading…</div>
@@ -276,6 +278,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
           )
         })}
       </div>
+      </PullToRefresh>
     </div>
   )
 }

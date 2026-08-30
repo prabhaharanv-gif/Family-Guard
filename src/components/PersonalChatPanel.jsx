@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useHiddenMessages } from '../hooks/useHiddenMessages'
+import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import {
   SingleTick, DoubleTick, ReplyBar, ReplyQuote, MessageActionSheet, EditModal,
@@ -65,6 +66,11 @@ function Avatar({ member, size = 44 }) {
 export default function PersonalChatPanel({ onDialog, resetSignal, onControls }) {
   const { user, familyId } = useAuthStore()
   const { hidden: hiddenMsgs, hide: hideMessage } = useHiddenMessages('direct', user?.id)
+  // Held in a ref rather than state: the pull-to-refresh handler needs to call
+  // the loader, but making it a dependency would re-run the effect and tear down
+  // the realtime channel on every render.
+  const reloadRef = useRef(null)
+  const reload = useCallback(async () => { await reloadRef.current?.() }, [])
   const [members, setMembers]   = useState([])
   const [messages, setMessages] = useState([])   // every DM I am part of
   const [openWith, setOpenWith] = useState(null) // member object, or null for the list
@@ -94,7 +100,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
     if (!familyId || !user) return
     let cancelled = false
 
-    ;(async () => {
+    reloadRef.current = async () => {
       const [memRes, dmRes] = await Promise.all([
         supabase.from('family_members')
           .select('user_id, display_name, avatar_url, avatar_color')
@@ -110,7 +116,8 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
       setMembers((memRes.data || []).filter(m => m.user_id !== user.id))
       setMessages(dmRes.data || [])
       setLoading(false)
-    })()
+    }
+    reloadRef.current()
 
     const channel = supabase
       .channel(`direct-messages:${familyId}:${user.id}`)
@@ -509,6 +516,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
 
   // ── Conversation list ─────────────────────────────────────────────────────
   return (
+    <PullToRefresh onRefresh={reload}>
     <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '10px 12px 20px' }}>
       {loading ? null : members.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9C6B7A', fontSize: 13 }}>
@@ -550,5 +558,6 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
         )
       })}
     </div>
+    </PullToRefresh>
   )
 }
