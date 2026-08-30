@@ -1009,13 +1009,11 @@ export default function FamilyPage() {
                     // would read as disabled. Green is avoided because it sat
                     // beside the green "Live" pin and the two merged.
                     const color = '#9C6B7A'
-                    // This reading is only as fresh as the last location write.
-                    // A member who stopped sharing keeps their last value
-                    // forever, and since a battery only drains, a stale number
-                    // always reads higher than reality. Fade it rather than
-                    // hide it — "last known 2%" is worth knowing, "currently
-                    // 2%" would be a lie. presenceTick re-renders every 15s so
-                    // this stays current.
+                    // Stale readings were previously faded to 55% opacity, on
+                    // the reasoning that a battery only drains so an old value
+                    // always reads high. In practice it just looked like two
+                    // members had different coloured indicators, so the signal
+                    // cost more than it bought. Kept as a tooltip only.
                     const stale = loc?.updatedAt
                       ? (Date.now() - new Date(loc.updatedAt)) > 15 * 60 * 1000
                       : true
@@ -1025,7 +1023,6 @@ export default function FamilyPage() {
                         style={{
                           display: 'flex', alignItems: 'center', gap: 4,
                           fontSize: 11, fontWeight: 800, color, marginTop: 3, whiteSpace: 'nowrap',
-                          opacity: stale ? 0.55 : 1,
                         }}>
                         <svg width="21" height="12" viewBox="0 0 26 14" fill="none" aria-hidden="true">
                           <rect x="1" y="1" width="21" height="12" rx="3"
