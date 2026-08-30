@@ -47,6 +47,7 @@ export default function MessagesPage() {
   // has no back arrow (hardware back does the same on Android).
   const [personalReset, setPersonalReset] = useState(0)
   const [callControls, setCallControls] = useState(null) // reported by CallsPanel
+  const [personalControls, setPersonalControls] = useState(null) // reported by PersonalChatPanel
   const [typingUsers, setTypingUsers] = useState({})
   const bottomRef      = useRef(null)
   const longPressRef   = useRef(null)
@@ -351,6 +352,23 @@ export default function MessagesPage() {
               {clearing ? 'Clearing...' : 'Clear Chat'}
             </button>
           )}
+          {/* Same button for an open personal thread. The panel reports the
+              action up rather than drawing its own, so the two tabs cannot
+              drift apart in style the way they had. */}
+          {activeTab === 'personal' && personalControls?.canClear && (
+            <button onClick={personalControls.clearThread} disabled={personalControls.clearing} style={{
+              background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
+              color: '#951345', borderRadius: 10, padding: '7px 12px',
+              fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
+              cursor: personalControls.clearing ? 'wait' : 'pointer',
+              whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+              {personalControls.clearing ? 'Clearing...' : 'Clear Chat'}
+            </button>
+          )}
           {activeTab === 'chat' && (
           <button onClick={() => setShowSearch(s => !s)} style={{
             background: showSearch ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)',
@@ -385,7 +403,7 @@ export default function MessagesPage() {
 
       {activeTab === 'calls' && <CallsPanel onDialog={setDialog} onControls={setCallControls} />}
 
-      {activeTab === 'personal' && <PersonalChatPanel onDialog={setDialog} resetSignal={personalReset} />}
+      {activeTab === 'personal' && <PersonalChatPanel onDialog={setDialog} resetSignal={personalReset} onControls={setPersonalControls} />}
 
       {activeTab === 'chat' && showSearch && (
         <div style={{ padding: '8px 16px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF' }}>

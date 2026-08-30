@@ -61,7 +61,7 @@ function Avatar({ member, size = 44 }) {
   )
 }
 
-export default function PersonalChatPanel({ onDialog, resetSignal }) {
+export default function PersonalChatPanel({ onDialog, resetSignal, onControls }) {
   const { user, familyId } = useAuthStore()
   const [members, setMembers]   = useState([])
   const [messages, setMessages] = useState([])   // every DM I am part of
@@ -283,6 +283,17 @@ export default function PersonalChatPanel({ onDialog, resetSignal }) {
     if (longPressRef.current) clearTimeout(longPressRef.current)
   }
 
+  // Reported up so the maroon header can own this button, matching the family
+  // room and the calls tab. Cleared when no thread is open so the header does
+  // not offer to clear a conversation that is not on screen.
+  useEffect(() => {
+    onControls?.({
+      canClear: !!openWith && thread.length > 0,
+      clearing,
+      clearThread: handleClearThread,
+    })
+  }, [openWith, thread.length, clearing, onControls])
+
   const senderNameOf = (msg) =>
     (msg?.sender_id === user?.id ? 'You' : openWith?.display_name)
 
@@ -300,28 +311,6 @@ export default function PersonalChatPanel({ onDialog, resetSignal }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14.5, fontWeight: 800, color: '#0D0C1D' }}>{openWith.display_name}</div>
           </div>
-          {thread.length > 0 && (
-            <button
-              onClick={handleClearThread}
-              disabled={clearing}
-              style={{
-                background: '#FDF0F5', border: '1.5px solid #F0D8E3',
-                color: '#951345', borderRadius: 10, padding: '7px 11px',
-                fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
-                cursor: clearing ? 'wait' : 'pointer', flexShrink: 0,
-                display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345"
-                strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                <path d="M10 11v6M14 11v6" />
-                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-              </svg>
-              {clearing ? 'Clearing...' : 'Clear Chat'}
-            </button>
-          )}
         </div>
 
         {/* Messages */}
