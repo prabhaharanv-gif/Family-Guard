@@ -201,7 +201,7 @@ public class PingRingService extends Service {
             .setOngoing(true)
             .setAutoCancel(false)
             .setContentIntent(contentPi)
-            .addAction(0, "Stop", stopPi)
+            .addAction(0, getString(R.string.notif_action_stop), stopPi)
             .build();
     }
 

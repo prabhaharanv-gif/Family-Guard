@@ -54,11 +54,11 @@
     <!-- Hindi puts the caller first: "<name> से <call type>" -->
     <string name="notif_call_title">📞 %2$s से %1$s</string>
     <string name="notif_tap_to_answer">उत्तर देने के लिए टैप करें</string>
+    <string name="notif_action_stop">रोकें</string>
+
     <string name="notif_ping_title">📡 मिल गया!</string>
     <string name="notif_ping_body">%1$s इस फ़ोन को ढूँढ़ रहे हैं</string>
-    <!-- "Stop" is the literal action-button label: it is a hardcoded Java
-         string in PingRingService, not a resource, so it stays English here. -->
-    <string name="notif_ping_big">%1$s इस फ़ोन को ढूँढ़ रहे हैं।\n\nआवाज़ बंद करने के लिए Stop दबाएँ।</string>
+    <string name="notif_ping_big">%1$s इस फ़ोन को ढूँढ़ रहे हैं।\n\nआवाज़ बंद करने के लिए रोकें बटन दबाएँ।</string>
     <string name="notif_location_body">आपके परिवार की सुरक्षा · लोकेशन चालू</string>
     <string name="notif_tap_to_open">खोलने के लिए टैप करें</string>
 </resources>

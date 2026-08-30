@@ -73,6 +73,15 @@
     <string name="notif_call_video_label">Video call</string>
     <string name="notif_call_title">📞 %1$s from %2$s</string>
     <string name="notif_tap_to_answer">Tap to answer</string>
+    <!--
+      The Stop action button on the Find My Phone notification. It was a
+      hardcoded Java literal until now, so it read "Stop" on every device
+      while notif_ping_big told the reader to tap a translated word that did
+      not exist. Whatever this says, notif_ping_big below must name the same
+      word, in every language.
+    -->
+    <string name="notif_action_stop">Stop</string>
+
     <string name="notif_ping_title">📡 Found it!</string>
     <string name="notif_ping_body">%1$s is looking for this phone</string>
     <string name="notif_ping_big">%1$s is looking for this phone.\n\nTap Stop to silence it.</string>

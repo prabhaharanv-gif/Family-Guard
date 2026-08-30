@@ -54,11 +54,11 @@
     <!-- Malayalam puts the caller first: "<name> ൽ നിന്ന് <call type>" -->
     <string name="notif_call_title">📞 %2$s ൽ നിന്ന് %1$s</string>
     <string name="notif_tap_to_answer">മറുപടി നൽകാൻ ടാപ്പ് ചെയ്യുക</string>
+    <string name="notif_action_stop">നിർത്തുക</string>
+
     <string name="notif_ping_title">📡 കണ്ടെത്തി!</string>
     <string name="notif_ping_body">%1$s ഈ ഫോൺ തിരയുന്നു</string>
-    <!-- "Stop" is the literal action-button label: it is a hardcoded Java
-         string in PingRingService, not a resource, so it stays English here. -->
-    <string name="notif_ping_big">%1$s ഈ ഫോൺ തിരയുന്നു.\n\nശബ്ദം നിർത്താൻ Stop അമർത്തുക.</string>
+    <string name="notif_ping_big">%1$s ഈ ഫോൺ തിരയുന്നു.\n\nശബ്ദം നിർത്താൻ നിർത്തുക ബട്ടൺ അമർത്തുക.</string>
     <string name="notif_location_body">നിങ്ങളുടെ കുടുംബത്തെ സംരക്ഷിക്കുന്നു · ലൊക്കേഷൻ സജീവം</string>
     <string name="notif_tap_to_open">തുറക്കാൻ ടാപ്പ് ചെയ്യുക</string>
 </resources>

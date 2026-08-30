@@ -54,6 +54,8 @@
     <!-- Tamil puts the caller first: "<name> இடமிருந்து <call type>" -->
     <string name="notif_call_title">📞 %2$s இடமிருந்து %1$s</string>
     <string name="notif_tap_to_answer">பதிலளிக்க தட்டவும்</string>
+    <string name="notif_action_stop">நிறுத்து</string>
+
     <string name="notif_ping_title">📡 கிடைத்தது!</string>
     <string name="notif_ping_body">%1$s இந்தத் தொலைபேசியைத் தேடுகிறார்</string>
     <string name="notif_ping_big">%1$s இந்தத் தொலைபேசியைத் தேடுகிறார்.\n\nஒலியை நிறுத்த நிறுத்து என்பதைத் தட்டவும்.</string>

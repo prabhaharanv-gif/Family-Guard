@@ -54,11 +54,11 @@
     <!-- Telugu puts the caller first: "<name> నుండి <call type>" -->
     <string name="notif_call_title">📞 %2$s నుండి %1$s</string>
     <string name="notif_tap_to_answer">సమాధానం ఇవ్వడానికి ట్యాప్ చేయండి</string>
+    <string name="notif_action_stop">ఆపు</string>
+
     <string name="notif_ping_title">📡 దొరికింది!</string>
     <string name="notif_ping_body">%1$s ఈ ఫోన్ కోసం వెతుకుతున్నారు</string>
-    <!-- "Stop" is the literal action-button label: it is a hardcoded Java
-         string in PingRingService, not a resource, so it stays English here. -->
-    <string name="notif_ping_big">%1$s ఈ ఫోన్ కోసం వెతుకుతున్నారు.\n\nశబ్దం ఆపడానికి Stop నొక్కండి.</string>
+    <string name="notif_ping_big">%1$s ఈ ఫోన్ కోసం వెతుకుతున్నారు.\n\nశబ్దం ఆపడానికి ఆపు బటన్ నొక్కండి.</string>
     <string name="notif_location_body">మీ కుటుంబాన్ని కాపాడుతోంది · లొకేషన్ ఆన్</string>
     <string name="notif_tap_to_open">తెరవడానికి ట్యాప్ చేయండి</string>
 </resources>
