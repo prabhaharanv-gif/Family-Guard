@@ -461,8 +461,17 @@ public class LocationForegroundService extends Service {
             // the same charge. Both paths write this column, so they have to
             // agree or the number jumps depending on which one wrote last.
             if (level >= 0 && scale > 0) battery = Math.round((level / (float) scale) * 100f);
-            charging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING
-                    || status == android.os.BatteryManager.BATTERY_STATUS_FULL;
+            // EXTRA_PLUGGED, not just STATUS. MIUI (and most OEM "optimised
+            // charging" schemes) report BATTERY_STATUS_NOT_CHARGING while the
+            // cable is connected but current is paused — thermal limits, an
+            // 80% charge cap, or simply being full. Reading STATUS alone made
+            // a plugged-in phone show as not charging. Conversely STATUS can
+            // linger on FULL briefly after unplugging, which showed the
+            // opposite. EXTRA_PLUGGED answers the question actually being
+            // asked: is this phone on power right now?
+            int plugged = batteryIntent.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0);
+            charging = plugged != 0
+                    || status == android.os.BatteryManager.BATTERY_STATUS_CHARGING;
         }
 
         float speedKmh = loc.hasSpeed() ? loc.getSpeed() * 3.6f : 0f;
