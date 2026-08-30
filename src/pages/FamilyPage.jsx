@@ -996,11 +996,12 @@ export default function FamilyPage() {
                     if (pct == null || Number.isNaN(pct)) return null
                     const level = Math.max(0, Math.min(100, Math.round(pct)))
                     const charging = !!loc?.isCharging
-                    // Maroon at every level. Green sat beside the green "Live"
-                    // pin and the two read as one blob; red and amber pulled the
-                    // eye away from the location status, which is the more
-                    // important signal on this card.
-                    const color = '#951345'
+                    // The app's muted rose, already used for secondary text
+                    // elsewhere on this screen. Full maroon was too heavy for a
+                    // supporting detail and competed with the member name; grey
+                    // would read as disabled. Green is avoided because it sat
+                    // beside the green "Live" pin and the two merged.
+                    const color = '#9C6B7A'
                     // This reading is only as fresh as the last location write.
                     // A member who stopped sharing keeps their last value
                     // forever, and since a battery only drains, a stale number
