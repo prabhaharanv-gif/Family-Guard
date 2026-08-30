@@ -306,7 +306,6 @@ export default function ProfilePage() {
       .eq('user_id', user.id)
     if (fams && fams.length > 0) {
       const own    = fams.find(d => d.families?.created_by === user.id)
-      const joined = fams.find(d => d.families && d.families.created_by !== user.id)
 
       // Try to get the family creator's invite code first
       if (own && own.families?.invite_code) {
@@ -324,9 +323,6 @@ export default function ProfilePage() {
         }
       }
 
-      const active = fams.find(d => d.family_id === familyId && d.families?.name)
-      const chosen = active || joined || own
-      if (chosen && chosen.families?.name) setMyFamilyName(chosen.families.name)
     } else {
       // User has no family yet — still show their personal code
       const uid = user.id.replace(/-/g, '')
