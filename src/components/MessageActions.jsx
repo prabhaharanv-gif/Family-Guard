@@ -87,41 +87,6 @@ export function ReplyQuote({ original, senderName }) {
 // sheet on the Family page. The labels carried a caption each ("Reply to this
 // message", "Remove for everyone") that only restated the label, and four
 // full-width coloured blocks made every action shout equally loudly.
-function ActionRow({ icon, label, color, onClick, danger }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        width: '100%', padding: '9px 4px',
-        background: 'none', border: 'none', cursor: 'pointer',
-        fontFamily: 'inherit', textAlign: 'left',
-        display: 'flex', alignItems: 'center', gap: 11,
-      }}
-    >
-      <div style={{
-        width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-        background: `${color}14`, color,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>{icon}</div>
-      <div style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: danger ? color : '#0D0C1D' }}>
-        {label}
-      </div>
-      <span style={{ color: '#D8C3CD', fontSize: 16, flexShrink: 0 }}>›</span>
-    </button>
-  )
-}
-
-/**
- * Anchored dropdown shown on a long press, positioned next to the bubble that
- * was pressed rather than sliding up from the bottom of the screen.
- *
- * A bottom sheet put the actions as far from the message as the screen allows,
- * and needed a copy of the message text plus a Cancel button just to re-explain
- * what was being acted on. Anchoring it to the bubble makes the target obvious,
- * so both can go and the menu is roughly a third the height.
- *
- * `anchor` is the pressed bubble's bounding rect in viewport coordinates.
- */
 export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDelete, onHide, onInfo, onClose }) {
   const actions = [
     {
