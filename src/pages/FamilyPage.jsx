@@ -1032,7 +1032,16 @@ export default function FamilyPage() {
                           <rect x="3.5" y="3.5" width={Math.max(2, (level / 100) * 16)} height="7" rx="1.5" fill={color} />
                           <path d="M24 5 v4" stroke={color} strokeWidth="3" strokeLinecap="round" />
                         </svg>
-                        {level}%{charging ? ' ⚡' : ''}
+                        {level}%
+                        {/* SVG, not the ⚡ emoji: an emoji paints its own
+                            colours and cannot be tinted. Electric blue against
+                            the muted rose so charging is readable at a glance
+                            without competing with the green "Live" pin. */}
+                        {charging && (
+                          <svg width="9" height="13" viewBox="0 0 8 12" fill="#2563EB" aria-hidden="true">
+                            <path d="M4.6 0 0 6.6h2.7L2.2 12 7.4 5.1H4.4L4.6 0z" />
+                          </svg>
+                        )}
                       </span>
                     )
                   })()}
