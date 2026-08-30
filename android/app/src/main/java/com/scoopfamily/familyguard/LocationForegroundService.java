@@ -455,7 +455,6 @@ public class LocationForegroundService extends Service {
         if (batteryIntent != null) {
             int level  = batteryIntent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
             int scale  = batteryIntent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
-            int status = batteryIntent.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
             // Math.round, not an (int) cast: the cast truncates, so 48.9% was
             // stored as 48 here while the JS writer (Math.round) stored 49 for
             // the same charge. Both paths write this column, so they have to
@@ -469,9 +468,15 @@ public class LocationForegroundService extends Service {
             // linger on FULL briefly after unplugging, which showed the
             // opposite. EXTRA_PLUGGED answers the question actually being
             // asked: is this phone on power right now?
+            // EXTRA_PLUGGED alone. BATTERY_STATUS lingers on CHARGING after the
+            // cable is pulled — verified with `dumpsys battery unplug`, which
+            // reported "USB powered: false" while status stayed 2 (CHARGING).
+            // ORing STATUS in as a "safety net" therefore kept a phone showing
+            // as charging after it was unplugged, which is the bug this was
+            // meant to fix. EXTRA_PLUGGED is non-zero for every power source
+            // (USB, AC, wireless, dock), so nothing is lost by dropping it.
             int plugged = batteryIntent.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0);
-            charging = plugged != 0
-                    || status == android.os.BatteryManager.BATTERY_STATUS_CHARGING;
+            charging = plugged != 0;
         }
 
         float speedKmh = loc.hasSpeed() ? loc.getSpeed() * 3.6f : 0f;

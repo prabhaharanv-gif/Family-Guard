@@ -66,6 +66,50 @@ public class LocationPlugin extends Plugin {
      *
      * Call this from JS AFTER foreground location is already granted.
      */
+    /**
+     * Battery level and whether the phone is on power, read straight from
+     * BatteryManager.
+     *
+     * The web layer used navigator.getBattery() for this. Chromium has
+     * deprecated the Battery Status API and reports it unreliably inside a
+     * WebView — the charging flag in particular can stay stuck at whatever it
+     * was when the page loaded. Because the JS location writer runs every 20s
+     * while the app is open, that stale value kept overwriting the accurate one
+     * this service already writes, so a phone showed as charging long after it
+     * was unplugged.
+     *
+     * EXTRA_PLUGGED rather than BATTERY_STATUS: OEM optimised-charging pauses
+     * current while still plugged in, which STATUS reports as not charging.
+     */
+    @PluginMethod
+    public void getBatteryStatus(PluginCall call) {
+        try {
+            android.content.Intent b = getContext().registerReceiver(
+                null, new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED));
+
+            JSObject ret = new JSObject();
+            if (b == null) { ret.put("level", null); ret.put("charging", false); call.resolve(ret); return; }
+
+            int level  = b.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
+            int scale  = b.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
+            int plug   = b.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0);
+
+            if (level >= 0 && scale > 0) ret.put("level", Math.round((level / (float) scale) * 100f));
+            else                         ret.put("level", null);
+            // EXTRA_PLUGGED alone. BATTERY_STATUS lingers on CHARGING after the
+            // cable is pulled — verified with `dumpsys battery unplug`, which
+            // reported "USB powered: false" while status stayed 2 (CHARGING).
+            // ORing STATUS in as a "safety net" therefore kept a phone showing
+            // as charging after it was unplugged, which is the bug this was
+            // meant to fix. EXTRA_PLUGGED is non-zero for every power source
+            // (USB, AC, wireless, dock), so nothing is lost by dropping it.
+            ret.put("charging", plug != 0);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("getBatteryStatus failed: " + e.getMessage());
+        }
+    }
+
     @PluginMethod
     public void requestBackgroundPermission(PluginCall call) {
         // Below Android 10 there is no separate background permission — foreground covers it
