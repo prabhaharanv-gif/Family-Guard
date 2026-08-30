@@ -239,6 +239,7 @@ export default function ProfilePage() {
   const [myInviteCode, setMyInviteCode] = useState('')
   // null while unknown or on web, where there is no native picker; the card is
   // hidden in that case rather than offering something that cannot work.
+  const [codeCopied, setCodeCopied] = useState(false)
   const [ringtones, setRingtones] = useState(null)
   // Collapsed by default: four rows of sound pickers pushed Privacy and
   // everything below it off the first screen.
@@ -651,10 +652,34 @@ export default function ProfilePage() {
               <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 8 }}>
                 My Code
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 3, color: '#0D0C1D', fontFamily: 'Sora, sans-serif' }}>
                   {myInviteCode}
                 </div>
+                <button
+                  onClick={() => {
+                    // Best-effort: clipboard is unavailable in some WebView
+                    // configurations, and the code is on screen either way.
+                    try { navigator.clipboard?.writeText(myInviteCode) } catch { /* shown above */ }
+                    setCodeCopied(true)
+                    setTimeout(() => setCodeCopied(false), 1400)
+                  }}
+                  style={{
+                    background: codeCopied ? '#D1FAE5' : '#FDF0F5',
+                    border: `1.5px solid ${codeCopied ? '#10B981' : '#F0D8E3'}`,
+                    color: codeCopied ? '#059669' : '#951345',
+                    borderRadius: 10, padding: '7px 12px',
+                    fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
+                    cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : '#951345'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  {codeCopied ? 'Copied' : 'Copy'}
+                </button>
               </div>
             </>
           )}
