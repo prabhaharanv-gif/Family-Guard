@@ -13,13 +13,17 @@
 import { create } from 'zustand'
 import { UI } from './ui'
 
-// Languages the *interface* is translated into. The user guide ships in more
-// (see LANGUAGES in manual.js) — a guide someone reads once is cheap to
-// translate, every screen in the app is not. Keep these separate so adding a
-// guide language does not silently claim the UI is translated too.
+// Languages the *interface* is translated into. This list happens to match
+// LANGUAGES in manual.js today, but the two stay separate on purpose: a guide
+// someone reads once is cheap to translate, every screen in the app is not, so
+// a guide language must never silently claim the UI is translated too. Order
+// matches manual.js so the picker here and the one on the guide agree.
 export const UI_LANGUAGES = [
   { code: 'en', native: 'English' },
   { code: 'ta', native: 'தமிழ்' },
+  { code: 'te', native: 'తెలుగు' },
+  { code: 'kn', native: 'ಕನ್ನಡ' },
+  { code: 'ml', native: 'മലയാളം' },
   { code: 'hi', native: 'हिन्दी' },
 ]
 

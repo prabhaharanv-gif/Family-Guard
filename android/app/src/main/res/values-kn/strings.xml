@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+  Kannada notification channel labels.
+
+  Only the strings Android renders on our behalf live here. app_name and the
+  url-scheme values stay untranslated in values/ — the brand is the brand, and
+  the scheme is an identifier.
+-->
+<resources>
+    <string name="ch_sos_name">SOS ತುರ್ತು ಎಚ್ಚರಿಕೆಗಳು</string>
+    <string name="ch_sos_desc">ಕುಟುಂಬ ಸದಸ್ಯರಿಂದ ಬರುವ ತುರ್ತು SOS ಎಚ್ಚರಿಕೆಗಳು</string>
+
+    <string name="ch_sos_banner_name">SOS ಎಚ್ಚರಿಕೆ ಬ್ಯಾನರ್</string>
+    <string name="ch_sos_banner_desc">SOS ಎಚ್ಚರಿಕೆ ಬ್ಯಾನರ್ — ಶಬ್ದವನ್ನು ಅಪ್ಲಿಕೇಶನ್ ಒದಗಿಸುತ್ತದೆ</string>
+
+    <string name="ch_calls_name">ಒಳಬರುವ ಕರೆಗಳು</string>
+    <string name="ch_calls_desc">ಕುಟುಂಬ ಸದಸ್ಯರಿಂದ ಬರುವ ಧ್ವನಿ ಮತ್ತು ವೀಡಿಯೊ ಕರೆಗಳು</string>
+
+    <string name="ch_call_ring_name">ಒಳಬರುವ ಕರೆಗಳು</string>
+    <string name="ch_call_ring_desc">ಕುಟುಂಬ ಸದಸ್ಯರಿಂದ ಬರುವ ಧ್ವನಿ/ವೀಡಿಯೊ ಕರೆಗಳು</string>
+
+    <string name="ch_messages_name">ಕುಟುಂಬ ಸಂದೇಶಗಳು</string>
+    <string name="ch_messages_desc">ಕುಟುಂಬ ಸದಸ್ಯರಿಂದ ಹೊಸ ಸಂದೇಶಗಳು</string>
+
+    <string name="ch_messages_silent_name">ಕುಟುಂಬ ಸಂದೇಶಗಳು (ಮೌನ)</string>
+    <string name="ch_messages_silent_desc">ಕುಟುಂಬ ಸಂದೇಶಗಳು — ಮೌನ ಮೋಡ್</string>
+
+    <string name="ch_location_name">ಸ್ಥಳ ಟ್ರ್ಯಾಕಿಂಗ್</string>
+    <string name="ch_location_desc">Famora ನಿಮ್ಮ ಸ್ಥಳವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡುತ್ತಿರುವಾಗ ಕಾಣಿಸುತ್ತದೆ</string>
+
+    <string name="ch_ping_name">ನನ್ನ ಫೋನ್ ಹುಡುಕಿ</string>
+    <string name="ch_ping_desc">ಕುಟುಂಬ ಸದಸ್ಯರು ಫೋನ್ ಹುಡುಕಿದಾಗ ಈ ಫೋನ್ ರಿಂಗ್ ಆಗುತ್ತದೆ</string>
+
+    <string name="a_family_member">ಒಬ್ಬ ಕುಟುಂಬ ಸದಸ್ಯ</string>
+    <string name="sos_alert">SOS ಎಚ್ಚರಿಕೆ</string>
+
+    <!-- SOSAlertActivity — ಲಾಕ್ ಪರದೆಯ ಮೇಲೆ ಕಾಣುವ ಪೂರ್ಣ-ಪರದೆ ಎಚ್ಚರಿಕೆ -->
+    <string name="sos_needs_help">%1$s ಅವರಿಗೆ ಸಹಾಯ ಬೇಕು!</string>
+    <string name="sos_view_location">📍 ಸ್ಥಳ ನೋಡಿ</string>
+    <string name="sos_open_app">Famora ತೆರೆಯಿರಿ</string>
+    <string name="sos_stop_alarm">✋ ಅರ್ಥವಾಯಿತು — ಅಲಾರಂ ನಿಲ್ಲಿಸಿ</string>
+
+    <!-- CallRingingActivity -->
+    <string name="call_incoming_voice">ಒಳಬರುವ ಧ್ವನಿ ಕರೆ</string>
+    <string name="call_incoming_video">ಒಳಬರುವ ವೀಡಿಯೊ ಕರೆ</string>
+    <string name="call_decline">✕ ತಿರಸ್ಕರಿಸಿ</string>
+    <string name="call_accept">✓ ಸ್ವೀಕರಿಸಿ</string>
+
+    <!-- ಅಧಿಸೂಚನೆಗಳು -->
+    <string name="notif_sos_title">🚨 SOS — %1$s ಅವರಿಗೆ ಸಹಾಯ ಬೇಕು!</string>
+    <string name="notif_sos_big">⚠️ %1$s ಅವರಿಗೆ ಸಹಾಯ ಬೇಕು!\n\n%2$s\n\nFamora ತೆರೆಯಲು ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
+    <string name="notif_call_voice_label">ಧ್ವನಿ ಕರೆ</string>
+    <string name="notif_call_video_label">ವೀಡಿಯೊ ಕರೆ</string>
+    <!-- Kannada puts the caller first: "<name> ಇಂದ <call type>" -->
+    <string name="notif_call_title">📞 %2$s ಇಂದ %1$s</string>
+    <string name="notif_tap_to_answer">ಉತ್ತರಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="notif_ping_title">📡 ಸಿಕ್ಕಿತು!</string>
+    <string name="notif_ping_body">%1$s ಈ ಫೋನ್ ಹುಡುಕುತ್ತಿದ್ದಾರೆ</string>
+    <!-- "Stop" is the literal action-button label: it is a hardcoded Java
+         string in PingRingService, not a resource, so it stays English here. -->
+    <string name="notif_ping_big">%1$s ಈ ಫೋನ್ ಹುಡುಕುತ್ತಿದ್ದಾರೆ.\n\nಶಬ್ದ ನಿಲ್ಲಿಸಲು Stop ಒತ್ತಿರಿ.</string>
+    <string name="notif_location_body">ನಿಮ್ಮ ಕುಟುಂಬವನ್ನು ರಕ್ಷಿಸುತ್ತಿದೆ · ಸ್ಥಳ ಸಕ್ರಿಯ</string>
+    <string name="notif_tap_to_open">ತೆರೆಯಲು ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+</resources>

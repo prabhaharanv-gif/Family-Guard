@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+  Telugu notification channel labels.
+
+  Only the strings Android renders on our behalf live here. app_name and the
+  url-scheme values stay untranslated in values/ — the brand is the brand, and
+  the scheme is an identifier.
+-->
+<resources>
+    <string name="ch_sos_name">SOS అత్యవసర హెచ్చరికలు</string>
+    <string name="ch_sos_desc">కుటుంబ సభ్యుల నుండి వచ్చే అత్యవసర SOS హెచ్చరికలు</string>
+
+    <string name="ch_sos_banner_name">SOS హెచ్చరిక బ్యానర్</string>
+    <string name="ch_sos_banner_desc">SOS హెచ్చరిక బ్యానర్ — శబ్దాన్ని యాప్ అందిస్తుంది</string>
+
+    <string name="ch_calls_name">వచ్చే కాల్‌లు</string>
+    <string name="ch_calls_desc">కుటుంబ సభ్యుల నుండి వచ్చే వాయిస్, వీడియో కాల్‌లు</string>
+
+    <string name="ch_call_ring_name">వచ్చే కాల్‌లు</string>
+    <string name="ch_call_ring_desc">కుటుంబ సభ్యుల నుండి వచ్చే వాయిస్/వీడియో కాల్‌లు</string>
+
+    <string name="ch_messages_name">కుటుంబ సందేశాలు</string>
+    <string name="ch_messages_desc">కుటుంబ సభ్యుల నుండి కొత్త సందేశాలు</string>
+
+    <string name="ch_messages_silent_name">కుటుంబ సందేశాలు (నిశ్శబ్దం)</string>
+    <string name="ch_messages_silent_desc">కుటుంబ సందేశాలు — నిశ్శబ్ద మోడ్</string>
+
+    <string name="ch_location_name">లొకేషన్ ట్రాకింగ్</string>
+    <string name="ch_location_desc">Famora మీ లొకేషన్‌ను ట్రాక్ చేస్తున్నప్పుడు కనిపిస్తుంది</string>
+
+    <string name="ch_ping_name">నా ఫోన్ కనుగొను</string>
+    <string name="ch_ping_desc">కుటుంబ సభ్యుడు ఫోన్ వెతికినప్పుడు ఈ ఫోన్ మోగుతుంది</string>
+
+    <string name="a_family_member">ఒక కుటుంబ సభ్యుడు</string>
+    <string name="sos_alert">SOS హెచ్చరిక</string>
+
+    <!-- SOSAlertActivity — లాక్ స్క్రీన్ పైన కనిపించే పూర్తి-స్క్రీన్ హెచ్చరిక -->
+    <string name="sos_needs_help">%1$s కు సహాయం కావాలి!</string>
+    <string name="sos_view_location">📍 లొకేషన్ చూడు</string>
+    <string name="sos_open_app">Famora తెరువు</string>
+    <string name="sos_stop_alarm">✋ అర్థమైంది — అలారం ఆపు</string>
+
+    <!-- CallRingingActivity -->
+    <string name="call_incoming_voice">వచ్చే వాయిస్ కాల్</string>
+    <string name="call_incoming_video">వచ్చే వీడియో కాల్</string>
+    <string name="call_decline">✕ తిరస్కరించు</string>
+    <string name="call_accept">✓ స్వీకరించు</string>
+
+    <!-- నోటిఫికేషన్‌లు -->
+    <string name="notif_sos_title">🚨 SOS — %1$s కు సహాయం కావాలి!</string>
+    <string name="notif_sos_big">⚠️ %1$s కు సహాయం కావాలి!\n\n%2$s\n\nFamora తెరవడానికి ట్యాప్ చేయండి.</string>
+    <string name="notif_call_voice_label">వాయిస్ కాల్</string>
+    <string name="notif_call_video_label">వీడియో కాల్</string>
+    <!-- Telugu puts the caller first: "<name> నుండి <call type>" -->
+    <string name="notif_call_title">📞 %2$s నుండి %1$s</string>
+    <string name="notif_tap_to_answer">సమాధానం ఇవ్వడానికి ట్యాప్ చేయండి</string>
+    <string name="notif_ping_title">📡 దొరికింది!</string>
+    <string name="notif_ping_body">%1$s ఈ ఫోన్ కోసం వెతుకుతున్నారు</string>
+    <!-- "Stop" is the literal action-button label: it is a hardcoded Java
+         string in PingRingService, not a resource, so it stays English here. -->
+    <string name="notif_ping_big">%1$s ఈ ఫోన్ కోసం వెతుకుతున్నారు.\n\nశబ్దం ఆపడానికి Stop నొక్కండి.</string>
+    <string name="notif_location_body">మీ కుటుంబాన్ని కాపాడుతోంది · లొకేషన్ ఆన్</string>
+    <string name="notif_tap_to_open">తెరవడానికి ట్యాప్ చేయండి</string>
+</resources>
