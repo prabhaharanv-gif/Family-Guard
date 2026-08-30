@@ -240,6 +240,9 @@ export default function ProfilePage() {
   // null while unknown or on web, where there is no native picker; the card is
   // hidden in that case rather than offering something that cannot work.
   const [ringtones, setRingtones] = useState(null)
+  // Collapsed by default: four rows of sound pickers pushed Privacy and
+  // everything below it off the first screen.
+  const [soundsOpen, setSoundsOpen] = useState(false)
 
   const [displayName, setDisplayName]   = useState('')
   const [phone, setPhone]               = useState('')
@@ -747,10 +750,37 @@ export default function ProfilePage() {
             offer on web. */}
         {ringtones && (
           <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 12 }}>
-              Alert Sounds
-            </div>
-            {ALERT_TYPES.map((t, i) => (
+            <button
+              onClick={() => setSoundsOpen(o => !o)}
+              aria-expanded={soundsOpen}
+              style={{
+                width: '100%', background: 'none', border: 'none', padding: 0,
+                cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                display: 'flex', alignItems: 'center', gap: 12,
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2 }}>
+                  Alert Sounds
+                </div>
+                <div style={{ fontSize: 12.5, color: '#9C6B7A', marginTop: 3 }}>
+                  Message, SOS and call tones
+                </div>
+              </div>
+              <svg
+                width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="#C9A3B4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                style={{
+                  flexShrink: 0,
+                  transform: soundsOpen ? 'rotate(90deg)' : 'none',
+                  transition: 'transform 0.18s',
+                }}
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+            {soundsOpen && <div style={{ height: 10 }} />}
+            {soundsOpen && ALERT_TYPES.map((t, i) => (
               <div key={t.key} style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '10px 0',
@@ -768,14 +798,14 @@ export default function ProfilePage() {
                 {ringtones[t.key] && ringtones[t.key] !== 'Default' && (
                   <button
                     onClick={() => handleResetTone(t.key)}
-                    title={`Reset ${t.label} to the default sound`}
+                    title={`Use the default sound for ${t.label}`}
                     style={{
                       background: 'none', border: 'none', cursor: 'pointer',
                       color: '#9C6B7A', fontSize: 11.5, fontWeight: 700,
                       fontFamily: 'inherit', padding: '6px 2px', flexShrink: 0,
                     }}
                   >
-                    Reset
+                    Default
                   </button>
                 )}
                 <button
