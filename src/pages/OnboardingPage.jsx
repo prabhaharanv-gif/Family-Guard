@@ -76,7 +76,7 @@ export default function OnboardingPage() {
               <label>Family Invite Code</label>
               <input className="input" value={joinCode}
                 onChange={e => setJoinCode(e.target.value.toUpperCase())}
-                placeholder="e.g. AB12CD" maxLength={6}
+                maxLength={6}
                 style={{ textAlign: 'center', fontSize: 24, fontWeight: 800, letterSpacing: 8 }}
                 required />
             </div>

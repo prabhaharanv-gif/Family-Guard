@@ -186,7 +186,7 @@ export default function RegisterPage() {
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Your name</label>
             <input className="input" type="text" value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="e.g. Prabhakaran" required />
+              required />
           </div>
 
           <div style={{ marginBottom: 12 }}>

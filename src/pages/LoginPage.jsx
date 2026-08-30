@@ -132,7 +132,7 @@ function ForgotPasswordModal({ onClose }) {
               <>
                 <input className="input" value={mobile}
                   onChange={e => setMobile(e.target.value)}
-                  placeholder="Mobile number (e.g. 9876543210)"
+                  placeholder="Mobile number"
                   autoFocus style={{ marginBottom: 16 }} />
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={onClose} style={{

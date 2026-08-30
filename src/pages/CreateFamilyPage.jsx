@@ -60,7 +60,6 @@ export default function CreateFamilyPage() {
               className="input"
               value={familyName}
               onChange={e => setFamilyName(e.target.value)}
-              placeholder="e.g. The Prabhakarans"
               required
             />
           </div>
@@ -70,7 +69,6 @@ export default function CreateFamilyPage() {
               className="input"
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
-              placeholder="e.g. Dad"
               required
             />
           </div>

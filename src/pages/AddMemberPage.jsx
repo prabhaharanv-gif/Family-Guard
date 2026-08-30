@@ -73,7 +73,7 @@ export default function AddMemberPage() {
             <label>Full Name *</label>
             <input className="input" value={displayName}
               onChange={e => setDisplayName(e.target.value)}
-              placeholder="e.g. Sudha" required />
+              required />
           </div>
 
           <div className="form-group">
@@ -103,7 +103,7 @@ export default function AddMemberPage() {
             <label>Nickname (Optional)</label>
             <input className="input" value={betName}
               onChange={e => setBetName(e.target.value)}
-              placeholder="e.g. Chinna, Kanna, Joo..." />
+              />
           </div>
 
           <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop: 8 }}>

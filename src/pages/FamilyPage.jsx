@@ -147,7 +147,7 @@ function ActionRow({ icon, label, sub, color, onClick, danger }) {
   )
 }
 
-function MemberActionSheet({ member, displayName, isOwner, onClose, onEditName, onRemove, onFindDevice }) {
+function MemberActionSheet({ member, displayName, isOwner, isSelf, onClose, onEditName, onRemove, onFindDevice }) {
   const shown = displayName || member.display_name
   return (
     <div className="overlay" onClick={onClose}>
@@ -180,18 +180,24 @@ function MemberActionSheet({ member, displayName, isOwner, onClose, onEditName, 
           </div>
         </div>
 
-        {/* Everyday actions */}
-        <ActionRow
-          icon={<PencilIcon />} color="#951345"
-          label="Set Nickname" sub="A private name only you see"
-          onClick={onEditName}
-        />
-        <div style={{ height: 1, background: '#F7EFF3' }} />
-        <ActionRow
-          icon={<RadarIcon />} color="#951345"
-          label="Find My Device" sub="Ring their phone, even on silent"
-          onClick={onFindDevice}
-        />
+        {/* Everyday actions — neither applies to yourself. A nickname is a
+            private label for someone else, and ringing your own phone to find
+            it makes no sense while you are holding it. */}
+        {!isSelf && (
+          <>
+            <ActionRow
+              icon={<PencilIcon />} color="#951345"
+              label="Set Nickname" sub="A private name only you see"
+              onClick={onEditName}
+            />
+            <div style={{ height: 1, background: '#F7EFF3' }} />
+            <ActionRow
+              icon={<RadarIcon />} color="#951345"
+              label="Find My Device" sub="Ring their phone, even on silent"
+              onClick={onFindDevice}
+            />
+          </>
+        )}
 
         {/* Destructive action, deliberately separated and quieter than the
             everyday ones — it is irreversible and rarely what you came for. */}
@@ -246,12 +252,9 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
           className="input" value={name} autoFocus
           onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSave()}
-          placeholder={`e.g. a nickname for ${member.display_name}`}
-          style={{ marginBottom: 8 }}
+          placeholder="Nickname"
+          style={{ marginBottom: 16 }}
         />
-        <div style={{ fontSize: 11, color: '#B0AAC8', marginBottom: 16 }}>
-          Clear the field and save to remove the nickname.
-        </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 14, borderRadius: 14,
@@ -674,6 +677,7 @@ export default function FamilyPage() {
           member={actionMember}
           displayName={nameFor(actionMember)}
           isOwner={isOwner && actionMember.user_id !== user?.id}
+          isSelf={actionMember.user_id === user?.id}
           onClose={() => setActionMember(null)}
           onEditName={() => { setEditNameMember(actionMember); setActionMember(null) }}
           onRemove={() => handleRemoveMember(actionMember)}

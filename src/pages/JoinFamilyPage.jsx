@@ -106,7 +106,6 @@ export default function JoinFamilyPage() {
               className="input"
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
-              placeholder="e.g. Mum"
               maxLength={100}
               required
             />
