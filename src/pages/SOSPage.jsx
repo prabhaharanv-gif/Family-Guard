@@ -451,7 +451,6 @@ export default function SOSPage() {
             </svg>
             SOS Alerts
           </div>
-          <div className="top-bar-sub">Tap to alert your family instantly</div>
         </div>
 
         {/* Clear Resolved — right side, matches Switch / Sign Out style */}

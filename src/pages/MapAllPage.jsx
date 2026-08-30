@@ -329,7 +329,6 @@ export default function MapAllPage() {
       <div className="top-bar" style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
         <div style={{ flex: 1 }}>
           <div className="top-bar-title">🗺️ Family Map</div>
-          <div className="top-bar-sub">{memberCount} member{memberCount !== 1 ? 's' : ''} sharing location</div>
         </div>
         {/* Find Fam button */}
         <button
