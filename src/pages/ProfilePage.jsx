@@ -252,14 +252,11 @@ export default function ProfilePage() {
   const [dialog, setDialog]             = useState(null)
   const [showPwModal, setShowPwModal]           = useState(false)
   const [showDeleteModal, setShowDeleteModal]   = useState(false)
-  const [showInviteSheet, setShowInviteSheet]   = useState(false)
-  const [codeCopied, setCodeCopied]             = useState(false)
   const [selectedFam, setSelectedFam]           = useState(null) // family action sheet
   const [viewFam, setViewFam]                   = useState(null) // { fam, members, loading } — read-only member list
   const fileRef = useRef()
 
   // Hardware back button closes open sheets instead of exiting the app
-  useBackButton(showInviteSheet, () => setShowInviteSheet(false))
   useBackButton(!!selectedFam, () => setSelectedFam(null))
   useBackButton(!!viewFam, () => setViewFam(null))
 
@@ -641,17 +638,6 @@ export default function ProfilePage() {
                 <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 3, color: '#0D0C1D', fontFamily: 'Sora, sans-serif' }}>
                   {myInviteCode}
                 </div>
-                <button onClick={() => setShowInviteSheet(true)} style={{
-                  background: '#951345', border: 'none', borderRadius: 10,
-                  padding: '8px 14px', color: '#fff', fontWeight: 800,
-                  fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'flex', alignItems: 'center', gap: 5,
-                }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
-                  </svg>
-                  Invite
-                </button>
               </div>
             </>
           )}
@@ -910,79 +896,6 @@ export default function ProfilePage() {
       )}
 
       {/* ── INVITE SHEET ── */}
-      {showInviteSheet && (
-        <div className="overlay" onClick={() => setShowInviteSheet(false)}>
-          <div className="popup" onClick={e => e.stopPropagation()} style={{ paddingBottom: 28 }}>
-            <div className="popup-handle" />
-
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
-              Share My Code
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 5, color: '#0D0C1D', fontFamily: 'Sora, sans-serif', marginBottom: 4 }}>
-              {myInviteCode}
-            </div>
-            <div style={{ fontSize: 12, color: '#9C6B7A', marginBottom: 20 }}>
-              Ask your family member to enter this code on the Add Member screen
-            </div>
-
-            {/* WhatsApp */}
-            <button onClick={() => {
-              const msg = encodeURIComponent(`Join me on Famora! Enter my code *${myInviteCode}* when adding me as a member. Download the app and stay connected with family 🛡️`)
-              window.open(`https://wa.me/?text=${msg}`, '_blank')
-            }} style={{
-              width: '100%', padding: '14px 16px', borderRadius: 14,
-              background: '#25D366', border: 'none',
-              color: '#fff', fontWeight: 800, fontSize: 15,
-              fontFamily: 'inherit', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10,
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.553 4.118 1.522 5.852L.057 23.25a.75.75 0 0 0 .916.916l5.404-1.464A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.502-5.17-1.381l-.37-.218-3.835 1.04 1.04-3.834-.218-.371A9.953 9.953 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-              </svg>
-              Share via WhatsApp
-            </button>
-
-            {/* SMS */}
-            <button onClick={() => {
-              const msg = encodeURIComponent(`Join me on Famora! My code is ${myInviteCode} — enter it when adding me as a member.`)
-              window.open(`sms:?body=${msg}`, '_blank')
-            }} style={{
-              width: '100%', padding: '14px 16px', borderRadius: 14,
-              background: '#0EA5E9', border: 'none',
-              color: '#fff', fontWeight: 800, fontSize: 15,
-              fontFamily: 'inherit', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10,
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-              Share via SMS
-            </button>
-
-            {/* Copy Code */}
-            <button onClick={() => {
-              navigator.clipboard.writeText(myInviteCode)
-              setCodeCopied(true)
-              setTimeout(() => { setCodeCopied(false); setShowInviteSheet(false) }, 1200)
-            }} style={{
-              width: '100%', padding: '14px 16px', borderRadius: 14,
-              background: codeCopied ? '#D1FAE5' : '#F5F4FB',
-              border: codeCopied ? '1.5px solid #10B981' : '1.5px solid #E9E6FB',
-              color: codeCopied ? '#059669' : '#3A1020', fontWeight: 800, fontSize: 15,
-              fontFamily: 'inherit', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 12, transition: 'all 0.2s',
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : '#951345'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-              </svg>
-              {codeCopied ? '✓ Copied!' : 'Copy Code'}
-            </button>
-
-          </div>
-        </div>
-      )}
-
       {/* ── FAMILY ACTION SHEET ── */}
       {selectedFam && (
         <div className="overlay" onClick={() => setSelectedFam(null)}>

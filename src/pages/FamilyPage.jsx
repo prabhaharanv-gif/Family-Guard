@@ -327,7 +327,7 @@ export default function FamilyPage() {
       supabase.from('family_members').select('*').eq('family_id', familyId),
       supabase.from('member_nicknames').select('target_user_id, nickname')
         .eq('family_id', familyId).eq('owner_user_id', user.id),
-      supabase.from('locations').select('user_id, lat, lng, updated_at, is_sharing, location_enabled')
+      supabase.from('locations').select('user_id, lat, lng, updated_at, is_sharing, location_enabled, battery_level, is_charging')
         .eq('family_id', familyId),
       supabase.from('join_requests').select('*')
         .eq('family_id', familyId).eq('status', 'pending'),
@@ -343,7 +343,7 @@ export default function FamilyPage() {
     }
     if (locRes.data) {
       const map = {}
-      locRes.data.forEach(l => { map[l.user_id] = { lat: l.lat, lng: l.lng, updatedAt: l.updated_at, isSharing: l.is_sharing, locEnabled: l.location_enabled !== false } })
+      locRes.data.forEach(l => { map[l.user_id] = { lat: l.lat, lng: l.lng, updatedAt: l.updated_at, isSharing: l.is_sharing, locEnabled: l.location_enabled !== false, battery: l.battery_level ?? null, isCharging: l.is_charging ?? false } })
       setLocations(map)
     }
     if (reqRes.data) setJoinRequests(reqRes.data)
@@ -370,7 +370,16 @@ export default function FamilyPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'locations', filter: `family_id=eq.${familyId}` },
         (payload) => {
           if (payload.new) {
-            setLocations(prev => ({ ...prev, [payload.new.user_id]: { lat: payload.new.lat, lng: payload.new.lng, updatedAt: payload.new.updated_at, isSharing: payload.new.is_sharing, locEnabled: payload.new.location_enabled !== false } }))
+            setLocations(prev => ({ ...prev, [payload.new.user_id]: {
+              lat: payload.new.lat, lng: payload.new.lng,
+              updatedAt: payload.new.updated_at,
+              isSharing: payload.new.is_sharing,
+              locEnabled: payload.new.location_enabled !== false,
+              // An UPDATE payload can omit columns that did not change, so fall
+              // back to what we already had rather than blanking the indicator.
+              battery: payload.new.battery_level ?? prev[payload.new.user_id]?.battery ?? null,
+              isCharging: payload.new.is_charging ?? prev[payload.new.user_id]?.isCharging ?? false,
+            } }))
           }
         })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'family_members', filter: `family_id=eq.${familyId}` },
@@ -977,6 +986,29 @@ export default function FamilyPage() {
                         marginTop: 1, whiteSpace: 'nowrap',
                       }}>
                         {label}
+                      </span>
+                    )
+                  })()}
+                  {(() => {
+                    // Battery has been collected and stored since the location
+                    // service landed, but was never surfaced anywhere.
+                    const pct = loc?.battery
+                    if (pct == null || Number.isNaN(pct)) return null
+                    const level = Math.max(0, Math.min(100, Math.round(pct)))
+                    const charging = !!loc?.isCharging
+                    const color = charging ? '#10B981' : level <= 15 ? '#E11D48' : level <= 30 ? '#D97706' : '#6B7280'
+                    return (
+                      <span style={{
+                        display: 'flex', alignItems: 'center', gap: 3,
+                        fontSize: 9, fontWeight: 700, color, marginTop: 1, whiteSpace: 'nowrap',
+                      }}>
+                        <svg width="14" height="9" viewBox="0 0 26 14" fill="none" aria-hidden="true">
+                          <rect x="0.75" y="0.75" width="21.5" height="12.5" rx="2.5"
+                            stroke={color} strokeWidth="1.5" />
+                          <rect x="3" y="3" width={Math.max(1, (level / 100) * 17)} height="8" rx="1" fill={color} />
+                          <path d="M24 5 v4" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+                        </svg>
+                        {level}%{charging ? ' ⚡' : ''}
                       </span>
                     )
                   })()}
