@@ -1011,15 +1011,17 @@ export default function FamilyPage() {
                       <span
                         title={stale ? 'Last known battery — this member has not reported recently' : undefined}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: 3,
-                          fontSize: 9, fontWeight: 700, color, marginTop: 1, whiteSpace: 'nowrap',
-                          opacity: stale ? 0.45 : 1,
+                          display: 'flex', alignItems: 'center', gap: 4,
+                          fontSize: 11, fontWeight: 800, color, marginTop: 3, whiteSpace: 'nowrap',
+                          opacity: stale ? 0.55 : 1,
                         }}>
-                        <svg width="14" height="9" viewBox="0 0 26 14" fill="none" aria-hidden="true">
-                          <rect x="0.75" y="0.75" width="21.5" height="12.5" rx="2.5"
-                            stroke={color} strokeWidth="1.5" />
-                          <rect x="3" y="3" width={Math.max(1, (level / 100) * 17)} height="8" rx="1" fill={color} />
-                          <path d="M24 5 v4" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+                        <svg width="21" height="12" viewBox="0 0 26 14" fill="none" aria-hidden="true">
+                          <rect x="1" y="1" width="21" height="12" rx="3"
+                            stroke={color} strokeWidth="2" />
+                          {/* Minimum 2px of fill so a nearly-flat battery still
+                              reads as "some charge" rather than an empty shell. */}
+                          <rect x="3.5" y="3.5" width={Math.max(2, (level / 100) * 16)} height="7" rx="1.5" fill={color} />
+                          <path d="M24 5 v4" stroke={color} strokeWidth="3" strokeLinecap="round" />
                         </svg>
                         {level}%{charging ? ' ⚡' : ''}
                       </span>
