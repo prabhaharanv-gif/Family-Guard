@@ -53,7 +53,24 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     public  static final String CALL_CHANNEL_ID   = "incoming_calls_ring_v1";
     private static final String CALL_CHANNEL_NAME = "Incoming Calls";
 
-    private static final String MSG_CHANNEL_ID   = "family_messages_v3";
+    private static final String MSG_CHANNEL_BASE = "family_messages_v4";
+    private static final String KEY_MSG_CHANNEL  = "msg_channel_id";
+
+    /**
+     * Channel id for the currently selected message tone.
+     *
+     * A NotificationChannel's sound is fixed at creation, and deleting a channel
+     * then recreating it under the same id restores the old settings — so the
+     * only way to actually change the sound is a different id. It is derived
+     * from the sound URI, giving one stable channel per distinct choice.
+     */
+    private static String msgChannelId(Context ctx) {
+        android.net.Uri chosen = RingtonePlugin.getUri(ctx, RingtonePlugin.KEY_MESSAGE);
+        String tag = (chosen == null)
+            ? "default"
+            : Integer.toHexString(chosen.toString().hashCode());
+        return MSG_CHANNEL_BASE + "_" + tag;
+    }
     private static final String MSG_CHANNEL_NAME = "Family Messages";
     // Silent channel — banner shows but no sound (used for mute level 1)
     private static final String MSG_SILENT_CHANNEL_ID   = "family_messages_silent";
@@ -74,8 +91,16 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             NotificationManager nm =
                 (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
             if (nm == null) return;
-            nm.deleteNotificationChannel(MSG_CHANNEL_ID);
+            // Remove the channel the previous selection used, plus the two
+            // historical ids, so switching sounds does not leave a growing list
+            // of stale channels in system settings.
+            android.content.SharedPreferences p = ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            String previous = p.getString(KEY_MSG_CHANNEL, null);
+            if (previous != null) nm.deleteNotificationChannel(previous);
+            nm.deleteNotificationChannel("family_messages_v3");
+
             ensureMessageChannelStatic(ctx);
+            p.edit().putString(KEY_MSG_CHANNEL, msgChannelId(ctx)).apply();
         } catch (Exception e) { e.printStackTrace(); }
     }
     public static final String KEY_MESSAGES_OPEN  = "messages_page_open";
@@ -348,18 +373,33 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager nm =
             (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm == null || nm.getNotificationChannel(MSG_CHANNEL_ID) != null) return;
+        if (nm == null) return;
+
+        // Retire the pre-v4 channel. It stored its sound as a numeric resource
+        // id, which stopped resolving to message_tone once res/raw was
+        // renumbered, so it survives only as a silent entry in system settings.
+        try { nm.deleteNotificationChannel("family_messages_v3"); } catch (Exception ignored) {}
+
+        String channelId = msgChannelId(ctx);
+        if (nm.getNotificationChannel(channelId) != null) return;
 
         NotificationChannel ch = new NotificationChannel(
-            MSG_CHANNEL_ID, MSG_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH
+            channelId, MSG_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH
         );
         ch.setDescription("New messages from family members");
 
         // The user's choice if they made one, otherwise the bundled tone.
+        //
+        // Referenced by NAME, not by R.raw's numeric id. A channel stores this
+        // URI permanently, and raw resource ids are renumbered whenever a file
+        // is added to res/raw — adding emergency_alert.mp3 shifted message_tone
+        // from 0x7f0d0001 to 0x7f0d0003, leaving the live channel pointing at
+        // firebase_common_keep and playing nothing at all. The named form
+        // survives that.
         android.net.Uri notifUri = RingtonePlugin.getUri(ctx, RingtonePlugin.KEY_MESSAGE);
         if (notifUri == null) {
             notifUri = android.net.Uri.parse(
-                "android.resource://" + ctx.getPackageName() + "/" + R.raw.message_tone
+                "android.resource://" + ctx.getPackageName() + "/raw/message_tone"
             );
         }
         android.media.AudioAttributes attrs = new android.media.AudioAttributes.Builder()
@@ -395,7 +435,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         // muteLevel 1 = sound off but banner still shows → use PRIORITY_LOW + silent channel
         // muteLevel 0 = normal
         NotificationCompat.Builder b = new NotificationCompat.Builder(
-                appCtx, muteLevel >= 1 ? MSG_SILENT_CHANNEL_ID : MSG_CHANNEL_ID)
+                appCtx, muteLevel >= 1 ? MSG_SILENT_CHANNEL_ID : msgChannelId(appCtx))
             .setSmallIcon(R.drawable.ic_stat_notify)
             .setColor(android.graphics.Color.parseColor("#951345"))
             .setContentTitle("💬 " + senderName)
