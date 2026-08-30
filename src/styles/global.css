@@ -533,6 +533,14 @@ body {
    MEMBER CARD — premium lifted card
    ══════════════════════════════════════════════════════════════ */
 .member-card {
+  /* The card's own gesture is a long press, which opens the action sheet. Without
+     this the browser starts a text selection at the same moment and grabs
+     whatever is under the finger — the battery percentage, "Live", the distance —
+     and MIUI puts its Convert/Copy/Share bar over the card. Same guard the nav
+     items in Layout.jsx already use. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
   background: var(--grad-card);
   border-radius: var(--radius-lg);
   padding: 15px 16px;
