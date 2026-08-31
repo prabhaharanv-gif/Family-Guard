@@ -167,14 +167,31 @@ serve(async (req) => {
 
     console.log(`[MSG-FN] New message in family ${record.family_id}`)
 
-    // Tokens for all OTHER family members
+    // Tokens for all OTHER family members. user_id comes along so each
+    // notification can be addressed with the name THAT recipient uses.
     const { data: tokens } = await supabase
       .from('device_tokens')
-      .select('token')
+      .select('token, user_id')
       .eq('family_id', record.family_id)
       .neq('user_id',  record.user_id)
 
     if (!tokens || tokens.length === 0) return new Response('No tokens', { status: 200 })
+
+    // A nickname is private to the person who set it: member_nicknames is
+    // keyed by owner_user_id, so the same sender is named differently on
+    // different phones. One query fetches every nickname pointing at this
+    // sender in this family; anyone without one falls back to display_name.
+    const { data: nicknameRows } = await supabase
+      .from('member_nicknames')
+      .select('owner_user_id, nickname')
+      .eq('family_id',      record.family_id)
+      .eq('target_user_id', record.user_id)
+
+    const nicknameByOwner = new Map<string, string>()
+    for (const row of nicknameRows || []) {
+      const nick = typeof row.nickname === 'string' ? row.nickname.trim() : ''
+      if (nick) nicknameByOwner.set(row.owner_user_id, nick)
+    }
 
     const rawSA = Deno.env.get('FIREBASE_SERVICE_ACCOUNT')
     if (!rawSA) return new Response('Config error', { status: 500 })
@@ -197,10 +214,10 @@ serve(async (req) => {
     // (foreground, background, killed), so MyFirebaseMessagingService can
     // check the mute level and Messages-page-open flag before deciding whether
     // to show a notification, play a sound, or stay silent.
-    const fcmPayload = {
+    const payloadFor = (recipientId: string) => ({
       data: {
         type:      'message',
-        sender:    senderName,
+        sender:    nicknameByOwner.get(recipientId) || senderName,
         content:   preview,
         family_id: String(record.family_id),
       },
@@ -208,10 +225,10 @@ serve(async (req) => {
         priority: 'high',
         ttl:      '300s',
       },
-    }
+    })
 
     const results = await Promise.all(
-      tokens.map(({ token }) => sendFCM(token, fcmPayload, accessToken))
+      tokens.map(({ token, user_id }) => sendFCM(token, payloadFor(user_id), accessToken))
     )
 
     let successCount = 0

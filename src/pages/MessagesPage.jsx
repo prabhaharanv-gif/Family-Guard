@@ -181,7 +181,17 @@ export default function MessagesPage() {
     return () => supabase.removeChannel(ch)
   }, [familyId, user])
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+  // The first paint of a loaded thread jumps straight to the newest message.
+  // Animating it meant watching the whole history scroll past on every visit
+  // to the page; later arrivals still slide in so the movement is noticed.
+  const didInitialScroll = useRef(false)
+  useEffect(() => {
+    if (!messages.length) return
+    bottomRef.current?.scrollIntoView({
+      behavior: didInitialScroll.current ? 'smooth' : 'instant',
+    })
+    didInitialScroll.current = true
+  }, [messages])
 
   // ── Send ────────────────────────────────────────────────────────────────────
   const sendMessage = async () => {

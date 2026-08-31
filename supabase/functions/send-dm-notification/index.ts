@@ -164,7 +164,19 @@ serve(async (req) => {
       .eq('family_id', record.family_id)
       .maybeSingle()
 
-    const senderName = sender?.display_name || 'Family member'
+    // A nickname is private to the person who set it, and there is exactly
+    // one recipient here — so look up only what THIS recipient calls the
+    // sender, falling back to the sender's own display name.
+    const { data: nicknameRow } = await supabase
+      .from('member_nicknames')
+      .select('nickname')
+      .eq('family_id',      record.family_id)
+      .eq('owner_user_id',  record.recipient_id)
+      .eq('target_user_id', record.sender_id)
+      .maybeSingle()
+
+    const nickname = typeof nicknameRow?.nickname === 'string' ? nicknameRow.nickname.trim() : ''
+    const senderName = nickname || sender?.display_name || 'Family member'
     const preview = typeof record.content === 'string'
       ? record.content.substring(0, 100)
       : 'New message'
