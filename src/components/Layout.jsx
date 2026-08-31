@@ -1,4 +1,5 @@
-import { Outlet, NavLink } from 'react-router-dom'
+import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import ErrorBoundary from './ErrorBoundary'
 
 // Premium custom SVG nav icons — pixel-perfect, brand-aligned
 const NAV_ITEMS = [
@@ -84,10 +85,15 @@ const NAV_ITEMS = [
 ]
 
 export default function Layout({ unreadMessages = 0 }) {
+  const location = useLocation()
   return (
     <div className="app-shell">
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        <Outlet />
+        {/* Keyed by path so a crash on one tab is contained: the bottom nav
+            stays usable and switching tabs mounts a fresh boundary. */}
+        <ErrorBoundary key={location.pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </div>
       <nav className="bottom-nav">
         {NAV_ITEMS.map(item => (

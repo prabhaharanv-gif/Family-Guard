@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 import Dialog from '../components/Dialog'
+import { readMuteLevel, writeMuteLevel, MUTE_LEVELS } from '../lib/muteLevel'
 
 const MessagesPageNative = registerPlugin('MessagesPage')
 function notifyNativePageOpen(open) {
@@ -283,9 +284,7 @@ export default function MessagesPage() {
   const [text, setText]           = useState('')
   const [sending, setSending]     = useState(false)
   const [clearing, setClearing]   = useState(false)
-  const [muteLevel, setMuteLevel] = useState(() => {
-    try { return parseInt(localStorage.getItem('msg_mute_level') || '0', 10) } catch { return 0 }
-  })
+  const [muteLevel, setMuteLevel] = useState(readMuteLevel)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch]   = useState(false)
   const [dialog, setDialog]           = useState(null) // { type, title, message, onConfirm }
@@ -474,9 +473,8 @@ export default function MessagesPage() {
 
   // ── Mute ────────────────────────────────────────────────────────────────────
   const handleMuteToggle = () => {
-    const next = (muteLevel + 1) % 3
+    const next = writeMuteLevel((muteLevel + 1) % MUTE_LEVELS)
     setMuteLevel(next)
-    try { localStorage.setItem('msg_mute_level', String(next)) } catch {}
     setNativeMuteLevel(next)
   }
   const MUTE_STATES = [
@@ -484,6 +482,8 @@ export default function MessagesPage() {
     { icon: '🔕', tip: 'Sound muted' },
     { icon: '🚫', tip: 'All muted' },
   ]
+  // Never index blind — an unexpected level must not take the whole page down
+  const muteState = MUTE_STATES[muteLevel] || MUTE_STATES[0]
 
   // ── Long press ──────────────────────────────────────────────────────────────
   const startLongPress = (msg) => {
@@ -506,12 +506,12 @@ export default function MessagesPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div>
             <div className="top-bar-title">💬 Messages</div>
-            <button onClick={handleMuteToggle} title={MUTE_STATES[muteLevel].tip} style={{
+            <button onClick={handleMuteToggle} title={muteState.tip} style={{
               marginTop: 3, background: 'none', border: 'none',
               cursor: 'pointer', padding: 0,
               display: 'flex', alignItems: 'center', gap: 5,
             }}>
-              <span style={{ fontSize: 15 }}>{MUTE_STATES[muteLevel].icon}</span>
+              <span style={{ fontSize: 15 }}>{muteState.icon}</span>
               {muteLevel > 0 && (
                 <span style={{ fontSize: 10, fontWeight: 700,
                   color: muteLevel === 1 ? '#FFD700' : '#FF8080' }}>
@@ -861,7 +861,7 @@ export default function MessagesPage() {
             )}
             {(() => {
               const readers = new Set((reads[detailMsg.id] || []).map(r => r.user_id))
-              const pending = Object.values(members).filter(m => m.user_id !== user.id && !readers.has(m.user_id))
+              const pending = Object.values(members).filter(m => m.user_id !== user?.id && !readers.has(m.user_id))
               if (pending.length === 0) return null
               return (
                 <>

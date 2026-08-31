@@ -22,6 +22,7 @@ import { useLocationService } from './hooks/useLocationService'
 import { useLocationBroadcast } from './hooks/useLocationBroadcast'
 import { useHeartbeat } from './hooks/useHeartbeat'
 import { initBackHandler, pushCloser, removeCloser } from './lib/backHandler'
+import { readMuteLevel } from './lib/muteLevel'
 import Layout from './components/Layout'
 
 // ── Native siren bridge (Android) ────────────────────────────────────────────
@@ -408,7 +409,7 @@ export default function App() {
         if (payload.new.user_id !== user.id &&
             window.location.pathname !== '/messages') {
           // Respect mute level — if fully muted (level 2) don't show badge either
-          const muteLevel = parseInt(localStorage.getItem('msg_mute_level') || '0', 10)
+          const muteLevel = readMuteLevel()
           if (muteLevel < 2) {
             setUnreadMessages(prev => prev + 1)
           }

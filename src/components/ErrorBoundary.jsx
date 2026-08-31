@@ -3,7 +3,7 @@ import { Component } from 'react'
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = { hasError: false, error: null, showDetails: false }
   }
 
   static getDerivedStateFromError(error) {
@@ -12,23 +12,36 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('[ErrorBoundary] Caught:', error, info)
+    this.setState({ info })
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null, info: null, showDetails: false })
+    this.props.onRetry?.()
   }
 
   render() {
     if (!this.state.hasError) return this.props.children
+
+    const { error, info, showDetails } = this.state
+    const detail = [
+      error?.message || String(error || 'Unknown error'),
+      info?.componentStack?.trim(),
+    ].filter(Boolean).join('\n\n')
 
     return (
       <div style={{
         height: '100%', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         padding: 32, background: '#FFF5F7', textAlign: 'center',
+        overflowY: 'auto',
       }}>
         <div style={{
           width: 72, height: 72, borderRadius: 22,
           background: 'linear-gradient(135deg, #FEE2E2, #FEF2F2)',
           border: '1.5px solid #FCA5A5',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 36, marginBottom: 20,
+          fontSize: 36, marginBottom: 20, flexShrink: 0,
         }}>
           ⚠️
         </div>
@@ -45,7 +58,7 @@ export default class ErrorBoundary extends Component {
           FamilyGuard ran into a problem on this page. Your data is safe.
         </div>
         <button
-          onClick={() => this.setState({ hasError: false, error: null })}
+          onClick={this.handleRetry}
           style={{
             padding: '13px 28px', borderRadius: 14,
             background: 'linear-gradient(135deg, #951345, #720D35)',
@@ -67,6 +80,27 @@ export default class ErrorBoundary extends Component {
         >
           Go to Home
         </button>
+
+        {/* Details — collapsed by default, so a crash on a phone is still
+            reportable without a debugger attached */}
+        <button
+          onClick={() => this.setState(s => ({ showDetails: !s.showDetails }))}
+          style={{
+            marginTop: 18, background: 'none', border: 'none',
+            color: '#C4A2AE', fontSize: 12, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >
+          {showDetails ? 'Hide details' : 'Show details'}
+        </button>
+        {showDetails && (
+          <pre style={{
+            marginTop: 10, maxWidth: '100%', maxHeight: 220, overflow: 'auto',
+            background: '#fff', border: '1px solid #F3D4DD', borderRadius: 12,
+            padding: 12, fontSize: 11, lineHeight: 1.5, color: '#6B7280',
+            textAlign: 'left', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+          }}>{detail}</pre>
+        )}
       </div>
     )
   }
