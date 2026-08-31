@@ -149,6 +149,20 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
       }, (payload) => {
         if (payload.old?.id) setMessages(prev => prev.filter(x => x.id !== payload.old.id))
       })
+      // The member list was fetched once per family and never revisited, so
+      // anyone who joined while this panel was mounted was missing from it —
+      // there was no way to start a chat with a new member short of
+      // restarting the app. INSERT/DELETE only: member UPDATEs are mostly
+      // heartbeats, and reloading the whole history on each one would be
+      // constant pointless traffic.
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'family_members',
+        filter: `family_id=eq.${familyId}`,
+      }, () => { reloadRef.current?.() })
+      .on('postgres_changes', {
+        event: 'DELETE', schema: 'public', table: 'family_members',
+        filter: `family_id=eq.${familyId}`,
+      }, () => { reloadRef.current?.() })
       .subscribe()
 
     return () => { cancelled = true; supabase.removeChannel(channel) }
@@ -525,8 +539,13 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
           Nobody else has joined this family yet.
         </div>
       ) : members.map(m => {
-        const t = threadFor(m.user_id)
-        const last = t[t.length - 1]
+        // Deliberately NOT named `t`: that shadowed the translation function
+        // from useT() in this scope, so the two t(...) calls below were
+        // invoking this array and threw "t is not a function". It only
+        // surfaced once the family had a second real member — until then the
+        // empty-list branch above ran instead and the map never executed.
+        const memberThread = threadFor(m.user_id)
+        const last = memberThread[memberThread.length - 1]
         return (
           <button
             key={m.user_id}

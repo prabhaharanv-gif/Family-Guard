@@ -1,7 +1,6 @@
 package com.scoopfamily.familyguard;
 
 import android.Manifest;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -71,13 +70,15 @@ public class MainActivity extends BridgeActivity {
         CallRingingService.ensureCallRingChannelStatic(getApplicationContext());
         LocationForegroundService.ensureChannel(getApplicationContext());
 
-        // ── Request USE_FULL_SCREEN_INTENT on Android 14+ ───────────────────
-        // On API 34+, USE_FULL_SCREEN_INTENT became a runtime permission that
-        // the user must grant. Without it, setFullScreenIntent() in
-        // SOSSirenService is silently blocked — sound plays but no visual alert
-        // appears over the lock screen. We request it once on first launch;
-        // the system shows a one-time prompt the user can accept/deny.
-        requestFullScreenIntentPermissionIfNeeded();
+        // USE_FULL_SCREEN_INTENT (Android 14+) is deliberately NOT requested
+        // from here — see canDrawOverlays below for the same reasoning. It has
+        // no requestPermissions() path, only a Settings page, and launching
+        // that from onCreate pushed the app straight to the background on
+        // every first launch after an install: on API 34+ devices the app
+        // looked like it would not open at all, minimising itself the moment
+        // it started (reported on a Motorola; never seen on the Android 12
+        // test Xiaomi, where this branch cannot run). SosReliabilitySetup
+        // already offers it as a user-initiated card, which is where it stays.
         setupWebViewMediaPermissions();
         clearWebViewCacheIfAppUpdated();
 
@@ -193,44 +194,6 @@ public class MainActivity extends BridgeActivity {
             pendingWebPermissionRequest.deny();
         }
         pendingWebPermissionRequest = null;
-    }
-
-    /**
-     * On Android 14 (API 34)+, USE_FULL_SCREEN_INTENT is no longer
-     * automatically granted — the NotificationManager exposes
-     * canUseFullScreenIntent() which returns false until the user grants it
-     * via a system settings page. We direct them there on first launch.
-     */
-    private void requestFullScreenIntentPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34
-            try {
-                NotificationManager nm =
-                    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                if (nm != null && !nm.canUseFullScreenIntent()) {
-                    // Opens the system settings page where the user can grant this.
-                    // This is the documented way to request it — there's no
-                    // requestPermissions() path for this particular permission.
-                    Intent intent = new Intent(
-                        android.provider.Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT
-                    );
-                    intent.setData(
-                        android.net.Uri.parse("package:" + getPackageName())
-                    );
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    // Only show once — check a pref so we don't nag every launch
-                    SharedPreferences prefs = getSharedPreferences(
-                        MyFirebaseMessagingService.PREF_NAME, MODE_PRIVATE);
-                    boolean asked = prefs.getBoolean("fsi_permission_asked", false);
-                    if (!asked) {
-                        prefs.edit().putBoolean("fsi_permission_asked", true).apply();
-                        startActivity(intent);
-                    }
-                }
-            } catch (Exception e) {
-                // Settings activity may not exist on all devices — safe to ignore
-                e.printStackTrace();
-            }
-        }
     }
 
     /**

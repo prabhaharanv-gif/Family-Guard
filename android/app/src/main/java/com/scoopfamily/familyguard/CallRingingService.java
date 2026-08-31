@@ -57,7 +57,14 @@ public class CallRingingService extends Service {
     private PowerManager.WakeLock screenWakeLock = null;
 
     private String callId     = "";
-    private String callerName = getString(R.string.a_family_member);
+    // Deliberately a plain literal, NOT getString(R.string.a_family_member):
+    // field initializers run from the constructor, before the framework
+    // attaches the base context, so getResources() NPEs there and the service
+    // dies in <init> — every incoming call crashed on the callee's phone with
+    // "Unable to create service". onStartCommand applies the localized default
+    // below, where a context exists, and it is the only thing that ever writes
+    // this field before it is read.
+    private String callerName = "";
     private String callType   = "voice";
     private String callerAvatar = "";
     private boolean launchActivity = true;

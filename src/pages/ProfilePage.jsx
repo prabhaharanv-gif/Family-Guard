@@ -302,8 +302,22 @@ export default function ProfilePage() {
       setMember(data)
       setDisplayName(data.display_name || '')
       const savedPhone = data.phone ? data.phone.replace('+91', '') : ''
+      // Two registration eras, and the number lives somewhere different in
+      // each. The older scheme encoded it into a synthetic address
+      // (91XXXXXXXXXX@familyguard.app); accounts created through the Twilio
+      // OTP flow are real phone signups, so they carry it in user.phone as
+      // E.164 and have NO email at all — which is why this field came up
+      // blank for them, the email regex having nothing to match against.
+      // family_members.phone is null for both until someone saves it here:
+      // create_family and accept_join_request only ever insert
+      // (family_id, user_id, display_name, role).
       const regFromEmail = (user?.email || '').match(/^91(\d{10})@familyguard\.app$/)
-      setPhone(savedPhone || (regFromEmail ? regFromEmail[1] : ''))
+      const fromAuthPhone = (user?.phone || '').replace(/^\+?91/, '')
+      setPhone(
+        savedPhone
+        || (regFromEmail ? regFromEmail[1] : '')
+        || (/^\d{10}$/.test(fromAuthPhone) ? fromAuthPhone : '')
+      )
       setAvatarUrl(data.avatar_url ? `${data.avatar_url}?t=${Date.now()}` : null)
 
       // If this row's privacy fields are null (new family), seed from another family's row

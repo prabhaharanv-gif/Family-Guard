@@ -166,8 +166,8 @@ export default function FamilyPage() {
   // window accurate to within a fifth of itself.
   const [, setPresenceTick] = useState(0)
   useEffect(() => {
-    const t = setInterval(() => setPresenceTick(n => n + 1), 15_000)
-    return () => clearInterval(t)
+    const tick = setInterval(() => setPresenceTick(n => n + 1), 15_000)
+    return () => clearInterval(tick)
   }, [])
 
   // Hardware back closes open sheets/modals instead of exiting the app.
@@ -260,6 +260,23 @@ export default function FamilyPage() {
                 : m
             ))
           }
+        })
+      // Somebody joining or leaving is an INSERT/DELETE, which neither the
+      // UPDATE handler above nor the join_requests path covers. Joining with a
+      // family code writes straight into family_members with no request to
+      // accept, so that path refreshed nothing: the new member never appeared
+      // in the list, and because the UPDATE handler above patches by map() it
+      // can only touch members already in state — their heartbeats were then
+      // dropped too, pinning them on "No activity yet" for good.
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'family_members', filter: `family_id=eq.${familyId}` },
+        () => {
+          supabase.from('family_members').select('*').eq('family_id', familyId)
+            .then(({ data }) => { if (data) setMembers(data) })
+        })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'family_members', filter: `family_id=eq.${familyId}` },
+        () => {
+          supabase.from('family_members').select('*').eq('family_id', familyId)
+            .then(({ data }) => { if (data) setMembers(data) })
         })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sos_alerts', filter: `family_id=eq.${familyId}` },
         (payload) => { if (payload.new && payload.new.user_id !== user?.id) setSosAlert(payload.new) })

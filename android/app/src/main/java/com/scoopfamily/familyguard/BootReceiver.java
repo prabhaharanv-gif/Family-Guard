@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.util.Log;
 
 /**
@@ -44,12 +43,16 @@ public class BootReceiver extends BroadcastReceiver {
             return;
         }
 
-        Log.i(TAG, "Restarting LocationForegroundService after boot");
-        Intent serviceIntent = new Intent(context, LocationForegroundService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent);
-        } else {
-            context.startService(serviceIntent);
+        // Location permission can be revoked between one boot and the next, and
+        // starting a location-typed foreground service without it kills the
+        // whole process rather than just failing. Go through startService(),
+        // which makes that check in one place for every start path.
+        if (!LocationForegroundService.hasLocationPermission(context)) {
+            Log.i(TAG, "Location permission not granted — skipping service restart");
+            return;
         }
+
+        Log.i(TAG, "Restarting LocationForegroundService after boot");
+        LocationForegroundService.startService(context);
     }
 }

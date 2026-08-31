@@ -1,5 +1,6 @@
 package com.scoopfamily.familyguard;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -8,6 +9,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Handler;
@@ -17,6 +19,7 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -240,22 +243,94 @@ public class LocationForegroundService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        isRunning = true;
-        // Android 14+ (API 34+) REQUIRES the service type to be passed explicitly
-        // to startForeground() for a "location" typed service. The old
-        // 2-argument startForeground() throws and the service dies instantly.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {  // API 34
-            startForeground(
-                NOTIF_ID,
-                buildNotification(),
-                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-            );
-        } else {
-            startForeground(NOTIF_ID, buildNotification());
+        // A "location" typed foreground service is only legal while the app
+        // actually holds the location runtime permission. On Android 14+ the
+        // system enforces that inside startForeground() by throwing
+        // SecurityException, which is an uncaught crash on the main thread —
+        // it takes the whole PROCESS down, not just the service.
+        //
+        // On a fresh install the permission has not been granted yet, so the
+        // app killed itself moments after launch and dropped the user back at
+        // the launcher: it looked like the app simply would not open, or
+        // "minimised itself" (seen on an Android 15 Motorola; never on the
+        // Android 12 test phone, where this is not enforced at all).
+        //
+        // startService() above refuses to start us in that state, so reaching
+        // here without the permission means something bypassed it. We are
+        // already committed: skipping startForeground() entirely earns a
+        // ForegroundServiceDidNotStartInTimeException, which is equally fatal.
+        // Post the notification untyped to satisfy the contract, then stop.
+        if (!hasLocationPermission(this)) {
+            Log.w(TAG, "No location permission — satisfying FGS contract, then stopping");
+            try {
+                // The typed overload and TYPE_NONE are both API 29+; below
+                // that nothing enforces service types, so the plain call is
+                // both sufficient and the only one available.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    startForeground(
+                        NOTIF_ID,
+                        buildNotification(),
+                        android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE
+                    );
+                } else {
+                    startForeground(NOTIF_ID, buildNotification());
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "untyped startForeground refused — " + e.getMessage());
+            }
+            isRunning = false;
+            stopSelf();
+            return START_NOT_STICKY;
         }
+
+        isRunning = true;
+        try {
+            // Android 14+ (API 34+) REQUIRES the service type to be passed explicitly
+            // to startForeground() for a "location" typed service. The old
+            // 2-argument startForeground() throws and the service dies instantly.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {  // API 34
+                startForeground(
+                    NOTIF_ID,
+                    buildNotification(),
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+                );
+            } else {
+                startForeground(NOTIF_ID, buildNotification());
+            }
+        } catch (Exception e) {
+            // Holding the permission is necessary but not sufficient: the
+            // system also refuses a foreground start made from the background
+            // unless the app is in an eligible state, which is exactly what
+            // the BootReceiver path is. Crashing there would kill the app
+            // silently on every reboot, so treat any refusal as "not now".
+            Log.w(TAG, "startForeground refused — " + e.getMessage());
+            isRunning = false;
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+
         startLocationUpdates();
         Log.i(TAG, "Location foreground service started — FusedLocationProvider");
         return START_STICKY;
+    }
+
+    /**
+     * Fine or coarse is enough for a "location" typed foreground service —
+     * the system checks anyOf(FINE, COARSE), and the app degrades to coarse
+     * fixes rather than refusing to track at all.
+     *
+     * Public and static because the decision belongs at the START sites, not
+     * here: once startForegroundService() has been called the service is
+     * committed either way — calling startForeground() with the location type
+     * throws without the permission, and NOT calling it earns a
+     * ForegroundServiceDidNotStartInTimeException. Both kill the process, so
+     * the only safe move is never to start in that state.
+     */
+    public static boolean hasLocationPermission(Context ctx) {
+        return ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION)
+                   == PackageManager.PERMISSION_GRANTED
+            || ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION)
+                   == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
@@ -788,6 +863,17 @@ public class LocationForegroundService extends Service {
     }
 
     public static void startService(Context ctx) {
+        // Refusing here is what keeps the app alive on a fresh install, where
+        // the location permission has not been granted yet — see
+        // hasLocationPermission above for why starting anyway is fatal rather
+        // than merely useless. Callers may fire this optimistically; the
+        // service starts for real once the permission is granted and
+        // useLocationService asks again.
+        if (!hasLocationPermission(ctx)) {
+            Log.w(TAG, "startService skipped — location permission not granted yet");
+            return;
+        }
+
         ensureChannel(ctx);
         Intent intent = new Intent(ctx, LocationForegroundService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

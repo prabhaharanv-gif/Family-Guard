@@ -169,7 +169,18 @@ export default function CallPage() {
           body: { call_id: call.id },
         })
         if (error || !data?.token) {
-          console.error('[CallPage] Failed to get Agora token:', error?.message)
+          // supabase-js collapses every non-2xx into the same opaque
+          // "returned a non-2xx status code", which cannot tell apart the
+          // failures that matter here: missing Agora secrets (500), a row RLS
+          // will not show us (404), an expired session (401), or a call that
+          // finished while we were asking (409). The Response it carries has
+          // the status and body, so read them off it.
+          let detail = ''
+          try {
+            const res = error?.context
+            if (res?.status) detail = ` [HTTP ${res.status}] ${await res.text()}`
+          } catch (e) {}
+          console.error('[CallPage] Failed to get Agora token:', (error?.message || 'no token in response') + detail)
           setJoinError('Could not connect the call. Please check your internet and try again')
           return
         }
@@ -253,8 +264,8 @@ export default function CallPage() {
       // cold start with no previous history entry, so navigate(-1) was a
       // no-op and the finished call screen ("Call ended") stayed on screen
       // indefinitely.
-      const t = setTimeout(() => navigate('/', { replace: true }), 1200)
-      return () => clearTimeout(t)
+      const goHomeTimer = setTimeout(() => navigate('/', { replace: true }), 1200)
+      return () => clearTimeout(goHomeTimer)
     }
   }, [call?.status, navigate])
 
