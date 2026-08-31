@@ -1,5 +1,17 @@
 apply plugin: 'com.android.application'
 
+// ── Release signing credentials ───────────────────────────────────────────────
+// Read from android/keystore.properties, which is gitignored and must never be
+// committed. Create it from keystore.properties.example on the build machine.
+// When the file is absent (CI checkout, fresh clone) the release signingConfig
+// is simply not created and only debug builds are possible.
+def keystorePropsFile = rootProject.file('keystore.properties')
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+def hasReleaseSigning = keystoreProps.containsKey('storeFile')
+
 android {
     namespace = "com.scoopfamily.familyguard"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -14,10 +26,26 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile     rootProject.file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias      keystoreProps['keyAlias']
+                keyPassword   keystoreProps['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // R8: shrink + obfuscate. Required for a security-sensitive app —
+            // without it the release bundle ships readable class and method names.
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

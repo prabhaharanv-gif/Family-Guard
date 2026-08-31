@@ -53,14 +53,26 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "        Sync complete" -ForegroundColor Green
 
 # ── STEP 5: Set JAVA_HOME for Gradle ─────────────────────────────────────────
-Write-Host "[ 5/5 ] Building APK (Gradle)..." -ForegroundColor Yellow
+Write-Host "[ 5/5 ] Building release AAB (Gradle)..." -ForegroundColor Yellow
+
+# Play Store uploads require a signed Android App Bundle. A debug-signed APK
+# is rejected at upload. Signing credentials come from android/keystore.properties
+# (gitignored) - see android/keystore.properties.example.
+if (-not (Test-Path "$ProjectRoot\android\keystore.properties")) {
+    Write-Host ""
+    Write-Host "[ERROR] android\keystore.properties not found." -ForegroundColor Red
+    Write-Host "        Copy android\keystore.properties.example to" -ForegroundColor Yellow
+    Write-Host "        android\keystore.properties and fill in your signing details." -ForegroundColor Yellow
+    Write-Host "        Without it the release bundle cannot be signed." -ForegroundColor Yellow
+    exit 1
+}
 
 # Update this path if your JDK is installed elsewhere
 $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 
 Set-Location "$ProjectRoot\android"
-.\gradlew.bat assembleDebug --no-build-cache
+.\gradlew.bat bundleRelease --no-build-cache
 if ($LASTEXITCODE -ne 0) {
     Write-Host "`n[ERROR] Gradle build failed." -ForegroundColor Red
     Set-Location $ProjectRoot
@@ -74,6 +86,7 @@ Write-Host ""
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
 Write-Host "  BUILD COMPLETE" -ForegroundColor Green
 Write-Host ""
-Write-Host "  APK:  android\app\build\outputs\apk\debug\app-debug.apk" -ForegroundColor White
+Write-Host "  AAB:  android\app\build\outputs\bundle\release\app-release.aab" -ForegroundColor White
+Write-Host "  Upload this file to the Play Console." -ForegroundColor Gray
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
 Write-Host ""

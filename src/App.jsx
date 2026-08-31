@@ -18,6 +18,8 @@ import SettingsPage from './pages/SettingsPage'
 import ProfilePage from './pages/ProfilePage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import { usePushNotifications } from './hooks/usePushNotifications'
+import BackgroundLocationDisclosure from './components/BackgroundLocationDisclosure'
+import { useLocationConsentStore } from './store/locationConsentStore'
 import { useLocationService } from './hooks/useLocationService'
 import { useLocationBroadcast } from './hooks/useLocationBroadcast'
 import { useHeartbeat } from './hooks/useHeartbeat'
@@ -287,6 +289,29 @@ function ConsentGate({ children }) {
   return children
 }
 
+/**
+ * Shows the background-location prominent disclosure the first time an
+ * authenticated user reaches the app, and keeps the consent store in sync with
+ * whoever is signed in. Renders nothing once a decision has been recorded —
+ * declining lets the user straight through to the rest of the app.
+ */
+function LocationDisclosureGate({ children }) {
+  const { user, loading } = useAuthStore()
+  const { userId, consent, load } = useLocationConsentStore()
+
+  useEffect(() => {
+    if (user?.id && userId !== user.id) load(user.id)
+  }, [user?.id, userId, load])
+
+  if (loading || !user) return children
+  // Wait for the store to be pointed at this user before deciding to prompt,
+  // otherwise a stale consent from the previous account leaks through.
+  if (userId !== user.id) return children
+  if (consent === null) return <BackgroundLocationDisclosure />
+
+  return children
+}
+
 function PrivateRoute({ children }) {
   const { user, loading } = useAuthStore()
   if (loading) return <div className="splash">Loading...</div>
@@ -470,27 +495,29 @@ export default function App() {
 
   return (
     <ConsentGate>
-      <NativeAlarmBanner visible={nativeAlarmOn} onStop={stopAllAlarms} />
-      <GlobalSOSAlert alert={sosAlert} onDismiss={stopAllAlarms} />
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/privacy" element={<PrivacyPolicyPage />} />
-        <Route path="/onboarding" element={<PrivateRoute><OnboardingPage /></PrivateRoute>} />
-        <Route path="/add-member" element={<PrivateRoute><AddMemberPage /></PrivateRoute>} />
-        <Route path="/join-family" element={<PrivateRoute><JoinFamilyPage /></PrivateRoute>} />
-        <Route path="/create-family" element={<PrivateRoute><CreateFamilyPage /></PrivateRoute>} />
-        <Route path="/map/:userId" element={<PrivateRoute><MapPage /></PrivateRoute>} />
+      <LocationDisclosureGate>
+        <NativeAlarmBanner visible={nativeAlarmOn} onStop={stopAllAlarms} />
+        <GlobalSOSAlert alert={sosAlert} onDismiss={stopAllAlarms} />
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/onboarding" element={<PrivateRoute><OnboardingPage /></PrivateRoute>} />
+          <Route path="/add-member" element={<PrivateRoute><AddMemberPage /></PrivateRoute>} />
+          <Route path="/join-family" element={<PrivateRoute><JoinFamilyPage /></PrivateRoute>} />
+          <Route path="/create-family" element={<PrivateRoute><CreateFamilyPage /></PrivateRoute>} />
+          <Route path="/map/:userId" element={<PrivateRoute><MapPage /></PrivateRoute>} />
 
-        <Route path="/" element={<PrivateRoute><Layout unreadMessages={unreadMessages} /></PrivateRoute>}>
-          <Route index element={<FamilyPage />} />
-          <Route path="messages" element={<MessagesPage />} />
-          <Route path="sos" element={<SOSPage />} />
-          <Route path="map-all" element={<MapAllPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="profile" element={<ProfilePage />} />
-        </Route>
-      </Routes>
+          <Route path="/" element={<PrivateRoute><Layout unreadMessages={unreadMessages} /></PrivateRoute>}>
+            <Route index element={<FamilyPage />} />
+            <Route path="messages" element={<MessagesPage />} />
+            <Route path="sos" element={<SOSPage />} />
+            <Route path="map-all" element={<MapAllPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+          </Route>
+        </Routes>
+      </LocationDisclosureGate>
     </ConsentGate>
   )
 }

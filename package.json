@@ -17,7 +17,6 @@
     "@capacitor/geolocation": "^8.2.2",
     "@capacitor/push-notifications": "^8.1.2",
     "@supabase/supabase-js": "^2.112.3",
-    "firebase": "^12.18.0",
     "leaflet": "^1.9.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

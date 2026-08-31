@@ -10,29 +10,33 @@ function extractBearer(req: Request): string | null {
   return auth.slice(7).trim()
 }
 
-const PROJECT_REF = 'xiwfmunwodovzpzicyvu'
-
-function b64urlDecode(seg: string): string {
-  seg = seg.replace(/-/g, '+').replace(/_/g, '/')
-  while (seg.length % 4) seg += '='
-  try { return atob(seg) } catch { return '' }
+// Verify the caller presented our actual service_role key.
+//
+// The previous implementation only base64-decoded the JWT payload and trusted
+// its `role` claim, without ever checking the signature. Any caller could mint
+// {"role":"service_role","ref":"<project>"} with a garbage signature and pass.
+// That is only safe when the platform gateway has already verified the
+// signature (verify_jwt = true) — which is exactly what a database webhook
+// deployed with --no-verify-jwt does NOT do.
+//
+// A constant-time comparison against the injected SUPABASE_SERVICE_ROLE_KEY is
+// both correct and rotation-safe: Supabase updates that env var when the key
+// rotates, so the function follows the rotation automatically.
+function timingSafeEqual(a: string, b: string): boolean {
+  const ab = new TextEncoder().encode(a)
+  const bb = new TextEncoder().encode(b)
+  // Compare lengths without early-returning on the secret's length.
+  let diff = ab.length ^ bb.length
+  const max = Math.max(ab.length, bb.length)
+  for (let i = 0; i < max; i++) {
+    diff |= (ab[i] ?? 0) ^ (bb[i] ?? 0)
+  }
+  return diff === 0
 }
 
-// Accept ANY structurally-valid service_role JWT for this project.
-// This is resilient to key rotation: legacy and new-format service_role
-// keys both carry role=service_role and ref=<project> in their payload.
-// Falls back to exact-match against the injected env key for non-JWT keys.
-function isServiceRoleJwt(token: string, serviceRoleKey: string): boolean {
-  if (token && serviceRoleKey && token === serviceRoleKey) return true
-  const parts = token.split('.')
-  if (parts.length !== 3) return false
-  try {
-    const payload = JSON.parse(b64urlDecode(parts[1]))
-    if (payload.role !== 'service_role') return false
-    if (payload.ref && payload.ref !== PROJECT_REF) return false
-    if (payload.exp && Date.now() / 1000 > payload.exp) return false
-    return true
-  } catch { return false }
+function isServiceRoleKey(token: string, serviceRoleKey: string): boolean {
+  if (!token || !serviceRoleKey) return false
+  return timingSafeEqual(token, serviceRoleKey)
 }
 
 function b64url(input: string | Uint8Array): string {
@@ -111,7 +115,7 @@ serve(async (req) => {
   const srKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
   const bearerToken = extractBearer(req)
-  if (!bearerToken || !isServiceRoleJwt(bearerToken, srKey)) {
+  if (!bearerToken || !isServiceRoleKey(bearerToken, srKey)) {
     console.warn('[MSG-FN] Rejected: unauthorized caller')
     return new Response('Unauthorized', { status: 401 })
   }

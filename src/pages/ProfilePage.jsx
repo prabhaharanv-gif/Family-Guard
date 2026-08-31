@@ -4,6 +4,7 @@ const LocationService = registerPlugin('LocationService')
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useLocationConsentStore } from '../store/locationConsentStore'
 import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import Dialog from '../components/Dialog'
@@ -408,6 +409,14 @@ export default function ProfilePage() {
       // Stop background location service when user disables location sharing
       if (!showLocation && Capacitor.isNativePlatform()) {
         try { await LocationService.stop() } catch (e) {}
+      }
+
+      // If the user previously declined the background-location disclosure and
+      // is now switching sharing back on, clear the decision so the disclosure
+      // is shown again before any collection restarts. Play requires the
+      // disclosure every time consent is newly obtained — not just once ever.
+      if (showLocation && useLocationConsentStore.getState().consent === 'declined') {
+        useLocationConsentStore.getState().reset()
       }
 
       if (locErr) {

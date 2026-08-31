@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Legacy (Android 11 and below) backup rules. Kept in sync with
+  data_extraction_rules.xml: FamilyGuard's SharedPreferences hold the live
+  Supabase session token, so nothing may be included in a backup.
+-->
+<full-backup-content>
+    <exclude domain="root"       />
+    <exclude domain="file"       />
+    <exclude domain="database"   />
+    <exclude domain="sharedpref" />
+    <exclude domain="external"   />
+</full-backup-content>

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { registerPlugin, Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useLocationConsentStore } from '../store/locationConsentStore'
 
 const LocationService = registerPlugin('LocationService')
 
@@ -10,12 +11,21 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export function useLocationService() {
   const { user, familyId } = useAuthStore()
+  const consent = useLocationConsentStore((s) => s.consent)
   const tokenRef     = useRef(null)
   const refreshTimer = useRef(null)
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
     if (!user || !familyId) return
+    // Never start background collection before the user has seen the
+    // prominent disclosure and accepted it (Play location policy). If consent
+    // is withdrawn while the service is running, tear it down rather than just
+    // declining to start it again.
+    if (consent !== 'granted') {
+      LocationService.stop().catch(() => {})
+      return
+    }
 
     const startService = async () => {
       try {
@@ -78,7 +88,7 @@ export function useLocationService() {
       subscription?.unsubscribe()
       if (refreshTimer.current) clearInterval(refreshTimer.current)
     }
-  }, [user?.id, familyId])
+  }, [user?.id, familyId, consent])
 
   const stopService = async () => {
     if (!Capacitor.isNativePlatform()) return

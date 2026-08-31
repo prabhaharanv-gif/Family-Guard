@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Geolocation } from '@capacitor/geolocation'
+import { useLocationConsentStore } from '../store/locationConsentStore'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 
@@ -18,12 +19,15 @@ import { supabase } from '../lib/supabase'
  *   - Respects the member's show_location privacy toggle.
  */
 export function useLocationBroadcast(userId, familyId) {
+  const consent = useLocationConsentStore((s) => s.consent)
   const watchRef      = useRef(null)
   const lastCoordsRef = useRef(null)
   const sharingRef    = useRef(true)
 
   useEffect(() => {
     if (!userId || !familyId) return
+    // No location work of any kind until the prominent disclosure is accepted.
+    if (consent !== 'granted') return
 
     let cancelled = false
     let intervalId = null
@@ -171,5 +175,5 @@ export function useLocationBroadcast(userId, familyId) {
         watchRef.current = null
       }
     }
-  }, [userId, familyId])
+  }, [userId, familyId, consent])
 }
