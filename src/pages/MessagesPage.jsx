@@ -362,7 +362,7 @@ export default function MessagesPage() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `family_id=eq.${familyId}` },
         (payload) => {
           setMessages(prev => [...prev, payload.new])
-          if (payload.new.user_id !== user.id) markReadIfVisible()
+          if (payload.new.user_id !== user?.id) markReadIfVisible()
         })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `family_id=eq.${familyId}` },
         (payload) => {
@@ -411,16 +411,30 @@ export default function MessagesPage() {
   // ── Send ────────────────────────────────────────────────────────────────────
   const sendMessage = async () => {
     if (!text.trim() || sending) return
+    if (!user?.id || !familyId) {
+      setDialog({ type: 'error', message: 'You are not in a family yet. Join or create one to send messages.' })
+      return
+    }
     setSending(true)
-    await supabase.from('messages').insert({
-      family_id:   familyId,
-      user_id:     user.id,
-      content:     text.trim(),
-      reply_to_id: replyTo?.id || null,
-    })
-    setText('')
-    setReplyTo(null)
-    setSending(false)
+    try {
+      const { error } = await supabase.from('messages').insert({
+        family_id:   familyId,
+        user_id:     user.id,
+        content:     text.trim(),
+        reply_to_id: replyTo?.id || null,
+      })
+      if (error) {
+        // Keep what they typed so a failed send isn't a lost message
+        setDialog({ type: 'error', message: `Could not send message. ${error.message}` })
+        return
+      }
+      setText('')
+      setReplyTo(null)
+    } catch (e) {
+      setDialog({ type: 'error', message: `Could not send message. ${e?.message || e}` })
+    } finally {
+      setSending(false)
+    }
   }
 
   // ── Edit ────────────────────────────────────────────────────────────────────
@@ -456,9 +470,16 @@ export default function MessagesPage() {
       confirmLabel: 'Clear Chat',
       onConfirm: async () => {
         setClearing(true)
-        await supabase.from('messages').delete().eq('family_id', familyId)
-        setMessages([])
-        setClearing(false)
+        try {
+          const { error } = await supabase.from('messages').delete().eq('family_id', familyId)
+          if (error) {
+            setDialog({ type: 'error', message: `Could not clear messages. ${error.message}` })
+            return
+          }
+          setMessages([])
+        } finally {
+          setClearing(false)
+        }
       },
     })
   }

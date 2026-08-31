@@ -1,4 +1,10 @@
 import { Component } from 'react'
+import { BUILD_ID, recordCrash, formatCrashLog, clearCrashLog } from '../lib/crashLog'
+
+const detailBtn = {
+  background: 'none', border: 'none', color: '#C4A2AE',
+  fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+}
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -12,6 +18,7 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('[ErrorBoundary] Caught:', error, info)
+    recordCrash('render', error, info?.componentStack?.trim().split('\n').slice(0, 6).join('\n'))
     this.setState({ info })
   }
 
@@ -25,8 +32,10 @@ export default class ErrorBoundary extends Component {
 
     const { error, info, showDetails } = this.state
     const detail = [
+      `build ${BUILD_ID}`,
       error?.message || String(error || 'Unknown error'),
       info?.componentStack?.trim(),
+      formatCrashLog() && '── recent errors ──\n' + formatCrashLog(),
     ].filter(Boolean).join('\n\n')
 
     return (
@@ -94,12 +103,24 @@ export default class ErrorBoundary extends Component {
           {showDetails ? 'Hide details' : 'Show details'}
         </button>
         {showDetails && (
+          <>
           <pre style={{
             marginTop: 10, maxWidth: '100%', maxHeight: 220, overflow: 'auto',
             background: '#fff', border: '1px solid #F3D4DD', borderRadius: 12,
             padding: 12, fontSize: 11, lineHeight: 1.5, color: '#6B7280',
             textAlign: 'left', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
           }}>{detail}</pre>
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <button
+              onClick={() => { navigator.clipboard?.writeText(detail).catch(() => {}) }}
+              style={detailBtn}
+            >Copy</button>
+            <button
+              onClick={() => { clearCrashLog(); this.forceUpdate() }}
+              style={detailBtn}
+            >Clear log</button>
+          </div>
+          </>
         )}
       </div>
     )
