@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { PushNotifications } from '@capacitor/push-notifications'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
+import { playSOSAlarm } from '../lib/sosAudio'
 
 export function usePushNotifications(userId, familyId) {
   useEffect(() => {
@@ -27,7 +28,6 @@ export function usePushNotifications(userId, familyId) {
     // ── SECURE: uses upsert_device_token RPC ──────────────────────────────
     // user_id comes from auth.uid() server-side — the client cannot fake it
     const saveToken = async (token) => {
-      // Ensure we are authenticated first, otherwise the RPC rejects the save.
       const session = await waitForSession()
       if (!session) {
         console.warn('[FCM] No session after wait — token NOT saved')
@@ -49,8 +49,6 @@ export function usePushNotifications(userId, familyId) {
         return
       }
 
-      // Retry a few times: covers the brief window where the session exists
-      // client-side but auth.uid() is still settling, and transient errors.
       for (let attempt = 1; attempt <= 3; attempt++) {
         const { error } = await supabase.rpc('upsert_device_token', {
           p_family_id: fid,
@@ -63,10 +61,34 @@ export function usePushNotifications(userId, familyId) {
       }
     }
 
+    // ── Robust deep-link navigation ───────────────────────────────────────
+    // When the app is opened by TAPPING an SOS notification from a killed
+    // state, React Router may not be mounted yet at the moment the tap event
+    // fires. window.__navigateTo (set in App.jsx) may also be undefined for a
+    // moment. So we retry until the router is ready, then navigate to the
+    // route carried in the notification's data payload (default /sos).
+    const navigateWhenReady = (route, tries = 0) => {
+      const target = route || '/sos'
+      // __authReady (not just __navigateTo) — on a cold start from a
+      // notification tap the router exists before the Supabase session is
+      // restored, and navigating then hits PrivateRoute's
+      // `<Navigate to="/login" replace />`, which replaces the target route
+      // and loses it for good.
+      if (typeof window !== 'undefined' && typeof window.__navigateTo === 'function' && window.__authReady) {
+        window.__navigateTo(target)
+        return
+      }
+      if (tries < 60) { // retry for up to ~12s
+        setTimeout(() => navigateWhenReady(target, tries + 1), 200)
+      } else {
+        // Last-resort fallback — hard navigation
+        try { window.location.href = target } catch (e) {}
+      }
+    }
+
     const listeners = []
 
     PushNotifications.addListener('registration', async ({ value: token }) => {
-      // [removed sensitive log]
       await saveToken(token)
     }).then(l => listeners.push(l))
 
@@ -74,33 +96,32 @@ export function usePushNotifications(userId, familyId) {
       console.error('[FCM] ❌ registrationError:', JSON.stringify(err))
     }).then(l => listeners.push(l))
 
+    // Fired when a push arrives while the app is in the FOREGROUND.
+    // Play the audio alarm AND navigate to /sos so the GlobalSOSAlert overlay
+    // is shown. Previously only audio played — the visual alert was missing.
     PushNotifications.addListener('pushNotificationReceived', (notification) => {
-      console.log('[FCM] Foreground notification:', JSON.stringify(notification))
       if (notification.data?.type === 'sos') {
-        try {
-          const ctx = new (window.AudioContext || window.webkitAudioContext)()
-          let t = 0
-          for (let i = 0; i < 8; i++) {
-            const osc = ctx.createOscillator()
-            const gain = ctx.createGain()
-            osc.connect(gain)
-            gain.connect(ctx.destination)
-            osc.frequency.value = i % 2 === 0 ? 880 : 660
-            osc.type = 'square'
-            gain.gain.setValueAtTime(0.4, ctx.currentTime + t)
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.3)
-            osc.start(ctx.currentTime + t)
-            osc.stop(ctx.currentTime + t + 0.3)
-            t += 0.35
-          }
-        } catch (e) {}
+        // Web only, same reason as the realtime path: MyFirebaseMessagingService
+        // starts SOSSirenService for every "sos" push regardless of whether the
+        // app is foreground (unlike the call branch, which does check), so the
+        // native siren is already sounding by the time this runs.
+        if (!Capacitor.isNativePlatform()) playSOSAlarm()
+        navigateWhenReady(notification.data?.route || '/sos')
       }
     }).then(l => listeners.push(l))
 
+    // Fired when the user TAPS the notification (works from killed/background).
     PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-      console.log('[FCM] Notification tapped')
-      if (action.notification.data?.type === 'sos') {
-        window.location.href = '/sos'
+      const data = action?.notification?.data || {}
+      if (data.type === 'sos') {
+        navigateWhenReady(data.route || '/sos')
+      } else if (data.type === 'call' && data.call_id) {
+        // CallPage itself renders the right UI (ring/accept/live) based on the
+        // call row's current status — no separate "answer from notification"
+        // action needed, same as tapping into /sos just opens the SOS page.
+        navigateWhenReady(`/call/${data.call_id}`)
+      } else if (data.route) {
+        navigateWhenReady(data.route)
       }
     }).then(l => listeners.push(l))
 

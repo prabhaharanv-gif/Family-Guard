@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
-import { Geolocation } from '@capacitor/geolocation'
-import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useLocations } from '../hooks/useLocations'
+import { supabase } from '../lib/supabase'
 import SmoothMarker from '../components/SmoothMarker'
+import { useT } from '../i18n'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -31,19 +31,45 @@ function createIcon(color, initial) {
   })
 }
 
-function FlyTo({ lat, lng }) {
+function FollowTarget({ lat, lng, following, onUserTakeover }) {
   const map = useMap()
-  const hasFlown = useRef(false)
+  const centred = useRef(false)
+
+  // First fix: centre once when their location appears, as before.
   useEffect(() => {
-    // Center on the member once when their location first appears. After that,
-    // let the SmoothMarker glide handle movement so the map doesn't keep
-    // yanking the viewport on every GPS update.
-    if (hasFlown.current) return
+    if (centred.current) return
     if (lat && lng) {
-      hasFlown.current = true
+      centred.current = true
       map.flyTo([lat, lng], 16, { animate: true, duration: 1.2 })
     }
-  }, [lat, lng])
+  }, [lat, lng, map])
+
+  // A drag is unambiguously the user taking over the viewport. Leaflet's own
+  // flyTo/panTo never fire dragstart, so our animations cannot trip this.
+  useEffect(() => {
+    const stop = () => onUserTakeover()
+    map.on('dragstart', stop)
+    return () => { map.off('dragstart', stop) }
+  }, [map, onUserTakeover])
+
+  // Follow, but only once the marker approaches an edge. Re-centring on every
+  // GPS update is what the previous once-only version was avoiding: a phone
+  // sitting still wanders a few metres and the viewport would twitch
+  // continuously. Panning at the 25% margin keeps a moving member on screen
+  // without chasing noise, and panTo keeps the zoom the user chose.
+  useEffect(() => {
+    if (!following || !centred.current) return
+    if (!lat || !lng) return
+    const p    = map.latLngToContainerPoint([lat, lng])
+    const size = map.getSize()
+    const marginX = size.x * 0.25
+    const marginY = size.y * 0.25
+    const nearEdge =
+      p.x < marginX || p.x > size.x - marginX ||
+      p.y < marginY || p.y > size.y - marginY
+    if (nearEdge) map.panTo([lat, lng], { animate: true, duration: 0.8 })
+  }, [lat, lng, following, map])
+
   return null
 }
 
@@ -53,7 +79,11 @@ export default function MapPage() {
   const { user, familyId } = useAuthStore()
   const { locations } = useLocations(familyId)
   const [member, setMember] = useState(null)
-  const watchRef = useRef(null)
+  const t = useT()
+  // Follow is on until the user drags the map away; then it stays off until
+  // they ask for it back, so panning to look at something is never fought.
+  const [following, setFollowing] = useState(true)
+  const stopFollowing = useCallback(() => setFollowing(false), [])
 
   useEffect(() => {
     if (!targetUserId || !familyId) return
@@ -61,73 +91,8 @@ export default function MapPage() {
       .eq('user_id', targetUserId).eq('family_id', familyId).single()
       .then(({ data }) => { if (data) setMember(data) })
   }, [targetUserId, familyId])
-
-  // Share own location using Capacitor (native GPS) — same as MapAllPage
-  useEffect(() => {
-    if (!user || !familyId) return
-
-    const update = async (lat, lng, accuracy) => {
-      const now = new Date().toISOString()
-      // FIX: onConflict must include family_id so multi-family users
-      // upsert into the correct row (was 'user_id' only — wrong).
-      await supabase.from('locations').upsert({
-        user_id: user.id, family_id: familyId,
-        lat, lng, accuracy: accuracy || 0,
-        is_sharing: true, updated_at: now,
-      }, { onConflict: 'user_id,family_id' })
-      await supabase.from('family_members')
-        .update({ last_active: now })
-        .eq('user_id', user.id)
-        .eq('family_id', familyId)
-    }
-
-    // FIX: Use Capacitor Geolocation (native GPS) instead of navigator.geolocation
-    // (browser API). On Android WebView, navigator.geolocation falls back to
-    // network/IP location which can be several km off. Capacitor calls the
-    // native Android GPS API directly — same source WhatsApp uses.
-    const startTracking = async () => {
-      try {
-        const perm = await Geolocation.requestPermissions()
-        if (perm.location !== 'granted') return
-
-        // Get an immediate fix
-        const pos = await Geolocation.getCurrentPosition({
-          enableHighAccuracy: true, timeout: 20000, maximumAge: 30000,
-        })
-        await update(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy)
-
-        // Watch for continuous updates
-        if (!watchRef.current) {
-          watchRef.current = await Geolocation.watchPosition(
-            { enableHighAccuracy: true },
-            async (p, err) => {
-              if (err) { console.warn('Watch error:', err); return }
-              if (p) await update(p.coords.latitude, p.coords.longitude, p.coords.accuracy)
-            }
-          )
-        }
-      } catch (e) {
-        console.warn('MapPage GPS error:', e)
-        // Fallback: browser geolocation (web/desktop)
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => update(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
-            null,
-            { enableHighAccuracy: true, timeout: 15000 }
-          )
-        }
-      }
-    }
-
-    startTracking()
-
-    return () => {
-      if (watchRef.current) {
-        Geolocation.clearWatch({ id: watchRef.current })
-        watchRef.current = null
-      }
-    }
-  }, [user, familyId])
+  // NOTE: own location is handled globally by useLocationBroadcast in App.jsx —
+  // no duplicate writer needed here.
 
   const targetLoc = targetUserId ? locations[targetUserId] : null
 
@@ -146,7 +111,14 @@ export default function MapPage() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {targetLoc && <FlyTo lat={targetLoc.lat} lng={targetLoc.lng} />}
+          {targetLoc && (
+            <FollowTarget
+              lat={targetLoc.lat}
+              lng={targetLoc.lng}
+              following={following}
+              onUserTakeover={stopFollowing}
+            />
+          )}
 
           {/* Target member marker */}
           {targetLoc && (
@@ -220,6 +192,30 @@ export default function MapPage() {
               </SmoothMarker>
             ))}
         </MapContainer>
+
+        {/* Only shown once the user has taken the viewport over, so it never
+            competes for attention while the map is already following. */}
+        {targetLoc && !following && (
+          <button
+            onClick={() => setFollowing(true)}
+            style={{
+              position: 'absolute', right: 14, bottom: 18, zIndex: 1000,
+              display: 'flex', alignItems: 'center', gap: 7,
+              background: 'linear-gradient(135deg,#951345,#720D35)',
+              border: 'none', borderRadius: 999, padding: '10px 16px',
+              color: '#fff', fontWeight: 700, fontSize: 13,
+              fontFamily: 'inherit', cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(149,19,69,0.4)',
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="3.2" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+            </svg>
+            {t('map.recenter')}
+          </button>
+        )}
       </div>
 
       {/* Bottom info bar */}

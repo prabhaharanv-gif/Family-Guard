@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Status-bar icon for Find My Phone.
+
+    The same radar motif the action uses in-app, so the notification is
+    recognisably from that feature rather than the generic app glyph.
+
+    White on transparent with no fill: Android masks a status-bar icon to a
+    single colour and discards everything else, so a coloured or filled icon
+    renders as a solid blob.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFF">
+
+    <!-- Centre point -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,10 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0" />
+
+    <!-- Inner arcs -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.9"
+        android:strokeLineCap="round"
+        android:pathData="M15.9,6.1 a5.5,5.5 0 0 1 0,7.8" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.9"
+        android:strokeLineCap="round"
+        android:pathData="M8.1,13.9 a5.5,5.5 0 0 1 0,-7.8" />
+
+    <!-- Outer arcs -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.9"
+        android:strokeLineCap="round"
+        android:pathData="M18.6,3.4 a9.3,9.3 0 0 1 0,13.2" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.9"
+        android:strokeLineCap="round"
+        android:pathData="M5.4,16.6 a9.3,9.3 0 0 1 0,-13.2" />
+</vector>

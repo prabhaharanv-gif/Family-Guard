@@ -7,6 +7,8 @@ import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import Dialog from '../components/Dialog'
+import { ALERT_TYPES, getRingtones, pickRingtone, resetRingtone } from '../lib/ringtones'
+import { useT, useLangStore, UI_LANGUAGES } from '../i18n'
 
 function Toggle({ on, onToggle }) {
   return (
@@ -31,8 +33,17 @@ function Toggle({ on, onToggle }) {
   )
 }
 
+// Defined at module scope, not inside ChangePasswordModal. A component declared
+// during render is a new type on every render, so React unmounted and remounted
+// it each time — meaning every keystroke in a password field destroyed and
+// rebuilt this icon's DOM.
+const EyeIcon = ({ off }) => off
+  ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
+  : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+
 // ── Change password modal ──
 function ChangePasswordModal({ onClose, userEmail }) {
+  const t = useT()
   const [oldPw, setOldPw]       = useState('')
   const [pw, setPw]             = useState('')
   const [confirm, setConfirm]   = useState('')
@@ -45,20 +56,16 @@ function ChangePasswordModal({ onClose, userEmail }) {
 
   useBackButton(true, onClose)
 
-  const EyeIcon = ({ off }) => off
-    ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
-    : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
-
   const handleSave = async () => {
     setErr('')
-    if (!oldPw) { setErr('Please enter your current password'); return }
-    if (pw.length < 6) { setErr('New password must be at least 6 characters'); return }
-    if (pw !== confirm) { setErr('New passwords do not match'); return }
-    if (pw === oldPw) { setErr('New password must be different from current password'); return }
+    if (!oldPw) { setErr(t('profile.enterCurrentPassword')); return }
+    if (pw.length < 6) { setErr(t('profile.newPasswordMin6')); return }
+    if (pw !== confirm) { setErr(t('profile.newPasswordsNoMatch')); return }
+    if (pw === oldPw) { setErr(t('profile.newPasswordSame')); return }
     setBusy(true)
     // Verify old password by re-signing in
     const { error: signInErr } = await supabase.auth.signInWithPassword({ email: userEmail, password: oldPw })
-    if (signInErr) { setBusy(false); setErr('Current password is incorrect'); return }
+    if (signInErr) { setBusy(false); setErr(t('profile.currentPasswordWrong')); return }
     // Update to new password
     const { error } = await supabase.auth.updateUser({ password: pw })
     setBusy(false)
@@ -72,12 +79,12 @@ function ChangePasswordModal({ onClose, userEmail }) {
       <div className="popup" onClick={e => e.stopPropagation()}>
         <div className="popup-handle" />
         <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 14 }}>
-          Change Password
+          {t('profile.changePassword')}
         </div>
 
         {ok ? (
           <div style={{ padding: '20px 0', textAlign: 'center', color: '#059669', fontWeight: 700 }}>
-            ✓ Password updated
+            ✓ {t('profile.passwordUpdated')}
           </div>
         ) : (
           <>
@@ -88,7 +95,7 @@ function ChangePasswordModal({ onClose, userEmail }) {
               <input
                 className="input" type={show ? 'text' : 'password'} value={oldPw} autoFocus
                 onChange={e => setOldPw(e.target.value)}
-                placeholder="Current password"
+                placeholder={t('profile.currentPassword')}
                 style={{ paddingRight: 44 }}
               />
               <button type="button" onClick={() => setShow(s => !s)}
@@ -105,7 +112,7 @@ function ChangePasswordModal({ onClose, userEmail }) {
               <input
                 className="input" type={showNew ? 'text' : 'password'} value={pw}
                 onChange={e => setPw(e.target.value)}
-                placeholder="New password"
+                placeholder={t('profile.newPassword')}
                 style={{ paddingRight: 44 }}
               />
               <button type="button" onClick={() => setShowNew(s => !s)}
@@ -120,7 +127,7 @@ function ChangePasswordModal({ onClose, userEmail }) {
                 className="input" type={showConf ? 'text' : 'password'} value={confirm}
                 onChange={e => setConfirm(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSave()}
-                placeholder="Confirm new password"
+                placeholder={t('profile.confirmNewPassword')}
                 style={{ paddingRight: 44 }}
               />
               <button type="button" onClick={() => setShowConf(s => !s)}
@@ -134,12 +141,12 @@ function ChangePasswordModal({ onClose, userEmail }) {
                 flex: 1, padding: 14, borderRadius: 14,
                 background: '#F5F4FB', border: '1px solid #E9E6FB',
                 color: '#3A1020', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-              }}>Cancel</button>
+              }}>{t('common.cancel')}</button>
               <button onClick={handleSave} disabled={busy} style={{
                 flex: 1, padding: 14, borderRadius: 14,
                 background: '#951345', border: 'none',
                 color: '#fff', fontWeight: 700, cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit', fontSize: 14,
-              }}>{busy ? 'Verifying...' : 'Update'}</button>
+              }}>{busy ? t('reset.verifying') : t('profile.update')}</button>
             </div>
           </>
         )}
@@ -150,6 +157,7 @@ function ChangePasswordModal({ onClose, userEmail }) {
 
 // ── Delete account confirmation modal ──
 function DeleteAccountModal({ onClose, onConfirm }) {
+  const t = useT()
   const [confirmText, setConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
   const CONFIRM_WORD = 'DELETE'
@@ -177,23 +185,23 @@ function DeleteAccountModal({ onClose, onConfirm }) {
           <span style={{ fontSize: 24, flexShrink: 0 }}>⚠️</span>
           <div>
             <div style={{ fontSize: 14, fontWeight: 800, color: '#DC2626', marginBottom: 4 }}>
-              Delete My Account
+              {t('profile.deleteAccount')}
             </div>
             <div style={{ fontSize: 13, color: '#7F1D1D', lineHeight: 1.5 }}>
-              Permanently delete your account and all your data. This cannot be undone.
+              {t('profile.deleteAccountWarn')}
             </div>
           </div>
         </div>
 
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, color: '#374151', fontWeight: 600, marginBottom: 6 }}>
-            Type <strong>DELETE</strong> to confirm
+            {t('profile.typeToConfirm', { word: CONFIRM_WORD })}
           </div>
           <input
             className="input"
             value={confirmText}
             onChange={e => setConfirmText(e.target.value.toUpperCase())}
-            placeholder="Type DELETE here"
+            placeholder={t('profile.typeDeleteHere')}
             autoFocus
             style={{ textAlign: 'center', fontWeight: 800, letterSpacing: 3, fontSize: 15 }}
           />
@@ -205,7 +213,7 @@ function DeleteAccountModal({ onClose, onConfirm }) {
             background: '#F5F4FB', border: '1px solid #E9E6FB',
             color: '#3A1020', fontWeight: 700, cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 14,
-          }}>Cancel</button>
+          }}>{t('common.cancel')}</button>
           <button
             onClick={handleDelete}
             disabled={confirmText !== CONFIRM_WORD || deleting}
@@ -218,7 +226,7 @@ function DeleteAccountModal({ onClose, onConfirm }) {
               transition: 'background 0.2s',
             }}
           >
-            {deleting ? 'Deleting...' : 'Delete Forever'}
+            {deleting ? t('profile.deleting') : t('profile.deleteForever')}
           </button>
         </div>
       </div>
@@ -227,12 +235,20 @@ function DeleteAccountModal({ onClose, onConfirm }) {
 }
 
 export default function ProfilePage() {
-  const { user, familyId, familyName: activeFamilyName, allFamilies, leaveFamily, switchFamily, loadFamily, signOut } = useAuthStore()
+  const t = useT()
+  const setLang = useLangStore(s => s.setLang)
+  const { user, familyId, allFamilies, leaveFamily, signOut } = useAuthStore()
   const navigate = useNavigate()
 
   const [member, setMember]             = useState(null)
-  const [myFamilyName, setMyFamilyName] = useState('')
   const [myInviteCode, setMyInviteCode] = useState('')
+  // null while unknown or on web, where there is no native picker; the card is
+  // hidden in that case rather than offering something that cannot work.
+  const [codeCopied, setCodeCopied] = useState(false)
+  const [ringtones, setRingtones] = useState(null)
+  // Collapsed by default: four rows of sound pickers pushed Privacy and
+  // everything below it off the first screen.
+  const [soundsOpen, setSoundsOpen] = useState(false)
 
   const [displayName, setDisplayName]   = useState('')
   const [phone, setPhone]               = useState('')
@@ -241,7 +257,6 @@ export default function ProfilePage() {
   const [showLocation, setShowLocation] = useState(true)
   const [showLastSeen, setShowLastSeen] = useState(true)
   const [showOnline, setShowOnline]     = useState(true)
-  const [savingToggle, setSavingToggle] = useState(false)
 
   const [uploading, setUploading]       = useState(false)
   const [saving, setSaving]             = useState(false)
@@ -250,14 +265,25 @@ export default function ProfilePage() {
   const [dialog, setDialog]             = useState(null)
   const [showPwModal, setShowPwModal]           = useState(false)
   const [showDeleteModal, setShowDeleteModal]   = useState(false)
-  const [showInviteSheet, setShowInviteSheet]   = useState(false)
-  const [codeCopied, setCodeCopied]             = useState(false)
   const [selectedFam, setSelectedFam]           = useState(null) // family action sheet
+  const [viewFam, setViewFam]                   = useState(null) // { fam, members, loading } — read-only member list
   const fileRef = useRef()
 
   // Hardware back button closes open sheets instead of exiting the app
-  useBackButton(showInviteSheet, () => setShowInviteSheet(false))
   useBackButton(!!selectedFam, () => setSelectedFam(null))
+  useBackButton(!!viewFam, () => setViewFam(null))
+
+  const openViewFamily = async (fam) => {
+    setSelectedFam(null)
+    setViewFam({ fam, members: [], loading: true })
+    const { data, error: err } = await supabase
+      .from('family_members')
+      .select('*')
+      .eq('family_id', fam.family_id)
+      .order('role', { ascending: true })
+    setViewFam({ fam, members: err ? [] : (data || []), loading: false })
+    if (err) setError(err.message)
+  }
 
   const loadProfile = async () => {
     if (!user || !familyId) return
@@ -276,8 +302,22 @@ export default function ProfilePage() {
       setMember(data)
       setDisplayName(data.display_name || '')
       const savedPhone = data.phone ? data.phone.replace('+91', '') : ''
+      // Two registration eras, and the number lives somewhere different in
+      // each. The older scheme encoded it into a synthetic address
+      // (91XXXXXXXXXX@familyguard.app); accounts created through the Twilio
+      // OTP flow are real phone signups, so they carry it in user.phone as
+      // E.164 and have NO email at all — which is why this field came up
+      // blank for them, the email regex having nothing to match against.
+      // family_members.phone is null for both until someone saves it here:
+      // create_family and accept_join_request only ever insert
+      // (family_id, user_id, display_name, role).
       const regFromEmail = (user?.email || '').match(/^91(\d{10})@familyguard\.app$/)
-      setPhone(savedPhone || (regFromEmail ? regFromEmail[1] : ''))
+      const fromAuthPhone = (user?.phone || '').replace(/^\+?91/, '')
+      setPhone(
+        savedPhone
+        || (regFromEmail ? regFromEmail[1] : '')
+        || (/^\d{10}$/.test(fromAuthPhone) ? fromAuthPhone : '')
+      )
       setAvatarUrl(data.avatar_url ? `${data.avatar_url}?t=${Date.now()}` : null)
 
       // If this row's privacy fields are null (new family), seed from another family's row
@@ -293,7 +333,6 @@ export default function ProfilePage() {
       .eq('user_id', user.id)
     if (fams && fams.length > 0) {
       const own    = fams.find(d => d.families?.created_by === user.id)
-      const joined = fams.find(d => d.families && d.families.created_by !== user.id)
 
       // Try to get the family creator's invite code first
       if (own && own.families?.invite_code) {
@@ -311,9 +350,6 @@ export default function ProfilePage() {
         }
       }
 
-      const active = fams.find(d => d.family_id === familyId && d.families?.name)
-      const chosen = active || joined || own
-      if (chosen && chosen.families?.name) setMyFamilyName(chosen.families.name)
     } else {
       // User has no family yet — still show their personal code
       const uid = user.id.replace(/-/g, '')
@@ -328,7 +364,7 @@ export default function ProfilePage() {
   const handlePhotoChange = async (e) => {
     const file = e.target.files && e.target.files[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { setError('Photo must be under 5MB'); return }
+    if (file.size > 5 * 1024 * 1024) { setError(t('profile.photoTooBig')); return }
     setUploading(true); setError('')
     try {
       // Derive a safe extension from the MIME type (Android file names are unreliable)
@@ -364,7 +400,7 @@ export default function ProfilePage() {
 
       setAvatarUrl(`${publicUrl}?t=${Date.now()}`)
     } catch (err) {
-      setError('Upload failed: ' + (err?.message || 'unknown error'))
+      setError(t('profile.uploadFailed', { reason: err?.message || t('profile.unknownError') }))
     } finally {
       setUploading(false)
       // reset the input so selecting the SAME file again still fires onChange
@@ -373,7 +409,7 @@ export default function ProfilePage() {
   }
 
   const handleSave = async () => {
-    if (!displayName.trim()) { setError('Name cannot be empty'); return }
+    if (!displayName.trim()) { setError(t('profile.nameEmpty')); return }
     setSaving(true); setError('')
     try {
       const cleanPhone = phone ? `+91${phone.replace(/[^0-9]/g, '')}` : null
@@ -489,18 +525,18 @@ export default function ProfilePage() {
     }
   }
 
-  const handleLeaveFamily = () => {
-    const label = myFamilyName || familyId || 'this family'
-    setDialog({
-      type: 'confirm',
-      title: 'Leave Family',
-      message: `Are you sure you want to leave "${label}"? You will need a new invite to rejoin.`,
-      confirmLabel: 'Leave',
-      onConfirm: async () => {
-        try { await leaveFamily(user.id, familyId); navigate('/onboarding') }
-        catch (err) { setError(err.message) }
-      },
-    })
+  useEffect(() => { getRingtones().then(setRingtones) }, [])
+
+  const handlePickTone = async (type) => {
+    const res = await pickRingtone(type)
+    // Only re-read when something actually changed — backing out of the picker
+    // should leave the row exactly as it was.
+    if (res?.changed) setRingtones(await getRingtones())
+  }
+
+  const handleResetTone = async (type) => {
+    await resetRingtone(type)
+    setRingtones(await getRingtones())
   }
 
   const initial = displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?'
@@ -513,7 +549,7 @@ export default function ProfilePage() {
       <div className="top-bar" style={{ alignItems: 'center' }}>
         <div
           onClick={() => { if (!uploading) fileRef.current && fileRef.current.click() }}
-          title="Tap to change photo"
+          title={t('profile.tapToChangePhoto')}
           style={{ position: 'relative', flexShrink: 0, marginRight: 12, cursor: uploading ? 'wait' : 'pointer' }}
         >
           {avatarUrl ? (
@@ -559,11 +595,11 @@ export default function ProfilePage() {
         </div>
 
         <div style={{ flex: 1 }}>
-          <div className="top-bar-title" style={{ fontSize: 16 }}>{displayName || 'My Profile'}</div>
+          <div className="top-bar-title" style={{ fontSize: 16 }}>{displayName || t('profile.myProfile')}</div>
         </div>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button onClick={() => setDialog({ type: 'confirm', title: 'Sign Out', message: 'Are you sure you want to sign out?', confirmLabel: 'Sign Out', onConfirm: signOut })} style={{
+          <button onClick={() => setDialog({ type: 'confirm', title: t('profile.signOut'), message: t('profile.signOutConfirm'), confirmLabel: t('profile.signOut'), onConfirm: signOut })} style={{
             background: 'rgba(255,255,255,0.92)',
             border: '1.5px solid #fff',
             color: '#951345', borderRadius: 10,
@@ -591,25 +627,73 @@ export default function ProfilePage() {
             background: '#D1FAE5', border: '1px solid #10B981',
             color: '#059669', padding: '8px 14px', borderRadius: 12,
             fontSize: 13, fontWeight: 700, marginBottom: 10, textAlign: 'center',
-          }}>✅ Profile saved!</div>
+          }}>✅ {t('profile.profileSaved')}</div>
         )}
+
+        {/* ── LANGUAGE ──
+            First card, and on Profile rather than Settings: /settings is a
+            registered route but nothing in the app navigates to it, so a
+            picker there could never be reached. It sits above everything else
+            because someone who cannot read the rest of this screen still has
+            to be able to find it — which is also why the options are written
+            in their own script. */}
+        <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 10 }}>
+            {t('settings.language')}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {UI_LANGUAGES.map(l => {
+              const active = l.code === t.lang
+              return (
+                <button
+                  key={l.code}
+                  onClick={() => setLang(l.code)}
+                  aria-pressed={active}
+                  style={{
+                    padding: '9px 16px', borderRadius: 999,
+                    background: active ? 'linear-gradient(135deg,#951345,#720D35)' : '#F8F7FF',
+                    border: `1.5px solid ${active ? 'transparent' : '#EDE9FF'}`,
+                    color: active ? '#fff' : '#5B4652',
+                    fontWeight: active ? 800 : 600,
+                    fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {l.native}
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
         {/* ── EDIT INFO ── */}
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 10 }}>
-            Edit Info
+            {t('profile.editInfo')}
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6 }}>Display Name</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.displayName')}</label>
             <input className="input" style={{ padding: '11px 14px', fontSize: 14 }}
-              value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your name" />
+              value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={t('profile.yourName')} />
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6 }}>Mobile Number</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.mobileNumber')}</label>
             <div style={{ display: 'flex', gap: 7 }}>
-              <span style={{ padding: '10px 9px', background: '#F8F7FF', border: '1.5px solid #E8E5FF', borderRadius: 14, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>🇮🇳 +91</span>
+              {/* Plain "+91" — the 🇮🇳 flag emoji used to sit here, but MIUI
+                  and several other Android ROMs ship no regional-indicator
+                  glyphs, so the pair fell back to rendering its two underlying
+                  letters as boxed capitals: the strange "IN +91". Padding and
+                  font now match the input beside it so the two read as one
+                  field. */}
+              <span style={{
+                display: 'flex', alignItems: 'center',
+                padding: '11px 14px', background: '#F8F7FF',
+                border: '1.5px solid #E8E5FF', borderRadius: 14,
+                fontSize: 14, fontWeight: 700, color: '#5B4652',
+                whiteSpace: 'nowrap', flexShrink: 0,
+              }}>+91</span>
               <input className="input" type="tel" style={{ padding: '11px 14px', fontSize: 14, flex: 1 }}
                 value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))} placeholder="9876543210" maxLength={10} />
             </div>
@@ -621,22 +705,35 @@ export default function ProfilePage() {
           {myInviteCode && (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 8 }}>
-                My Code
+                {t('profile.myCode')}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 3, color: '#0D0C1D', fontFamily: 'Sora, sans-serif' }}>
                   {myInviteCode}
                 </div>
-                <button onClick={() => setShowInviteSheet(true)} style={{
-                  background: '#951345', border: 'none', borderRadius: 10,
-                  padding: '8px 14px', color: '#fff', fontWeight: 800,
-                  fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'flex', alignItems: 'center', gap: 5,
-                }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                <button
+                  onClick={() => {
+                    // Best-effort: clipboard is unavailable in some WebView
+                    // configurations, and the code is on screen either way.
+                    try { navigator.clipboard?.writeText(myInviteCode) } catch { /* shown above */ }
+                    setCodeCopied(true)
+                    setTimeout(() => setCodeCopied(false), 1400)
+                  }}
+                  style={{
+                    background: codeCopied ? '#D1FAE5' : '#FDF0F5',
+                    border: `1.5px solid ${codeCopied ? '#10B981' : '#F0D8E3'}`,
+                    color: codeCopied ? '#059669' : '#951345',
+                    borderRadius: 10, padding: '7px 12px',
+                    fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
+                    cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : '#951345'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                   </svg>
-                  Invite
+                  {codeCopied ? t('profile.copied') : t('profile.copy')}
                 </button>
               </div>
             </>
@@ -647,7 +744,7 @@ export default function ProfilePage() {
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2 }}>
-              My Families
+              {t('profile.myFamilies')}
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               <button onClick={() => navigate('/join-family')} style={{
@@ -710,7 +807,7 @@ export default function ProfilePage() {
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 800, color: '#000' }}>{fam.name}</div>
                         <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
-                          {fam.role === 'admin' ? '👑 Admin' : '👤 Member'}
+                          {fam.role === 'admin' ? '👑 ' + t('profile.admin') : '👤 ' + t('profile.member')}
                         </div>
                       </div>
                     </div>
@@ -719,7 +816,7 @@ export default function ProfilePage() {
                         background: '#951345', color: '#fff',
                         fontSize: 10, fontWeight: 800, padding: '3px 8px',
                         borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5,
-                      }}>Active</div>
+                      }}>{t('profile.active')}</div>
                     )}
                   </div>
                 )
@@ -728,10 +825,89 @@ export default function ProfilePage() {
           )}
         </div>
 
+        {/* ── ALERT SOUNDS ── */}
+        {/* Native only: the picker is a system Activity, so there is nothing to
+            offer on web. */}
+        {ringtones && (
+          <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
+            <button
+              onClick={() => setSoundsOpen(o => !o)}
+              aria-expanded={soundsOpen}
+              style={{
+                width: '100%', background: 'none', border: 'none', padding: 0,
+                cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                display: 'flex', alignItems: 'center', gap: 12,
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2 }}>
+                  {t('profile.alertSounds')}
+                </div>
+                <div style={{ fontSize: 12.5, color: '#9C6B7A', marginTop: 3, lineHeight: 1.5 }}>
+                  {t('profile.alertSoundsSub')}
+                </div>
+              </div>
+              <svg
+                width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="#C9A3B4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                style={{
+                  flexShrink: 0,
+                  transform: soundsOpen ? 'rotate(90deg)' : 'none',
+                  transition: 'transform 0.18s',
+                }}
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+            {soundsOpen && <div style={{ height: 10 }} />}
+            {soundsOpen && ALERT_TYPES.map((at, i) => (
+              <div key={at.key} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '10px 0',
+                borderTop: i === 0 ? 'none' : '1px solid #F7EFF3',
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{t('profile.sound.' + at.key)}</div>
+                  <div style={{
+                    fontSize: 11.5, color: '#9C6B7A', marginTop: 2,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {ringtones[at.key] || t('profile.default')}
+                  </div>
+                </div>
+                {ringtones[at.key] && ringtones[at.key] !== t('profile.default') && (
+                  <button
+                    onClick={() => handleResetTone(t.key)}
+                    title={`Use the default sound for ${t('profile.sound.' + at.key)}`}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: '#9C6B7A', fontSize: 11.5, fontWeight: 700,
+                      fontFamily: 'inherit', padding: '6px 2px', flexShrink: 0,
+                    }}
+                  >
+                    Default
+                  </button>
+                )}
+                <button
+                  onClick={() => handlePickTone(t.key)}
+                  style={{
+                    background: '#FDF0F5', border: '1.5px solid #F0D8E3',
+                    color: '#951345', borderRadius: 10, padding: '7px 13px',
+                    fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
+                    cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
+                  }}
+                >
+                  Change
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ── PRIVACY ── */}
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 12 }}>
-            Privacy
+            {t('profile.privacy')}
           </div>
           {[
             {
@@ -741,7 +917,7 @@ export default function ProfilePage() {
                   <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/>
                 </svg>
               ),
-              label: 'Show Me Online', value: showOnline, handler: handleToggleOnline,
+              label: t('profile.showMeOnline'), value: showOnline, handler: handleToggleOnline,
             },
             {
               icon: (
@@ -750,7 +926,7 @@ export default function ProfilePage() {
                   <circle cx="12" cy="10" r="3"/>
                 </svg>
               ),
-              label: 'Show My Location', value: showLocation, handler: handleToggleLocation,
+              label: t('profile.showMyLocation'), value: showLocation, handler: handleToggleLocation,
             },
             {
               icon: (
@@ -759,7 +935,7 @@ export default function ProfilePage() {
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
               ),
-              label: 'Show Last Seen', value: showLastSeen, handler: handleToggleLastSeen,
+              label: t('profile.showLastSeen'), value: showLastSeen, handler: handleToggleLastSeen,
             },
           ].map((item, i, arr) => (
             <div key={item.label}>
@@ -784,9 +960,9 @@ export default function ProfilePage() {
         </div>
 
         {/* ── SAVE + CHANGE PASSWORD side by side ── */}
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1, whiteSpace: 'nowrap' }}>
-            {saving ? 'Saving...' : 'Save Changes'}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'stretch' }}>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
+            {saving ? t('common.saving') : t('profile.saveChanges')}
           </button>
           <button onClick={() => setShowPwModal(true)} style={{
             flex: 1, padding: 14, borderRadius: 14,
@@ -794,14 +970,41 @@ export default function ProfilePage() {
             color: '#951345', fontWeight: 800, fontSize: 13,
             fontFamily: 'inherit', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            whiteSpace: 'nowrap',
+            lineHeight: 1.5, textAlign: 'center',
           }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
-            Change Password
+            {t('profile.changePassword')}
           </button>
+        </div>
+
+        {/* ── USER GUIDE ── */}
+        <div
+          className="settings-card"
+          onClick={() => navigate('/manual')}
+          style={{ marginTop: 10, padding: '14px 16px', cursor: 'pointer' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                background: '#F5E8EF', border: '1px solid #EDD0DA',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0D0C1D' }}>{t('profile.userGuide')}</div>
+                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>{t('profile.userGuideSub')}</div>
+              </div>
+            </div>
+            <span style={{ color: '#9C6B7A', fontSize: 16 }}>›</span>
+          </div>
         </div>
 
         {/* ── PRIVACY POLICY ── */}
@@ -818,14 +1021,13 @@ export default function ProfilePage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  <circle cx="12" cy="16" r="1.2" fill="#951345"/>
+                  <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" fill="none"/>
+                  <polyline points="9 12 11 14 15 10" fill="none"/>
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>Privacy Policy</div>
-                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>How we protect your data</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>{t('profile.privacyPolicy')}</div>
+                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>{t('profile.privacyPolicySub')}</div>
               </div>
             </div>
             <span style={{ color: '#9C6B7A', fontSize: 18, fontWeight: 300 }}>›</span>
@@ -844,7 +1046,7 @@ export default function ProfilePage() {
             <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
             <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
           </svg>
-          Delete My Account
+          {t('profile.deleteAccount')}
         </button>
 
       </div>
@@ -863,86 +1065,13 @@ export default function ProfilePage() {
               await signOut()
               window.location.href = '/login'
             } catch (err) {
-              setDialog({ type: 'error', message: 'Failed to delete account. Please try again or contact support.' })
+              setDialog({ type: 'error', message: t('profile.deleteFailed') })
             }
           }}
         />
       )}
 
       {/* ── INVITE SHEET ── */}
-      {showInviteSheet && (
-        <div className="overlay" onClick={() => setShowInviteSheet(false)}>
-          <div className="popup" onClick={e => e.stopPropagation()} style={{ paddingBottom: 28 }}>
-            <div className="popup-handle" />
-
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
-              Share My Code
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 5, color: '#0D0C1D', fontFamily: 'Sora, sans-serif', marginBottom: 4 }}>
-              {myInviteCode}
-            </div>
-            <div style={{ fontSize: 12, color: '#9C6B7A', marginBottom: 20 }}>
-              Ask your family member to enter this code on the Add Member screen
-            </div>
-
-            {/* WhatsApp */}
-            <button onClick={() => {
-              const msg = encodeURIComponent(`Join me on FamilyGuard! Enter my code *${myInviteCode}* when adding me as a member. Download the app and stay connected with family 🛡️`)
-              window.open(`https://wa.me/?text=${msg}`, '_blank')
-            }} style={{
-              width: '100%', padding: '14px 16px', borderRadius: 14,
-              background: '#25D366', border: 'none',
-              color: '#fff', fontWeight: 800, fontSize: 15,
-              fontFamily: 'inherit', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10,
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.553 4.118 1.522 5.852L.057 23.25a.75.75 0 0 0 .916.916l5.404-1.464A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.502-5.17-1.381l-.37-.218-3.835 1.04 1.04-3.834-.218-.371A9.953 9.953 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-              </svg>
-              Share via WhatsApp
-            </button>
-
-            {/* SMS */}
-            <button onClick={() => {
-              const msg = encodeURIComponent(`Join me on FamilyGuard! My code is ${myInviteCode} — enter it when adding me as a member.`)
-              window.open(`sms:?body=${msg}`, '_blank')
-            }} style={{
-              width: '100%', padding: '14px 16px', borderRadius: 14,
-              background: '#0EA5E9', border: 'none',
-              color: '#fff', fontWeight: 800, fontSize: 15,
-              fontFamily: 'inherit', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10,
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-              Share via SMS
-            </button>
-
-            {/* Copy Code */}
-            <button onClick={() => {
-              navigator.clipboard.writeText(myInviteCode)
-              setCodeCopied(true)
-              setTimeout(() => { setCodeCopied(false); setShowInviteSheet(false) }, 1200)
-            }} style={{
-              width: '100%', padding: '14px 16px', borderRadius: 14,
-              background: codeCopied ? '#D1FAE5' : '#F5F4FB',
-              border: codeCopied ? '1.5px solid #10B981' : '1.5px solid #E9E6FB',
-              color: codeCopied ? '#059669' : '#3A1020', fontWeight: 800, fontSize: 15,
-              fontFamily: 'inherit', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 12, transition: 'all 0.2s',
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : '#951345'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-              </svg>
-              {codeCopied ? '✓ Copied!' : 'Copy Code'}
-            </button>
-
-          </div>
-        </div>
-      )}
-
       {/* ── FAMILY ACTION SHEET ── */}
       {selectedFam && (
         <div className="overlay" onClick={() => setSelectedFam(null)}>
@@ -966,18 +1095,14 @@ export default function ProfilePage() {
               <div>
                 <div style={{ fontSize: 18, fontWeight: 900, color: '#000' }}>{selectedFam.name}</div>
                 <div style={{ fontSize: 12, color: '#9C6B7A', marginTop: 2 }}>
-                  {selectedFam.role === 'admin' ? '👑 Admin' : '👤 Member'}
+                  {selectedFam.role === 'admin' ? '👑 ' + t('profile.admin') : '👤 ' + t('profile.member')}
                   {selectedFam.family_id === familyId && <span style={{ marginLeft: 8, background: '#951345', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5 }}>ACTIVE</span>}
                 </div>
               </div>
             </div>
 
-            {/* Go to Family */}
-            <button onClick={() => {
-              // Switching is done from Family page — here just show details
-              setSelectedFam(null)
-              navigate('/')
-            }} style={{
+            {/* View Family — read-only member list, does not switch active family */}
+            <button onClick={() => openViewFamily(selectedFam)} style={{
               width: '100%', padding: '14px 16px', borderRadius: 14,
               background: '#951345', border: 'none',
               color: '#fff', fontWeight: 800, fontSize: 15,
@@ -995,9 +1120,9 @@ export default function ProfilePage() {
             <button onClick={() => {
               setDialog({
                 type: 'confirm',
-                title: 'Leave Family',
-                message: `Leave "${selectedFam.name}"? You will need a new invite to rejoin.`,
-                confirmLabel: 'Leave',
+                title: t('profile.leaveFamily'),
+                message: t('profile.leaveFamilyMsg', { name: selectedFam.name }),
+                confirmLabel: t('profile.leave'),
                 onConfirm: async () => {
                   setSelectedFam(null)
                   try { await leaveFamily(user.id, selectedFam.family_id) }
@@ -1017,6 +1142,69 @@ export default function ProfilePage() {
               Leave Family
             </button>
 
+          </div>
+        </div>
+      )}
+
+      {/* ── VIEW FAMILY — read-only member list, does not touch the active family ── */}
+      {viewFam && (
+        <div className="overlay" onClick={() => setViewFam(null)}>
+          <div className="popup" onClick={e => e.stopPropagation()} style={{ paddingBottom: 28, maxHeight: '75vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="popup-handle" />
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: '#000' }}>{viewFam.fam.name}</div>
+              <button onClick={() => setViewFam(null)} style={{
+                background: '#F5EBF0', border: 'none', borderRadius: 10,
+                width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {viewFam.loading ? (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: '#9C6B7A', fontSize: 13 }}>{t('profile.loadingMembers')}</div>
+              ) : viewFam.members.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: '#9C6B7A', fontSize: 13 }}>{t('profile.noMembersFound')}</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {viewFam.members.map((m) => (
+                    <div key={m.user_id || m.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 12px', borderRadius: 12,
+                      background: '#F8F7FF', border: '1.5px solid #E8E5FF',
+                    }}>
+                      {m.avatar_url ? (
+                        <img src={m.avatar_url} alt={m.display_name} style={{
+                          width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0,
+                        }} />
+                      ) : (
+                        <div style={{
+                          width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                          background: m.avatar_color && m.avatar_color !== '#4F8EF7' ? m.avatar_color : '#951345',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: '#fff', fontWeight: 800, fontSize: 16,
+                        }}>
+                          {m.display_name?.[0]?.toUpperCase() || '?'}
+                        </div>
+                      )}
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {m.display_name || t('profile.unknown')}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
+                          {m.role === 'admin' ? '👑 ' + t('profile.admin') : '👤 ' + t('profile.member')}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

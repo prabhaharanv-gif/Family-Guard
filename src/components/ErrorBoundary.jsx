@@ -1,6 +1,10 @@
 import { Component } from 'react'
-import { BUILD_ID, recordCrash, formatCrashLog, clearCrashLog } from '../lib/crashLog'
+import { recordError } from '../lib/crashReporting'
 import { APP_NAME } from '../lib/brand'
+
+// Stamped in by vite.config.js, so the screen can say which build it is —
+// the fastest way to tell a real bug from a stale APK on a device.
+const BUILD_ID = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 
 const detailBtn = {
   background: 'none', border: 'none', color: '#C4A2AE',
@@ -10,7 +14,7 @@ const detailBtn = {
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
-    this.state = { hasError: false, error: null, showDetails: false }
+    this.state = { hasError: false, error: null, info: null, showDetails: false }
   }
 
   static getDerivedStateFromError(error) {
@@ -19,13 +23,11 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('[ErrorBoundary] Caught:', error, info)
-    recordCrash('render', error, info?.componentStack?.trim().split('\n').slice(0, 6).join('\n'))
+    // The process survives a render throw, so Crashlytics never sees it unless
+    // we say so — otherwise this is a blank screen we only hear about if the
+    // user happens to tell us.
+    recordError(error, 'ErrorBoundary: ' + String(info && info.componentStack || '').slice(0, 500))
     this.setState({ info })
-  }
-
-  handleRetry = () => {
-    this.setState({ hasError: false, error: null, info: null, showDetails: false })
-    this.props.onRetry?.()
   }
 
   render() {
@@ -35,8 +37,8 @@ export default class ErrorBoundary extends Component {
     const detail = [
       `build ${BUILD_ID}`,
       error?.message || String(error || 'Unknown error'),
-      info?.componentStack?.trim(),
-      formatCrashLog() && '── recent errors ──\n' + formatCrashLog(),
+      error?.stack?.split('\n').slice(0, 6).join('\n'),
+      info?.componentStack?.trim().split('\n').slice(0, 8).join('\n'),
     ].filter(Boolean).join('\n\n')
 
     return (
@@ -51,7 +53,7 @@ export default class ErrorBoundary extends Component {
           background: 'linear-gradient(135deg, #FEE2E2, #FEF2F2)',
           border: '1.5px solid #FCA5A5',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 36, marginBottom: 20, flexShrink: 0,
+          fontSize: 36, marginBottom: 20,
         }}>
           ⚠️
         </div>
@@ -68,7 +70,7 @@ export default class ErrorBoundary extends Component {
           {APP_NAME} ran into a problem on this page. Your data is safe.
         </div>
         <button
-          onClick={this.handleRetry}
+          onClick={() => this.setState({ hasError: false, error: null, info: null, showDetails: false })}
           style={{
             padding: '13px 28px', borderRadius: 14,
             background: 'linear-gradient(135deg, #951345, #720D35)',
@@ -94,33 +96,23 @@ export default class ErrorBoundary extends Component {
         {/* Details — collapsed by default, so a crash on a phone is still
             reportable without a debugger attached */}
         <button
-          onClick={() => this.setState(s => ({ showDetails: !s.showDetails }))}
-          style={{
-            marginTop: 18, background: 'none', border: 'none',
-            color: '#C4A2AE', fontSize: 12, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}
+          onClick={() => this.setState(st => ({ showDetails: !st.showDetails }))}
+          style={{ ...detailBtn, marginTop: 18 }}
         >
           {showDetails ? 'Hide details' : 'Show details'}
         </button>
         {showDetails && (
           <>
-          <pre style={{
-            marginTop: 10, maxWidth: '100%', maxHeight: 220, overflow: 'auto',
-            background: '#fff', border: '1px solid #F3D4DD', borderRadius: 12,
-            padding: 12, fontSize: 11, lineHeight: 1.5, color: '#6B7280',
-            textAlign: 'left', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-          }}>{detail}</pre>
-          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <pre style={{
+              marginTop: 10, maxWidth: '100%', maxHeight: 220, overflow: 'auto',
+              background: '#fff', border: '1px solid #F3D4DD', borderRadius: 12,
+              padding: 12, fontSize: 11, lineHeight: 1.5, color: '#6B7280',
+              textAlign: 'left', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+            }}>{detail}</pre>
             <button
               onClick={() => { navigator.clipboard?.writeText(detail).catch(() => {}) }}
-              style={detailBtn}
+              style={{ ...detailBtn, marginTop: 8 }}
             >Copy</button>
-            <button
-              onClick={() => { clearCrashLog(); this.forceUpdate() }}
-              style={detailBtn}
-            >Clear log</button>
-          </div>
           </>
         )}
       </div>

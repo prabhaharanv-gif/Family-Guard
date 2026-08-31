@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Geolocation } from '@capacitor/geolocation'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
+import { startBatteryReporting } from './useBattery'
 
 /**
  * Global, always-on location writer.
@@ -17,16 +18,53 @@ import { supabase } from '../lib/supabase'
  *     timestamp keeps advancing and other members can see the pin is "live".
  *   - Respects the member's show_location privacy toggle.
  */
+// ── Location quality filters ─────────────────────────────────────────────────
+// Reject fixes worse than this. Loosened from 50m to 100m so normal indoor
+// WiFi/cell fixes are accepted instead of silently rejected — matches the
+// native LocationForegroundService gate.
+const MAX_ACCURACY_M = 100       // metres — discard anything worse than this
+// Only write if the user has moved more than this from the last written position
+// Eliminates GPS noise making a stationary pin drift around
+const MIN_MOVE_M     = 15        // metres
+// Write at least this often even when stationary, so the pin stays "live"
+const HEARTBEAT_MS   = 90_000    // 90 seconds
+// A single bad fix (stale WiFi AP entry, cell-tower fallback, GPS multipath) can
+// report a "plausible" accuracy while being far off, making the pin teleport and
+// snap back on the next good fix. Anything implying faster than this is held back
+// until a second fix roughly confirms it — matches the native background gate.
+const MAX_PLAUSIBLE_SPEED_MPS = 55       // ~200 km/h
+const JUMP_CONFIRM_RADIUS_M   = 50
+
+// Haversine distance in metres between two lat/lng pairs
+function distanceM(lat1, lng1, lat2, lng2) {
+  const R = 6371000
+  const toRad = d => d * Math.PI / 180
+  const dLat  = toRad(lat2 - lat1)
+  const dLng  = toRad(lng2 - lng1)
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 export function useLocationBroadcast(userId, familyId) {
-  const watchRef      = useRef(null)
-  const lastCoordsRef = useRef(null)
-  const sharingRef    = useRef(true)
+  const watchRef       = useRef(null)
+  const lastCoordsRef  = useRef(null)
+  const lastWrittenRef = useRef(null)   // last coords actually written to DB
+  const lastWriteTimeRef = useRef(0)    // timestamp of last write — for heartbeat
+  const pendingJumpRef = useRef(null)   // an implausibly-fast fix awaiting confirmation
+  const sharingRef     = useRef(true)
+  const batteryRef     = useRef({ level: null, charging: false })
 
   useEffect(() => {
     if (!userId || !familyId) return
 
     let cancelled = false
     let intervalId = null
+
+    // Start battery reporting — updates batteryRef whenever level/charging changes
+    const stopBattery = startBatteryReporting(({ level, charging }) => {
+      batteryRef.current = { level, charging }
+    })
 
     // Check the member's privacy preference once, then cache it.
     const checkSharing = async () => {
@@ -41,8 +79,62 @@ export function useLocationBroadcast(userId, familyId) {
     }
 
     // Write current coords to the DB (or mark as not-sharing).
+    // The locations.speed column is km/h — that is what
+    // LocationForegroundService writes (loc.getSpeed() * 3.6f) and it is the
+    // primary writer on Android. The Geolocation API reports metres/second,
+    // so this path has to convert or the same column ends up holding two
+    // different units depending on which writer last ran.
+    const toKmh = (mps) => (mps == null || Number.isNaN(mps) ? null : mps * 3.6)
+
     const write = async (lat, lng, accuracy, speed) => {
       if (cancelled) return
+
+      // ── Quality gate ──────────────────────────────────────────────────────
+      // Reject fixes with poor accuracy (cell tower / network fallback).
+      // These are the main cause of pins jumping while the user is stationary.
+      if (accuracy != null && accuracy > MAX_ACCURACY_M) {
+        console.warn(`[LocationBroadcast] Discarding poor fix — accuracy ${Math.round(accuracy)}m > ${MAX_ACCURACY_M}m`)
+        return
+      }
+
+      // Jump gate — reject a fix that implies unrealistic speed from the last
+      // written position unless a second fix roughly confirms it. Catches the
+      // "pin teleports far away then snaps back" pattern before it ever writes.
+      if (lastWrittenRef.current) {
+        const jumpDist  = distanceM(lastWrittenRef.current.lat, lastWrittenRef.current.lng, lat, lng)
+        const elapsedMs = Date.now() - lastWriteTimeRef.current
+        // Clamp elapsed time for the speed check — see LocationForegroundService.java
+        // for why: a stale heartbeat-gap baseline otherwise makes multi-km jumps look
+        // like plausible low speed even though the person hasn't actually moved.
+        const speedElapsedMs = Math.min(elapsedMs, 20_000)
+        const impliedMps = speedElapsedMs > 0 ? jumpDist / (speedElapsedMs / 1000) : 0
+        if (impliedMps > MAX_PLAUSIBLE_SPEED_MPS) {
+          const pending = pendingJumpRef.current
+          const confirmed = pending && distanceM(pending.lat, pending.lng, lat, lng) <= JUMP_CONFIRM_RADIUS_M
+          if (confirmed) {
+            pendingJumpRef.current = null
+          } else {
+            console.warn(`[LocationBroadcast] Rejected as GPS jump — ${Math.round(jumpDist)}m in ${elapsedMs}ms (${Math.round(impliedMps * 3.6)}km/h implied)`)
+            pendingJumpRef.current = { lat, lng }
+            return
+          }
+        } else {
+          pendingJumpRef.current = null
+        }
+      }
+
+      // Only write if the user has moved MIN_MOVE_M from the last written
+      // position, OR if HEARTBEAT_MS has elapsed since the last write. Without
+      // the heartbeat, a stationary user's timestamp never advances and their
+      // pin shows as stale ("last seen 3h ago") even though the app is running.
+      if (lastWrittenRef.current) {
+        const moved = distanceM(
+          lastWrittenRef.current.lat, lastWrittenRef.current.lng, lat, lng
+        )
+        const sinceLastWrite = Date.now() - lastWriteTimeRef.current
+        if (moved < MIN_MOVE_M && sinceLastWrite < HEARTBEAT_MS) return
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       if (!sharingRef.current) {
         // Privacy off — flag the row so pins are hidden for this user
@@ -60,18 +152,22 @@ export function useLocationBroadcast(userId, familyId) {
           p_lat:         lat,
           p_lng:         lng,
           p_accuracy:    accuracy || 0,
-          p_speed:       speed ?? null,
-          p_battery:     null,
-          p_is_charging: false,
+          p_speed:       toKmh(speed),
+          p_battery:     batteryRef.current.level,
+          p_is_charging: batteryRef.current.charging,
         })
         if (error) throw error
+        lastWrittenRef.current = { lat, lng }
+        lastWriteTimeRef.current = Date.now()
       } catch (e) {
         // Fallback: direct upsert (RLS still enforces user_id = auth.uid())
         await supabase.from('locations').upsert({
           user_id: userId, family_id: familyId,
-          lat, lng, accuracy: accuracy || 0, speed: speed ?? null,
+          lat, lng, accuracy: accuracy || 0, speed: toKmh(speed),
           is_sharing: true, updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id,family_id' })
+        lastWrittenRef.current = { lat, lng }
+        lastWriteTimeRef.current = Date.now()
       }
     }
 
@@ -161,6 +257,7 @@ export function useLocationBroadcast(userId, familyId) {
 
     return () => {
       cancelled = true
+      stopBattery()
       if (intervalId) clearInterval(intervalId)
       if (watchRef.current != null) {
         if (Capacitor.isNativePlatform()) {

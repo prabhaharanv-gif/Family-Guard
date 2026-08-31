@@ -236,6 +236,7 @@ body {
   text-align: center;
   margin-bottom: 6px;
   letter-spacing: -0.8px;
+  line-height: 1.3;
   background: var(--grad-maroon);
   -webkit-background-clip: text;
   background-clip: text;
@@ -260,6 +261,7 @@ body {
   font-weight: 600;
   color: #6B7280;
   margin-bottom: 6px;
+  line-height: 1.5;
   letter-spacing: 0.2px;
 }
 .input-group { margin-bottom: 16px; }
@@ -303,6 +305,11 @@ body {
   font-size: 15px;
   font-weight: 700;
   font-family: inherit;
+  /* Tamil labels run longer than the English ones and wrap to two lines. With
+     the default leading the second line was clipped by the overflow:hidden
+     below (which the shine effect needs), so set it explicitly — Indic scripts
+     stack marks above and below the base character and need the room. */
+  line-height: 1.5;
   cursor: pointer;
   transition: all 0.22s var(--ease);
   letter-spacing: 0.3px;
@@ -533,6 +540,14 @@ body {
    MEMBER CARD — premium lifted card
    ══════════════════════════════════════════════════════════════ */
 .member-card {
+  /* The card's own gesture is a long press, which opens the action sheet. Without
+     this the browser starts a text selection at the same moment and grabs
+     whatever is under the finger — the battery percentage, "Live", the distance —
+     and MIUI puts its Convert/Copy/Share bar over the card. Same guard the nav
+     items in Layout.jsx already use. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
   background: var(--grad-card);
   border-radius: var(--radius-lg);
   padding: 15px 16px;
@@ -889,7 +904,7 @@ body {
   50%       { background: rgba(244,63,94,0.18); }
 }
 .sos-blink-overlay {
-  position: fixed; inset: 0; z-index: 9999;
+  position: fixed; inset: 0; z-index: 700;
   pointer-events: all;
   display: flex; align-items: flex-end; justify-content: center;
   animation: sos-screen-blink 0.8s ease-in-out infinite;
@@ -918,6 +933,48 @@ body {
 }
 .sos-alert-dismiss:hover { background: rgba(255,255,255,0.28); }
 
+/* ══════════════════════════════════════════════════════════════
+   INCOMING CALL OVERLAY — maroon theme, gentle pulse (not an alarm)
+   ══════════════════════════════════════════════════════════════ */
+.call-ring-overlay {
+  position: fixed; inset: 0; z-index: 700;
+  pointer-events: all;
+  display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(0,0,0,0.35);
+}
+.call-ring-banner {
+  width: 100%; max-width: 430px;
+  background: linear-gradient(160deg, #B01650 0%, #720D35 100%);
+  border-radius: 32px 32px 0 0;
+  padding: 28px 28px 40px;
+  text-align: center;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.25), 0 -12px 50px rgba(114,13,53,0.5);
+  animation: slideUp 0.36s var(--ease);
+}
+.call-ring-icon { font-size: 52px; margin-bottom: 12px; animation: call-ring-pulse 1s ease-in-out infinite; }
+.call-ring-avatar {
+  width: 96px; height: 96px; border-radius: 50%;
+  margin: 0 auto 12px; overflow: hidden;
+  background: rgba(255,255,255,0.16);
+  border: 3px solid rgba(255,255,255,0.35);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Sora', sans-serif; font-size: 38px; font-weight: 900; color: #fff;
+  animation: call-ring-pulse 1s ease-in-out infinite;
+}
+.call-ring-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+@keyframes call-ring-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+.call-ring-title { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 6px; letter-spacing: -0.5px; }
+.call-ring-sub { font-size: 14px; color: rgba(255,255,255,0.85); margin-bottom: 26px; font-weight: 500; }
+.call-ring-actions { display: flex; gap: 14px; }
+.call-ring-btn {
+  flex: 1; border-radius: 16px; padding: 15px 0; font-size: 15px; font-weight: 800;
+  font-family: inherit; cursor: pointer; letter-spacing: 0.2px; transition: all 0.2s var(--ease);
+}
+.call-ring-decline { background: rgba(255,255,255,0.14); border: 2px solid rgba(255,255,255,0.35); color: #fff; }
+.call-ring-decline:hover { background: rgba(255,255,255,0.24); }
+.call-ring-accept { background: #fff; border: 2px solid #fff; color: #720D35; }
+.call-ring-accept:hover { background: rgba(255,255,255,0.9); }
+
 /* ── Scrollbar hide ── */
 * { scrollbar-width: none; }
 *::-webkit-scrollbar { display: none; }
@@ -926,7 +983,7 @@ body {
    NATIVE ALARM BAR
    ══════════════════════════════════════════════════════════════ */
 .native-alarm-bar {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 99999;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 800;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 12px 16px;
   padding-top: calc(12px + env(safe-area-inset-top, 0px));
@@ -984,4 +1041,24 @@ body {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* ── Charging battery fill ──────────────────────────────────────────────────
+   Sweeps the fill from the real level up to full and repeats, the way a phone's
+   own status bar does. The percentage beside it still shows the true value, so
+   the bar reads as "charging" rather than as a live measurement.
+
+   --bat-w is set inline per member, since each starts from its own level. */
+@keyframes batteryCharge {
+  0%   { width: var(--bat-w, 2px); }
+  70%  { width: 16px; }
+  100% { width: 16px; opacity: 0.35; }
+}
+.battery-fill-charging {
+  animation: batteryCharge 1.8s ease-in-out infinite;
+}
+/* Respect a reduced-motion preference — the bolt already signals charging, so
+   nothing is lost by holding the bar still. */
+@media (prefers-reduced-motion: reduce) {
+  .battery-fill-charging { animation: none; }
 }

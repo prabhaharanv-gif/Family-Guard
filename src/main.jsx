@@ -3,10 +3,12 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
-import { installGlobalCrashHandlers } from './lib/crashLog'
 import './styles/global.css'
+import { initCrashReporting } from './lib/crashReporting'
 
-installGlobalCrashHandlers()
+// Installed before React mounts so a failure during the very first render is
+// still reported rather than vanishing into a blank screen.
+initCrashReporting()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

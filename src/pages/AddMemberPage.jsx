@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useT } from '../i18n'
 
 const RELATIONSHIPS = ['Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Spouse', 'Grandfather', 'Grandmother', 'Other']
 const AVATAR_COLORS = ['#4F8EF7','#FF6B6B','#34C759','#FF9500','#AF52DE','#FF2D55','#5AC8FA','#FFCC00']
@@ -10,6 +11,7 @@ const AVATAR_COLORS = ['#4F8EF7','#FF6B6B','#34C759','#FF9500','#AF52DE','#FF2D5
 // Real members join via authenticated invite flow.
 
 export default function AddMemberPage() {
+  const t = useT()
   const [displayName, setDisplayName] = useState('')
   const [phone, setPhone] = useState('')
   const [relationship, setRelationship] = useState('')
@@ -48,7 +50,7 @@ export default function AddMemberPage() {
       <div className="add-member-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
           <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>←</button>
-          <h2 style={{ fontSize: 20, fontWeight: 800 }}>Add Family Member</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.4 }}>{t('addMember.title')}</h2>
         </div>
 
         {error && <div className="error-msg">{error}</div>}
@@ -56,7 +58,7 @@ export default function AddMemberPage() {
         <form onSubmit={handleAdd}>
           {/* Avatar color picker */}
           <div className="form-group">
-            <label>Avatar Color</label>
+            <label>{t('addMember.avatarColor')}</label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {AVATAR_COLORS.map(c => (
                 <div key={c} onClick={() => setSelectedColor(c)} style={{
@@ -70,20 +72,20 @@ export default function AddMemberPage() {
           </div>
 
           <div className="form-group">
-            <label>Full Name *</label>
+            <label>{t('addMember.fullName')}</label>
             <input className="input" value={displayName}
               onChange={e => setDisplayName(e.target.value)}
-              placeholder="e.g. Sudha" required />
+              required />
           </div>
 
           <div className="form-group">
-            <label>Mobile Number</label>
+            <label>{t('addMember.mobileNumber')}</label>
             <div style={{ display: 'flex', gap: 8 }}>
               <span style={{
                 padding: '13px 10px', background: 'var(--bg)',
                 border: '1.5px solid var(--border)', borderRadius: 'var(--radius)',
                 fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap'
-              }}>🇮🇳 +91</span>
+              }}>+91</span>
               <input className="input" type="tel" value={phone}
                 onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="9876543210" maxLength={10} style={{ flex: 1 }} />
@@ -91,23 +93,24 @@ export default function AddMemberPage() {
           </div>
 
           <div className="form-group">
-            <label>Relationship *</label>
+            <label>{t('addMember.relationship')}</label>
             <select className="input" value={relationship}
               onChange={e => setRelationship(e.target.value)} required>
-              <option value="">Select relationship</option>
-              {RELATIONSHIPS.map(r => <option key={r} value={r}>{r}</option>)}
+              <option value="">{t('addMember.selectRelationship')}</option>
+              {/* value stays English: it is what add_family_contact stores. */}
+              {RELATIONSHIPS.map(r => <option key={r} value={r}>{t('addMember.rel.' + r)}</option>)}
             </select>
           </div>
 
           <div className="form-group">
-            <label>Nickname (Optional)</label>
+            <label>{t('addMember.nickname')}</label>
             <input className="input" value={betName}
               onChange={e => setBetName(e.target.value)}
-              placeholder="e.g. Chinna, Kanna, Joo..." />
+              />
           </div>
 
           <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop: 8 }}>
-            {loading ? 'Adding...' : 'Add Member'}
+            {loading ? t('addMember.adding') : t('addMember.add')}
           </button>
         </form>
       </div>

@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+  Tamil notification channel labels.
+
+  Only the strings Android renders on our behalf live here. app_name and the
+  url-scheme values stay untranslated in values/ — the brand is the brand, and
+  the scheme is an identifier.
+-->
+<resources>
+    <string name="ch_sos_name">SOS அவசர எச்சரிக்கைகள்</string>
+    <string name="ch_sos_desc">குடும்ப உறுப்பினர்களிடமிருந்து வரும் அவசர SOS எச்சரிக்கைகள்</string>
+
+    <string name="ch_sos_banner_name">SOS எச்சரிக்கைப் பட்டை</string>
+    <string name="ch_sos_banner_desc">SOS எச்சரிக்கைப் பட்டை — ஒலியை செயலி வழங்கும்</string>
+
+    <string name="ch_calls_name">உள்வரும் அழைப்புகள்</string>
+    <string name="ch_calls_desc">குடும்ப உறுப்பினர்களிடமிருந்து வரும் குரல் மற்றும் வீடியோ அழைப்புகள்</string>
+
+    <string name="ch_call_ring_name">உள்வரும் அழைப்புகள்</string>
+    <string name="ch_call_ring_desc">குடும்ப உறுப்பினர்களிடமிருந்து வரும் குரல்/வீடியோ அழைப்புகள்</string>
+
+    <string name="ch_messages_name">குடும்பச் செய்திகள்</string>
+    <string name="ch_messages_desc">குடும்ப உறுப்பினர்களிடமிருந்து புதிய செய்திகள்</string>
+
+    <string name="ch_messages_silent_name">குடும்பச் செய்திகள் (ஒலியின்றி)</string>
+    <string name="ch_messages_silent_desc">குடும்பச் செய்திகள் — ஒலியில்லா பயன்முறை</string>
+
+    <string name="ch_location_name">இருப்பிடக் கண்காணிப்பு</string>
+    <string name="ch_location_desc">Famora உங்கள் இருப்பிடத்தைக் கண்காணிக்கும் போது காட்டப்படும்</string>
+
+    <string name="ch_ping_name">தொலைபேசியைக் கண்டுபிடி</string>
+    <string name="ch_ping_desc">குடும்ப உறுப்பினர் தேடும்போது இந்தத் தொலைபேசி ஒலிக்கும்</string>
+
+    <string name="a_family_member">ஒரு குடும்ப உறுப்பினர்</string>
+    <string name="sos_alert">SOS எச்சரிக்கை</string>
+
+    <!-- SOSAlertActivity — பூட்டுத் திரையின் மேல் தோன்றும் முழுத்திரை எச்சரிக்கை -->
+    <string name="sos_needs_help">%1$s அவர்களுக்கு உதவி தேவை!</string>
+    <string name="sos_view_location">📍 இருப்பிடத்தைக் காண்க</string>
+    <string name="sos_open_app">Famora-வைத் திற</string>
+    <string name="sos_stop_alarm">✋ புரிந்தது — அலாரத்தை நிறுத்து</string>
+
+    <!-- CallRingingActivity -->
+    <string name="call_incoming_voice">உள்வரும் குரல் அழைப்பு</string>
+    <string name="call_incoming_video">உள்வரும் வீடியோ அழைப்பு</string>
+    <string name="call_decline">✕ நிராகரி</string>
+    <string name="call_accept">✓ ஏற்கிறேன்</string>
+
+    <!-- அறிவிப்புகள் -->
+    <string name="notif_sos_title">🚨 SOS — %1$s அவர்களுக்கு உதவி தேவை!</string>
+    <string name="notif_sos_big">⚠️ %1$s அவர்களுக்கு உதவி தேவை!\n\n%2$s\n\nFamora-வைத் திறக்க தட்டவும்.</string>
+    <string name="notif_call_voice_label">குரல் அழைப்பு</string>
+    <string name="notif_call_video_label">வீடியோ அழைப்பு</string>
+    <!-- Tamil puts the caller first: "<name> இடமிருந்து <call type>" -->
+    <string name="notif_call_title">📞 %2$s இடமிருந்து %1$s</string>
+    <string name="notif_tap_to_answer">பதிலளிக்க தட்டவும்</string>
+    <string name="notif_action_stop">நிறுத்து</string>
+
+    <string name="notif_ping_title">📡 கிடைத்தது!</string>
+    <string name="notif_ping_body">%1$s இந்தத் தொலைபேசியைத் தேடுகிறார்</string>
+    <string name="notif_ping_big">%1$s இந்தத் தொலைபேசியைத் தேடுகிறார்.\n\nஒலியை நிறுத்த நிறுத்து என்பதைத் தட்டவும்.</string>
+    <string name="notif_location_body">உங்கள் குடும்பத்தைப் பாதுகாக்கிறது · இருப்பிடம் இயக்கத்தில்</string>
+    <string name="notif_tap_to_open">திறக்க தட்டவும்</string>
+</resources>

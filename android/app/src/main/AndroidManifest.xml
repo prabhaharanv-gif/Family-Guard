@@ -1,26 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Backup off: Android auto-backup would copy the WebView store — which
+         holds the Supabase session — into the cloud backup, where restoring it
+         onto another device would carry the signed-in session with it. Nothing
+         is lost by disabling it: consent is re-read from user_consents on
+         sign-in, and the only other local values (active family, mute level,
+         language) are re-derived or fall back to the device default. -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <!-- Crashlytics collection starts OFF and is switched on by
+             ConsentGate once the user accepts the privacy policy that
+             discloses it. The setting persists, so this only costs reports
+             from before first consent. -->
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="false" />
+
+        <!-- Locked to portrait: the app is a phone-first family app with no
+             landscape layouts, and rotating mid-use (notably when a call or
+             alert brought a screen forward) was disorienting. Applies to the
+             whole WebView app; the SOS and call screens are locked separately. -->
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
+            android:screenOrientation="portrait"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- ── Full-screen SOS alert shown over the lock screen ──────────────
+             showWhenLocked + turnScreenOn let it display over the keyguard,
+             launched by SOSSirenService's full-screen intent. This is what
+             gives a reliable VISUAL alert when the phone is locked. -->
+        <activity
+            android:name=".SOSAlertActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density"
+            android:theme="@style/SOSAlertTheme" />
+
+        <!-- ── Full-screen incoming-call UI over the lock screen ──────────────
+             Same pattern as SOSAlertActivity, launched by CallRingingService. -->
+        <activity
+            android:name=".CallRingingActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density"
+            android:theme="@style/SOSAlertTheme" />
 
         <!-- ── FCM background/killed message handler ── -->
         <service
@@ -31,9 +78,54 @@
             </intent-filter>
         </service>
 
-        <!-- ── SOS siren foreground service ── -->
+        <!-- ── Boot receiver — restarts location service after device reboot ──
+             Without this, background tracking stops permanently on reboot until
+             the user manually reopens the app. -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <!-- Covers HTC/OnePlus fast-boot variants -->
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+
+        <!-- ── SOS siren foreground service ──────────────────────────────────
+             foregroundServiceType must include BOTH mediaPlayback (for audio)
+             AND specialUse (required on Android 14+ for full-screen intents
+             from a non-phone/camera foreground service).
+             The <property> tag below is the Google Play declaration required
+             when using FOREGROUND_SERVICE_TYPE_SPECIAL_USE. -->
         <service
             android:name=".SOSSirenService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback|specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Emergency SOS alarm that requires showing a full-screen alert over the lock screen when a family member is in danger." />
+        </service>
+
+        <!-- ── Incoming call ringing foreground service ──────────────────────
+             Same mediaPlayback|specialUse justification as SOSSirenService —
+             a ringing call needs the full-screen intent over the lock screen. -->
+        <service
+            android:name=".CallRingingService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback|specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Incoming voice/video call from a family member that requires showing a full-screen ringing alert over the lock screen." />
+        </service>
+
+        <!-- ── Find My Device ring foreground service ────────────────────────
+             mediaPlayback only — unlike the SOS/call services this one never
+             shows a full-screen intent, so it needs no specialUse type and no
+             Play Console special-use declaration. -->
+        <service
+            android:name=".PingRingService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
@@ -47,6 +139,10 @@
             android:exported="false"
             android:foregroundServiceType="location"
             android:stopWithTask="false" />
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notify" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -74,18 +170,35 @@
 
     <!-- ── Foreground services ── -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- Required for mediaPlayback|specialUse combination on Android 14+ -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <!-- ── Full-screen intent — runtime permission on Android 14+ ── -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <!-- ── Notifications ── -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- ── Phone calls ── -->
-    <uses-permission android:name="android.permission.CALL_PHONE" />
-
     <!-- ── Vibration ── -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- ── Voice/video calling (Agora WebRTC via the Capacitor WebView) ── -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- ── Full-screen incoming call while the phone is UNLOCKED ──────────
+         A full-screen intent only takes over the screen when the device is
+         locked; while the user is actively using the phone Android demotes it
+         to a heads-up banner, so an incoming call looked like an ordinary
+         message notification. Background activity starts are also blocked in
+         that state. Holding this permission exempts the app from that
+         restriction, so CallRingingActivity can be launched directly — the
+         same mechanism other calling apps use. Does not affect the locked
+         path, which already works via the full-screen intent. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
 </manifest>

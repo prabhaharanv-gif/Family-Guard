@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
+import { Geolocation } from '@capacitor/geolocation'
+import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 import Dialog from '../components/Dialog'
+import { useT } from '../i18n'
 
 // ── SVG Icon components — consistent outlined style ───────────────────────────
 const Icons = {
@@ -58,54 +61,78 @@ const Icons = {
   ),
 }
 
+// Call-number badge backgrounds — same maroon family, distinct shade per emergency number
+const CALL_BADGE_BG = { '100': '#6B0B2C', '108': '#951345', '112': '#C0185A' }
+
+// `label` is the English text stored in sos_alerts.message and read by the
+// send-sos-notification function. It stays English deliberately: one alert is
+// read by a whole family, who may not share a language, and changing it would
+// orphan every row already in the table. `key` is what the UI translates.
+/* i18n-exempt:start — `label` is written to sos_alerts.message and read by
+   the notification function, so it stays English on purpose; `key` is what
+   the UI translates. */
 const QUICK_MESSAGES = [
-  { label: 'Need Ambulance',    Icon: Icons.Ambulance,   color: '#951345', bg: '#FDF0F5', call: '108', emergency: true  },
-  { label: 'Need Police Help',  Icon: Icons.Police,      color: '#720D35', bg: '#F5EBF0', call: '100', emergency: true  },
-  { label: 'Fire Around Me',    Icon: Icons.Fire,        color: '#B01650', bg: '#FDF2F6', call: '112', emergency: true  },
-  { label: 'Under Violence',    Icon: Icons.Violence,    color: '#8A0F3A', bg: '#F8ECF1', call: '100', emergency: true  },
-  { label: 'Under Harassment',  Icon: Icons.Harassment,  color: '#C0185A', bg: '#FEF0F6', call: '100', emergency: true  },
-  { label: 'Natural Disaster',  Icon: Icons.Disaster,    color: '#6B0B2C', bg: '#F2E8EC', call: '108', emergency: true  },
-  { label: 'Theft',             Icon: Icons.Theft,       color: '#A01040', bg: '#FAF0F4', call: '100', emergency: false },
-  { label: 'Need Money',        Icon: Icons.Money,       color: '#951345', bg: '#FDF0F5', call: null,  emergency: false },
+  { key: 'police',     label: 'Need Police Help',  Icon: Icons.Police,      color: '#720D35', bg: '#F5EBF0', call: '100', emergency: true  },
+  { key: 'violence',   label: 'Under Violence',    Icon: Icons.Violence,    color: '#8A0F3A', bg: '#F8ECF1', call: '100', emergency: true  },
+  { key: 'harassment', label: 'Under Harassment',  Icon: Icons.Harassment,  color: '#C0185A', bg: '#FEF0F6', call: '100', emergency: true  },
+  { key: 'ambulance',  label: 'Need Ambulance',    Icon: Icons.Ambulance,   color: '#951345', bg: '#FDF0F5', call: '108', emergency: true  },
+  { key: 'disaster',   label: 'Natural Disaster',  Icon: Icons.Disaster,    color: '#6B0B2C', bg: '#F2E8EC', call: '108', emergency: true  },
+  { key: 'fire',       label: 'Fire Around Me',    Icon: Icons.Fire,        color: '#B01650', bg: '#FDF2F6', call: '112', emergency: true  },
+  { key: 'theft',      label: 'Theft',             Icon: Icons.Theft,       color: '#A01040', bg: '#FAF0F4', call: '100', emergency: false },
+  { key: 'money',      label: 'Need Money',        Icon: Icons.Money,       color: '#951345', bg: '#FDF0F5', call: null,  emergency: false },
 ]
+/* i18n-exempt:end */
 
-// ── Alarm ────────────────────────────────────────────────────────────────────
-let senderAlarmInterval = null
-let senderAudioCtx = null
+// Stored English label → translation key, so a history row written before the
+// language switch (or by a relative using English) still shows translated.
+const LABEL_TO_KEY = Object.fromEntries(QUICK_MESSAGES.map(m => [m.label, m.key]))
+const translateReason = (t, stored) =>
+  LABEL_TO_KEY[stored] ? t('sos.msg.' + LABEL_TO_KEY[stored]) : stored
 
-function startSenderAlarm() {
-  stopSenderAlarm()
-  try {
-    senderAudioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    const playOneCycle = () => {
-      if (!senderAudioCtx) return
-      const beepAt = (t, freq, dur) => {
-        try {
-          const osc = senderAudioCtx.createOscillator()
-          const gain = senderAudioCtx.createGain()
-          osc.connect(gain); gain.connect(senderAudioCtx.destination)
-          osc.frequency.value = freq; osc.type = 'square'
-          gain.gain.setValueAtTime(0.35, senderAudioCtx.currentTime + t)
-          gain.gain.exponentialRampToValueAtTime(0.001, senderAudioCtx.currentTime + t + dur)
-          osc.start(senderAudioCtx.currentTime + t)
-          osc.stop(senderAudioCtx.currentTime + t + dur)
-        } catch (e) {}
+// ── Alarm — factory returns start/stop bound to private refs ─────────────────
+// Using a factory instead of module-level variables prevents stale audio context
+// leaks when the component unmounts and remounts (e.g. tab switching).
+function createSenderAlarm() {
+  let intervalId = null
+  let audioCtx = null
+
+  function start() {
+    stop()
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+      const playOneCycle = () => {
+        if (!audioCtx) return
+        const beepAt = (t, freq, dur) => {
+          try {
+            const osc = audioCtx.createOscillator()
+            const gain = audioCtx.createGain()
+            osc.connect(gain); gain.connect(audioCtx.destination)
+            osc.frequency.value = freq; osc.type = 'square'
+            gain.gain.setValueAtTime(0.35, audioCtx.currentTime + t)
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + dur)
+            osc.start(audioCtx.currentTime + t)
+            osc.stop(audioCtx.currentTime + t + dur)
+          } catch (e) {}
+        }
+        ;[0, 0.25, 0.5, 0.75, 1.0].forEach(t => beepAt(t, 880, 0.2))
+        ;[0, 0.25, 0.5, 0.75, 1.0].forEach(t => beepAt(t + 0.12, 660, 0.12))
       }
-      ;[0, 0.25, 0.5, 0.75, 1.0].forEach(t => beepAt(t, 880, 0.2))
-      ;[0, 0.25, 0.5, 0.75, 1.0].forEach(t => beepAt(t + 0.12, 660, 0.12))
-    }
-    playOneCycle()
-    senderAlarmInterval = setInterval(playOneCycle, 1500)
-  } catch (e) {}
-}
+      playOneCycle()
+      intervalId = setInterval(playOneCycle, 1500)
+    } catch (e) {}
+  }
 
-function stopSenderAlarm() {
-  if (senderAlarmInterval) { clearInterval(senderAlarmInterval); senderAlarmInterval = null }
-  if (senderAudioCtx) { try { senderAudioCtx.close() } catch (e) {} senderAudioCtx = null }
+  function stop() {
+    if (intervalId) { clearInterval(intervalId); intervalId = null }
+    if (audioCtx) { try { audioCtx.close() } catch (e) {} audioCtx = null }
+  }
+
+  return { start, stop }
 }
 
 // ── Confirmation overlay ─────────────────────────────────────────────────────
 function ConfirmSheet({ msg, onConfirm, onCancel }) {
+  const t = useT()
   return (
     <div className="overlay" onClick={onCancel}>
       <div className="popup" onClick={e => e.stopPropagation()} style={{ padding: '24px 20px 36px' }}>
@@ -127,11 +154,10 @@ function ConfirmSheet({ msg, onConfirm, onCancel }) {
             fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 900,
             color: '#0D0C1D', marginBottom: 8, letterSpacing: -0.4,
           }}>
-            {msg.label}
+            {t('sos.msg.' + msg.key)}
           </div>
           <div style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.5 }}>
-            This will immediately alert all your family members
-            {msg.call && ` and call ${msg.call}`}.
+            {msg.call ? t('sos.confirmBodyCall', { number: msg.call }) : t('sos.confirmBody')}
           </div>
         </div>
 
@@ -141,9 +167,9 @@ function ConfirmSheet({ msg, onConfirm, onCancel }) {
           marginBottom: 24, border: '1px solid #EDE9FF',
         }}>
           {[
-            { icon: '📍', text: 'Your location will be shared' },
-            { icon: '🔔', text: 'Family members get an emergency alert' },
-            msg.call && { icon: '📞', text: `Emergency call to ${msg.call} will start` },
+            { icon: '📍', text: t('sos.willShareLocation') },
+            { icon: '🔔', text: t('sos.familyGetsAlert') },
+            msg.call && { icon: '📞', text: t('sos.willCall', { number: msg.call }) },
           ].filter(Boolean).map((item, i) => (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: 10,
@@ -161,7 +187,7 @@ function ConfirmSheet({ msg, onConfirm, onCancel }) {
             background: '#F8F7FF', border: '1px solid #EDE9FF',
             color: '#6B7280', fontWeight: 700, fontSize: 14,
             fontFamily: 'inherit', cursor: 'pointer',
-          }}>Cancel</button>
+          }}>{t('common.cancel')}</button>
           <button onClick={onConfirm} style={{
             flex: 2, padding: '14px', borderRadius: 14,
             background: `linear-gradient(135deg, ${msg.color}, ${msg.color}CC)`,
@@ -173,7 +199,7 @@ function ConfirmSheet({ msg, onConfirm, onCancel }) {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12.7 19.79 19.79 0 0 1 1.61 4.18 2 2 0 0 1 3.59 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
             </svg>
-            Send SOS Now
+            {t('sos.sendNow')}
           </button>
         </div>
       </div>
@@ -183,11 +209,12 @@ function ConfirmSheet({ msg, onConfirm, onCancel }) {
 
 // ── Sent screen ───────────────────────────────────────────────────────────────
 function SOSSentScreen({ msg, onDismiss, onSafe }) {
+  const t = useT()
   const [elapsed, setElapsed] = useState(0)
 
   useEffect(() => {
-    const t = setInterval(() => setElapsed(s => s + 1), 1000)
-    return () => clearInterval(t)
+    const id = setInterval(() => setElapsed(s => s + 1), 1000)
+    return () => clearInterval(id)
   }, [])
 
   const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
@@ -230,17 +257,17 @@ function SOSSentScreen({ msg, onDismiss, onSafe }) {
       <div style={{
         fontFamily: 'Sora, sans-serif', fontSize: 28, fontWeight: 900,
         color: '#fff', marginBottom: 8, letterSpacing: -0.5,
-      }}>🚨 SOS Sent</div>
-      <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', marginBottom: 32, fontWeight: 500 }}>
-        {msg.label}
+      }}>🚨 {t('sos.sentTitle')}</div>
+      <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', marginBottom: 32, fontWeight: 500, lineHeight: 1.5, textAlign: 'center' }}>
+        {t('sos.msg.' + msg.key)}
       </div>
 
       {/* Status cards */}
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
         {[
-          { icon: '📍', label: 'Location shared', ok: true },
-          { icon: '🔔', label: 'Family alerted', ok: true },
-          { icon: '⏱️', label: `Alert active for ${fmt(elapsed)}`, ok: true },
+          { icon: '📍', label: t('sos.locationShared'), ok: true },
+          { icon: '🔔', label: t('sos.familyAlerted'), ok: true },
+          { icon: '⏱️', label: t('sos.activeFor', { time: fmt(elapsed) }), ok: true },
         ].map((item, i) => (
           <div key={i} style={{
             background: 'rgba(255,255,255,0.08)',
@@ -277,7 +304,7 @@ function SOSSentScreen({ msg, onDismiss, onSafe }) {
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           <polyline points="9 12 11 14 15 10"/>
         </svg>
-        I'm Safe Now
+        {t('sos.imSafe')}
       </button>
 
       <button onClick={onDismiss} style={{
@@ -285,13 +312,14 @@ function SOSSentScreen({ msg, onDismiss, onSafe }) {
         color: 'rgba(255,255,255,0.45)', fontSize: 13,
         fontFamily: 'inherit', cursor: 'pointer', fontWeight: 500,
       }}>
-        Dismiss
+        {t('sos.dismiss')}
       </button>
     </div>
   )
 }
 
 export default function SOSPage() {
+  const t = useT()
   const { user, familyId } = useAuthStore()
   const [activeTab, setActiveTab]       = useState('send')
   const [alerts, setAlerts]             = useState([])
@@ -303,8 +331,13 @@ export default function SOSPage() {
   const [dialog, setDialog]             = useState(null)
 
   const prevAlertIds = useRef(new Set())
+  const alarmRef     = useRef(null)
 
-  useEffect(() => { return () => stopSenderAlarm() }, [])
+  // Create alarm instance once per component mount; destroy on unmount
+  useEffect(() => {
+    alarmRef.current = createSenderAlarm()
+    return () => alarmRef.current?.stop()
+  }, [])
 
   const reloadAlerts = async () => {
     if (!familyId) return
@@ -326,7 +359,11 @@ export default function SOSPage() {
           setAlerts(prev => [p.new, ...prev])
           if (p.new.user_id !== user?.id && !prevAlertIds.current.has(p.new.id)) {
             prevAlertIds.current.add(p.new.id)
-            startSenderAlarm(); setAlarmOn(true)
+            // Web only. On Android SOSSirenService already plays the siren and
+            // SOSAlertActivity already shows the alert, so starting this too
+            // gave a second, different-sounding alarm plus a banner the user had
+            // to stop separately after dealing with the native one.
+            if (!Capacitor.isNativePlatform()) { alarmRef.current?.start(); setAlarmOn(true) }
           }
         })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sos_alerts', filter: 'family_id=eq.' + familyId },
@@ -351,13 +388,33 @@ export default function SOSPage() {
     if (msg.call) window.open(`tel:${msg.call}`, '_system')
 
     try {
-      const pos = await new Promise((res) =>
-        navigator.geolocation.getCurrentPosition(res, () => res(null), { timeout: 5000 })
-      )
+      // Use Capacitor Geolocation on native (same as MapPage / LocationBroadcast).
+      // navigator.geolocation falls back to network/IP on Android WebView and can
+      // be several km off — Capacitor calls the native GPS API directly.
+      let lat = 0, lng = 0
+      try {
+        if (Capacitor.isNativePlatform()) {
+          const pos = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true, timeout: 8000, maximumAge: 30000,
+          })
+          lat = pos.coords.latitude
+          lng = pos.coords.longitude
+        } else {
+          // Web fallback
+          const pos = await new Promise((res, rej) =>
+            navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 })
+          )
+          lat = pos.coords.latitude
+          lng = pos.coords.longitude
+        }
+      } catch (gpsErr) {
+        console.warn('[SOS] GPS unavailable, sending with 0,0:', gpsErr?.message)
+      }
+
       const { error: sosErr } = await supabase.rpc('send_sos', {
         p_family_id: familyId,
-        p_lat:       pos ? pos.coords.latitude  : 0,
-        p_lng:       pos ? pos.coords.longitude : 0,
+        p_lat:       lat,
+        p_lng:       lng,
         p_message:   msg.label,
       })
       if (sosErr) throw sosErr
@@ -413,10 +470,50 @@ export default function SOSPage() {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="1" fill="#fff"/>
             </svg>
-            SOS Alerts
+            {t('sos.title')}
           </div>
-          <div className="top-bar-sub">Tap to alert your family instantly</div>
         </div>
+
+        {/* Clear Resolved — right side, matches Switch / Sign Out style */}
+        {activeTab === 'history' && alerts.some(a => a.is_resolved) && (
+          <button
+            onClick={() => {
+              setDialog({
+                type: 'confirm',
+                title: t('sos.clearTitle'),
+                message: t('sos.clearMsg'),
+                confirmLabel: t('sos.clear'),
+                onConfirm: async () => {
+                  const { error } = await supabase.rpc('clear_sos_history', { p_family_id: familyId })
+                  if (error) {
+                    setDialog({ type: 'error', title: t('sos.adminOnly'), message: t('sos.adminOnlyMsg') })
+                    return
+                  }
+                  setAlerts(prev => prev.filter(a => !a.is_resolved))
+                },
+              })
+            }}
+            style={{
+              background: 'rgba(255,255,255,0.92)',
+              border: '1.5px solid #fff',
+              color: '#951345',
+              borderRadius: 10,
+              padding: '7px 12px',
+              fontWeight: 800,
+              fontSize: 12,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              display: 'flex', alignItems: 'center', gap: 6,
+              flexShrink: 0,
+              zIndex: 1,
+            }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            </svg>
+            {t('sos.clearResolved', { n: alerts.filter(a => a.is_resolved).length })}
+          </button>
+        )}
       </div>
 
       {/* Alarm active banner */}
@@ -427,20 +524,20 @@ export default function SOSPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           flexShrink: 0, gap: 10,
         }}>
-          <span style={{ fontWeight: 700, fontSize: 14 }}>🚨 Family alert received</span>
-          <button onClick={() => { stopSenderAlarm(); setAlarmOn(false) }} style={{
+          <span style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.5 }}>🚨 {t('sos.alarmBanner')}</span>
+          <button onClick={() => { alarmRef.current?.stop(); setAlarmOn(false) }} style={{
             background: 'rgba(255,255,255,0.2)', border: '1.5px solid #fff',
             color: '#fff', borderRadius: 20, padding: '6px 14px',
             fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-          }}>🔕 Stop</button>
+          }}>🔕 {t('sos.stop')}</button>
         </div>
       )}
 
       {/* Tabs */}
       <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #F0E4EA', flexShrink: 0 }}>
         {[
-          { key: 'send',    label: 'Send SOS' },
-          { key: 'history', label: `SOS History${activeCount > 0 ? ` (${activeCount})` : ''}` },
+          { key: 'send',    label: t('sos.tabSend') },
+          { key: 'history', label: t('sos.tabHistory') + (activeCount > 0 ? ` (${activeCount})` : '') },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
             flex: 1, padding: '13px 0', background: 'none', border: 'none',
@@ -462,23 +559,23 @@ export default function SOSPage() {
           {/* Emergency section */}
           <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.3, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#E11D48', animation: 'sos-pulse 1.5s ease-in-out infinite' }} />
-            Emergency
+            {t('sos.emergency')}
             <style>{`@keyframes sos-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }`}</style>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
             {emergencyMsgs.map((msg) => (
-              <SOSButton key={msg.label} msg={msg} onTap={handleTap} disabled={sending} />
+              <SOSButton key={msg.key} msg={msg} onTap={handleTap} disabled={sending} />
             ))}
           </div>
 
           {/* Other help section */}
           <div style={{ fontSize: 11, fontWeight: 700, color: '#9C6B7A', letterSpacing: 0.3, marginBottom: 10 }}>
-            Other Help
+            {t('sos.otherHelp')}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {otherMsgs.map((msg) => (
-              <SOSButton key={msg.label} msg={msg} onTap={handleTap} disabled={sending} />
+              <SOSButton key={msg.key} msg={msg} onTap={handleTap} disabled={sending} />
             ))}
           </div>
 
@@ -490,40 +587,6 @@ export default function SOSPage() {
       {activeTab === 'history' && (
         <PullToRefresh onRefresh={reloadAlerts}>
         <div style={{ padding: 16 }}>
-          {alerts.some(a => a.is_resolved) && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-              <button
-                onClick={() => {
-                  setDialog({
-                    type: 'confirm',
-                    title: 'Clear Resolved Alerts',
-                    message: 'This will permanently delete all resolved SOS alerts for your family.',
-                    confirmLabel: 'Clear',
-                    onConfirm: async () => {
-                      const { error } = await supabase.rpc('clear_sos_history', { p_family_id: familyId })
-                      if (error) {
-                        setDialog({ type: 'error', title: 'Admin Only', message: 'Only a family Admin can clear alert history.' })
-                        return
-                      }
-                      setAlerts(prev => prev.filter(a => !a.is_resolved))
-                    },
-                  })
-                }}
-                style={{
-                  background: '#FFF0F3', border: '1px solid #951345',
-                  color: '#951345', borderRadius: 10,
-                  padding: '7px 14px', fontWeight: 700, fontSize: 12,
-                  cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'flex', alignItems: 'center', gap: 6,
-                }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                </svg>
-                Clear Resolved ({alerts.filter(a => a.is_resolved).length})
-              </button>
-            </div>
-          )}
-
           {alerts.length === 0 && (
             <div className="empty-state">
               <div style={{ margin: '0 auto 18px', width: 80, height: 80 }}>
@@ -543,8 +606,8 @@ export default function SOSPage() {
                   </defs>
                 </svg>
               </div>
-              <div className="empty-text">All clear</div>
-              <div className="empty-sub">No SOS alerts have been sent</div>
+              <div className="empty-text">{t('sos.allClear')}</div>
+              <div className="empty-sub">{t('sos.noAlerts')}</div>
             </div>
           )}
 
@@ -557,7 +620,7 @@ export default function SOSPage() {
             const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1)
             const isYesterday = d.toDateString() === yesterday.toDateString()
             const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            const dateStr = isToday ? `Today ${time}` : isYesterday ? `Yesterday ${time}` : `${d.toLocaleDateString([], { day: 'numeric', month: 'short' })}, ${time}`
+            const dateStr = isToday ? t('sos.today', { time }) : isYesterday ? t('sos.yesterday', { time }) : `${d.toLocaleDateString([], { day: 'numeric', month: 'short' })}, ${time}`
 
             return (
               <div key={alert.id} className={'alert-card' + (alert.is_resolved ? ' resolved' : '')} style={{ marginBottom: 12 }}>
@@ -572,15 +635,17 @@ export default function SOSPage() {
                       {(member?.display_name || 'F')?.[0]?.toUpperCase()}
                     </div>
                     <div>
-                      <div className="alert-name">{isOwn ? 'You' : member?.display_name || 'Family'}</div>
+                      <div className="alert-name">{isOwn ? t('common.you') : member?.display_name || t('sos.family')}</div>
                       <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>{dateStr}</div>
                     </div>
                   </div>
                   <span className={'badge ' + (alert.is_resolved ? 'badge-resolved' : 'badge-active')}>
-                    {alert.is_resolved ? '✅ Safe' : '🚨 Active'}
+                    {alert.is_resolved ? '✅ ' + t('sos.safe') : '🚨 ' + t('sos.active')}
                   </span>
                 </div>
-                <div className="alert-message">{alert.message}</div>
+                {alert.message && alert.message !== '0' && !(/^-?\d+(\.\d+)?$/.test(alert.message)) && (
+                  <div className="alert-message">{translateReason(t, alert.message)}</div>
+                )}
                 {alert.lat && alert.lat !== 0 && (
                   <a href={`https://www.google.com/maps?q=${alert.lat},${alert.lng}`}
                     target="_blank" rel="noopener noreferrer"
@@ -588,12 +653,12 @@ export default function SOSPage() {
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                     </svg>
-                    View on Google Maps
+                    {t('sos.viewOnMaps')}
                   </a>
                 )}
                 {!alert.is_resolved && isOwn && (
                   <button onClick={() => resolveAlert(alert.id)} className="resolve-btn">
-                    ✅ Mark as Safe
+                    ✅ {t('sos.markSafe')}
                   </button>
                 )}
               </div>
@@ -619,6 +684,7 @@ export default function SOSPage() {
 
 // ── Individual SOS button ─────────────────────────────────────────────────────
 function SOSButton({ msg, onTap, disabled }) {
+  const t = useT()
   return (
     <button
       onClick={() => !disabled && onTap(msg)}
@@ -638,7 +704,7 @@ function SOSButton({ msg, onTap, disabled }) {
       {msg.call && (
         <div style={{
           position: 'absolute', top: 8, right: 8,
-          background: msg.color, borderRadius: 8,
+          background: CALL_BADGE_BG[msg.call] || msg.color, borderRadius: 8,
           padding: '2px 7px', fontSize: 9, fontWeight: 800,
           color: '#fff', letterSpacing: 0.3,
         }}>
@@ -653,7 +719,7 @@ function SOSButton({ msg, onTap, disabled }) {
         color: disabled ? '#C0B8C8' : msg.color,
         textAlign: 'center', width: '100%',
       }}>
-        {msg.label}
+        {t('sos.msg.' + msg.key)}
       </span>
     </button>
   )

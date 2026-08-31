@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useT } from '../i18n'
 
 const toEmail = (mobile) => `91${mobile.replace(/[^0-9]/g, '')}@familyguard.app`
 
@@ -20,7 +21,11 @@ function EyeIcon({ open }) {
   )
 }
 
+const toE164 = (mobile) => `+91${mobile.replace(/[^0-9]/g, '')}`
+
 export default function RegisterPage() {
+  const t = useT()
+  const [step, setStep] = useState(1)   // 1 = details form, 2 = OTP verification
   const [name, setName] = useState('')
   const [mobile, setMobile] = useState('')
   const [password, setPassword] = useState('')
@@ -30,39 +35,90 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [agreed, setAgreed] = useState(false)
+  const [otp, setOtp] = useState('')
+  const [resendIn, setResendIn] = useState(0)
   const { createOwnFamily } = useAuthStore()
 
-  const handleRegister = async (e) => {
+  // Step 1 → send OTP to the entered mobile number, move to step 2
+  const handleSendOtp = async (e) => {
     e.preventDefault()
     setError('')
-    if (!name.trim()) { setError('Please enter your name'); return }
+    if (!name.trim()) { setError(t('register.enterName')); return }
     if (mobile.replace(/[^0-9]/g, '').length !== 10) {
-      setError('Enter a valid 10-digit mobile number'); return
+      setError(t('auth.enterValidMobile')); return
     }
-    if (password.length < 6) { setError('Password must be at least 6 characters'); return }
-    if (password !== confirm) { setError('Passwords do not match'); return }
-    if (!agreed) { setError('Please accept the Privacy Policy & Terms to continue'); return }
+    if (password.length < 6) { setError(t('reset.passwordMin6')); return }
+    if (password !== confirm) { setError(t('reset.passwordsNoMatch')); return }
+    if (!agreed) { setError(t('register.acceptTerms')); return }
 
     setLoading(true)
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: toEmail(mobile), password,
-        options: { data: { display_name: name } },
+      const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: toE164(mobile) })
+      if (otpErr) throw otpErr
+      setStep(2)
+      setResendIn(30)
+    } catch (err) {
+      setError(err.message || t('register.couldNotSend'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Step 2 → verify the OTP, then attach email/password to the now-authenticated session
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault()
+    setError('')
+    if (otp.replace(/[^0-9]/g, '').length !== 6) { setError(t('reset.enterSixDigit')); return }
+
+    setLoading(true)
+    try {
+      const { data: verifyData, error: verifyErr } = await supabase.auth.verifyOtp({
+        phone: toE164(mobile), token: otp, type: 'sms',
       })
-      if (signUpError) {
-        if (signUpError.message.includes('already registered')) {
-          throw new Error('This mobile number is already registered. Please sign in.')
+      if (verifyErr) throw new Error(t('reset.incorrectCode'))
+      if (!verifyData.user) throw new Error(t('register.verificationFailed'))
+
+      const { data: updateData, error: updateErr } = await supabase.auth.updateUser({
+        email: toEmail(mobile), password,
+        data: { display_name: name },
+      })
+      if (updateErr) {
+        if (updateErr.message.includes('already registered') || updateErr.message.includes('already been registered')) {
+          throw new Error(t('register.alreadyRegistered'))
         }
-        throw signUpError
+        throw updateErr
       }
-      if (!data.user) throw new Error('Registration failed')
-      await createOwnFamily(data.user.id, name)
+      if (!updateData.user) throw new Error(t('register.registrationFailed'))
+
+      await createOwnFamily(updateData.user.id, name)
       window.location.href = '/onboarding'
     } catch (err) {
       setError(err.message)
       setLoading(false)
     }
   }
+
+  const handleResendOtp = async () => {
+    if (resendIn > 0) return
+    setError('')
+    setLoading(true)
+    try {
+      const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: toE164(mobile) })
+      if (otpErr) throw otpErr
+      setResendIn(30)
+    } catch (err) {
+      setError(err.message || t('reset.couldNotResend'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Resend cooldown ticker
+  useEffect(() => {
+    if (resendIn <= 0) return
+    const id = setInterval(() => setResendIn(s => (s > 0 ? s - 1 : 0)), 1000)
+    return () => clearInterval(id)
+  }, [resendIn])
 
   return (
     <div className="auth-page">
@@ -89,21 +145,54 @@ export default function RegisterPage() {
             </svg>
           </div>
         </div>
-        <h1 className="auth-title" style={{ fontSize: 26, marginBottom: 4 }}>Create Account</h1>
-        <p className="auth-subtitle" style={{ marginBottom: 20 }}>Join FamilyGuard to keep your family safe</p>
+        <h1 className="auth-title" style={{ fontSize: 26, marginBottom: 4, lineHeight: 1.35 }}>{t('register.title')}</h1>
+        <p className="auth-subtitle" style={{ marginBottom: 20 }}>
+          {step === 1 ? t('register.sub') : t('register.otpSub', { mobile })}
+        </p>
 
         {error && <div className="error-msg">{error}</div>}
 
-        <form onSubmit={handleRegister} noValidate>
+        {step === 2 ? (
+          <form onSubmit={handleVerifyOtp} noValidate>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('register.verificationCode')}</label>
+              <input className="input" type="text" inputMode="numeric" value={otp} autoFocus
+                onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                placeholder={t('reset.sixDigitCode')} required
+                style={{ textAlign: 'center', fontSize: 22, fontWeight: 800, letterSpacing: 6 }} />
+            </div>
+
+            <button className="btn btn-primary" type="submit"
+              disabled={loading || otp.length !== 6} style={{ marginTop: 4 }}>
+              {loading ? t('reset.verifying') : t('register.verifyAndCreate')}
+            </button>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+              <button type="button" onClick={() => { setStep(1); setOtp(''); setError('') }}
+                style={{ background: 'none', border: 'none', color: '#6B7280', fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0 }}>
+                ← {t('register.changeNumber')}
+              </button>
+              <button type="button" onClick={handleResendOtp} disabled={resendIn > 0 || loading}
+                style={{
+                  background: 'none', border: 'none', fontWeight: 700, fontSize: 13, padding: 0,
+                  color: resendIn > 0 ? '#B0AAC8' : '#951345',
+                  cursor: resendIn > 0 ? 'default' : 'pointer',
+                }}>
+                {resendIn > 0 ? t('reset.resendIn', { n: resendIn }) : t('reset.resendCode')}
+              </button>
+            </div>
+          </form>
+        ) : (
+        <form onSubmit={handleSendOtp} noValidate>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Your name</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('register.yourName')}</label>
             <input className="input" type="text" value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="e.g. Prabhakaran" required />
+              required />
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Mobile number</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.mobileNumber')}</label>
             <div style={{ display: 'flex', gap: 8 }}>
               <div style={{
                 background: '#F5F4FB', border: '1.5px solid #E9E6FB',
@@ -111,7 +200,7 @@ export default function RegisterPage() {
                 fontWeight: 700, fontSize: 14, color: '#3A1020',
                 whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6,
               }}>
-                🇮🇳 +91
+                +91
               </div>
               <input className="input" type="tel" value={mobile}
                 onChange={e => setMobile(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
@@ -120,13 +209,13 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Password</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.password')}</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showPassword ? 'text' : 'password'} value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="Min 6 characters" required style={{ paddingRight: 44 }} />
+                placeholder={t('register.min6')} required style={{ paddingRight: 44 }} />
               <button type="button" onClick={() => setShowPassword(s => !s)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                 style={{
                   position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer',
@@ -138,13 +227,13 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Confirm password</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('register.confirmPassword')}</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showConfirm ? 'text' : 'password'} value={confirm}
                 onChange={e => setConfirm(e.target.value)}
-                placeholder="Re-enter password" required style={{ paddingRight: 44 }} />
+                placeholder={t('register.reenter')} required style={{ paddingRight: 44 }} />
               <button type="button" onClick={() => setShowConfirm(s => !s)}
-                aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                aria-label={showConfirm ? t('auth.hidePassword') : t('auth.showPassword')}
                 style={{
                   position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer',
@@ -179,26 +268,27 @@ export default function RegisterPage() {
               )}
             </div>
             <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5, userSelect: 'none' }}>
-              I have read and agree to the{' '}
+              {t('register.agreeLead')}{' '}
               <Link
                 to="/privacy"
                 onClick={e => e.stopPropagation()}
                 style={{ color: '#951345', fontWeight: 700, textDecoration: 'underline' }}
               >
-                Privacy Policy & Terms
+                {t('register.agreeLink')}
               </Link>
-              {' '}of FamilyGuard
+              {' '}{t('register.agreeTail')}
             </div>
           </div>
 
           <button className="btn btn-primary" type="submit"
             disabled={loading || !agreed} style={{ marginTop: 4, opacity: agreed ? 1 : 0.6 }}>
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? t('register.sendingCode') : t('register.sendCode')}
           </button>
         </form>
+        )}
 
         <p className="auth-link">
-          Already have an account? <Link to="/login">Sign In</Link>
+          {t('auth.haveAccount')} <Link to="/login">{t('auth.signIn')}</Link>
         </p>
       </div>
     </div>

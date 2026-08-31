@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useT } from '../i18n'
 
 // ── SECURE JoinFamilyPage ────────────────────────────────────────────────────
 // The old version did a direct family_members INSERT — bypassing admin approval.
@@ -10,6 +11,7 @@ import { useAuthStore } from '../store/authStore'
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function JoinFamilyPage() {
+  const t = useT()
   const [code, setCode]           = useState('')
   const [displayName, setDisplayName] = useState('')
   const [loading, setLoading]     = useState(false)
@@ -27,10 +29,10 @@ export default function JoinFamilyPage() {
       // ── Input validation ─────────────────────────────────────────────────
       const trimCode = code.toUpperCase().trim()
       if (trimCode.length < 4 || trimCode.length > 8) {
-        throw new Error('Invite code must be 4–8 characters.')
+        throw new Error(t('join.codeLength'))
       }
       if (!displayName.trim() || displayName.trim().length > 100) {
-        throw new Error('Please enter your name (max 100 characters).')
+        throw new Error(t('join.enterYourName'))
       }
 
       // ── Look up the family by invite code ─────────────────────────────
@@ -45,9 +47,9 @@ export default function JoinFamilyPage() {
         p_requester_name: displayName.trim(),
       })
 
-      if (re) throw new Error(re.message || 'Failed to send join request')
+      if (re) throw new Error(re.message || t('onboarding.failedJoinRequest'))
 
-      setTargetFamily({ name: 'the family' })
+      setTargetFamily({ name: t('join.theFamily') })
       setRequested(true)
     } catch (err) {
       setError(err.message)
@@ -62,15 +64,15 @@ export default function JoinFamilyPage() {
       <div className="auth-page">
         <div className="auth-card" style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 56, marginBottom: 16 }}>⏳</div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Request Sent!</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>{t('onboarding.requestSent')}</h2>
           <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 8 }}>
-            Your request to join <strong>{targetFamily?.name}</strong> has been sent.
+            {t('onboarding.requestSentBody', { family: targetFamily?.name })}
           </p>
           <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 24 }}>
-            The family admin will review your request. Once accepted you will be added automatically.
+            {t('join.adminWillReview')}
           </p>
           <button className="btn btn-primary" onClick={() => window.location.href = '/profile'}>
-            Back to Profile
+            {t('join.backToProfile')}
           </button>
         </div>
       </div>
@@ -82,14 +84,14 @@ export default function JoinFamilyPage() {
     <div className="onboard-page">
       <div className="onboard-card">
         <div className="auth-logo">🔑</div>
-        <h1 className="auth-title">Join a Family</h1>
-        <p className="auth-subtitle">Enter the invite code from your family admin</p>
+        <h1 className="auth-title">{t('join.title')}</h1>
+        <p className="auth-subtitle">{t('join.sub')}</p>
 
         {error && <div className="error-msg">{error}</div>}
 
         <form onSubmit={handleJoinRequest} noValidate>
           <div className="form-group">
-            <label>Invite Code</label>
+            <label>{t('join.inviteCode')}</label>
             <input
               className="input"
               value={code}
@@ -101,12 +103,11 @@ export default function JoinFamilyPage() {
             />
           </div>
           <div className="form-group">
-            <label>Your Name in the Family</label>
+            <label>{t('join.yourNameInFamily')}</label>
             <input
               className="input"
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
-              placeholder="e.g. Mum"
               maxLength={100}
               required
             />
@@ -114,12 +115,12 @@ export default function JoinFamilyPage() {
           <button className="btn btn-primary" type="submit"
             disabled={loading || code.length < 4 || !displayName.trim()}
             style={{ marginTop: 8 }}>
-            {loading ? 'Sending Request...' : 'Send Join Request'}
+            {loading ? t('onboarding.sendingRequest') : t('onboarding.sendJoinRequest')}
           </button>
         </form>
 
         <p className="auth-link">
-          Want to create a new family? <Link to="/create-family">Go back</Link>
+          {t('join.wantCreate')} <Link to="/create-family">{t('join.goBack')}</Link>
         </p>
       </div>
     </div>

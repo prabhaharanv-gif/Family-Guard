@@ -1,9 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { registerPlugin, Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
 const LocationService = registerPlugin('LocationService')
+
+const DISCLOSURE_DECLINED_KEY = 'bg_location_disclosure_declined'
+const declinedBefore  = () => { try { return localStorage.getItem(DISCLOSURE_DECLINED_KEY) === '1' } catch { return false } }
+const rememberDeclined = () => { try { localStorage.setItem(DISCLOSURE_DECLINED_KEY, '1') } catch { /* private mode */ } }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -13,16 +17,37 @@ export function useLocationService() {
   const tokenRef     = useRef(null)
   const refreshTimer = useRef(null)
 
+  // Play policy requires a prominent disclosure BEFORE the system
+  // background-location prompt. startService() below parks on this promise
+  // until the user answers, so the two are guaranteed to be in that order.
+  const [disclosureOpen, setDisclosureOpen] = useState(false)
+  const disclosureResolver = useRef(null)
+
+  const answerDisclosure = useCallback((accepted) => {
+    setDisclosureOpen(false)
+    const resolve = disclosureResolver.current
+    disclosureResolver.current = null
+    if (resolve) resolve(accepted)
+  }, [])
+
+  const acceptDisclosure  = useCallback(() => answerDisclosure(true),  [answerDisclosure])
+  const declineDisclosure = useCallback(() => answerDisclosure(false), [answerDisclosure])
+
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
     if (!user || !familyId) return
 
+    let cancelled  = false
+    let retryTimer = null
+
     const startService = async () => {
+      if (cancelled) return
       try {
         const { data: { session } } = await supabase.auth.getSession()
+        if (cancelled) return
         if (!session?.access_token) {
           console.warn('[LocationService] No session token — retrying in 5s')
-          setTimeout(startService, 5000)
+          retryTimer = setTimeout(startService, 5000)
           return
         }
 
@@ -34,13 +59,57 @@ export function useLocationService() {
           userId:       user.id,
           familyId:     familyId,
           sessionToken: session.access_token,
+          refreshToken: session.refresh_token,
         })
 
         console.log('[LocationService] ✅ Background service started')
+
+        // ── Request ACCESS_BACKGROUND_LOCATION ("Allow all the time") ────────
+        // Capacitor's Geolocation.requestPermissions() only grants FOREGROUND
+        // location. On Android 10+ background location is a separate prompt —
+        // without this the pin freezes the moment the app is backgrounded.
+        // We request it here, after foreground is already granted.
+        try {
+          const bg = await LocationService.hasBackgroundPermission()
+          if (!bg?.granted && !declinedBefore()) {
+            // Disclosure first, always. If the user says no we do not prompt at
+            // all, and we remember it rather than asking again every launch.
+            const accepted = await new Promise((resolve) => {
+              disclosureResolver.current = resolve
+              setDisclosureOpen(true)
+            })
+            if (cancelled) return
+            if (!accepted) {
+              rememberDeclined()
+              console.warn('[LocationService] background location disclosure declined')
+              return
+            }
+            const res = await LocationService.requestBackgroundPermission()
+            if (res?.granted) console.log('[LocationService] ✅ Background location granted')
+            else console.warn('[LocationService] ⚠️ Background location NOT granted — pin will freeze when app is backgrounded')
+          }
+        } catch (e) {
+          console.warn('[LocationService] Background permission request failed:', e?.message)
+        }
+
+        // ── Request battery optimization exemption ───────────────────────────
+        // The #1 cause of location stopping when the app is CLOSED. Without this
+        // exemption Android (and aggressively, OEM skins like MIUI/ColorOS/OneUI)
+        // kills the foreground service to save power. This prompts the user once
+        // to allow the app to run unrestricted in the background.
+        try {
+          const opt = await LocationService.isBatteryOptimizationIgnored()
+          if (!opt?.ignored) {
+            await LocationService.requestIgnoreBatteryOptimization()
+            console.log('[LocationService] Prompted for battery optimization exemption')
+          }
+        } catch (e) {
+          console.warn('[LocationService] Battery optimization request failed:', e?.message)
+        }
       } catch (e) {
         console.warn('[LocationService] Failed to start:', e?.message)
         // Retry after 10 seconds if start fails
-        setTimeout(startService, 10000)
+        retryTimer = setTimeout(startService, 10000)
       }
     }
 
@@ -53,7 +122,7 @@ export function useLocationService() {
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.access_token && session.access_token !== tokenRef.current) {
           tokenRef.current = session.access_token
-          await LocationService.updateSessionToken({ sessionToken: session.access_token })
+          await LocationService.updateSessionToken({ sessionToken: session.access_token, refreshToken: session.refresh_token })
           console.log('[LocationService] 🔄 Session token refreshed')
         }
       } catch (e) {
@@ -67,7 +136,7 @@ export function useLocationService() {
         if (session?.access_token && session.access_token !== tokenRef.current) {
           tokenRef.current = session.access_token
           try {
-            await LocationService.updateSessionToken({ sessionToken: session.access_token })
+            await LocationService.updateSessionToken({ sessionToken: session.access_token, refreshToken: session.refresh_token })
             console.log('[LocationService] 🔄 Token updated on auth change:', event)
           } catch (e) {}
         }
@@ -75,6 +144,12 @@ export function useLocationService() {
     )
 
     return () => {
+      // Stop any retry chain that is still pending. Without this a retry armed
+      // just before sign-out keeps firing, finds no session, and re-arms itself
+      // every 5s for the life of the process — and the next sign-in starts a
+      // second chain on top of it.
+      cancelled = true
+      if (retryTimer) clearTimeout(retryTimer)
       subscription?.unsubscribe()
       if (refreshTimer.current) clearInterval(refreshTimer.current)
     }
@@ -89,5 +164,5 @@ export function useLocationService() {
     } catch (e) {}
   }
 
-  return { stopService }
+  return { stopService, disclosureOpen, acceptDisclosure, declineDisclosure }
 }

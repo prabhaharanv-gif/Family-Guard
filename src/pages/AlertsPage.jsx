@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useT } from '../i18n'
 import { useSOS } from '../hooks/useSOS'
 import PullToRefresh from '../components/PullToRefresh'
 import Dialog from '../components/Dialog'
 
 export default function AlertsPage() {
+  const t = useT()
   const { user, familyId } = useAuthStore()
   const { resolveAlert } = useSOS(familyId, user?.id)
   const [alerts, setAlerts] = useState([])
@@ -27,19 +29,19 @@ export default function AlertsPage() {
   const handleClearHistory = () => {
     const resolved = alerts.filter(a => a.is_resolved)
     if (resolved.length === 0) {
-      setDialog({ type: 'alert', title: 'Nothing to Clear', message: 'There are no resolved alerts to clear.' })
+      setDialog({ type: 'alert', title: t('alerts.nothingToClear'), message: t('alerts.nothingToClearMsg') })
       return
     }
     setDialog({
       type: 'confirm',
-      title: 'Clear Alert History',
+      title: t('alerts.clearHistory'),
       message: `This will permanently delete ${resolved.length} resolved alert${resolved.length > 1 ? 's' : ''}. This cannot be undone.`,
       confirmLabel: 'Clear',
       onConfirm: async () => {
         setClearing(true)
         const { error } = await supabase.rpc('clear_sos_history', { p_family_id: familyId })
         if (error) {
-          setDialog({ type: 'error', title: 'Admin Only', message: 'Only a family Admin can clear alert history.' })
+          setDialog({ type: 'error', title: t('alerts.adminOnly'), message: t('alerts.adminOnlyMsg') })
         } else {
           setAlerts(prev => prev.filter(a => !a.is_resolved))
         }
