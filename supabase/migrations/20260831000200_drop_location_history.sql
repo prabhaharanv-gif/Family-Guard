@@ -1,0 +1,37 @@
+-- Drop location_history.
+--
+-- ⚠️  DESTRUCTIVE — this permanently deletes every stored movement trail.
+--     That is the intent: read the note below before running it.
+--
+-- The app's privacy policy and its consent screen both tell users that no
+-- location history is kept:
+--
+--   PrivacyPolicyPage.jsx  "Your location is only stored as current position
+--                           — no history kept"
+--   App.jsx                "Only your current location is stored — no history
+--                           is kept"
+--
+-- upsert_location_with_battery was nonetheless appending a row to
+-- location_history on every write (roughly every 20 seconds per user), so
+-- the table holds detailed movement trails that users were told did not
+-- exist. Nothing in the app or in the edge functions ever read it — it was
+-- write-only.
+--
+-- Since the data was collected under a policy stating it was not being
+-- collected, it cannot be retained on the strength of that consent. The
+-- preceding migration stops the writes; this one removes what was already
+-- gathered, which also brings the Play Data Safety declaration back in line
+-- with what the app actually does.
+--
+-- Before running: confirm no other database function or view references this
+-- table, e.g.
+--
+--   SELECT p.proname
+--   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+--   WHERE n.nspname = 'public'
+--     AND pg_get_functiondef(p.oid) ILIKE '%location_history%';
+--
+-- If you would rather keep the rows while auditing them, run only the
+-- preceding migration and hold this one back.
+
+DROP TABLE IF EXISTS public.location_history;
