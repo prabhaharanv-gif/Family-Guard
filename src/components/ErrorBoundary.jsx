@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import { BUILD_ID, recordCrash, formatCrashLog, clearCrashLog } from '../lib/crashLog'
+import { APP_NAME } from '../lib/brand'
 
 const detailBtn = {
   background: 'none', border: 'none', color: '#C4A2AE',
@@ -64,7 +65,7 @@ export default class ErrorBoundary extends Component {
           fontSize: 14, color: '#6B7280', lineHeight: 1.6,
           marginBottom: 28, maxWidth: 300,
         }}>
-          FamilyGuard ran into a problem on this page. Your data is safe.
+          {APP_NAME} ran into a problem on this page. Your data is safe.
         </div>
         <button
           onClick={this.handleRetry}
