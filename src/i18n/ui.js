@@ -389,6 +389,7 @@ export const UI = {
       findMember: 'Find family member',
       findMemberTitle: 'Find Family Member',
       refresh: 'Refresh map',
+      recenter: 'Recentre',
       noMembersFound: 'No members found',
     },
 
@@ -425,6 +426,14 @@ export const UI = {
       whatStaysBody: 'Nothing that identifies you. Messages you sent are removed for everyone in the family. Crash reports already sent to Firebase Crashlytics carry no name, number or location and cannot be traced back to you.',
       backToApp: 'Back to Famora',
     },
+    // Shown when another device claims the session — see
+    // useSingleDevice. One account, one device.
+    session: {
+      displacedTitle: 'Signed out',
+      displacedBody: 'Your account was opened on another device. Famora can be used on one device at a time.',
+      signInAgain: 'Sign in again',
+    },
+
     profile: {
       myProfile: 'My Profile',
       tapToChangePhoto: 'Tap to change photo',
@@ -875,6 +884,7 @@ export const UI = {
       findMember: 'குடும்ப உறுப்பினரைக் கண்டுபிடி',
       findMemberTitle: 'குடும்ப உறுப்பினரைக் கண்டுபிடி',
       refresh: 'வரைபடத்தைப் புதுப்பி',
+      recenter: 'மையப்படுத்து',
       noMembersFound: 'உறுப்பினர்கள் யாரும் இல்லை',
     },
 
@@ -908,6 +918,14 @@ export const UI = {
       whatStaysBody: 'உங்களை அடையாளம் காட்டும் எதுவும் இல்லை. நீங்கள் அனுப்பிய செய்திகள் குடும்பத்தில் உள்ள அனைவருக்கும் நீக்கப்படும். Firebase Crashlytics-க்கு ஏற்கனவே அனுப்பப்பட்ட செயலிழப்பு அறிக்கைகளில் பெயர், எண் அல்லது இருப்பிடம் இல்லை, அவற்றை உங்களுடன் தொடர்புபடுத்த முடியாது.',
       backToApp: 'Famora-வுக்குத் திரும்பு',
     },
+    // Shown when another device claims the session — see
+    // useSingleDevice. One account, one device.
+    session: {
+      displacedTitle: 'வெளியேற்றப்பட்டது',
+      displacedBody: 'உங்கள் கணக்கு வேறொரு சாதனத்தில் திறக்கப்பட்டது. Famora ஒரு நேரத்தில் ஒரு சாதனத்தில் மட்டுமே பயன்படுத்த முடியும்.',
+      signInAgain: 'மீண்டும் உள்நுழை',
+    },
+
     profile: {
       myProfile: 'என் சுயவிவரம்',
       tapToChangePhoto: 'படத்தை மாற்ற தட்டவும்',
@@ -1361,6 +1379,7 @@ export const UI = {
       findMember: 'परिवार का सदस्य ढूँढें',
       findMemberTitle: 'परिवार का सदस्य ढूँढें',
       refresh: 'मानचित्र रीफ़्रेश करें',
+      recenter: 'केंद्र में लाएँ',
       noMembersFound: 'कोई सदस्य नहीं मिला',
     },
 
@@ -1394,6 +1413,14 @@ export const UI = {
       whatStaysBody: 'ऐसा कुछ नहीं जो आपकी पहचान बताए। आपके भेजे गए संदेश परिवार के सभी लोगों के लिए हट जाते हैं। Firebase Crashlytics को पहले भेजी जा चुकी क्रैश रिपोर्ट में नाम, नंबर या लोकेशन नहीं होती और उन्हें आपसे नहीं जोड़ा जा सकता।',
       backToApp: 'Famora पर वापस जाएँ',
     },
+    // Shown when another device claims the session — see
+    // useSingleDevice. One account, one device.
+    session: {
+      displacedTitle: 'साइन आउट कर दिया गया',
+      displacedBody: 'आपका खाता किसी दूसरे डिवाइस पर खोला गया। Famora एक समय में केवल एक ही डिवाइस पर इस्तेमाल किया जा सकता है।',
+      signInAgain: 'फिर से साइन इन करें',
+    },
+
     profile: {
       myProfile: 'मेरी प्रोफ़ाइल',
       tapToChangePhoto: 'फ़ोटो बदलने के लिए टैप करें',
@@ -1848,6 +1875,7 @@ export const UI = {
       findMember: 'కుటుంబ సభ్యుడిని కనుగొను',
       findMemberTitle: 'కుటుంబ సభ్యుడిని కనుగొను',
       refresh: 'మ్యాప్ రిఫ్రెష్ చేయి',
+      recenter: 'కేంద్రీకరించు',
       noMembersFound: 'సభ్యులు కనబడలేదు',
     },
 
@@ -1881,6 +1909,14 @@ export const UI = {
       whatStaysBody: 'మిమ్మల్ని గుర్తించే ఏదీ మిగలదు. మీరు పంపిన సందేశాలు కుటుంబంలోని అందరికీ తొలగించబడతాయి. Firebase Crashlytics కు ఇప్పటికే పంపిన క్రాష్ నివేదికల్లో పేరు, నంబర్ లేదా లొకేషన్ ఉండవు, వాటిని మీతో ముడిపెట్టలేరు.',
       backToApp: 'Famora కు తిరిగి వెళ్లు',
     },
+    // Shown when another device claims the session — see
+    // useSingleDevice. One account, one device.
+    session: {
+      displacedTitle: 'సైన్ అవుట్ చేయబడింది',
+      displacedBody: 'మీ ఖాతా వేరే పరికరంలో తెరవబడింది. Famora ఒకేసారి ఒక పరికరంలో మాత్రమే ఉపయోగించవచ్చు.',
+      signInAgain: 'మళ్లీ సైన్ ఇన్ చేయండి',
+    },
+
     profile: {
       myProfile: 'నా ప్రొఫైల్',
       tapToChangePhoto: 'ఫోటో మార్చడానికి ట్యాప్ చేయండి',
@@ -2335,6 +2371,7 @@ export const UI = {
       findMember: 'ಕುಟುಂಬ ಸದಸ್ಯರನ್ನು ಹುಡುಕಿ',
       findMemberTitle: 'ಕುಟುಂಬ ಸದಸ್ಯರನ್ನು ಹುಡುಕಿ',
       refresh: 'ನಕ್ಷೆ ರಿಫ್ರೆಶ್ ಮಾಡಿ',
+      recenter: 'ಕೇಂದ್ರೀಕರಿಸಿ',
       noMembersFound: 'ಯಾವುದೇ ಸದಸ್ಯರು ಸಿಗಲಿಲ್ಲ',
     },
 
@@ -2368,6 +2405,14 @@ export const UI = {
       whatStaysBody: 'ನಿಮ್ಮನ್ನು ಗುರುತಿಸುವ ಯಾವುದೂ ಉಳಿಯುವುದಿಲ್ಲ. ನೀವು ಕಳುಹಿಸಿದ ಸಂದೇಶಗಳು ಕುಟುಂಬದ ಎಲ್ಲರಿಗೂ ತೆಗೆದುಹಾಕಲ್ಪಡುತ್ತವೆ. Firebase Crashlytics ಗೆ ಈಗಾಗಲೇ ಕಳುಹಿಸಿದ ಕ್ರ್ಯಾಶ್ ವರದಿಗಳಲ್ಲಿ ಹೆಸರು, ಸಂಖ್ಯೆ ಅಥವಾ ಸ್ಥಳ ಇರುವುದಿಲ್ಲ ಮತ್ತು ಅವನ್ನು ನಿಮಗೆ ಜೋಡಿಸಲಾಗದು.',
       backToApp: 'Famora ಗೆ ಹಿಂತಿರುಗಿ',
     },
+    // Shown when another device claims the session — see
+    // useSingleDevice. One account, one device.
+    session: {
+      displacedTitle: 'ಸೈನ್ ಔಟ್ ಮಾಡಲಾಗಿದೆ',
+      displacedBody: 'ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಬೇರೊಂದು ಸಾಧನದಲ್ಲಿ ತೆರೆಯಲಾಗಿದೆ. Famora ಒಂದೇ ಸಮಯದಲ್ಲಿ ಒಂದು ಸಾಧನದಲ್ಲಿ ಮಾತ್ರ ಬಳಸಬಹುದು.',
+      signInAgain: 'ಮತ್ತೆ ಸೈನ್ ಇನ್ ಮಾಡಿ',
+    },
+
     profile: {
       myProfile: 'ನನ್ನ ಪ್ರೊಫೈಲ್',
       tapToChangePhoto: 'ಫೋಟೋ ಬದಲಾಯಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ',
@@ -2822,6 +2867,7 @@ export const UI = {
       findMember: 'കുടുംബാംഗത്തെ കണ്ടെത്തുക',
       findMemberTitle: 'കുടുംബാംഗത്തെ കണ്ടെത്തുക',
       refresh: 'മാപ്പ് പുതുക്കുക',
+      recenter: 'കേന്ദ്രീകരിക്കുക',
       noMembersFound: 'അംഗങ്ങളെ കണ്ടെത്തിയില്ല',
     },
 
@@ -2855,6 +2901,14 @@ export const UI = {
       whatStaysBody: 'നിങ്ങളെ തിരിച്ചറിയുന്ന ഒന്നും അവശേഷിക്കുന്നില്ല. നിങ്ങൾ അയച്ച സന്ദേശങ്ങൾ കുടുംബത്തിലെ എല്ലാവർക്കും നീക്കം ചെയ്യപ്പെടും. Firebase Crashlytics ലേക്ക് നേരത്തെ അയച്ച ക്രാഷ് റിപ്പോർട്ടുകളിൽ പേരോ നമ്പറോ ലൊക്കേഷനോ ഇല്ല, അവ നിങ്ങളുമായി ബന്ധിപ്പിക്കാനും കഴിയില്ല.',
       backToApp: 'Famora ലേക്ക് മടങ്ങുക',
     },
+    // Shown when another device claims the session — see
+    // useSingleDevice. One account, one device.
+    session: {
+      displacedTitle: 'സൈൻ ഔട്ട് ചെയ്തു',
+      displacedBody: 'നിങ്ങളുടെ അക്കൗണ്ട് മറ്റൊരു ഉപകരണത്തിൽ തുറന്നു. Famora ഒരു സമയത്ത് ഒരു ഉപകരണത്തിൽ മാത്രമേ ഉപയോഗിക്കാനാകൂ.',
+      signInAgain: 'വീണ്ടും സൈൻ ഇൻ ചെയ്യുക',
+    },
+
     profile: {
       myProfile: 'എന്റെ പ്രൊഫൈൽ',
       tapToChangePhoto: 'ഫോട്ടോ മാറ്റാൻ ടാപ്പ് ചെയ്യുക',

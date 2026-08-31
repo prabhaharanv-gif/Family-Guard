@@ -1,8 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 
 // Store
 import { useAuthStore } from './store/authStore'
+import { useSingleDevice } from './hooks/useSingleDevice'
+import Dialog from './components/Dialog'
+import { useT } from './i18n'
 
 // Hooks
 import { usePushNotifications }  from './hooks/usePushNotifications'
@@ -46,7 +49,7 @@ import DeleteAccountPage  from './pages/DeleteAccountPage'
 import UserManualPage    from './pages/UserManualPage'
 
 export default function App() {
-  const { initialize, user, familyId, loading } = useAuthStore()
+  const { initialize, user, familyId, loading, signOut } = useAuthStore()
   const location = useLocation()
   const navigate  = useNavigate()
 
@@ -59,6 +62,14 @@ export default function App() {
   const { disclosureOpen, acceptDisclosure, declineDisclosure } = useLocationService()
   useLocationBroadcast(user?.id, familyId)
   useDevicePing(user, familyId)
+
+  // ── One account, one device ──────────────────────────────────────────────
+  // The newest sign-in owns the session; this device signs itself out when it
+  // is displaced. Deliberately fails open — a failed check never signs anyone
+  // out, because being locked out of a safety app is its own hazard.
+  const t = useT()
+  const [displaced, setDisplaced] = useState(false)
+  useSingleDevice(user, () => setDisplaced(true))
 
   // ── SOS alarm + unread badge ─────────────────────────────────────────────
   const { sosAlert, nativeAlarmOn, stopAllAlarms } = useSosAlarm(user, familyId)
@@ -122,6 +133,20 @@ export default function App() {
         onAccept={handleAcceptCall}
         onDecline={declineIncoming}
       />
+      {displaced && (
+        <Dialog
+          type="alert"
+          title={t('session.displacedTitle')}
+          message={t('session.displacedBody')}
+          confirmLabel={t('session.signInAgain')}
+          onClose={async () => {
+            setDisplaced(false)
+            await signOut()
+            navigate('/login')
+          }}
+        />
+      )}
+
       <SosReliabilitySetup />
       <BackgroundLocationDisclosure
         open={disclosureOpen}

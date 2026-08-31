@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore'
 import { useLocations } from '../hooks/useLocations'
 import { supabase } from '../lib/supabase'
 import SmoothMarker from '../components/SmoothMarker'
+import { useT } from '../i18n'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -30,19 +31,45 @@ function createIcon(color, initial) {
   })
 }
 
-function FlyTo({ lat, lng }) {
+function FollowTarget({ lat, lng, following, onUserTakeover }) {
   const map = useMap()
-  const hasFlown = useRef(false)
+  const centred = useRef(false)
+
+  // First fix: centre once when their location appears, as before.
   useEffect(() => {
-    // Center on the member once when their location first appears. After that,
-    // let the SmoothMarker glide handle movement so the map doesn't keep
-    // yanking the viewport on every GPS update.
-    if (hasFlown.current) return
+    if (centred.current) return
     if (lat && lng) {
-      hasFlown.current = true
+      centred.current = true
       map.flyTo([lat, lng], 16, { animate: true, duration: 1.2 })
     }
-  }, [lat, lng])
+  }, [lat, lng, map])
+
+  // A drag is unambiguously the user taking over the viewport. Leaflet's own
+  // flyTo/panTo never fire dragstart, so our animations cannot trip this.
+  useEffect(() => {
+    const stop = () => onUserTakeover()
+    map.on('dragstart', stop)
+    return () => { map.off('dragstart', stop) }
+  }, [map, onUserTakeover])
+
+  // Follow, but only once the marker approaches an edge. Re-centring on every
+  // GPS update is what the previous once-only version was avoiding: a phone
+  // sitting still wanders a few metres and the viewport would twitch
+  // continuously. Panning at the 25% margin keeps a moving member on screen
+  // without chasing noise, and panTo keeps the zoom the user chose.
+  useEffect(() => {
+    if (!following || !centred.current) return
+    if (!lat || !lng) return
+    const p    = map.latLngToContainerPoint([lat, lng])
+    const size = map.getSize()
+    const marginX = size.x * 0.25
+    const marginY = size.y * 0.25
+    const nearEdge =
+      p.x < marginX || p.x > size.x - marginX ||
+      p.y < marginY || p.y > size.y - marginY
+    if (nearEdge) map.panTo([lat, lng], { animate: true, duration: 0.8 })
+  }, [lat, lng, following, map])
+
   return null
 }
 
@@ -52,6 +79,11 @@ export default function MapPage() {
   const { user, familyId } = useAuthStore()
   const { locations } = useLocations(familyId)
   const [member, setMember] = useState(null)
+  const t = useT()
+  // Follow is on until the user drags the map away; then it stays off until
+  // they ask for it back, so panning to look at something is never fought.
+  const [following, setFollowing] = useState(true)
+  const stopFollowing = useCallback(() => setFollowing(false), [])
 
   useEffect(() => {
     if (!targetUserId || !familyId) return
@@ -79,7 +111,14 @@ export default function MapPage() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {targetLoc && <FlyTo lat={targetLoc.lat} lng={targetLoc.lng} />}
+          {targetLoc && (
+            <FollowTarget
+              lat={targetLoc.lat}
+              lng={targetLoc.lng}
+              following={following}
+              onUserTakeover={stopFollowing}
+            />
+          )}
 
           {/* Target member marker */}
           {targetLoc && (
@@ -153,6 +192,30 @@ export default function MapPage() {
               </SmoothMarker>
             ))}
         </MapContainer>
+
+        {/* Only shown once the user has taken the viewport over, so it never
+            competes for attention while the map is already following. */}
+        {targetLoc && !following && (
+          <button
+            onClick={() => setFollowing(true)}
+            style={{
+              position: 'absolute', right: 14, bottom: 18, zIndex: 1000,
+              display: 'flex', alignItems: 'center', gap: 7,
+              background: 'linear-gradient(135deg,#951345,#720D35)',
+              border: 'none', borderRadius: 999, padding: '10px 16px',
+              color: '#fff', fontWeight: 700, fontSize: 13,
+              fontFamily: 'inherit', cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(149,19,69,0.4)',
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="3.2" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+            </svg>
+            {t('map.recenter')}
+          </button>
+        )}
       </div>
 
       {/* Bottom info bar */}
