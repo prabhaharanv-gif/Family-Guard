@@ -18,6 +18,22 @@ const STORAGE_KEY = 'sos_oem_setup_done_v1'
  * This one-time gate detects those devices and walks the user to the right
  * pages. It stores a flag once completed so it never nags again. It renders
  * nothing on stock Android or once the user has dismissed it.
+ *
+ * With one exception, and it is the important one. The pop-up permission is
+ * the whole reason this sheet exists and it CANNOT be read — there is no API
+ * for it, on any of these OEMs. So completion used to be judged on the two
+ * permissions that can be read, and the sheet closed itself and set its
+ * never-show-again flag while the unreadable one was still off. The user got a
+ * dismissed setup screen and a broken full-screen alert, with nothing
+ * connecting the two.
+ *
+ * The permission cannot be read, but its ABSENCE is observable: when
+ * CallRingingService or SOSSirenService starts its alert Activity and the
+ * Activity does not appear, that is this permission being refused. The native
+ * side records that (KEY_ALERT_BLOCKED) and this sheet reopens on it, with the
+ * relevant step first, regardless of having been dismissed before. The next
+ * alert that DOES appear clears the flag, so it stops on its own once fixed —
+ * it asks when there is evidence of a problem, and never otherwise.
  */
 export default function SosReliabilitySetup() {
   const t = useT()
@@ -25,6 +41,8 @@ export default function SosReliabilitySetup() {
   const [visible, setVisible] = useState(false)
   const [step, setStep]       = useState(0)
   const [overlayOk, setOverlayOk] = useState(true)
+  // Set by the native side after an alert failed to reach the screen.
+  const [alertBlocked, setAlertBlocked] = useState(false)
 
   // Re-checked on every return to the app, not just at startup: the user
   // leaves to a system settings page to grant these, so the only moment we
@@ -32,7 +50,16 @@ export default function SosReliabilitySetup() {
   // stayed on screen even after everything had been granted.
   const evaluate = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return
-    try { if (localStorage.getItem(STORAGE_KEY) === '1') { setVisible(false); return } } catch {}
+
+    // Asked BEFORE the dismissal flag is honoured: a phone that has since
+    // refused to show an alert overrides an earlier "don't show me again".
+    let blocked = false
+    try { blocked = (await CallAlarm.getAlertBlocked())?.blocked === true } catch {}
+    setAlertBlocked(blocked)
+
+    if (!blocked) {
+      try { if (localStorage.getItem(STORAGE_KEY) === '1') { setVisible(false); return } } catch {}
+    }
 
     let device = null
     try { device = await SOSAlarm.getDeviceInfo() } catch { return }
@@ -43,17 +70,19 @@ export default function SosReliabilitySetup() {
     setInfo(device)
     setOverlayOk(canOverlay)
 
-    // Autostart cannot be read back on MIUI/ColorOS — there is no API for it —
-    // so completion is judged on the permissions we CAN verify. Gating on the
-    // unverifiable one would mean the sheet could never close by itself.
+    // Autostart and the pop-up permission cannot be read back on MIUI/ColorOS,
+    // so completion is judged on the permissions we CAN verify — PLUS the
+    // absence of a recorded failure, which is the only evidence available about
+    // the ones we cannot. Without that second half this closed itself over a
+    // phone that could not show an alert at all.
     const fsiOk = device.canUseFullScreenIntent !== false
-    if (fsiOk && canOverlay) {
+    if (fsiOk && canOverlay && !blocked) {
       try { localStorage.setItem(STORAGE_KEY, '1') } catch {}
       setVisible(false)
       return
     }
 
-    if (device.isRestrictive || !fsiOk || !canOverlay) setVisible(true)
+    if (blocked || device.isRestrictive || !fsiOk || !canOverlay) setVisible(true)
   }, [])
 
   useEffect(() => {
@@ -97,6 +126,16 @@ export default function SosReliabilitySetup() {
   }[info.oem] || 'Allow "Display over other apps".'
 
   const steps = [
+    // First when there is evidence, because it is the only step we KNOW is
+    // needed — the others are asked on suspicion. Named after what the user
+    // actually saw rather than after the permission, so it connects to the
+    // thing that went wrong on their phone.
+    ...(alertBlocked ? [{
+      title: '📵 A call could not open on your screen',
+      body: `An incoming call arrived but Famora was not allowed to show the answer screen, so it could only appear as a small banner. ${oemLabel} phones block this until it is switched on by hand.`,
+      action: { label: t('reliability.openPermissions'), fn: openAppDetails },
+      hint: popupHint,
+    }] : []),
     {
       title: '🔓 Allow Autostart',
       body: `On ${oemLabel} phones, Famora must be allowed to start on its own so SOS alerts arrive even when the app is closed.`,

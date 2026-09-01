@@ -4,8 +4,6 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useT } from '../i18n'
 
-const toEmail = (mobile) => `91${mobile.replace(/[^0-9]/g, '')}@familyguard.app`
-
 // Clean open/closed eye icon — no emoji. `open` = password visible.
 function EyeIcon({ open }) {
   return open ? (
@@ -53,6 +51,12 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
+      // No "is this number taken?" probe here, and there cannot be one.
+      // signInWithPassword returns "Invalid login credentials" whether or not
+      // the account exists — that is deliberate on Supabase's part, to stop
+      // anyone enumerating users — so a probe reads as "taken" for every
+      // number on earth and blocks all registration. The check belongs after
+      // verifyOtp, where the answer is actually knowable; see handleVerifyOtp.
       const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: toE164(mobile) })
       if (otpErr) throw otpErr
       setStep(2)
@@ -64,7 +68,7 @@ export default function RegisterPage() {
     }
   }
 
-  // Step 2 → verify the OTP, then attach email/password to the now-authenticated session
+  // Step 2 → verify the OTP, then attach the password to the now-authenticated session
   const handleVerifyOtp = async (e) => {
     e.preventDefault()
     setError('')
@@ -78,16 +82,37 @@ export default function RegisterPage() {
       if (verifyErr) throw new Error(t('reset.incorrectCode'))
       if (!verifyData.user) throw new Error(t('register.verificationFailed'))
 
+      // Already registered?
+      //
+      // verifyOtp signs in an EXISTING user for a known number rather than
+      // failing, so without this, "registering" a number that already has an
+      // account would quietly overwrite that account's password below. It
+      // cannot be caught earlier — Supabase will not reveal whether a number
+      // is taken until ownership is proven, which is exactly what the OTP just
+      // did.
+      //
+      // display_name is the marker: registration always sets it a few lines
+      // down, so a user carrying one has been through this before. Signed out
+      // again first, or a failed registration would leave them holding a
+      // session they never asked for.
+      if (verifyData.user.user_metadata?.display_name) {
+        await supabase.auth.signOut()
+        throw new Error(t('register.alreadyRegistered'))
+      }
+
+      // No email. verifyOtp has just created the account with the phone
+      // number on it, and asking to add 91XXXXXXXXXX@familyguard.app here only
+      // ever queued an email CHANGE that needs confirming from an inbox that
+      // does not exist — so auth.users.email stayed null while the app went on
+      // believing every account had an address. Login and password reset both
+      // looked accounts up by it, so everyone who registered this way was
+      // locked out the moment their session ended. The number on the account
+      // is the identity now; see 20260901040000_reset_password_finds_otp_accounts.
       const { data: updateData, error: updateErr } = await supabase.auth.updateUser({
-        email: toEmail(mobile), password,
+        password,
         data: { display_name: name },
       })
-      if (updateErr) {
-        if (updateErr.message.includes('already registered') || updateErr.message.includes('already been registered')) {
-          throw new Error(t('register.alreadyRegistered'))
-        }
-        throw updateErr
-      }
+      if (updateErr) throw updateErr
       if (!updateData.user) throw new Error(t('register.registrationFailed'))
 
       await createOwnFamily(updateData.user.id, name)

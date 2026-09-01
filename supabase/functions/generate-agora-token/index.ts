@@ -49,9 +49,17 @@ serve(async (req) => {
   }
 
   // Client authenticated AS THE CALLING USER — RLS does the participant check.
+  //
+  // PUBLISHABLE_KEY first: SUPABASE_ANON_KEY is the LEGACY JWT anon key, and
+  // once legacy JWT-based API keys are disabled on the project it stops being
+  // valid. This function would then still authenticate the caller — that comes
+  // from their own Authorization header — but the apikey header would be
+  // rejected, so a call could ring and then fail to connect, which is a
+  // confusing way to discover a key migration is incomplete. The fallback
+  // keeps older deployments working until the secret is set.
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
+    Deno.env.get('PUBLISHABLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY')!,
     { global: { headers: { Authorization: authHeader } } }
   )
 

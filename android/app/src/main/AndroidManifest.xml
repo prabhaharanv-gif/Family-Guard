@@ -49,6 +49,7 @@
             android:name=".SOSAlertActivity"
             android:exported="false"
             android:launchMode="singleTask"
+            android:taskAffinity="com.scoopfamily.familyguard.sos"
             android:excludeFromRecents="true"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
@@ -57,11 +58,19 @@
             android:theme="@style/SOSAlertTheme" />
 
         <!-- ── Full-screen incoming-call UI over the lock screen ──────────────
-             Same pattern as SOSAlertActivity, launched by CallRingingService. -->
+             Same pattern as SOSAlertActivity, launched by CallRingingService.
+
+             taskAffinity puts it in a task of its OWN. Without it this shares
+             MainActivity's task, and the ringing screen was being covered by
+             MainActivity again seconds after appearing — no second launch and
+             no finish in the logs, just the other activity in the same task
+             coming back to the front. A call screen the user has not answered
+             yet cannot be something the app's own task can bury. -->
         <activity
             android:name=".CallRingingActivity"
             android:exported="false"
             android:launchMode="singleTask"
+            android:taskAffinity="com.scoopfamily.familyguard.call"
             android:excludeFromRecents="true"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
@@ -157,6 +166,31 @@
     </application>
 
     <!-- ── Network ── -->
+    <!-- ── Package visibility ──────────────────────────────────────────────
+         Android 11+ hides other apps' activities unless they are declared
+         here. RingtonePlugin needs to SEE the sound picker, not just launch
+         it: MIUI routes an implicit RINGTONE_PICKER intent through its own
+         chooser (MiuiResolverActivity), which measured ~600ms on the test
+         device before the real picker even started. With this declaration the
+         plugin can resolve the single handler and address it directly, so that
+         intermediate screen never appears.
+
+         Narrow by design — this exposes only activities answering this one
+         action, not the QUERY_ALL_PACKAGES permission, which Play restricts. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.RINGTONE_PICKER" />
+        </intent>
+        <!-- The sound sheet's music button has to find the phone's music app
+             among the handlers of this action; without this entry the query
+             comes back empty and the button falls back to a chooser listing
+             file browsers alongside the player. -->
+        <intent>
+            <action android:name="android.intent.action.GET_CONTENT" />
+            <data android:mimeType="audio/*" />
+        </intent>
+    </queries>
+
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- ── Location ── -->
@@ -184,6 +218,16 @@
 
     <!-- ── Vibration ── -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- ── Alert sound picked from the music app ──────────────────
+         A song chosen there is a MediaStore uri, not a document, so no
+         persistable grant can be taken on it — the read has to be backed by a
+         permission or the alert falls silent once the picking activity is gone.
+         Asked for only when the music button is tapped, and only ever one of
+         the two: the second is the pre-Android-13 name for the same thing. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
 
     <!-- ── Voice/video calling (Agora WebRTC via the Capacitor WebView) ── -->
     <uses-permission android:name="android.permission.CAMERA" />

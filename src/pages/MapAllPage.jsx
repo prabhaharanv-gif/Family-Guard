@@ -176,7 +176,15 @@ function speedKmh(loc) {
  * room on that corner — the bubble deliberately spills outside the avatar
  * circle rather than covering the face.
  */
-function SpeedBadge({ loc, size = 28 }) {
+// 34, not 28, and the unit is set at 8px rather than 6.
+//
+// Android's WebView floors font-size at 8px: measured on the device, text set
+// to 6px, 7px and 8px all render identically at 23.4px wide for "KM/H". The
+// old badge asked for 6px and got 8px, which does not fit a 24px inner circle
+// — at the unit's line the available width is about 20px — so the label spilled
+// out over the edge and read as cut off. Sizing the circle for the text that
+// actually renders is what fixes it; asking for a smaller font cannot.
+function SpeedBadge({ loc, size = 34 }) {
   const kmh = speedKmh(loc)
   if (kmh == null) return null
   return (
@@ -184,7 +192,7 @@ function SpeedBadge({ loc, size = 28 }) {
       // Pushed out along the down-right diagonal so it clips only the very edge
       // of the avatar. Closer in, the bubble ate most of the lower-right
       // quadrant and buried the face.
-      position: 'absolute', right: -16, bottom: -10,
+      position: 'absolute', right: -14, bottom: -8,
       width: size, height: size, borderRadius: '50%',
       background: '#951345', border: '2px solid #fff',
       boxSizing: 'border-box',
@@ -193,9 +201,17 @@ function SpeedBadge({ loc, size = 28 }) {
       color: '#fff', lineHeight: 1,
       boxShadow: '0 2px 6px rgba(149,19,69,0.45)',
       pointerEvents: 'none',
+      // Nothing may leave the circle, whatever the platform does to the font.
+      overflow: 'hidden',
     }}>
-      <span style={{ fontSize: kmh >= 100 ? 9 : 11, fontWeight: 900, letterSpacing: -0.3 }}>{kmh}</span>
-      <span style={{ fontSize: 6, fontWeight: 800, letterSpacing: 0.2, marginTop: 1 }}>KM/H</span>
+      <span style={{
+        fontSize: kmh >= 100 ? 11 : 13, fontWeight: 900,
+        letterSpacing: -0.3, whiteSpace: 'nowrap',
+      }}>{kmh}</span>
+      <span style={{
+        fontSize: 8, fontWeight: 800, letterSpacing: 0,
+        marginTop: 1, whiteSpace: 'nowrap',
+      }}>KM/H</span>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useNicknames } from '../hooks/useNicknames'
 import { useT } from '../i18n'
 import { useBackButton } from '../hooks/useBackButton'
 import { joinChannel, leaveChannel, setMuted, setCameraOff, switchCamera } from '../lib/agora'
@@ -10,7 +11,8 @@ import {
   VideoIcon, VideoOffIcon, FlipCameraIcon, PhoneIcon, PhoneOffIcon,
 } from '../components/CallIcons'
 import { stopNativeCallAlarm } from '../lib/nativeCallAlarm'
-import { startNativeCallAudio, setNativeSpeakerOn, stopNativeCallAudio } from '../lib/nativeCallAudio'
+import { startNativeCallAudio, setNativeSpeakerOn, stopNativeCallAudio,
+         startCallRingback, stopCallRingback } from '../lib/nativeCallAudio'
 
 const CALLER_NO_ANSWER_MS = 45000
 
@@ -26,6 +28,11 @@ export default function CallPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { user } = useAuthStore()
+  const { nameFor } = useNicknames()
+  // Held in a ref: the loader below runs once per call and must not re-run
+  // just because the nickname map changed identity on a re-render.
+  const nameForRef = useRef(nameFor)
+  nameForRef.current = nameFor
   // Read live from the URL, NOT captured at mount. Accepting from the native
   // full-screen alert deep-links to /call/:id?action=accept, but this screen
   // is often already mounted by then (useCallSignaling discovers the ringing
@@ -83,7 +90,8 @@ export default function CallPage() {
         .eq('family_id', data.family_id)
         .maybeSingle()
       if (!cancelled) {
-        setOtherName(member?.display_name || 'Family member')
+        // The name from their family card if I set one there.
+        setOtherName(nameForRef.current(otherId, member?.display_name) || t('messages.member'))
         setOtherAvatar(member?.avatar_url || '')
       }
     }
@@ -156,6 +164,18 @@ export default function CallPage() {
     }, CALLER_NO_ANSWER_MS)
     return () => clearTimeout(noAnswerTimer.current)
   }, [call?.id, call?.status, isCaller])
+
+  // ── Caller: ringback while the callee's phone is ringing ────────────────
+  // An outgoing call was completely silent until it connected, so there was
+  // nothing to tell the caller it was ringing rather than dead. Its own effect
+  // alongside the timer above rather than part of it: the tone has to stop the
+  // moment the status leaves 'ringing' — answered, declined or no answer — and
+  // when the screen goes away, both of which this cleanup covers.
+  useEffect(() => {
+    if (!call || !isCaller || call.status !== 'ringing') return
+    startCallRingback(isVideo)
+    return () => { stopCallRingback() }
+  }, [call?.id, call?.status, isCaller, isVideo])
 
   // ── Join the Agora channel once the call is accepted ────────────────────
   useEffect(() => {

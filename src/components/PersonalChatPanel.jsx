@@ -7,7 +7,12 @@ import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import {
   SingleTick, DoubleTick, ReplyBar, ReplyQuote, MessageActionSheet, EditModal,
+  ReactionChips, messagePreviewText,
 } from './MessageActions'
+import { AttachButton, MediaBubble, PendingMediaBar, VoiceRecorder } from './ChatMedia'
+import { useNicknames } from '../hooks/useNicknames'
+import { useReactions } from '../hooks/useReactions'
+import { directMediaFolder, uploadChatMedia } from '../lib/chatMedia'
 
 /**
  * PersonalChatPanel
@@ -31,7 +36,7 @@ import {
  * below physically cannot deliver somebody else's private thread.
  */
 
-const DM_COLUMNS = 'id, sender_id, recipient_id, content, created_at, reply_to_id, is_edited, edited_at, read_at'
+const DM_COLUMNS = 'id, sender_id, recipient_id, content, created_at, reply_to_id, is_edited, edited_at, read_at, media_path, media_type, media_mime, media_size, media_duration_ms, media_name'
 
 function timeShort(ts) {
   if (!ts) return ''
@@ -44,10 +49,11 @@ function timeShort(ts) {
   return d.toLocaleDateString([], { day: '2-digit', month: 'short' })
 }
 
-function Avatar({ member, size = 44 }) {
+function Avatar({ member, size = 44, name }) {
+  const label = name || member.display_name
   if (member.avatar_url) {
     return (
-      <img src={member.avatar_url} alt={member.display_name}
+      <img src={member.avatar_url} alt={label}
         style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid #951345' }} />
     )
   }
@@ -59,7 +65,7 @@ function Avatar({ member, size = 44 }) {
       color: '#fff', fontWeight: 800, fontSize: size * 0.36,
       border: '2px solid #951345', boxSizing: 'border-box',
     }}>
-      {member.display_name?.[0]?.toUpperCase() || '?'}
+      {label?.[0]?.toUpperCase() || '?'}
     </div>
   )
 }
@@ -68,6 +74,10 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
   const t = useT()
   const { user, familyId } = useAuthStore()
   const { hidden: hiddenMsgs, hide: hideMessage } = useHiddenMessages('direct', user?.id)
+  // The private name I gave this person on their family card, which is what
+  // they should be called here too.
+  const { nameFor } = useNicknames()
+  const { reactions, react } = useReactions('direct', familyId, user?.id)
   // Held in a ref rather than state: the pull-to-refresh handler needs to call
   // the loader, but making it a dependency would re-run the effect and tear down
   // the realtime channel on every render.
@@ -77,6 +87,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
   const [messages, setMessages] = useState([])   // every DM I am part of
   const [openWith, setOpenWith] = useState(null) // member object, or null for the list
   const [draft, setDraft]       = useState('')
+  const [pendingMedia, setPendingMedia] = useState(null)  // { file, kind, durationMs, previewUrl }
   const [sending, setSending]   = useState(false)
   const [clearing, setClearing] = useState(false)
   const [loading, setLoading]   = useState(true)
@@ -159,13 +170,37 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
         event: 'INSERT', schema: 'public', table: 'family_members',
         filter: `family_id=eq.${familyId}`,
       }, () => { reloadRef.current?.() })
-      .on('postgres_changes', {
-        event: 'DELETE', schema: 'public', table: 'family_members',
-        filter: `family_id=eq.${familyId}`,
-      }, () => { reloadRef.current?.() })
-      .subscribe()
+      .subscribe((status, err) => {
+        // Realtime rejects a channel outright if ANY binding in it is invalid,
+        // and the failure is otherwise silent: messages simply stop arriving
+        // and only a manual refresh shows them. Worth a line in the log.
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[PersonalChat] realtime subscribe failed:', status, err?.message || '')
+        }
+      })
 
-    return () => { cancelled = true; supabase.removeChannel(channel) }
+    // Isolated for the reason spelled out in FamilyPage: Realtime refuses a
+    // DELETE binding on family_members and takes the whole channel with it.
+    // Alone, it can only cost itself — a member who leaves lingers in the
+    // picker until the next load, instead of private messages not arriving.
+    const leaveChannel = supabase
+      .channel(`dm-members-left:${familyId}:${user.id}`)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'family_members' },
+        (payload) => {
+          if (payload.old?.family_id && payload.old.family_id !== familyId) return
+          reloadRef.current?.()
+        })
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[PersonalChat] member-left channel refused:', status, err?.message || '')
+        }
+      })
+
+    return () => {
+      cancelled = true
+      supabase.removeChannel(channel)
+      supabase.removeChannel(leaveChannel)
+    }
   }, [familyId, user?.id])
 
   const threadFor = useCallback(
@@ -175,6 +210,11 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
     ),
     [messages, user?.id]
   )
+
+  // Names on this panel are the ones from the family card, not what the person
+  // registered as.
+  const nameOf    = (m) => nameFor(m?.user_id, m?.display_name)
+  const otherName = openWith ? nameOf(openWith) : ''
 
   const thread = (openWith ? threadFor(openWith.user_id) : []).filter(m => !hiddenMsgs.has(m.id))
 
@@ -210,16 +250,69 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
     return () => { cancelled = true }
   }, [openWith?.user_id, unreadFromOther, familyId, user?.id])
 
+  // An attachment is a message on its own, so either a caption or a file is
+  // enough to send.
+  const canSend = (!!draft.trim() || !!pendingMedia) && !!openWith
+
+  // An image preview holds the whole file in memory until its object URL is
+  // released, and people browse several before settling on one.
+  const clearPendingMedia = () => {
+    setPendingMedia(prev => {
+      if (prev?.previewUrl) { try { URL.revokeObjectURL(prev.previewUrl) } catch (e) {} }
+      return null
+    })
+  }
+
   const handleSend = async () => {
     const text = draft.trim()
-    if (!text || !openWith || sending) return
+    if (!canSend || sending) return
     setSending(true)
-    const { error } = await supabase.rpc('send_direct_message', {
+
+    // Uploaded as part of sending, so a message that is never sent leaves
+    // nothing behind in storage. The folder names both participants, which is
+    // what the storage policy checks — nobody else in the family can read it.
+    let media = null
+    if (pendingMedia) {
+      try {
+        media = await uploadChatMedia(
+          directMediaFolder(familyId, user.id, openWith.user_id),
+          pendingMedia.file,
+        )
+      } catch (err) {
+        setSending(false)
+        onDialog?.({
+          type: 'error',
+          message: err?.message === 'too-big' ? t('messages.mediaTooBig')
+            : err?.message === 'unsupported' ? t('messages.mediaUnsupported')
+            : t('messages.mediaUploadFailed'),
+        })
+        return
+      }
+    }
+
+    let { error } = await supabase.rpc('send_direct_message', {
       p_family_id:    familyId,
       p_recipient_id: openWith.user_id,
       p_content:      text,
       p_reply_to_id:  replyTo?.id || null,
+      p_media_path:   media?.path || null,
+      p_media_type:   media?.type || null,
+      p_media_mime:   media?.mime || null,
+      p_media_size:   media?.size || null,
+      p_media_name:   media?.name || null,
+      p_media_duration_ms: pendingMedia?.durationMs ? Math.round(pendingMedia.durationMs) : null,
     })
+
+    // See the note in MessagesPage.sendMessage: on a database without the
+    // attachment migration, a text message must still go through.
+    if (error?.code === 'PGRST202' && !media) {
+      ;({ error } = await supabase.rpc('send_direct_message', {
+        p_family_id:    familyId,
+        p_recipient_id: openWith.user_id,
+        p_content:      text,
+        p_reply_to_id:  replyTo?.id || null,
+      }))
+    }
     setSending(false)
     if (error) {
       onDialog?.({ type: 'error', message: error.message })
@@ -227,6 +320,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
     }
     setDraft('')
     setReplyTo(null)
+    clearPendingMedia()
     // The realtime INSERT delivers the message back to us, so nothing is
     // appended optimistically here — that would duplicate it.
   }
@@ -250,7 +344,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
     onDialog?.({
       type: 'confirm',
       title: t('messages.deleteTitle'),
-      message: t('personal.deleteMsg', { name: openWith?.display_name || t('personal.theOtherPerson') }),
+      message: t('personal.deleteMsg', { name: otherName || t('personal.theOtherPerson') }),
       confirmLabel: t('common.delete'),
       onConfirm: async () => {
         const { error } = await supabase.rpc('delete_direct_message', { p_message_id: msg.id })
@@ -268,7 +362,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
     onDialog?.({
       type: 'confirm',
       title: t('personal.clearTitle'),
-      message: t('personal.clearMsg', { name: openWith.display_name }),
+      message: t('personal.clearMsg', { name: otherName }),
       confirmLabel: t('messages.clearChat'),
       onConfirm: async () => {
         setClearing(true)
@@ -316,11 +410,13 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
       canClear: !!openWith && thread.length > 0,
       clearing,
       clearThread: handleClearThread,
+      // Same reason as CallsPanel: the header refresh button needs a way in.
+      reload,
     })
-  }, [openWith, thread.length, clearing, onControls])
+  }, [openWith, thread.length, clearing, reload, onControls])
 
   const senderNameOf = (msg) =>
-    (msg?.sender_id === user?.id ? t('common.you') : openWith?.display_name)
+    (msg?.sender_id === user?.id ? t('common.you') : otherName)
 
   // ── Thread view ───────────────────────────────────────────────────────────
   if (openWith) {
@@ -332,9 +428,9 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
           padding: '10px 14px', borderBottom: '1px solid #F0E4EA', background: '#fff',
           flexShrink: 0,
         }}>
-          <Avatar member={openWith} size={36} />
+          <Avatar member={openWith} size={36} name={otherName} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14.5, fontWeight: 800, color: '#0D0C1D' }}>{openWith.display_name}</div>
+            <div style={{ fontSize: 14.5, fontWeight: 800, color: '#0D0C1D' }}>{otherName}</div>
           </div>
         </div>
 
@@ -346,7 +442,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
                 No messages yet
               </div>
               <div style={{ fontSize: 12.5, lineHeight: 1.6 }}>
-                Anything you send here is private between you and {openWith.display_name}.
+                Anything you send here is private between you and {otherName}.
                 The rest of the family cannot see it.
               </div>
             </div>
@@ -380,10 +476,24 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
                     {m.reply_to_id && (
                       <ReplyQuote original={original} senderName={senderNameOf(original)} />
                     )}
-                    <div style={{ fontSize: 13.5, lineHeight: 1.5, wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
-                      {m.content}
-                    </div>
+                    {m.media_path && (
+                      <div style={{ marginBottom: m.content ? 6 : 0 }}>
+                        <MediaBubble msg={m} isOwn={mine} />
+                      </div>
+                    )}
+                    {m.content && (
+                      <div style={{ fontSize: 13.5, lineHeight: 1.5, wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
+                        {m.content}
+                      </div>
+                    )}
                   </div>
+
+                  <ReactionChips
+                    reactions={reactions[m.id]}
+                    myUserId={user?.id}
+                    onReact={(emoji) => react(m.id, emoji)}
+                    align={mine ? 'right' : 'left'}
+                  />
 
                   {/* Timestamp + edited + ticks */}
                   <div style={{
@@ -417,28 +527,51 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
           onCancel={() => setReplyTo(null)}
         />
 
+        {/* The picked photo/clip, waiting for its caption and the send button */}
+        <PendingMediaBar
+          pending={pendingMedia}
+          uploading={sending && !!pendingMedia}
+          onCancel={clearPendingMedia}
+        />
+
         {/* Composer */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '10px 12px', borderTop: '1px solid #F0E4EA',
           background: '#fff', flexShrink: 0,
         }}>
+          <AttachButton
+            onPick={setPendingMedia}
+            onError={(message) => onDialog?.({ type: 'error', message })}
+            disabled={sending}
+          />
           <input
             className="input"
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleSend() }}
-            placeholder={replyTo ? t('messages.writeReply') : t('personal.messagePlaceholder', { name: openWith.display_name })}
+            placeholder={pendingMedia ? t('messages.addCaption')
+              : replyTo ? t('messages.writeReply')
+              : t('personal.messagePlaceholder', { name: otherName })}
             style={{ flex: 1, borderRadius: 22, padding: '11px 16px', fontSize: 14 }}
           />
+          {/* The microphone stands down while there is something to send, so
+              the row never offers two ways to act on the same draft. */}
+          {!draft.trim() && !pendingMedia && (
+            <VoiceRecorder
+              onRecorded={setPendingMedia}
+              onError={(message) => onDialog?.({ type: 'error', message })}
+              disabled={sending}
+            />
+          )}
           <button
             onClick={handleSend}
-            disabled={!draft.trim() || sending}
+            disabled={!canSend || sending}
             aria-label="Send"
             style={{
               width: 44, height: 44, borderRadius: '50%', flexShrink: 0, border: 'none',
-              background: draft.trim() ? '#951345' : '#E4D6DD',
-              color: '#fff', cursor: draft.trim() ? 'pointer' : 'not-allowed',
+              background: canSend ? '#951345' : '#E4D6DD',
+              color: '#fff', cursor: canSend ? 'pointer' : 'not-allowed',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
@@ -454,6 +587,8 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
             anchor={actionAnchor}
             msg={actionMsg}
             isOwn={actionMsg.sender_id === user?.id}
+            myReaction={(reactions[actionMsg.id] || []).find(r => r.user_id === user?.id)?.emoji}
+            onReact={(emoji) => react(actionMsg.id, emoji)}
             onReply={() => { setReplyTo(actionMsg); setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 100) }}
             onEdit={() => { setEditMsg(actionMsg); setActionMsg(null) }}
             onDelete={() => handleDeleteMessage(actionMsg)}
@@ -467,7 +602,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
         {editMsg && (
           <EditModal
             msg={editMsg}
-            subtitle={`Changes are visible to ${openWith.display_name}`}
+            subtitle={t('personal.editSubtitle', { name: otherName })}
             onClose={() => setEditMsg(null)}
             onSave={handleEdit}
           />
@@ -482,7 +617,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
                 Message Info
               </div>
               <div style={{ background: '#F5F4FB', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#0D0C1D', marginBottom: 16 }}>
-                {detailMsg.content}
+                {messagePreviewText(t, detailMsg)}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0' }}>
@@ -497,12 +632,12 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
                 <span style={{ color: detailMsg.read_at ? '#34B7F1' : '#8480B0', display: 'inline-flex' }}><DoubleTick /></span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>
-                    {detailMsg.read_at ? t('personal.readBy', { name: openWith.display_name }) : t('personal.notReadYet')}
+                    {detailMsg.read_at ? t('personal.readBy', { name: otherName }) : t('personal.notReadYet')}
                   </div>
                   <div style={{ fontSize: 11, color: '#8480B0' }}>
                     {detailMsg.read_at
                       ? new Date(detailMsg.read_at).toLocaleString()
-                      : `${openWith.display_name} has not opened this chat since you sent it.`}
+                      : t('personal.notOpenedSince', { name: otherName })}
                   </div>
                 </div>
               </div>
@@ -557,16 +692,16 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
               fontFamily: 'inherit', textAlign: 'left',
             }}
           >
-            <Avatar member={m} />
+            <Avatar member={m} name={nameOf(m)} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{m.display_name}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{nameOf(m)}</div>
               <div style={{
                 fontSize: 12, color: last ? '#5B4652' : '#B69AA6',
                 marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 fontStyle: last ? 'normal' : 'italic',
               }}>
                 {last
-                  ? `${last.sender_id === user?.id ? t('personal.youPrefix') : ''}${last.content}`
+                  ? `${last.sender_id === user?.id ? t('personal.youPrefix') : ''}${messagePreviewText(t, last)}`
                   : t('personal.startChat')}
               </div>
             </div>

@@ -78,6 +78,13 @@ public class LocationForegroundService extends Service {
     // Loosened to 100m: Fused indoor fixes (WiFi/cell) are often 20-80m, which
     // the old 50m gate rejected — leaving the pin frozen indoors.
     private static final float MAX_ACCURACY_M = 100f;  // discard fixes worse than this
+    // Until this device has pushed anything for this family there is no row in
+    // `locations` at all, and the Family list draws the member as if they were
+    // not sharing. Indoors the first fix is routinely worse than 100m, so the
+    // strict gate could keep somebody who had just joined invisible for as long
+    // as they stayed inside. A rough first position beats none; the normal gate
+    // applies from the second push on. Mirrors useLocationBroadcast.js.
+    private static final float FIRST_FIX_ACCURACY_M = 2000f;
     private static final float MIN_MOVE_M     = 15f;   // only push if moved this far
 
     // A single bad fix (stale WiFi AP entry, cell-tower fallback, GPS multipath) can
@@ -486,9 +493,11 @@ public class LocationForegroundService extends Service {
 
         float accuracy = loc.getAccuracy();
 
-        // Accuracy gate — discard poor fixes
-        if (accuracy > MAX_ACCURACY_M) {
-            Log.d(TAG, source + " fix discarded — accuracy " + accuracy + "m > " + MAX_ACCURACY_M + "m");
+        // Accuracy gate — discard poor fixes, but let the very first one
+        // through so the member stops looking like they are not sharing.
+        float accuracyLimit = lastPushedLocation != null ? MAX_ACCURACY_M : FIRST_FIX_ACCURACY_M;
+        if (accuracy > accuracyLimit) {
+            Log.d(TAG, source + " fix discarded — accuracy " + accuracy + "m > " + accuracyLimit + "m");
             return;
         }
 
@@ -702,8 +711,21 @@ public class LocationForegroundService extends Service {
     private int doPush(SharedPreferences prefs, String supabaseUrl, String supabaseKey,
                         String familyId, Location loc, int battery, boolean charging, float speedKmh) {
         try {
+            // No p_family_id: this reports to EVERY family the signed-in user
+            // belongs to, not just the one that happens to be active in the
+            // app. Scoped to one family, every other family froze at the last
+            // position from when it was last active, and a family joined after
+            // the service started never got a row at all — its members saw
+            // "Waiting" forever while this service was pushing fixes happily to
+            // a different family. familyId is still taken as a parameter: the
+            // caller uses it to decide whether to run at all, and the direct
+            // upsert fallback still needs it.
+            //
+            // This is the primary writer on Android — the JS path only runs
+            // while the app is open — so the fix has to be here, not only in
+            // useLocationBroadcast.js. Families the user has hidden their
+            // location from are skipped server-side.
             JSONObject body = new JSONObject();
-            body.put("p_family_id", familyId);
             body.put("p_lat",       loc.getLatitude());
             body.put("p_lng",       loc.getLongitude());
             body.put("p_accuracy",  loc.getAccuracy());
@@ -718,7 +740,7 @@ public class LocationForegroundService extends Service {
                 ? "Bearer " + sessionToken
                 : "Bearer " + supabaseKey;
 
-            URL url = new URL(supabaseUrl + "/rest/v1/rpc/upsert_location_with_battery");
+            URL url = new URL(supabaseUrl + "/rest/v1/rpc/upsert_location_all_families");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");

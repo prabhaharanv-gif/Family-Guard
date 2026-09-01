@@ -57,5 +57,20 @@ export function useHiddenMessages(kind, userId) {
     return { error }
   }, [kind])
 
-  return { hidden, hide }
+  /**
+   * Hide a batch at once — the family room's Clear Chat, which hides the whole
+   * backlog for me and leaves it untouched for everyone else. The ids come
+   * back from the RPC that wrote them, so this only mirrors what the database
+   * already recorded and never needs rolling back.
+   */
+  const hideMany = useCallback((messageIds) => {
+    if (!messageIds || messageIds.length === 0) return
+    setHidden(prev => {
+      const next = new Set(prev)
+      messageIds.forEach(id => next.add(id))
+      return next
+    })
+  }, [])
+
+  return { hidden, hide, hideMany }
 }

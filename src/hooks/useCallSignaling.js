@@ -11,6 +11,26 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { triggerNativeCallAlert, stopNativeCallAlarm } from '../lib/nativeCallAlarm'
 
+/**
+ * What I call this person on their family card, if I have renamed them there.
+ *
+ * Read here rather than through useNicknames: this hook feeds the full-screen
+ * incoming-call alert, which is often built before any screen that would have
+ * loaded the shared map — and one row is a cheaper thing to fetch than a race
+ * to have the map ready in time.
+ */
+async function nicknameFor(familyId, ownerUserId, targetUserId) {
+  if (!familyId || !ownerUserId || !targetUserId) return ''
+  const { data } = await supabase
+    .from('member_nicknames')
+    .select('nickname')
+    .eq('family_id',      familyId)
+    .eq('owner_user_id',  ownerUserId)
+    .eq('target_user_id', targetUserId)
+    .maybeSingle()
+  return (data?.nickname || '').trim()
+}
+
 export function useCallSignaling(user, familyId) {
   const [incomingCall, setIncomingCall] = useState(null) // { ...call row, callerName }
 
@@ -46,16 +66,23 @@ export function useCallSignaling(user, familyId) {
     // that is a call that already rang out and must not resurrect the UI.
     if (Date.now() - new Date(call.started_at).getTime() > 60000) return
 
-    const { data: member } = await supabase
-      .from('family_members')
-      .select('display_name, avatar_url')
-      .eq('user_id', call.caller_id)
-      .eq('family_id', call.family_id)
-      .maybeSingle()
+    const [{ data: member }, nickname] = await Promise.all([
+      supabase
+        .from('family_members')
+        .select('display_name, avatar_url')
+        .eq('user_id', call.caller_id)
+        .eq('family_id', call.family_id)
+        .maybeSingle(),
+      nicknameFor(call.family_id, user.id, call.caller_id),
+    ])
 
     setIncomingCall(prev => prev && prev.id === call.id
       ? prev
-      : { ...call, callerName: member?.display_name || 'A family member', callerAvatar: member?.avatar_url || '' })
+      : {
+        ...call,
+        callerName: nickname || member?.display_name || 'A family member',
+        callerAvatar: member?.avatar_url || '',
+      })
   }, [user])
 
   useEffect(() => {
@@ -89,14 +116,17 @@ export function useCallSignaling(user, familyId) {
         const call = payload.new
         if (!call || call.status !== 'ringing') return
 
-        const { data } = await supabase
-          .from('family_members')
-          .select('display_name, avatar_url')
-          .eq('user_id', call.caller_id)
-          .eq('family_id', call.family_id)
-          .maybeSingle()
+        const [{ data }, nickname] = await Promise.all([
+          supabase
+            .from('family_members')
+            .select('display_name, avatar_url')
+            .eq('user_id', call.caller_id)
+            .eq('family_id', call.family_id)
+            .maybeSingle(),
+          nicknameFor(call.family_id, user.id, call.caller_id),
+        ])
 
-        const callerName = data?.display_name || 'A family member'
+        const callerName = nickname || data?.display_name || 'A family member'
         const callerAvatar = data?.avatar_url || ''
         setIncomingCall({ ...call, callerName, callerAvatar })
         triggerNativeCallAlert({ callId: call.id, callerName, callerAvatar, callType: call.call_type })

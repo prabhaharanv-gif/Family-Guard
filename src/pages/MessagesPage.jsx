@@ -12,7 +12,12 @@ import { readMuteLevel, writeMuteLevel, MUTE_LEVELS } from '../lib/muteLevel'
 import PersonalChatPanel from '../components/PersonalChatPanel'
 import {
   SingleTick, DoubleTick, ReplyBar, ReplyQuote, MessageActionSheet, EditModal,
+  ReactionChips,
 } from '../components/MessageActions'
+import { AttachButton, MediaBubble, PendingMediaBar, VoiceRecorder } from '../components/ChatMedia'
+import { useNicknames } from '../hooks/useNicknames'
+import { useReactions } from '../hooks/useReactions'
+import { familyMediaFolder, uploadChatMedia } from '../lib/chatMedia'
 
 const MessagesPageNative = registerPlugin('MessagesPage')
 function notifyNativePageOpen(open) {
@@ -28,7 +33,12 @@ export default function MessagesPage() {
   const t = useT()
   const navigate = useNavigate()
   const { user, familyId } = useAuthStore()
-  const { hidden: hiddenMsgs, hide: hideMessage } = useHiddenMessages('family', user?.id)
+  const { hidden: hiddenMsgs, hide: hideMessage, hideMany } = useHiddenMessages('family', user?.id)
+  // The private name I have given each member — the same one shown on their
+  // family card. Without this the chat labelled everyone by the name they
+  // registered with, whatever the card said.
+  const { nameFor } = useNicknames()
+  const { reactions, react } = useReactions('family', familyId, user?.id)
   const [messages, setMessages]   = useState([])
   const [members, setMembers]     = useState({})
   const [msgsLoaded, setMsgsLoaded] = useState(false)
@@ -39,8 +49,10 @@ export default function MessagesPage() {
   const [editMsg, setEditMsg]     = useState(null)   // edit modal
   const [replyTo, setReplyTo]     = useState(null)   // message being replied to
   const [text, setText]           = useState('')
+  const [pendingMedia, setPendingMedia] = useState(null)  // { file, kind, durationMs, previewUrl }
   const [sending, setSending]     = useState(false)
   const [clearing, setClearing]   = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [muteLevel, setMuteLevel] = useState(readMuteLevel)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch]   = useState(false)
@@ -69,6 +81,17 @@ export default function MessagesPage() {
 
   const otherMemberCount = Math.max(0, Object.keys(members).length - 1)
 
+  // What is actually on screen. Messages hidden for me — one "Delete for me",
+  // or a Clear Chat — are still in `messages`, so counting that array would
+  // leave an empty room claiming to have history and still offering to clear
+  // it.
+  const visibleMessages = messages.filter(m => !hiddenMsgs.has(m.id))
+
+  // Every name shown on this page goes through here: my nickname for that
+  // person if I set one, otherwise the name they chose for themselves.
+  const memberName = (uid, fallback) =>
+    nameFor(uid, members[uid]?.display_name || fallback)
+
   const loadReads = async () => {
     if (!familyId) return
     const { data } = await supabase.from('message_reads')
@@ -86,7 +109,7 @@ export default function MessagesPage() {
   const reloadMessages = async () => {
     if (!familyId) return
     const [memRes, msgRes] = await Promise.all([
-      supabase.from('family_members').select('user_id, display_name, avatar_color').eq('family_id', familyId),
+      supabase.from('family_members').select('user_id, display_name, avatar_color, avatar_url').eq('family_id', familyId),
       supabase.from('messages').select('*').eq('family_id', familyId).order('created_at', { ascending: true }),
     ])
     if (memRes.data) {
@@ -100,7 +123,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!familyId) return
-    supabase.from('family_members').select('user_id, display_name, avatar_color')
+    supabase.from('family_members').select('user_id, display_name, avatar_color, avatar_url')
       .eq('family_id', familyId)
       .then(({ data }) => {
         if (data) { const map = {}; data.forEach(m => { map[m.user_id] = m }); setMembers(map) }
@@ -108,7 +131,11 @@ export default function MessagesPage() {
   }, [familyId])
 
   useEffect(() => {
-    if (!familyId) return
+    // No family to read from. The fetch below is what flips msgsLoaded, so
+    // returning early left the skeleton bubbles shimmering forever — the page
+    // looked like it was still loading a room that does not exist. Marking it
+    // loaded hands over to the empty state below.
+    if (!familyId) { setMsgsLoaded(true); return }
     supabase.from('messages').select('*').eq('family_id', familyId)
       .order('created_at', { ascending: true })
       .then(({ data }) => { if (data) setMessages(data); setMsgsLoaded(true) })
@@ -193,20 +220,73 @@ export default function MessagesPage() {
     didInitialScroll.current = true
   }, [messages])
 
+  // An attachment is a message on its own, so either a caption or a file is
+  // enough to send.
+  const canSend = !!text.trim() || !!pendingMedia
+
+  // Revoking the object URL matters here: an image preview holds the whole
+  // file in memory until it is released, and people browse several before
+  // settling on one.
+  const clearPendingMedia = () => {
+    setPendingMedia(prev => {
+      if (prev?.previewUrl) { try { URL.revokeObjectURL(prev.previewUrl) } catch (e) {} }
+      return null
+    })
+  }
+
   // ── Send ────────────────────────────────────────────────────────────────────
   const sendMessage = async () => {
-    if (!text.trim() || sending) return
+    if (!canSend || sending) return
     setSending(true)
-    const { error } = await supabase.rpc('send_message', {
-      p_family_id:   familyId,
-      p_content:     text.trim(),
-      p_reply_to_id: replyTo?.id || null,
+
+    // Uploaded as part of sending rather than at pick time: a message that is
+    // never sent then leaves nothing behind in storage.
+    let media = null
+    if (pendingMedia) {
+      try {
+        media = await uploadChatMedia(familyMediaFolder(familyId, user.id), pendingMedia.file)
+      } catch (err) {
+        setSending(false)
+        setDialog({
+          type: 'error',
+          message: err?.message === 'too-big' ? t('messages.mediaTooBig')
+            : err?.message === 'unsupported' ? t('messages.mediaUnsupported')
+            : t('messages.mediaUploadFailed'),
+        })
+        return
+      }
+    }
+
+    let { error } = await supabase.rpc('send_message', {
+      p_family_id:        familyId,
+      p_content:          text.trim(),
+      p_reply_to_id:      replyTo?.id || null,
+      p_media_path:       media?.path || null,
+      p_media_type:       media?.type || null,
+      p_media_mime:       media?.mime || null,
+      p_media_size:       media?.size || null,
+      p_media_name:       media?.name || null,
+      p_media_duration_ms: pendingMedia?.durationMs ? Math.round(pendingMedia.durationMs) : null,
     })
+
+    // PGRST202 is "no function with these arguments". It means this build is
+    // running against a database where the attachment migration has not been
+    // applied yet — during a rollout, or on a phone updated ahead of the
+    // server. A plain text message still works there, and silently failing to
+    // send one would be a far worse bug than not being able to attach a photo.
+    if (error?.code === 'PGRST202' && !media) {
+      ;({ error } = await supabase.rpc('send_message', {
+        p_family_id:   familyId,
+        p_content:     text.trim(),
+        p_reply_to_id: replyTo?.id || null,
+      }))
+    }
     if (error) {
       setDialog({ type: 'error', message: t('messages.sendFailed') })
     } else {
       setText('')
       setReplyTo(null)
+      clearPendingMedia()
     }
     setSending(false)
   }
@@ -236,6 +316,10 @@ export default function MessagesPage() {
   }
 
   // ── Clear chat ──────────────────────────────────────────────────────────────
+  // Clears the room for ME. It used to delete every row in the family, so one
+  // person tidying their screen wiped the history off everyone's phone — in a
+  // shared room that is destroying other people's messages, not housekeeping.
+  // The private threads keep the old meaning: see PersonalChatPanel.
   const handleClearMessages = () => {
     setDialog({
       type: 'confirm',
@@ -244,11 +328,36 @@ export default function MessagesPage() {
       confirmLabel: t('messages.clearChat'),
       onConfirm: async () => {
         setClearing(true)
-        await supabase.from('messages').delete().eq('family_id', familyId)
-        setMessages([])
+        const { data, error } = await supabase.rpc('clear_family_chat_for_me', {
+          p_family_id: familyId,
+        })
         setClearing(false)
+        if (error) { setDialog({ type: 'error', message: t('messages.clearFailed') }); return }
+        // The RPC returns the ids it hid, so nothing has to be re-read; the
+        // messages stay in state and are filtered out by the hidden set.
+        hideMany((data || []).map(row => (typeof row === 'string' ? row : row.id)))
       },
     })
+  }
+
+  // Pull-to-refresh only arms once the list is scrolled to its very top, and
+  // these lists are anchored at the BOTTOM: refreshing meant dragging the whole
+  // history up first. The header offers it directly instead, for whichever tab
+  // is open. The Map screen already has the same control.
+  const handleRefresh = async () => {
+    if (refreshing) return
+    setRefreshing(true)
+    try {
+      if (activeTab === 'personal') await personalControls?.reload?.()
+      else if (activeTab === 'calls') await callControls?.reload?.()
+      else await reloadMessages()
+    } catch (e) {
+      // A failed refresh leaves what is already on screen; the realtime
+      // channels keep it current anyway, so this is a convenience, not a
+      // dependency.
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   const handleTextChange = (e) => {
@@ -369,7 +478,7 @@ export default function MessagesPage() {
               {callControls.busy ? t('messages.clearing') : t('messages.clearCount', { n: callControls.clearableCount })}
             </button>
           )}
-          {activeTab === 'chat' && messages.length > 0 && (
+          {activeTab === 'chat' && visibleMessages.length > 0 && (
             <button onClick={handleClearMessages} disabled={clearing} style={{
               background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
               color: '#951345', borderRadius: 10, padding: '7px 12px',
@@ -399,6 +508,24 @@ export default function MessagesPage() {
               {personalControls.clearing ? t('messages.clearing') : t('messages.clearChat')}
             </button>
           )}
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            title={t('common.retry')}
+            aria-label={t('messages.refresh')}
+            style={{
+              background: 'rgba(255,255,255,0.15)',
+              border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10,
+              padding: '7px 10px', cursor: refreshing ? 'default' : 'pointer',
+              flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+            <style>{'@keyframes msgspin{to{transform:rotate(360deg)}}'}</style>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              style={refreshing ? { animation: 'msgspin 0.8s linear infinite' } : undefined}>
+              <path d="M21 12a9 9 0 1 1-2.64-6.36" /><polyline points="21 3 21 9 15 9" />
+            </svg>
+          </button>
           {activeTab === 'chat' && (
           <button onClick={() => setShowSearch(s => !s)} style={{
             background: showSearch ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)',
@@ -474,7 +601,7 @@ export default function MessagesPage() {
           <style>{`@keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}`}</style>
           <span style={{ fontSize: 12, color: '#7C3AED', fontWeight: 600 }}>
             {Object.keys(typingUsers).length === 1
-              ? t('messages.isTyping', { name: members[Object.keys(typingUsers)[0]]?.display_name || t('messages.someone') })
+              ? t('messages.isTyping', { name: memberName(Object.keys(typingUsers)[0], t('messages.someone')) })
               : t('messages.severalTyping')}
           </span>
         </div>
@@ -502,7 +629,7 @@ export default function MessagesPage() {
           </>
         )}
 
-        {msgsLoaded && messages.length === 0 && (
+        {msgsLoaded && visibleMessages.length === 0 && (
           <div className="empty-state">
             <div className="empty-emoji">💬</div>
             <div className="empty-text">{t('messages.noMessages')}</div>
@@ -510,7 +637,7 @@ export default function MessagesPage() {
           </div>
         )}
 
-        {msgsLoaded && searchQuery && messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+        {msgsLoaded && searchQuery && visibleMessages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
           <div className="empty-state">
             <div className="empty-emoji">🔍</div>
             <div className="empty-text">{t('messages.noResults')}</div>
@@ -522,7 +649,7 @@ export default function MessagesPage() {
           let lastDateLabel = null
           // Hidden-for-me messages drop out before search, so a hidden message
           // cannot resurface by matching a query.
-          const visible = messages.filter(m => !hiddenMsgs.has(m.id))
+          const visible = visibleMessages
           const filtered = searchQuery
             ? visible.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
             : visible
@@ -583,14 +710,23 @@ export default function MessagesPage() {
               {/* Avatar — shown only on first bubble of a run; placeholder keeps alignment */}
               {!isOwn && (
                 showSenderInfo ? (
-                  <div style={{
-                    width: 32, height: 32, borderRadius: '50%',
-                    background: member?.avatar_color || '#951345',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontWeight: 800, fontSize: 13, flexShrink: 0,
-                  }}>
-                    {member?.display_name?.[0]?.toUpperCase() || '?'}
-                  </div>
+                  // The photo, not just the initial: this list only ever drew a
+                  // coloured letter, even for members who had set one.
+                  member?.avatar_url ? (
+                    <img src={member.avatar_url} alt="" style={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      objectFit: 'cover', flexShrink: 0,
+                    }} />
+                  ) : (
+                    <div style={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: member?.avatar_color || '#951345',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#fff', fontWeight: 800, fontSize: 13, flexShrink: 0,
+                    }}>
+                      {memberName(msg.user_id)?.[0]?.toUpperCase() || '?'}
+                    </div>
+                  )
                 ) : (
                   <div style={{ width: 32, flexShrink: 0 }} />
                 )
@@ -600,7 +736,7 @@ export default function MessagesPage() {
                 {/* Sender name — only on first bubble of a run */}
                 {!isOwn && showSenderInfo && (
                   <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 3, paddingLeft: 4 }}>
-                    {member?.display_name || t('messages.family')}
+                    {memberName(msg.user_id, t('messages.family'))}
                   </div>
                 )}
 
@@ -627,11 +763,26 @@ export default function MessagesPage() {
                   {msg.reply_to_id && (
                     <ReplyQuote
                       original={messages.find(x => x.id === msg.reply_to_id)}
-                      senderName={members[messages.find(x => x.id === msg.reply_to_id)?.user_id]?.display_name}
+                      senderName={memberName(messages.find(x => x.id === msg.reply_to_id)?.user_id)}
                     />
+                  )}
+                  {/* Attachment above the caption, which is how every chat
+                      lays this out — and an attachment with no caption then
+                      needs no empty text node under it. */}
+                  {msg.media_path && (
+                    <div style={{ marginBottom: msg.content ? 6 : 0 }}>
+                      <MediaBubble msg={msg} isOwn={isOwn} />
+                    </div>
                   )}
                   {msg.content}
                 </div>
+
+                <ReactionChips
+                  reactions={reactions[msg.id]}
+                  myUserId={user?.id}
+                  onReact={(emoji) => react(msg.id, emoji)}
+                  align={isOwn ? 'right' : 'left'}
+                />
 
                 {/* Timestamp + edited + ticks */}
                 <div style={{
@@ -660,7 +811,14 @@ export default function MessagesPage() {
       </PullToRefresh>
 
       {/* Reply bar above input */}
-      <ReplyBar replyTo={replyTo} senderName={members[replyTo?.user_id]?.display_name} onCancel={() => setReplyTo(null)} />
+      <ReplyBar replyTo={replyTo} senderName={memberName(replyTo?.user_id)} onCancel={() => setReplyTo(null)} />
+
+      {/* The picked photo/clip, waiting for its caption and the send button */}
+      <PendingMediaBar
+        pending={pendingMedia}
+        uploading={sending && !!pendingMedia}
+        onCancel={clearPendingMedia}
+      />
 
       {/* Input */}
       <div style={{
@@ -668,10 +826,15 @@ export default function MessagesPage() {
         borderTop: '1px solid var(--border)',
         display: 'flex', gap: 10, alignItems: 'flex-end',
       }}>
+        <AttachButton
+          onPick={setPendingMedia}
+          onError={(message) => setDialog({ type: 'error', message })}
+          disabled={sending}
+        />
         <textarea
           value={text}
           onChange={handleTextChange}
-          placeholder={replyTo ? t('messages.writeReply') : t('messages.typeMessage')}
+          placeholder={pendingMedia ? t('messages.addCaption') : replyTo ? t('messages.writeReply') : t('messages.typeMessage')}
           rows={1}
           style={{
             flex: 1, padding: '12px 14px', borderRadius: 24,
@@ -680,14 +843,23 @@ export default function MessagesPage() {
             background: 'var(--bg)', maxHeight: 100,
           }}
         />
+        {/* The microphone stands down while there is something to send, so
+            the row never offers two ways to act on the same draft. */}
+        {!canSend && !pendingMedia && (
+          <VoiceRecorder
+            onRecorded={setPendingMedia}
+            onError={(message) => setDialog({ type: 'error', message })}
+            disabled={sending}
+          />
+        )}
         <button
           onClick={sendMessage}
-          disabled={!text.trim() || sending}
+          disabled={!canSend || sending}
           style={{
             width: 44, height: 44, borderRadius: '50%',
-            background: text.trim() ? 'linear-gradient(135deg, #951345 0%, #B01650 100%)' : '#DDB8C4',
-            border: 'none', color: text.trim() ? '#fff' : '#951345',
-            fontSize: 18, cursor: text.trim() ? 'pointer' : 'default',
+            background: canSend ? 'linear-gradient(135deg, #951345 0%, #B01650 100%)' : '#DDB8C4',
+            border: 'none', color: canSend ? '#fff' : '#951345',
+            fontSize: 18, cursor: canSend ? 'pointer' : 'default',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'background 0.2s', flexShrink: 0,
           }}
@@ -702,6 +874,8 @@ export default function MessagesPage() {
           anchor={actionAnchor}
           msg={actionMsg}
           isOwn={actionMsg.user_id === user?.id}
+          myReaction={(reactions[actionMsg.id] || []).find(r => r.user_id === user?.id)?.emoji}
+          onReact={(emoji) => react(actionMsg.id, emoji)}
           onReply={() => { setReplyTo(actionMsg); setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100) }}
           onEdit={() => { setEditMsg(actionMsg); setActionMsg(null) }}
           onDelete={() => handleDelete(actionMsg)}
@@ -752,10 +926,10 @@ export default function MessagesPage() {
                   return (
                     <div key={r.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0' }}>
                       <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: m?.avatar_color || '#4F8EF7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
-                        {m?.display_name?.[0]?.toUpperCase() || '?'}
+                        {memberName(r.user_id, t('messages.member'))?.[0]?.toUpperCase() || '?'}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{m?.display_name || t('messages.member')}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{memberName(r.user_id, t('messages.member'))}</div>
                         <div style={{ fontSize: 11, color: '#8480B0' }}>{new Date(r.read_at).toLocaleString()}</div>
                       </div>
                     </div>
@@ -777,9 +951,9 @@ export default function MessagesPage() {
                     {pending.map(m => (
                       <div key={m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', opacity: 0.7 }}>
                         <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: m.avatar_color || '#951345', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
-                          {m.display_name?.[0]?.toUpperCase() || '?'}
+                          {memberName(m.user_id, t('messages.member'))?.[0]?.toUpperCase() || '?'}
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{m.display_name || t('messages.member')}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{memberName(m.user_id, t('messages.member'))}</div>
                       </div>
                     ))}
                   </div>

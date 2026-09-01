@@ -125,11 +125,18 @@ export default function App() {
         alert={Capacitor.isNativePlatform() ? null : sosAlert}
         onDismiss={stopAllAlarms}
       />
-      {/* CallPage renders its own ringing/accept UI once you're on it — showing
+      {/* Web only, for the same reason as GlobalSOSAlert above: on Android
+          CallRingingActivity is the incoming-call screen in all three states —
+          app open, app closed, screen locked — because it is the only one that
+          can appear over a lock screen. Rendering this as well put a banner and
+          a card on screen for one call, each with its own Accept.
+
+          CallPage renders its own ringing/accept UI once you're on it — showing
           this overlay too meant answering a call needed two taps on two
           stacked screens. */}
       <GlobalIncomingCall
-        call={!location.pathname.startsWith('/call/') ? incomingCall : null}
+        call={(!Capacitor.isNativePlatform() && !location.pathname.startsWith('/call/'))
+          ? incomingCall : null}
         onAccept={handleAcceptCall}
         onDecline={declineIncoming}
       />

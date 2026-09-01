@@ -41,15 +41,19 @@ function ForgotPasswordModal({ onClose }) {
     const digits = mobile.replace(/[^0-9]/g, '')
     if (!digits || digits.length !== 10) { setError(t('auth.enterValidMobile')); return }
     setLoading(true)
-    // Check if user exists by attempting sign-in with wrong password
-    const { error: e } = await supabase.auth.signInWithPassword({
-      email: `91${digits}@familyguard.app`, password: '___x___',
-    })
-    if (!e?.message?.includes('Invalid login credentials')) {
-      setLoading(false)
-      setError(t('reset.noAccountForMobile'))
-      return
-    }
+    // No existence probe before sending the OTP.
+    //
+    // This used to sign in with a deliberately wrong password and read
+    // "Invalid login credentials" as proof the account existed. Supabase
+    // returns that message whether or not it does — anti-enumeration, by
+    // design — so the check passed for every number and told us nothing. Worse
+    // for the email variant, which reported "no account for this mobile" at
+    // accounts that plainly had one, because an OTP-era account has no email.
+    //
+    // Sending the OTP unconditionally is what the reset flow needs anyway: the
+    // account is resolved by reset_password_verified once ownership is proven,
+    // and it raises 'No account found for this verified phone number' there if
+    // there really is none.
     const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: `+91${digits}` })
     setLoading(false)
     if (otpErr) { setError(otpErr.message || t('reset.couldNotSend')); return }
@@ -224,6 +228,24 @@ export default function LoginPage() {
     const digits = mobile.replace(/[^0-9]/g, '')
     if (!digits || digits.length !== 10) { setError(t('auth.enterValidMobile')); return }
     if (!password) { setError(t('auth.enterPassword')); return }
+    // Two eras of account, and they are identified differently.
+    //
+    //   Registered before the OTP flow: auth.users.email holds the synthetic
+    //     91XXXXXXXXXX@familyguard.app address, and phone is null.
+    //   Registered through the OTP flow: the account is created by verifyOtp,
+    //     so auth.users.phone holds the number and EMAIL IS NULL — RegisterPage
+    //     asks updateUser() to attach the address afterwards, but an email
+    //     change needs confirming and @familyguard.app has no inbox, so it
+    //     never lands.
+    //
+    // Signing in by email only, this second group could not log in at all: the
+    // password is set and correct, but nothing matches the address being looked
+    // up. It went unnoticed because a session that never expires never asks.
+    const { error: phoneErr } = await supabase.auth.signInWithPassword({
+      phone: `91${digits}`, password,
+    })
+    if (!phoneErr) { navigate('/'); return }
+
     const email = `91${digits}@familyguard.app`
     const { error: authErr } = await supabase.auth.signInWithPassword({ email, password })
     if (authErr) { setError(t('auth.invalidCreds')); return }

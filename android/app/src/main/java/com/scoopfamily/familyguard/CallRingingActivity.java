@@ -1,5 +1,6 @@
 package com.scoopfamily.familyguard;
 
+import android.content.pm.ActivityInfo;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.Context;
@@ -37,6 +38,17 @@ public class CallRingingActivity extends Activity {
     // full-screen alert stayed on top after the call was already over.
     private static volatile CallRingingActivity visibleInstance = null;
 
+    /**
+     * Whether the full-screen alert is actually on screen. The service starts
+     * this Activity directly and then checks: if the launch was refused — an
+     * OEM blocking background starts, "Display over other apps" turned off —
+     * nothing at all would otherwise be visible, and it posts the heads-up
+     * banner as a fallback instead.
+     */
+    public static boolean isShowing() {
+        return visibleInstance != null;
+    }
+
     public static void finishIfShowing() {
         CallRingingActivity a = visibleInstance;
         if (a != null) {
@@ -47,14 +59,37 @@ public class CallRingingActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Portrait is already declared in the manifest for all three activities,
+        // but a manifest value is a request the platform may override: OEM skins
+        // and, from targetSdk 36, Android itself ignore it in a growing number of
+        // situations. Asking again at runtime is the form that survives that, and
+        // it costs nothing when the manifest was being honoured anyway.
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         Log.d("FamoraCall", "CallRingingActivity.onCreate");
         visibleInstance = this;
+        // The alert exists, so the loud notification that bought it the
+        // keyguard can stop being loud before its banner ever lands.
+        CallRingingService.alertShown();
 
+        // setShowWhenLocked is the whole mechanism: it makes this window
+        // OCCLUDE the keyguard, which is how a dialler puts an incoming call in
+        // front of a locked phone.
+        //
+        // Deliberately NOT requestDismissKeyguard() here. On a secure lock
+        // screen that call does not quietly unlock anything — it asks the user
+        // to, and the unlock prompt is drawn on top of this Activity. The call
+        // screen was being created and resumed correctly every time (it is the
+        // mFocusedApp in a dump) and then covered by the bouncer, which is why
+        // the phone had to be unlocked before the call could be answered:
+        //
+        //     KeyguardUpdateMonitor: sendKeyguardBouncerChanged(true)
+        //     KeyguardIndication:    handleShowBouncerMessage
+        //
+        // The keyguard is dismissed in openApp() instead, when the user has
+        // actually chosen to answer and the app proper has to come forward.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
-            KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-            if (km != null) km.requestDismissKeyguard(this, null);
         } else {
             getWindow().addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
@@ -64,6 +99,21 @@ public class CallRingingActivity extends Activity {
             );
         }
 
+        // Keep the screen lit for as long as the call is ringing.
+        //
+        // CallRingingService's screen wake lock runs out after 10 seconds — it
+        // exists to WAKE the phone, not to hold it awake — and on API 27+ the
+        // branch above sets no window flag of its own, so the display simply
+        // went back to sleep about ten seconds in and the call screen vanished
+        // with it while the call was still ringing. (The pre-27 branch below
+        // has always set this; only the modern path was missing it.)
+        //
+        // A window flag rather than another wake lock: it lasts exactly as long
+        // as this Activity is in front, so the screen stops being held the
+        // moment the call is answered, declined or gives up, with nothing to
+        // release by hand.
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         final String callId = getIntent().getStringExtra(EXTRA_CALL_ID);
         String callerName   = getIntent().getStringExtra(EXTRA_CALLER_NAME);
         String callType     = getIntent().getStringExtra(EXTRA_CALL_TYPE);
@@ -72,6 +122,33 @@ public class CallRingingActivity extends Activity {
         if (callType == null || callType.isEmpty()) callType = "voice";
 
         setContentView(buildLayout(callId, callerName, callType, avatarUrl));
+    }
+
+    /**
+     * singleTask means a second launch for the same call arrives here rather
+     * than in onCreate — the fallback full-screen intent firing just as the
+     * direct start lands, say. Without this the new intent was swallowed: the
+     * screen kept the first call's details and the service was never told the
+     * alert was up, so its notification stayed loud and drew a banner beside
+     * the very screen it had opened.
+     */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent == null) return;
+        setIntent(intent);
+        Log.d("FamoraCall", "CallRingingActivity.onNewIntent");
+
+        String callId     = intent.getStringExtra(EXTRA_CALL_ID);
+        String callerName = intent.getStringExtra(EXTRA_CALLER_NAME);
+        String callType   = intent.getStringExtra(EXTRA_CALL_TYPE);
+        String avatarUrl  = intent.getStringExtra(EXTRA_CALLER_AVATAR);
+        if (callerName == null || callerName.isEmpty()) callerName = getString(R.string.a_family_member);
+        if (callType == null || callType.isEmpty()) callType = "voice";
+
+        visibleInstance = this;
+        setContentView(buildLayout(callId, callerName, callType, avatarUrl));
+        CallRingingService.alertShown();
     }
 
     @Override
@@ -196,6 +273,19 @@ public class CallRingingActivity extends Activity {
     }
 
     private void openApp(String callId, String action) {
+        // Answering is the moment the keyguard genuinely has to go: the call
+        // continues in MainActivity, and the user has just shown they want it.
+        // Declining does not — the RPC needs no screen, so a locked phone stays
+        // locked.
+        if ("accept".equals(action) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            try {
+                KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+                if (km != null) km.requestDismissKeyguard(this, null);
+            } catch (Exception e) {
+                Log.d("FamoraCall", "requestDismissKeyguard failed: " + e.getMessage());
+            }
+        }
+
         Intent open = new Intent(this, MainActivity.class);
         open.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         open.putExtra("call_id", callId);

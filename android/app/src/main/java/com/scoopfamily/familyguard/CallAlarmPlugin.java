@@ -21,15 +21,11 @@ public class CallAlarmPlugin extends Plugin {
 
     /**
      * Ring + wake the screen for an incoming call arriving over the websocket.
-     * launch_activity is computed from MainActivity.isAppInForeground — same
-     * authoritative flag the FCM path uses — rather than hardcoded false, so
-     * the two independent delivery paths (this one fires whenever the JS is
-     * alive enough to make a plugin call; FCM's onMessageReceived fires
-     * whenever the app process is alive at all, foreground included) agree on
-     * whether to show the native ringing Activity regardless of which one
-     * wins the race. Only skip it when the app is genuinely foreground —
-     * GlobalIncomingCall (the JS overlay) covers that case and launching both
-     * produced two independent accept/decline surfaces stacked on screen.
+     *
+     * Says nothing about where the alert should appear: CallRingingActivity is
+     * the incoming-call screen in every state, and the service works out how to
+     * reach it. This path and FCM's onMessageReceived can both fire for the
+     * same call, in either order; the service treats the second as a no-op.
      */
     @PluginMethod
     public void trigger(PluginCall call) {
@@ -40,7 +36,6 @@ public class CallAlarmPlugin extends Plugin {
             i.putExtra("caller_name", call.getString("callerName", getContext().getString(R.string.a_family_member)));
             i.putExtra("call_type",   call.getString("callType", "voice"));
             i.putExtra("caller_avatar", call.getString("callerAvatar", ""));
-            i.putExtra("launch_activity", !MainActivity.isAppInForeground);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 ctx.startForegroundService(i);
@@ -89,6 +84,19 @@ public class CallAlarmPlugin extends Plugin {
         } catch (Exception e) {
             call.reject("Could not open settings: " + e.getMessage());
         }
+    }
+
+    /**
+     * Whether the last full-screen alert failed to reach the screen — i.e.
+     * whether this phone is refusing background activity starts. The setup
+     * sheet uses it to ask for the OEM permission that causes that, which no
+     * API can report directly.
+     */
+    @PluginMethod
+    public void getAlertBlocked(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("blocked", MyFirebaseMessagingService.isAlertBlocked(getContext()));
+        call.resolve(ret);
     }
 
     @PluginMethod

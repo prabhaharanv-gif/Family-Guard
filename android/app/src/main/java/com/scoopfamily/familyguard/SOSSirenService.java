@@ -177,7 +177,14 @@ public class SOSSirenService extends Service {
         final String fbSender  = senderName;
         final String fbMessage = message;
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            if (SOSAlertActivity.isShowing) return;
+            // Either outcome is evidence about whether this phone lets the app
+            // take over the screen from the background — the one permission the
+            // setup sheet cannot read. See KEY_ALERT_BLOCKED.
+            if (SOSAlertActivity.isShowing) {
+                MyFirebaseMessagingService.setAlertBlocked(getApplicationContext(), false);
+                return;
+            }
+            MyFirebaseMessagingService.setAlertBlocked(getApplicationContext(), true);
             android.util.Log.w("FamoraSOS", "Alert activity did not appear — posting fallback notification");
             MyFirebaseMessagingService.showSosNotification(
                 getApplicationContext(), fbSender, fbMessage, sosLat, sosLng);

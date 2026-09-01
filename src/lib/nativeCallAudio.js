@@ -31,3 +31,24 @@ export async function stopNativeCallAudio() {
     console.warn('[nativeCallAudio] stop failed:', e)
   }
 }
+
+/**
+ * The tone the caller hears while the callee's phone is ringing.
+ *
+ * Separate from the routing calls above: this plays before a call is answered
+ * and touches no audio mode or speaker state. `speaker` sends it out of the
+ * loudspeaker for a video call, where the phone is not at the caller's ear.
+ */
+export async function startCallRingback(speaker) {
+  if (!Capacitor.isNativePlatform()) return
+  try { await CallAudio.startRingback({ speaker: !!speaker }) } catch (e) {
+    console.warn('[nativeCallAudio] startRingback failed:', e)
+  }
+}
+
+export async function stopCallRingback() {
+  if (!Capacitor.isNativePlatform()) return
+  try { await CallAudio.stopRingback() } catch (e) {
+    console.warn('[nativeCallAudio] stopRingback failed:', e)
+  }
+}

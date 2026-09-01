@@ -160,10 +160,18 @@ serve(async (req) => {
       .maybeSingle()
 
     const senderName = sender?.display_name || 'Family'
-    // Truncate preview to 100 chars — never log full content
-    const preview = typeof record.content === 'string'
-      ? record.content.substring(0, 100)
-      : 'New message'
+    // Truncate preview to 100 chars — never log full content.
+    // An attachment sent without a caption has content '', which would show as
+    // an empty notification, so it is named by what it is instead.
+    const mediaLabel = record.media_type === 'image' ? '📷 Photo'
+      : record.media_type === 'video' ? '🎬 Video'
+      : record.media_type === 'audio' ? '🎵 Audio'
+      : record.media_type === 'document' ? '📄 ' + (typeof record.media_name === 'string' && record.media_name ? record.media_name.substring(0, 60) : 'Document')
+      : ''
+    const text = typeof record.content === 'string' ? record.content.trim() : ''
+    const preview = text
+      ? text.substring(0, 100)
+      : (mediaLabel || 'New message')
 
     console.log(`[MSG-FN] New message in family ${record.family_id}`)
 

@@ -40,7 +40,61 @@ export async function getRingtones() {
  */
 export async function pickRingtone(type) {
   if (!Capacitor.isNativePlatform()) return { changed: false }
-  try { return await Ringtone.pick({ type }) } catch { return { changed: false } }
+  try {
+    return await Ringtone.pick({ type })
+  } catch (e) {
+    // Reported rather than swallowed. A silent catch here is exactly why the
+    // four buttons could sit dead for a whole release: the plugin was rejecting
+    // every call ("Unknown alert type: null", because the caller passed
+    // undefined) and nothing on screen or in the log ever said so.
+    console.warn('[ringtones] pick failed:', e?.message || e)
+    return { changed: false, error: e?.message || 'pick failed' }
+  }
+}
+
+/**
+ * Every sound of the right kind for one alert, for the app's own picker.
+ * Resolves { items: [{ title, uri }], current } — current is the stored uri, or
+ * null when the alert is on its default.
+ *
+ * The app draws this list itself because the system picker belongs to another
+ * package and cannot be themed. pickRingtone() above stays available as the
+ * "More sounds" escape for anything not enumerated here.
+ */
+export async function listRingtones(type) {
+  if (!Capacitor.isNativePlatform()) return { items: [], current: null }
+  try { return await Ringtone.list({ type }) } catch { return { items: [], current: null } }
+}
+
+/** Play one sound. Passing nothing stops whatever is playing. */
+export async function previewRingtone(uri) {
+  if (!Capacitor.isNativePlatform()) return
+  try { await Ringtone.preview({ uri: uri || '' }) } catch { /* silence is fine */ }
+}
+
+export async function stopPreview() {
+  if (!Capacitor.isNativePlatform()) return
+  try { await Ringtone.stopPreview() } catch { /* nothing playing */ }
+}
+
+/** Save a choice from the app's own list. An empty uri means "default". */
+export async function setRingtone(type, uri) {
+  if (!Capacitor.isNativePlatform()) return { title: null }
+  try { return await Ringtone.set({ type, uri: uri || '' }) } catch { return { title: null } }
+}
+
+/**
+ * Pick any audio file — a song, a download, a recording — from outside the
+ * ringtone list, which holds registered ringtones only.
+ *
+ * `source` picks which app opens: 'music' goes to the phone's music app and its
+ * song list, 'files' to the file manager. They are separate buttons on the
+ * sheet because they answer different questions — "which song?" and "which
+ * file?" — and one combined button could only ever open one of them.
+ */
+export async function pickAudioFile(type, source = 'files') {
+  if (!Capacitor.isNativePlatform()) return { changed: false }
+  try { return await Ringtone.pickFile({ type, source }) } catch { return { changed: false } }
 }
 
 /** Back to the app's built-in sound for one alert. */

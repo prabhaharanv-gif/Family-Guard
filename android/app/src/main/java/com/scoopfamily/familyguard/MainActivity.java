@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -60,6 +61,20 @@ public class MainActivity extends BridgeActivity {
         showWhenLockedAndTurnScreenOn();
 
         super.onCreate(savedInstanceState);
+        // Portrait is already declared in the manifest for all three activities,
+        // but a manifest value is a request the platform may override: OEM skins
+        // and, from targetSdk 36, Android itself ignore it in a growing number of
+        // situations. Asking again at runtime is the form that survives that, and
+        // it costs nothing when the manifest was being honoured anyway.
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        // A fresh process means no screen is open yet, whatever the last run
+        // left behind. onStop() clears this flag normally, but it never runs
+        // when the process is force-stopped, crashed, killed by an OEM battery
+        // manager or replaced by an install — and a flag stuck at true makes
+        // MyFirebaseMessagingService silently drop EVERY message and DM
+        // notification from then on, with nothing on screen to explain it.
+        setMessagesPageOpen(false);
 
         // Ensure all notification channels exist before first FCM message
         MyFirebaseMessagingService.ensureSosChannelStatic(getApplicationContext());

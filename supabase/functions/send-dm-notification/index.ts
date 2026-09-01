@@ -177,9 +177,17 @@ serve(async (req) => {
 
     const nickname = typeof nicknameRow?.nickname === 'string' ? nicknameRow.nickname.trim() : ''
     const senderName = nickname || sender?.display_name || 'Family member'
-    const preview = typeof record.content === 'string'
-      ? record.content.substring(0, 100)
-      : 'New message'
+    // An attachment sent without a caption has content '', which would show as
+    // an empty notification, so it is named by what it is instead.
+    const mediaLabel = record.media_type === 'image' ? '📷 Photo'
+      : record.media_type === 'video' ? '🎬 Video'
+      : record.media_type === 'audio' ? '🎵 Audio'
+      : record.media_type === 'document' ? '📄 ' + (typeof record.media_name === 'string' && record.media_name ? record.media_name.substring(0, 60) : 'Document')
+      : ''
+    const text = typeof record.content === 'string' ? record.content.trim() : ''
+    const preview = text
+      ? text.substring(0, 100)
+      : (mediaLabel || 'New message')
 
     // The RECIPIENT only. Never every family member - see the header note.
     const { data: tokens } = await supabase

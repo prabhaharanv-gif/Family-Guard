@@ -38,7 +38,14 @@ export function useLocations(familyId) {
         const map = {}
         locs.forEach(l => {
           if (!l.lat || !l.lng || (l.lat === 0 && l.lng === 0)) return
-          const m = memberMap[l.user_id] || {}
+          // Only people who are still in this family. A removed member keeps
+          // their row in `locations` — nothing deletes it — and this used to
+          // fall back to `|| {}`, so they carried on as a pin labelled
+          // "Member" long after being taken out of the family. The member list
+          // is the authority on who belongs here; a location with nobody
+          // behind it is not a person to draw.
+          const m = memberMap[l.user_id]
+          if (!m) return
           map[l.user_id] = {
             lat:         l.lat,
             lng:         l.lng,
@@ -116,11 +123,16 @@ export function useLocations(familyId) {
                 .eq('family_id', familyId)
                 .eq('user_id', uid)
                 .single()
-                .then(({ data: m }) => ({
-                  displayName: m?.display_name || 'Member',
-                  avatarColor: m?.avatar_color || '#951345',
-                  avatarUrl:   m?.avatar_url   || null,
-                }))
+                .then(({ data: m }) => (m ? {
+                  displayName: m.display_name || 'Member',
+                  avatarColor: m.avatar_color || '#951345',
+                  avatarUrl:   m.avatar_url   || null,
+                } : null))
+
+          // Same rule as the initial load above: no member record, no pin. A
+          // location update from someone who has been removed from the family
+          // is not a person to put back on the map.
+          if (!memberInfo) return
 
           setLocations(prev => {
             const next = {

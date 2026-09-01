@@ -23,6 +23,13 @@ import { startBatteryReporting } from './useBattery'
 // WiFi/cell fixes are accepted instead of silently rejected — matches the
 // native LocationForegroundService gate.
 const MAX_ACCURACY_M = 100       // metres — discard anything worse than this
+// Until this device has written ANYTHING for this family there is no row in
+// `locations` at all, and the Family list has nothing to draw: the member shows
+// as if they were not sharing. Indoors on WiFi the first fix is routinely worse
+// than 100m, so the strict gate above could keep somebody who had just joined
+// invisible for as long as they stayed inside. A rough first position is far
+// better than none — the normal gate applies from the second write on.
+const FIRST_FIX_ACCURACY_M = 2000
 // Only write if the user has moved more than this from the last written position
 // Eliminates GPS noise making a stationary pin drift around
 const MIN_MOVE_M     = 15        // metres
@@ -92,8 +99,9 @@ export function useLocationBroadcast(userId, familyId) {
       // ── Quality gate ──────────────────────────────────────────────────────
       // Reject fixes with poor accuracy (cell tower / network fallback).
       // These are the main cause of pins jumping while the user is stationary.
-      if (accuracy != null && accuracy > MAX_ACCURACY_M) {
-        console.warn(`[LocationBroadcast] Discarding poor fix — accuracy ${Math.round(accuracy)}m > ${MAX_ACCURACY_M}m`)
+      const accuracyLimit = lastWrittenRef.current ? MAX_ACCURACY_M : FIRST_FIX_ACCURACY_M
+      if (accuracy != null && accuracy > accuracyLimit) {
+        console.warn(`[LocationBroadcast] Discarding poor fix — accuracy ${Math.round(accuracy)}m > ${accuracyLimit}m`)
         return
       }
 
@@ -146,9 +154,15 @@ export function useLocationBroadcast(userId, familyId) {
       }
 
       try {
-        // Preferred: secure RPC (user_id resolved server-side via auth.uid())
-        const { error } = await supabase.rpc('upsert_location_with_battery', {
-          p_family_id:   familyId,
+        // Preferred: secure RPC (user_id resolved server-side via auth.uid()),
+        // writing EVERY family this person belongs to rather than only the one
+        // the app currently has open. Scoped to the active family, the others
+        // froze at the last position from when they were last active, and a
+        // newly joined family never got a row at all — its members saw
+        // "Waiting" forever with the phone's GPS working perfectly. The RPC
+        // skips families the member has hidden their location from. See
+        // 20260901030000_location_all_families.
+        const { error } = await supabase.rpc('upsert_location_all_families', {
           p_lat:         lat,
           p_lng:         lng,
           p_accuracy:    accuracy || 0,
@@ -156,7 +170,21 @@ export function useLocationBroadcast(userId, familyId) {
           p_battery:     batteryRef.current.level,
           p_is_charging: batteryRef.current.charging,
         })
-        if (error) throw error
+        // An older database without the new function still has to report
+        // somewhere, so fall back to the single-family one rather than losing
+        // the fix entirely.
+        if (error) {
+          const { error: oneErr } = await supabase.rpc('upsert_location_with_battery', {
+            p_family_id:   familyId,
+            p_lat:         lat,
+            p_lng:         lng,
+            p_accuracy:    accuracy || 0,
+            p_speed:       toKmh(speed),
+            p_battery:     batteryRef.current.level,
+            p_is_charging: batteryRef.current.charging,
+          })
+          if (oneErr) throw oneErr
+        }
         lastWrittenRef.current = { lat, lng }
         lastWriteTimeRef.current = Date.now()
       } catch (e) {

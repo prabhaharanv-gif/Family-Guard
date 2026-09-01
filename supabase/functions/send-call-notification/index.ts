@@ -186,7 +186,21 @@ serve(async (req) => {
       .eq('family_id', record.family_id)
       .maybeSingle()
 
-    const callerName = caller?.display_name || 'A family member'
+    // A nickname is private to the person who set it, and there is exactly one
+    // recipient here — so look up only what THIS callee calls the caller. The
+    // notification is the first thing they see when the phone rings with the
+    // app closed, and it named the caller by their registered name while every
+    // screen inside the app used the family card name.
+    const { data: nicknameRow } = await supabase
+      .from('member_nicknames')
+      .select('nickname')
+      .eq('family_id',      record.family_id)
+      .eq('owner_user_id',  record.callee_id)
+      .eq('target_user_id', record.caller_id)
+      .maybeSingle()
+
+    const nickname = typeof nicknameRow?.nickname === 'string' ? nicknameRow.nickname.trim() : ''
+    const callerName = nickname || caller?.display_name || 'A family member'
     const callType = record.call_type === 'video' ? 'Video call' : 'Voice call'
     console.log(`[CALL-FN] Sending to ${tokens.length} device(s) for callee ${record.callee_id}`)
 

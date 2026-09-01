@@ -7,7 +7,8 @@ import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import Dialog from '../components/Dialog'
-import { ALERT_TYPES, getRingtones, pickRingtone, resetRingtone } from '../lib/ringtones'
+import { ALERT_TYPES, getRingtones, resetRingtone } from '../lib/ringtones'
+import SoundPickerSheet from '../components/SoundPickerSheet'
 import { useT, useLangStore, UI_LANGUAGES } from '../i18n'
 
 function Toggle({ on, onToggle }) {
@@ -246,6 +247,8 @@ export default function ProfilePage() {
   // hidden in that case rather than offering something that cannot work.
   const [codeCopied, setCodeCopied] = useState(false)
   const [ringtones, setRingtones] = useState(null)
+  // Which alert's sound sheet is open, e.g. 'message'.
+  const [soundSheet, setSoundSheet] = useState(null)
   // Collapsed by default: four rows of sound pickers pushed Privacy and
   // everything below it off the first screen.
   const [soundsOpen, setSoundsOpen] = useState(false)
@@ -286,7 +289,14 @@ export default function ProfilePage() {
   }
 
   const loadProfile = async () => {
-    if (!user || !familyId) return
+    // Deliberately not gated on familyId. Leaving every family deletes every
+    // family_members row, and this used to bail out entirely when that
+    // happened — so Profile came up with no name, no number and no photo, as
+    // if the account itself had gone. It has not: the name is on the auth
+    // account from registration, the number is on the account too, and the
+    // photo has its own home in user_profiles precisely so it can outlive a
+    // membership. See the else branch below.
+    if (!user) return
     setEmail(user.email || '')
 
     // Load all my member records (all families)
@@ -325,6 +335,39 @@ export default function ProfilePage() {
       setShowLastSeen(src.show_last_seen !== false)
       setShowOnline(src.show_online !== false)
       setShowLocation(src.show_location !== false)
+    } else {
+      // No membership row for the active family. Either the person belongs to
+      // no family at all, or they have rows but not for this one; both are
+      // read the same way, from the account rather than from a membership.
+      const other = fallback || allMemberRows?.[0]
+      const { data: prof } = await supabase
+        .from('user_profiles')
+        .select('avatar_url, phone')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      setMember(other || null)
+      setDisplayName(other?.display_name || user?.user_metadata?.display_name || '')
+
+      // Same three places as the branch above, in the same order of trust.
+      const profPhone     = (prof?.phone || '').replace(/^\+?91/, '')
+      const regFromEmail  = (user?.email || '').match(/^91(\d{10})@familyguard\.app$/)
+      const fromAuthPhone = (user?.phone || '').replace(/^\+?91/, '')
+      setPhone(
+        (other?.phone ? other.phone.replace('+91', '') : '')
+        || (/^\d{10}$/.test(profPhone) ? profPhone : '')
+        || (regFromEmail ? regFromEmail[1] : '')
+        || (/^\d{10}$/.test(fromAuthPhone) ? fromAuthPhone : '')
+      )
+
+      const photo = other?.avatar_url || prof?.avatar_url
+      setAvatarUrl(photo ? `${photo}?t=${Date.now()}` : null)
+
+      if (other) {
+        setShowLastSeen(other.show_last_seen !== false)
+        setShowOnline(other.show_online !== false)
+        setShowLocation(other.show_location !== false)
+      }
     }
 
     // Load all families I'm in → find the active family name
@@ -424,6 +467,19 @@ export default function ProfilePage() {
           .update({ display_name: displayName.trim(), phone: cleanPhone })
           .eq('user_id', user.id)
       }
+
+      // The account is the only home these have when the person is in no
+      // family: sync_profile_all_families writes family_members rows, and there
+      // are none to write. Without this, editing your name with no family
+      // appeared to save and reverted on the next load. Both are best-effort —
+      // a failure here must not fail a save that did update real memberships.
+      try {
+        await supabase.auth.updateUser({ data: { display_name: displayName.trim() } })
+      } catch (e) { /* the family rows above are still the primary copy */ }
+      try {
+        await supabase.from('user_profiles')
+          .upsert({ user_id: user.id, phone: cleanPhone }, { onConflict: 'user_id' })
+      } catch (e) { /* same */ }
 
       // Privacy across all families
       const { error: privErr } = await supabase.rpc('sync_privacy_all_families', {
@@ -527,12 +583,11 @@ export default function ProfilePage() {
 
   useEffect(() => { getRingtones().then(setRingtones) }, [])
 
-  const handlePickTone = async (type) => {
-    const res = await pickRingtone(type)
-    // Only re-read when something actually changed — backing out of the picker
-    // should leave the row exactly as it was.
-    if (res?.changed) setRingtones(await getRingtones())
-  }
+  // The app's own sheet, not the system picker: com.android.soundpicker cannot
+  // be themed. It opens instantly — there is no second activity to launch.
+  const handlePickTone = (type) => setSoundSheet(type)
+
+  const handleSoundSaved = async () => setRingtones(await getRingtones())
 
   const handleResetTone = async (type) => {
     await resetRingtone(type)
@@ -877,7 +932,7 @@ export default function ProfilePage() {
                 </div>
                 {ringtones[at.key] && ringtones[at.key] !== t('profile.default') && (
                   <button
-                    onClick={() => handleResetTone(t.key)}
+                    onClick={() => handleResetTone(at.key)}
                     title={`Use the default sound for ${t('profile.sound.' + at.key)}`}
                     style={{
                       background: 'none', border: 'none', cursor: 'pointer',
@@ -889,7 +944,7 @@ export default function ProfilePage() {
                   </button>
                 )}
                 <button
-                  onClick={() => handlePickTone(t.key)}
+                  onClick={() => handlePickTone(at.key)}
                   style={{
                     background: '#FDF0F5', border: '1.5px solid #F0D8E3',
                     color: '#951345', borderRadius: 10, padding: '7px 13px',
@@ -897,11 +952,20 @@ export default function ProfilePage() {
                     cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
                   }}
                 >
-                  Change
+                  {t('profile.change')}
                 </button>
               </div>
             ))}
           </div>
+        )}
+
+        {soundSheet && (
+          <SoundPickerSheet
+            type={soundSheet}
+            title={t('profile.sound.' + soundSheet)}
+            onClose={() => setSoundSheet(null)}
+            onSaved={handleSoundSaved}
+          />
         )}
 
         {/* ── PRIVACY ── */}

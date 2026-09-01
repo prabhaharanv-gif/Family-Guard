@@ -47,7 +47,18 @@ export default function JoinFamilyPage() {
         p_requester_name: displayName.trim(),
       })
 
-      if (re) throw new Error(re.message || t('onboarding.failedJoinRequest'))
+      // "You already have a pending request" is not a failure — it is the state
+      // the user was trying to reach. Reported as an error it reads as though
+      // nothing was sent, while the admin is looking at the request on their
+      // screen, so the natural response is to try again and see the same error.
+      //
+      // It happens whenever a request was sent earlier, and also when the first
+      // call inserted the row but its response never made it back. Treating the
+      // outcome rather than the call as what matters makes submitting twice
+      // harmless.
+      if (re && !/pending request/i.test(re.message || '')) {
+        throw new Error(re.message || t('onboarding.failedJoinRequest'))
+      }
 
       setTargetFamily({ name: t('join.theFamily') })
       setRequested(true)

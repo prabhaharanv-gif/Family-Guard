@@ -8,6 +8,7 @@ import { useT } from '../i18n'
 import FamilyIllustration from '../components/FamilyIllustration'
 import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
+import { setNicknameLocally, useNicknames } from '../hooks/useNicknames'
 
 const AVATAR_COLORS = ['#951345','#720D35','#C0185A','#A01040','#B01650','#8A0F3A','#6B0B2C']
 
@@ -137,9 +138,12 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
 export default function FamilyPage() {
   const t = useT()
   const { user, familyId, familyName, inviteCode, updateFamilyName, allFamilies, switchFamily } = useAuthStore()
+  // Private to me, and now shared with the chat and call screens rather than
+  // being state only this page can see. `true` re-reads on mount: this is where
+  // they are edited, so it is the one screen that must not show a stale map.
+  const { nicknames } = useNicknames(true)
   const [members, setMembers]           = useState([])
   const [membersLoaded, setMembersLoaded] = useState(false)   // false until first fetch returns
-  const [nicknames, setNicknames]       = useState({})        // { [target_user_id]: nickname } — private to me
   const [locations, setLocations]       = useState({})
   const [joinRequests, setJoinRequests] = useState([])
   const [selectedMember, setSelectedMember] = useState(null)   // tap → call menu
@@ -189,13 +193,14 @@ export default function FamilyPage() {
 
   // Reusable data loader — used on mount AND by pull-to-refresh.
   const loadData = async () => {
-    if (!familyId || !user) return
+    // Nothing to load — the person is in no family. membersLoaded is only ever
+    // set at the end of this function, so returning early here left the member
+    // skeletons shimmering indefinitely instead of showing the empty state.
+    if (!familyId || !user) { setMembers([]); setMembersLoaded(true); return }
 
-    const [famRes, memRes, nickRes, locRes, reqRes] = await Promise.all([
+    const [famRes, memRes, locRes, reqRes] = await Promise.all([
       supabase.from('families').select('created_by').eq('id', familyId).single(),
       supabase.from('family_members').select('*').eq('family_id', familyId),
-      supabase.from('member_nicknames').select('target_user_id, nickname')
-        .eq('family_id', familyId).eq('owner_user_id', user.id),
       supabase.from('locations').select('user_id, lat, lng, updated_at, is_sharing, location_enabled, battery_level, is_charging')
         .eq('family_id', familyId),
       supabase.from('join_requests').select('*')
@@ -205,11 +210,6 @@ export default function FamilyPage() {
     if (famRes.data) setIsOwner(famRes.data.created_by === user.id)
     if (memRes.data) setMembers(memRes.data)
     setMembersLoaded(true)
-    if (nickRes.data) {
-      const map = {}
-      nickRes.data.forEach(n => { map[n.target_user_id] = n.nickname })
-      setNicknames(map)
-    }
     if (locRes.data) {
       const map = {}
       locRes.data.forEach(l => { map[l.user_id] = { lat: l.lat, lng: l.lng, updatedAt: l.updated_at, isSharing: l.is_sharing, locEnabled: l.location_enabled !== false, battery: l.battery_level ?? null, isCharging: l.is_charging ?? false } })
@@ -219,7 +219,11 @@ export default function FamilyPage() {
   }
 
   useEffect(() => {
-    if (!familyId || !user) return
+    // The subscriptions below need a family, but the empty state does not:
+    // returning before loadData() left membersLoaded false and the member
+    // skeletons shimmering over a page that had nothing to load. loadData()
+    // handles the no-family case itself and marks the list loaded.
+    if (!familyId || !user) { loadData(); return }
 
     // Single parallel load — replaces the 5 individual queries that ran on mount
     loadData()
@@ -273,16 +277,43 @@ export default function FamilyPage() {
           supabase.from('family_members').select('*').eq('family_id', familyId)
             .then(({ data }) => { if (data) setMembers(data) })
         })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'family_members', filter: `family_id=eq.${familyId}` },
-        () => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sos_alerts', filter: `family_id=eq.${familyId}` },
+        (payload) => { if (payload.new && payload.new.user_id !== user?.id) setSosAlert(payload.new) })
+      .subscribe((status, err) => {
+        // See PersonalChatPanel: one bad binding kills the whole channel, and
+        // this one carries locations, presence and join requests.
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[FamilyPage] realtime subscribe failed:', status, err?.message || '')
+        }
+      })
+
+    // ── The family_members DELETE lives alone, on purpose ──────────────────
+    // Realtime refuses this binding (with or without a filter) and refuses the
+    // ENTIRE channel it sits in when it does. Kept together with the rest, it
+    // silently took down live locations, presence and join requests here, and
+    // live message delivery in the personal threads.
+    //
+    // On its own, the worst it can cost is itself: if the server refuses it,
+    // a member who leaves simply lingers until the next load, and everything
+    // else on this screen still updates live.
+    const leaveChannel = supabase
+      .channel(`family-members-left:${familyId}`)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'family_members' },
+        (payload) => {
+          if (payload.old?.family_id && payload.old.family_id !== familyId) return
           supabase.from('family_members').select('*').eq('family_id', familyId)
             .then(({ data }) => { if (data) setMembers(data) })
         })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sos_alerts', filter: `family_id=eq.${familyId}` },
-        (payload) => { if (payload.new && payload.new.user_id !== user?.id) setSosAlert(payload.new) })
-      .subscribe()
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[FamilyPage] member-left channel refused:', status, err?.message || '')
+        }
+      })
 
-    return () => supabase.removeChannel(channel)
+    return () => {
+      supabase.removeChannel(channel)
+      supabase.removeChannel(leaveChannel)
+    }
   }, [familyId, user])
 
   useEffect(() => {
@@ -376,12 +407,9 @@ export default function FamilyPage() {
     })
     if (error) { setDialog({ type: 'error', message: t('family.saveNameFailed') }); return }
 
-    setNicknames(prev => {
-      const next = { ...prev }
-      if (trimmed) next[member.user_id] = trimmed
-      else delete next[member.user_id]   // blank clears the nickname
-      return next
-    })
+    // Pushed into the shared store, so the chat, the personal threads and the
+    // call screens relabel this person at the same moment as the card does.
+    setNicknameLocally(member.user_id, trimmed)
   }
 
   const handleRemoveMember = (member) => {
@@ -809,6 +837,10 @@ export default function FamilyPage() {
         ) : (
           members.map((m, i) => {
             const loc = locations[m.user_id] || {}
+            // Whether a row exists at all, which `loc` cannot answer once it
+            // has been defaulted to {} for the convenience of every reader
+            // below it.
+            const hasLocationRow = !!locations[m.user_id]
             // No `|| loc.updatedAt` fallback: a location timestamp says the
             // device is still reporting, not that the person has the app open.
             // Using it here is what made a closed app read "Online · Just now".
@@ -818,6 +850,9 @@ export default function FamilyPage() {
             // screen. Mirrors how show_online is handled directly above.
             const sharesLastSeen = m.show_last_seen !== false
             const lastSeen = sharesLastSeen ? formatLastSeen(t, m.last_active) : null
+            // Falls back to when they joined, which is the only thing known
+            // about a member who has never been active — see the status line.
+            const joined   = sharesLastSeen ? formatLastSeen(t, m.joined_at) : null
             return (
               <div
                 key={m.id}
@@ -870,6 +905,15 @@ export default function FamilyPage() {
                       <span>{t('family.lastSeenHidden')}</span>
                     ) : lastSeen ? (
                       <span>{t('family.lastSeen', { when: lastSeen })}</span>
+                    ) : joined ? (
+                      // Somebody who has never been active has exactly one
+                      // fact worth showing: when they joined. "No activity
+                      // yet" was the first thing said about every new member,
+                      // on the card they appear in the moment they join, and
+                      // it reads as something being wrong with them rather
+                      // than as them being new. Kept below as the last resort
+                      // for a row with no joined_at at all.
+                      <span>{t('family.joined', { when: joined })}</span>
                     ) : (
                       <span>{t('family.noActivity')}</span>
                     )}
@@ -949,20 +993,40 @@ export default function FamilyPage() {
                   alignSelf: 'flex-start', paddingTop: 4,
                   minWidth: 64,
                 }}>
-                  {/* Three distinct location states, because "not sharing" and
-                      "phone GPS switched off" are different problems with
-                      different fixes, and previously both looked the same:
-                        sharing + GPS on  → green pin, "Live"
-                        sharing + GPS off → RED pin,   "No GPS"
-                        not sharing       → grey pin + red X, "Off"
-                      gpsOff is only meaningful while sharing is on — with
+                  {/* Four distinct location states, because they are different
+                      problems with different fixes and used to look the same:
+                        sharing + GPS on   → green pin, "Live"
+                        sharing + GPS off  → RED pin,   "No GPS"
+                        sharing turned off → grey pin + red X, "Off"
+                        nothing reported yet → grey pin, "Waiting"
+
+                      That last one is why somebody who had only just joined
+                      showed a red X and "Off" while their location was on: a
+                      member has no locations row until their phone lands its
+                      first fix, and an absent row was read as "switched off".
+                      RLS hides a non-sharing member's row from everyone else,
+                      so the row cannot tell the two apart — show_location can,
+                      and it travels on the member record itself.
+
+                      gpsOff is only meaningful while sharing is on: with
                       sharing off the device stops reporting the flag at all. */}
                   {(() => {
-                    const sharing = !!loc?.isSharing
-                    const gpsOff  = sharing && loc?.locEnabled === false
-                    const pinFill = !sharing ? '#D1D5DB' : (gpsOff ? '#E11D48' : '#10B981')
-                    const label   = !sharing ? t('family.gpsOff') : (gpsOff ? t('family.gpsNoFix') : t('family.gpsLive'))
-                    const labelColor = sharing && !gpsOff ? '#10B981' : '#E11D48'
+                    const sharingOff = m.show_location === false
+                    const sharing    = !sharingOff && !!loc?.isSharing
+                    const gpsOff     = sharing && loc?.locEnabled === false
+                    // A row on its own is not a position: the privacy toggle
+                    // seeds one at 0,0 (sync_location_sharing_all_families) as
+                    // a placeholder, and calling that "Live" would be worse
+                    // than saying nothing.
+                    const hasFix = hasLocationRow && !!loc.lat && !!loc.lng
+                      && !(loc.lat === 0 && loc.lng === 0)
+                    const waiting = !sharingOff && !gpsOff && !hasFix
+                    const pinFill = sharingOff || waiting ? '#D1D5DB' : (gpsOff ? '#E11D48' : '#10B981')
+                    const label   = sharingOff ? t('family.gpsOff')
+                      : gpsOff ? t('family.gpsNoFix')
+                      : waiting ? t('family.gpsWaiting')
+                      : t('family.gpsLive')
+                    const labelColor = waiting ? '#9C6B7A' : (gpsOff || sharingOff ? '#E11D48' : '#10B981')
                     return (
                       <>
                         <div style={{ position: 'relative', width: 28, height: 28 }}>
@@ -972,8 +1036,10 @@ export default function FamilyPage() {
                               fill={pinFill} />
                             <circle cx="12" cy="9" r="2.5" fill="#fff" />
                           </svg>
-                          {/* Strike-through X overlay when not sharing */}
-                          {!sharing && (
+                          {/* Strike-through X overlay only when sharing was
+                              deliberately switched off. A member who simply
+                              has not reported yet gets a plain grey pin. */}
+                          {sharingOff && (
                             <svg width="28" height="28" viewBox="0 0 24 24"
                               style={{ position: 'absolute', top: 0, left: 0 }}>
                               <line x1="4" y1="4" x2="20" y2="20"

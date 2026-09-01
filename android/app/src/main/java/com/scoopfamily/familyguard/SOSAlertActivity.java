@@ -1,5 +1,6 @@
 package com.scoopfamily.familyguard;
 
+import android.content.pm.ActivityInfo;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.Context;
@@ -46,13 +47,27 @@ public class SOSAlertActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         isShowing = true;
         super.onCreate(savedInstanceState);
+        // Portrait is already declared in the manifest for all three activities,
+        // but a manifest value is a request the platform may override: OEM skins
+        // and, from targetSdk 36, Android itself ignore it in a growing number of
+        // situations. Asking again at runtime is the form that survives that, and
+        // it costs nothing when the manifest was being honoured anyway.
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         // ── Show over lock screen + wake screen ──────────────────────────────
+        // setShowWhenLocked is the whole mechanism: it makes this window OCCLUDE
+        // the keyguard.
+        //
+        // Deliberately NOT requestDismissKeyguard() here. On a secure lock
+        // screen that does not quietly unlock anything — it ASKS the user to,
+        // and the unlock prompt is drawn on top of this Activity. The alert was
+        // being created and resumed correctly and then covered by the bouncer,
+        // so an emergency could not be read without unlocking first. The
+        // keyguard is dismissed in leaveTo() instead, when the user has tapped
+        // something that takes them elsewhere.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
-            KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-            if (km != null) km.requestDismissKeyguard(this, null);
         } else {
             getWindow().addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
@@ -62,6 +77,15 @@ public class SOSAlertActivity extends Activity {
             );
         }
 
+        // Keep the screen lit for as long as the alert is up. SOSSirenService's
+        // screen wake lock runs out after 10 seconds — it is there to WAKE the
+        // phone, not hold it awake — while the siren itself runs for 60, so the
+        // display went dark on an emergency still sounding. The pre-27 branch
+        // above has always set this; only the modern path was missing it. A
+        // window flag rather than another wake lock: it lasts exactly as long as
+        // this Activity is in front, with nothing to release by hand.
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         String sender  = getIntent().getStringExtra(EXTRA_SENDER);
         String message = getIntent().getStringExtra(EXTRA_MESSAGE);
         final String lat = getIntent().getStringExtra(EXTRA_LAT);
@@ -70,6 +94,46 @@ public class SOSAlertActivity extends Activity {
         if (message == null || message.isEmpty()) message = getString(R.string.sos_alert);
 
         setContentView(buildLayout(sender, message, lat, lng));
+    }
+
+    /**
+     * singleTask means a second alert for the same emergency arrives here rather
+     * than in onCreate. Without this the new intent was swallowed and the screen
+     * kept the first alert's sender and message.
+     */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent == null) return;
+        setIntent(intent);
+
+        String sender  = intent.getStringExtra(EXTRA_SENDER);
+        String message = intent.getStringExtra(EXTRA_MESSAGE);
+        String lat     = intent.getStringExtra(EXTRA_LAT);
+        String lng     = intent.getStringExtra(EXTRA_LNG);
+        if (sender  == null || sender.isEmpty())  sender  = getString(R.string.a_family_member);
+        if (message == null || message.isEmpty()) message = getString(R.string.sos_alert);
+
+        isShowing = true;
+        setContentView(buildLayout(sender, message, lat, lng));
+    }
+
+    /**
+     * Leave the alert for somewhere else — the app, or the map.
+     *
+     * This is the moment the keyguard genuinely has to go: the user has chosen
+     * to act, and what comes next is a normal screen that cannot show over a
+     * lock screen the way this one can. Asking here rather than in onCreate is
+     * what keeps the unlock prompt off the alert itself.
+     */
+    private void leaveTo(Intent target) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            try {
+                KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+                if (km != null) km.requestDismissKeyguard(this, null);
+            } catch (Exception ignored) {}
+        }
+        try { startActivity(target); } catch (Exception ignored) {}
     }
 
     private View buildLayout(String sender, String message, final String lat, final String lng) {
@@ -121,12 +185,10 @@ public class SOSAlertActivity extends Activity {
             lbp.bottomMargin = dp(14);
             locBtn.setLayoutParams(lbp);
             locBtn.setOnClickListener(v -> {
-                try {
-                    Intent map = new Intent(Intent.ACTION_VIEW,
-                        android.net.Uri.parse("https://www.google.com/maps?q=" + lat + "," + lng));
-                    map.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(map);
-                } catch (Exception ignored) {}
+                Intent map = new Intent(Intent.ACTION_VIEW,
+                    android.net.Uri.parse("https://www.google.com/maps?q=" + lat + "," + lng));
+                map.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                leaveTo(map);
             });
             root.addView(locBtn);
         }
@@ -146,7 +208,7 @@ public class SOSAlertActivity extends Activity {
             Intent open = new Intent(this, MainActivity.class);
             open.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             open.putExtra("sos_notification", true);
-            startActivity(open);
+            leaveTo(open);
             finish();
         });
         root.addView(openBtn);
@@ -170,7 +232,7 @@ public class SOSAlertActivity extends Activity {
             Intent open = new Intent(this, MainActivity.class);
             open.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             open.putExtra("sos_notification", true);
-            startActivity(open);
+            leaveTo(open);
             finish();
         });
         root.addView(stopBtn);

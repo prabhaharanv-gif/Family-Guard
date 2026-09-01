@@ -50,13 +50,29 @@ export function usePushNotifications(userId, familyId) {
       }
 
       for (let attempt = 1; attempt <= 3; attempt++) {
-        const { error } = await supabase.rpc('upsert_device_token', {
+        // Every family, not just the active one. The token belongs to this
+        // device; writing it against one family left the others holding
+        // whatever token was current when they were last active, so calls and
+        // SOS raised in those families were pushed to a dead token and never
+        // arrived. FCM rotates tokens on its own, so this is not only a
+        // reinstall problem — see 20260901020000_device_token_all_families.
+        const { data: covered, error } = await supabase.rpc('upsert_device_token_all_families', {
+          p_token:    token,
+          p_platform: 'android',
+        })
+        if (!error) { console.log(`[FCM] Device registered for ${covered ?? '?'} family(ies)`); return }
+
+        // Fallback to the single-family RPC, same shape as the profile/privacy
+        // saves: an older database without the new function must still register
+        // SOMETHING rather than leave the device unreachable.
+        const { error: oneErr } = await supabase.rpc('upsert_device_token', {
           p_family_id: fid,
           p_token:     token,
           p_platform:  'android',
         })
-        if (!error) { console.log('[FCM] Device registered'); return }
-        console.error(`[FCM] Token save error (attempt ${attempt}):`, error.message || error)
+        if (!oneErr) { console.log('[FCM] Device registered (active family only)'); return }
+
+        console.error(`[FCM] Token save error (attempt ${attempt}):`, oneErr.message || oneErr)
         if (attempt < 3) await new Promise(r => setTimeout(r, 1000))
       }
     }

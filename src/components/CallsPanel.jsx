@@ -18,6 +18,7 @@ import { supabase } from '../lib/supabase'
 import PullToRefresh from '../components/PullToRefresh'
 import { useAuthStore } from '../store/authStore'
 import { useT } from '../i18n'
+import { useNicknames } from '../hooks/useNicknames'
 
 const FINISHED = ['ended', 'declined', 'missed']
 
@@ -41,6 +42,7 @@ function formatDuration(t, sec) {
 
 export default function CallsPanel({ onDialog, onControls, onCall }) {
   const t = useT()
+  const { nameFor } = useNicknames()
   const { user, familyId } = useAuthStore()
   const [calls, setCalls]       = useState([])
   const [names, setNames]       = useState({})
@@ -131,8 +133,11 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
       clearAll: handleClearAll,
       deleteSelected: handleDeleteSelected,
       cancelSelection: exitSelection,
+      // Pull-to-refresh only arms at the top of the list, so the header needs
+      // its own way to reload — see the refresh button in MessagesPage.
+      reload: load,
     })
-  }, [finishedCalls.length, selected, selectMode, busy,
+  }, [finishedCalls.length, selected, selectMode, busy, load,
       handleClearAll, handleDeleteSelected, exitSelection, onControls])
 
   const toggle = (id) => {
@@ -183,7 +188,9 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
           const outgoing = c.caller_id === user?.id
           const otherId  = outgoing ? c.callee_id : c.caller_id
           const other    = names[otherId]
-          const name     = other?.display_name || 'Family member'
+          // My private nickname for them, the same one their family card
+          // shows, rather than the name they registered with.
+          const name     = nameFor(otherId, other?.display_name || t('messages.member'))
           const missed   = c.status === 'missed' || c.status === 'declined'
           const isVideo  = c.call_type === 'video'
           const isSel    = selected.has(c.id)

@@ -99,6 +99,39 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             p.edit().putString(KEY_MSG_CHANNEL, msgChannelId(ctx)).apply();
         } catch (Exception e) { e.printStackTrace(); }
     }
+    /**
+     * Whether the last full-screen alert failed to reach the screen.
+     *
+     * There is no API for MIUI's "display pop-up windows while running in
+     * background" permission — it cannot be read, only refused — so the setup
+     * sheet had no way to tell whether the one thing it exists to ask for was
+     * ever granted, and closed itself after checking the two permissions it
+     * COULD read. Users skipped past it and quietly got the degraded path.
+     *
+     * The refusal is observable though: when CallRingingService or
+     * SOSSirenService starts its alert Activity and the Activity never appears,
+     * that IS the permission being denied. Recording it here turns an
+     * unreadable permission into evidence the app can act on, and clearing it
+     * on the next alert that DOES appear means the prompt stops by itself once
+     * the user has fixed it — no guessing in either direction.
+     */
+    public static final String KEY_ALERT_BLOCKED  = "fullscreen_alert_blocked";
+
+    /** Called by the alert services with what actually happened on screen. */
+    public static void setAlertBlocked(Context ctx, boolean blocked) {
+        try {
+            ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+               .edit().putBoolean(KEY_ALERT_BLOCKED, blocked).apply();
+        } catch (Exception e) { /* diagnostics only — never fail an alert for this */ }
+    }
+
+    public static boolean isAlertBlocked(Context ctx) {
+        try {
+            return ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                      .getBoolean(KEY_ALERT_BLOCKED, false);
+        } catch (Exception e) { return false; }
+    }
+
     public static final String KEY_MESSAGES_OPEN  = "messages_page_open";
     // 0 = all on, 1 = sound muted, 2 = sound + banner fully muted
     public static final String KEY_MUTE_LEVEL     = "msg_mute_level";
@@ -169,17 +202,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             // BOTH fire for the same call, ~hundreds of ms apart, in either
             // order depending on network timing — confirmed via device logs
             // racing and restarting the ringtone mid-playback (killing the
-            // audio). launch_activity is computed from the same authoritative
-            // MainActivity.isAppInForeground flag on both paths (not from
-            // which one wins the race) so they agree regardless of order;
-            // CallRingingService.isRunning below makes whichever arrives
-            // second a no-op instead of re-triggering the ring.
+            // audio). Neither path decides where the alert shows, so order
+            // does not matter; CallRingingService.isRunning makes whichever
+            // arrives second a no-op instead of re-triggering the ring.
             Intent ringIntent = new Intent(appCtx, CallRingingService.class);
             ringIntent.putExtra("call_id",     callId);
             ringIntent.putExtra("caller_name", callerName);
             ringIntent.putExtra("call_type",   callType);
             ringIntent.putExtra("caller_avatar", data.containsKey("caller_avatar") ? data.get("caller_avatar") : "");
-            ringIntent.putExtra("launch_activity", !MainActivity.isAppInForeground);
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     appCtx.startForegroundService(ringIntent);

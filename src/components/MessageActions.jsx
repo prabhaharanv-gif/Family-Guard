@@ -18,6 +18,12 @@ import { useT } from '../i18n'
  * resolved as `senderName` instead of being looked up here.
  */
 
+// The six offered on a long press. Deliberately short: a full emoji keyboard
+// turns a one-tap reaction into a search, and these cover what a family
+// actually sends. A seventh would also not fit the sheet's width on a small
+// phone without shrinking every target below a comfortable tap.
+export const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
+
 export function SingleTick() {
   return (
     <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
@@ -33,6 +39,18 @@ export function DoubleTick() {
       <path d="M6 6.5 L9.5 10 L15 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
+}
+
+// What to show where a message's text would go. An attachment sent without a
+// caption has content '', which would otherwise render as an empty quote.
+export function messagePreviewText(t, msg) {
+  if (!msg) return ''
+  if (msg.content) return msg.content
+  if (msg.media_type === 'image') return `📷 ${t('messages.mediaPhoto')}`
+  if (msg.media_type === 'video') return `🎬 ${t('messages.mediaVideo')}`
+  if (msg.media_type === 'audio') return `🎵 ${t('messages.mediaAudio')}`
+  if (msg.media_type === 'document') return `📄 ${msg.media_name || t('messages.mediaDocument')}`
+  return ''
 }
 
 // ── Reply preview strip shown above the input ─────────────────────────────────
@@ -52,13 +70,58 @@ export function ReplyBar({ replyTo, senderName, onCancel }) {
           {t('messages.replyingTo', { name: senderName || t('messages.family') })}
         </div>
         <div style={{ fontSize: 12, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {replyTo.content}
+          {messagePreviewText(t, replyTo)}
         </div>
       </div>
       <button onClick={onCancel} style={{
         background: 'none', border: 'none', cursor: 'pointer',
         fontSize: 18, color: '#8480B0', padding: '0 4px', flexShrink: 0,
       }}>✕</button>
+    </div>
+  )
+}
+
+// ── Reaction chips under a bubble ────────────────────────────────────────────
+// One chip per distinct emoji with a count, the way every chat app shows them.
+// `mine` gets a ring so you can see at a glance which one is yours, and
+// tapping a chip toggles that emoji for you — the same action as the sheet.
+export function ReactionChips({ reactions, myUserId, onReact, align }) {
+  if (!reactions || reactions.length === 0) return null
+
+  const counts = new Map()
+  for (const r of reactions) {
+    const entry = counts.get(r.emoji) || { emoji: r.emoji, count: 0, mine: false }
+    entry.count += 1
+    if (r.user_id === myUserId) entry.mine = true
+    counts.set(r.emoji, entry)
+  }
+
+  return (
+    <div style={{
+      display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4,
+      justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
+      paddingLeft: 4, paddingRight: 4,
+    }}>
+      {[...counts.values()].map((c) => (
+        <button
+          key={c.emoji}
+          onClick={() => onReact?.(c.emoji)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 3,
+            padding: '2px 7px', borderRadius: 12,
+            background: '#fff',
+            border: c.mine ? '1.5px solid #951345' : '1.5px solid #F0E4EA',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            cursor: onReact ? 'pointer' : 'default',
+            fontFamily: 'inherit', fontSize: 12, lineHeight: 1.5,
+          }}
+        >
+          <span>{c.emoji}</span>
+          {c.count > 1 && (
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: '#9C6B7A' }}>{c.count}</span>
+          )}
+        </button>
+      ))}
     </div>
   )
 }
@@ -79,7 +142,7 @@ export function ReplyQuote({ original, senderName }) {
         {senderName || t('messages.family')}
       </div>
       <div style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {original.content}
+        {messagePreviewText(t, original)}
       </div>
     </div>
   )
@@ -90,7 +153,7 @@ export function ReplyQuote({ original, senderName }) {
 // sheet on the Family page. The labels carried a caption each ("Reply to this
 // message", "Remove for everyone") that only restated the label, and four
 // full-width coloured blocks made every action shout equally loudly.
-export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDelete, onHide, onInfo, onClose }) {
+export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, onReply, onEdit, onDelete, onHide, onInfo, onClose }) {
   const t = useT()
   const actions = [
     {
@@ -105,7 +168,9 @@ export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDele
       // Any message, sent or received — copying someone else's text is the
       // common case. Clipboard access can be unavailable in a WebView, and the
       // text is on screen regardless, so a failure is not worth an error.
-      label: t('messages.copy'), color: '#951345', show: true,
+      // Hidden on an attachment sent without a caption — there is no text to
+      // copy, and an action that silently does nothing reads as broken.
+      label: t('messages.copy'), color: '#951345', show: !!msg?.content,
       fn: () => { try { navigator.clipboard?.writeText(msg?.content || '') } catch { /* on screen anyway */ } },
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -153,10 +218,13 @@ export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDele
     },
   ].filter(a => a.show)
 
-  const WIDTH  = 186
+  const WIDTH  = 226
   const ROW_H  = 40
   const PAD    = 12
-  const height = actions.length * ROW_H + PAD
+  // The emoji row sits inside the same card, so it counts towards the height
+  // used to decide whether the menu opens below the bubble or above it.
+  const REACT_H = onReact ? 48 : 0
+  const height = actions.length * ROW_H + REACT_H + PAD
 
   const vw = typeof window === 'undefined' ? 360 : window.innerWidth
   const vh = typeof window === 'undefined' ? 640 : window.innerHeight
@@ -192,6 +260,34 @@ export function MessageActionSheet({ msg, isOwn, anchor, onReply, onEdit, onDele
           padding: 6, overflow: 'hidden',
         }}
       >
+        {/* Reactions come first: it is the quickest thing you can want from a
+            long press, and putting it under five text rows would bury it. The
+            one already chosen is ringed, and tapping it again clears it. */}
+        {onReact && (
+          <>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '3px 2px 6px',
+            }}>
+              {REACTION_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => { onReact(emoji); onClose() }}
+                  aria-label={emoji}
+                  style={{
+                    width: 33, height: 33, borderRadius: '50%',
+                    border: myReaction === emoji ? '2px solid #951345' : '2px solid transparent',
+                    background: myReaction === emoji ? '#FDF2F6' : 'none',
+                    cursor: 'pointer', fontSize: 19, lineHeight: 1,
+                    padding: 0, fontFamily: 'inherit',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >{emoji}</button>
+              ))}
+            </div>
+            <div style={{ height: 1, background: '#F7EFF3', margin: '0 6px 2px' }} />
+          </>
+        )}
         {actions.map((a, i) => (
           <div key={a.label}>
             {i > 0 && <div style={{ height: 1, background: '#F7EFF3', margin: '0 6px' }} />}
