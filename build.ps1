@@ -1,4 +1,4 @@
-# ─────────────────────────────────────────────────────────────────────────────
+﻿# ─────────────────────────────────────────────────────────────────────────────
 #  FamilyGuard — Clean Build Script
 #  Place this file in: C:\Users\Public\family-guard-web\
 #  Run with:  .\build.ps1                  -> debug APK, for local testing
@@ -26,9 +26,9 @@ $GradleFile    = "$ProjectRoot\android\app\build.gradle"
 Write-Host ""
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
 if ($Release) {
-    Write-Host "  FamilyGuard Clean Build — RELEASE BUNDLE" -ForegroundColor Cyan
+    Write-Host "  FamilyGuard Clean Build - RELEASE BUNDLE" -ForegroundColor Cyan
 } else {
-    Write-Host "  FamilyGuard Clean Build — DEBUG APK" -ForegroundColor Cyan
+    Write-Host "  FamilyGuard Clean Build - DEBUG APK" -ForegroundColor Cyan
 }
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
 Write-Host ""
