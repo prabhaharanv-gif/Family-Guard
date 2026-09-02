@@ -1,12 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { registerPlugin, Capacitor } from '@capacitor/core'
-import { supabase } from '../lib/supabase'
+import { supabase, SUPABASE_URL, SUPABASE_KEY } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
 const LocationService = registerPlugin('LocationService')
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export function useLocationService() {
   const { user, familyId } = useAuthStore()

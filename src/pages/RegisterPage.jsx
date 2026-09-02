@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { supabase, describeSupabaseError } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
 const toEmail = (mobile) => `91${mobile.replace(/[^0-9]/g, '')}@familyguard.app`
@@ -59,7 +59,7 @@ export default function RegisterPage() {
       await createOwnFamily(data.user.id, name)
       window.location.href = '/onboarding'
     } catch (err) {
-      setError(err.message)
+      setError(describeSupabaseError(err))
       setLoading(false)
     }
   }

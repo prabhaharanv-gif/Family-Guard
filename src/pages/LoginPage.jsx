@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { supabase, describeSupabaseError, isConfigError } from '../lib/supabase'
 
 function EyeIcon({ open }) {
   return open ? (
@@ -37,6 +37,8 @@ function ForgotPasswordModal({ onClose }) {
     setLoading(false)
     if (e?.message?.includes('Invalid login credentials')) {
       setStep(2)
+    } else if (isConfigError(e)) {
+      setError(describeSupabaseError(e))
     } else {
       setError('No account found for this mobile number')
     }
@@ -155,7 +157,14 @@ export default function LoginPage() {
     if (!password) { setError('Please enter your password'); return }
     const email = `91${digits}@familyguard.app`
     const { error: authErr } = await supabase.auth.signInWithPassword({ email, password })
-    if (authErr) { setError('Invalid mobile number or password'); return }
+    if (authErr) {
+      // A bad key looks nothing like a bad password — don't hide it behind
+      // "Invalid mobile number or password".
+      setError(isConfigError(authErr)
+        ? describeSupabaseError(authErr)
+        : 'Invalid mobile number or password')
+      return
+    }
     navigate('/')
   }
 
