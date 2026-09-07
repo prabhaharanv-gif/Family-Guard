@@ -104,13 +104,33 @@ export function useSingleDevice(user, onDisplaced) {
 
     const verify = async () => {
       try {
+        // Only ask while we genuinely hold a session.
+        //
+        // supabase-js falls back to the anon key when there is no session
+        // (`_getAccessToken` returns `sessionToken ?? supabaseKey`), so the
+        // call still succeeds — as `anon`. Inside is_active_device that makes
+        // auth.uid() NULL, `user_id = NULL` matches nothing, and the function
+        // returns a confident `false` with no error. That is indistinguishable
+        // here from "another device took over", so a momentary gap in the
+        // session — a token that lapsed while the app slept, a storage read
+        // that came back empty — would sign the user out and tell them their
+        // account was opened elsewhere, which never happened.
+        //
+        // Checking first keeps the promise this hook makes everywhere else:
+        // never sign anyone out because the check could not be made.
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) return
+
         const { data, error } = await supabase.rpc('is_active_device', { p_device_id: mine })
         if (error) return                 // same reasoning: fail open
         if (data === false) displace()
       } catch (e) { /* fail open */ }
     }
 
-    claimAndVerify()
+    // Claim, then verify — the second half was named but never called, so the
+    // race the comment above describes (two devices claiming at once, the
+    // earlier one needing to notice it lost) was not actually covered.
+    claimAndVerify().then(() => { if (!cancelled) verify() })
 
     // 1. Realtime — instant while foregrounded.
     const channel = supabase

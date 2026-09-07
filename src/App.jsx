@@ -17,6 +17,7 @@ import { useCallSignaling }      from './hooks/useCallSignaling'
 import { useUnreadMessages }     from './hooks/useUnreadMessages'
 import { useDevicePing }         from './hooks/useDevicePing'
 import { initBackHandler }       from './lib/backHandler'
+import { initSessionKeepAlive }  from './lib/sessionKeepAlive'
 
 // Components
 import ConsentGate         from './components/ConsentGate'
@@ -54,7 +55,15 @@ export default function App() {
   const navigate  = useNavigate()
 
   // ── Bootstrap ────────────────────────────────────────────────────────────
-  useEffect(() => { initialize() }, [])
+  useEffect(() => {
+    initialize()
+    // Refresh the access token whenever the app comes back to the
+    // foreground. A backgrounded WebView freezes the library's own 30s
+    // refresh ticker, and Android does not reliably fire the document
+    // visibilitychange the library listens for, so without this the token
+    // simply lapses after an hour and every request starts failing.
+    initSessionKeepAlive()
+  }, [])
 
   // ── Always-on services ───────────────────────────────────────────────────
   useHeartbeat(user?.id, familyId)
