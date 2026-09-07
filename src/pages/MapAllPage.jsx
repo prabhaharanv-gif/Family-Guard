@@ -467,8 +467,8 @@ export default function MapAllPage() {
                       <SpeedBadge loc={loc} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: 14, color: '#0D0C1D' }}>{loc.displayName}</div>
-                      <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: '#221419' }}>{loc.displayName}</div>
+                      <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 1 }}>
                         Last Loc Time · {new Date(loc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                       {/* Stale warning — if location is older than 15 minutes */}
@@ -511,7 +511,7 @@ export default function MapAllPage() {
             position: 'absolute', top: 70, right: 12, zIndex: 400,
             background: '#fff', borderRadius: 16,
             boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-            border: '1px solid #F0E4EA',
+            border: '1px solid #ECE2D6',
             minWidth: 200, maxWidth: 260,
             overflow: 'hidden',
           }}>
@@ -532,7 +532,7 @@ export default function MapAllPage() {
 
             {/* Member list */}
             {Object.entries(locations).length === 0 ? (
-              <div style={{ padding: '16px', fontSize: 13, color: '#9C6B7A', textAlign: 'center' }}>
+              <div style={{ padding: '16px', fontSize: 13, color: '#7A6A62', textAlign: 'center' }}>
                 No members sharing location
               </div>
             ) : (
@@ -577,7 +577,7 @@ export default function MapAllPage() {
                     </div>
                     {/* Name + distance + last loc time */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0D0C1D', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#221419', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
                         {loc.displayName}
                         {myLoc && uid !== user?.id && (() => {
                           const dist = formatDistance(myLoc.lat, myLoc.lng, loc.lat, loc.lng)
@@ -588,7 +588,7 @@ export default function MapAllPage() {
                           ) : null
                         })()}
                       </div>
-                      <div style={{ fontSize: 11, color: stale ? '#D97706' : '#9C6B7A' }}>
+                      <div style={{ fontSize: 11, color: stale ? '#D97706' : '#7A6A62' }}>
                         {stale ? '⚠️ ' : ''}Last Loc Time · {new Date(loc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>

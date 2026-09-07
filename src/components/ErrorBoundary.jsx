@@ -58,13 +58,13 @@ export default class ErrorBoundary extends Component {
           ⚠️
         </div>
         <div style={{
-          fontSize: 20, fontWeight: 800, color: '#0D0C1D',
+          fontSize: 20, fontWeight: 800, color: '#221419',
           fontFamily: 'Sora, sans-serif', marginBottom: 10,
         }}>
           Something went wrong
         </div>
         <div style={{
-          fontSize: 14, color: '#6B7280', lineHeight: 1.6,
+          fontSize: 14, color: '#7A6A62', lineHeight: 1.6,
           marginBottom: 28, maxWidth: 300,
         }}>
           {APP_NAME} ran into a problem on this page. Your data is safe.
@@ -86,7 +86,7 @@ export default class ErrorBoundary extends Component {
           onClick={() => window.location.href = '/'}
           style={{
             background: 'none', border: 'none',
-            color: '#9C6B7A', fontSize: 13, fontWeight: 600,
+            color: '#7A6A62', fontSize: 13, fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
           }}
         >
@@ -106,7 +106,7 @@ export default class ErrorBoundary extends Component {
             <pre style={{
               marginTop: 10, maxWidth: '100%', maxHeight: 220, overflow: 'auto',
               background: '#fff', border: '1px solid #F3D4DD', borderRadius: 12,
-              padding: 12, fontSize: 11, lineHeight: 1.5, color: '#6B7280',
+              padding: 12, fontSize: 11, lineHeight: 1.5, color: '#7A6A62',
               textAlign: 'left', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             }}>{detail}</pre>
             <button

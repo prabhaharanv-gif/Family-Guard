@@ -425,20 +425,20 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
         {/* Thread header — no back arrow; see the navigation note above. */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          padding: '10px 14px', borderBottom: '1px solid #F0E4EA', background: '#fff',
+          padding: '10px 14px', borderBottom: '1px solid #ECE2D6', background: '#fff',
           flexShrink: 0,
         }}>
           <Avatar member={openWith} size={36} name={otherName} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14.5, fontWeight: 800, color: '#0D0C1D' }}>{otherName}</div>
+            <div style={{ fontSize: 14.5, fontWeight: 800, color: '#221419' }}>{otherName}</div>
           </div>
         </div>
 
         {/* Messages */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 8px', minHeight: 0 }}>
           {thread.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9C6B7A' }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#3A1020', marginBottom: 6 }}>
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#7A6A62' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#4A3138', marginBottom: 6 }}>
                 No messages yet
               </div>
               <div style={{ fontSize: 12.5, lineHeight: 1.6 }}>
@@ -467,8 +467,8 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
                       padding: '9px 13px',
                       borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                       background: mine ? '#951345' : '#fff',
-                      color: mine ? '#fff' : '#0D0C1D',
-                      border: mine ? 'none' : '1px solid #F0E4EA',
+                      color: mine ? '#fff' : '#221419',
+                      border: mine ? 'none' : '1px solid #ECE2D6',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
                       cursor: 'default', userSelect: 'none',
                     }}
@@ -537,7 +537,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
         {/* Composer */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          padding: '10px 12px', borderTop: '1px solid #F0E4EA',
+          padding: '10px 12px', borderTop: '1px solid #ECE2D6',
           background: '#fff', flexShrink: 0,
         }}>
           <AttachButton
@@ -616,25 +616,25 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
               <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
                 Message Info
               </div>
-              <div style={{ background: '#F5F4FB', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#0D0C1D', marginBottom: 16 }}>
+              <div style={{ background: '#F8F3EB', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#221419', marginBottom: 16 }}>
                 {messagePreviewText(t, detailMsg)}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0' }}>
-                <span style={{ color: '#8480B0', display: 'inline-flex' }}><SingleTick /></span>
+                <span style={{ color: '#7A6A62', display: 'inline-flex' }}><SingleTick /></span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>Sent</div>
-                  <div style={{ fontSize: 11, color: '#8480B0' }}>{new Date(detailMsg.created_at).toLocaleString()}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#221419' }}>Sent</div>
+                  <div style={{ fontSize: 11, color: '#7A6A62' }}>{new Date(detailMsg.created_at).toLocaleString()}</div>
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', opacity: detailMsg.read_at ? 1 : 0.7 }}>
-                <span style={{ color: detailMsg.read_at ? '#34B7F1' : '#8480B0', display: 'inline-flex' }}><DoubleTick /></span>
+                <span style={{ color: detailMsg.read_at ? '#34B7F1' : '#7A6A62', display: 'inline-flex' }}><DoubleTick /></span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#221419' }}>
                     {detailMsg.read_at ? t('personal.readBy', { name: otherName }) : t('personal.notReadYet')}
                   </div>
-                  <div style={{ fontSize: 11, color: '#8480B0' }}>
+                  <div style={{ fontSize: 11, color: '#7A6A62' }}>
                     {detailMsg.read_at
                       ? new Date(detailMsg.read_at).toLocaleString()
                       : t('personal.notOpenedSince', { name: otherName })}
@@ -651,8 +651,8 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
                     </svg>
                   </span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>Edited</div>
-                    <div style={{ fontSize: 11, color: '#8480B0' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#221419' }}>Edited</div>
+                    <div style={{ fontSize: 11, color: '#7A6A62' }}>
                       {detailMsg.edited_at ? new Date(detailMsg.edited_at).toLocaleString() : ''}
                     </div>
                   </div>
@@ -670,7 +670,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
     <PullToRefresh onRefresh={reload}>
     <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '10px 12px 20px' }}>
       {loading ? null : members.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9C6B7A', fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#7A6A62', fontSize: 13 }}>
           Nobody else has joined this family yet.
         </div>
       ) : members.map(m => {
@@ -694,7 +694,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
           >
             <Avatar member={m} name={nameOf(m)} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{nameOf(m)}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#221419' }}>{nameOf(m)}</div>
               <div style={{
                 fontSize: 12, color: last ? '#5B4652' : '#B69AA6',
                 marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',

@@ -5,12 +5,12 @@ import { useT } from '../i18n'
 
 function EyeIcon({ open }) {
   return open ? (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6A62" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   ) : (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6A62" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" />
       <line x1="2" y1="2" x2="22" y2="22" />
     </svg>
@@ -113,8 +113,8 @@ function ForgotPasswordModal({ onClose }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
           }}>🔑</div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0D0C1D' }}>{t('reset.title')}</div>
-            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#221419' }}>{t('reset.title')}</div>
+            <div style={{ fontSize: 11, color: '#9E8C86', marginTop: 2 }}>
               {step === 1 ? t('reset.step1Sub')
                 : step === 2 ? t('reset.step2Sub', { mobile })
                 : t('reset.step3Sub')}
@@ -126,7 +126,7 @@ function ForgotPasswordModal({ onClose }) {
           <div style={{ textAlign: 'center', padding: '16px 0' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#16A34A', marginBottom: 8 }}>{t('reset.successTitle')}</div>
-            <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>
+            <div style={{ fontSize: 13, color: '#7A6A62', marginBottom: 20 }}>
               {t('reset.successBody')}
             </div>
             <button onClick={onClose} className="btn btn-primary">{t('reset.backToSignIn')}</button>
@@ -142,8 +142,8 @@ function ForgotPasswordModal({ onClose }) {
                   autoFocus style={{ marginBottom: 16 }} />
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={onClose} style={{
-                    flex: 1, padding: 14, borderRadius: 14, background: '#F8F7FF',
-                    border: '1px solid #EDE9FF', color: '#6B7280', fontWeight: 700,
+                    flex: 1, padding: 14, borderRadius: 14, background: '#FBF7F1',
+                    border: '1px solid #ECE2D6', color: '#7A6A62', fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>{t('common.cancel')}</button>
                   <button onClick={handleContinue} disabled={loading} style={{
@@ -162,8 +162,8 @@ function ForgotPasswordModal({ onClose }) {
                   style={{ marginBottom: 16, textAlign: 'center', fontSize: 22, fontWeight: 800, letterSpacing: 6 }} />
                 <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
                   <button onClick={() => setStep(1)} style={{
-                    flex: 1, padding: 14, borderRadius: 14, background: '#F8F7FF',
-                    border: '1px solid #EDE9FF', color: '#6B7280', fontWeight: 700,
+                    flex: 1, padding: 14, borderRadius: 14, background: '#FBF7F1',
+                    border: '1px solid #ECE2D6', color: '#7A6A62', fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>← {t('common.back')}</button>
                   <button onClick={handleVerifyOtp} disabled={loading || otp.length !== 6} style={{
@@ -192,8 +192,8 @@ function ForgotPasswordModal({ onClose }) {
                   style={{ marginBottom: 16 }} />
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={() => setStep(2)} style={{
-                    flex: 1, padding: 14, borderRadius: 14, background: '#F8F7FF',
-                    border: '1px solid #EDE9FF', color: '#6B7280', fontWeight: 700,
+                    flex: 1, padding: 14, borderRadius: 14, background: '#FBF7F1',
+                    border: '1px solid #ECE2D6', color: '#7A6A62', fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>← {t('common.back')}</button>
                   <button onClick={handleReset} disabled={loading} style={{
@@ -290,13 +290,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin}>
           <div className="input-group">
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.mobileNumber')}</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7A6A62", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.mobileNumber')}</label>
             <input className="input" type="tel" value={mobile}
               onChange={e => setMobile(e.target.value)}
               placeholder="9876543210" autoComplete="tel" />
           </div>
           <div className="input-group">
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.password')}</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7A6A62", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.password')}</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showPassword ? 'text' : 'password'}
                 value={password} onChange={e => setPassword(e.target.value)}

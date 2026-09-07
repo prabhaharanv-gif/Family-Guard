@@ -17,7 +17,7 @@ function Toggle({ on, onToggle }) {
       onClick={onToggle}
       style={{
         width: 46, height: 26, borderRadius: 13,
-        background: on ? '#951345' : '#D1D5DB',
+        background: on ? '#951345' : '#C3B7A8',
         border: 'none', cursor: 'pointer', position: 'relative',
         transition: 'all 0.25s', flexShrink: 0,
         boxShadow: on ? '0 2px 8px rgba(149,19,69,0.35)' : 'none',
@@ -39,8 +39,8 @@ function Toggle({ on, onToggle }) {
 // it each time — meaning every keystroke in a password field destroyed and
 // rebuilt this icon's DOM.
 const EyeIcon = ({ off }) => off
-  ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
-  : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+  ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6A62" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
+  : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6A62" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
 
 // ── Change password modal ──
 function ChangePasswordModal({ onClose, userEmail }) {
@@ -106,7 +106,7 @@ function ChangePasswordModal({ onClose, userEmail }) {
             </div>
 
             {/* Divider */}
-            <div style={{ height: 1, background: '#F0E4EA', margin: '4px 0 12px' }} />
+            <div style={{ height: 1, background: '#ECE2D6', margin: '4px 0 12px' }} />
 
             {/* New password */}
             <div style={{ position: 'relative', marginBottom: 12 }}>
@@ -140,8 +140,8 @@ function ChangePasswordModal({ onClose, userEmail }) {
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={onClose} style={{
                 flex: 1, padding: 14, borderRadius: 14,
-                background: '#F5F4FB', border: '1px solid #E9E6FB',
-                color: '#3A1020', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
+                background: '#F8F3EB', border: '1px solid #ECE2D6',
+                color: '#4A3138', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
               }}>{t('common.cancel')}</button>
               <button onClick={handleSave} disabled={busy} style={{
                 flex: 1, padding: 14, borderRadius: 14,
@@ -195,7 +195,7 @@ function DeleteAccountModal({ onClose, onConfirm }) {
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, color: '#374151', fontWeight: 600, marginBottom: 6 }}>
+          <div style={{ fontSize: 12, color: '#4A3138', fontWeight: 600, marginBottom: 6 }}>
             {t('profile.typeToConfirm', { word: CONFIRM_WORD })}
           </div>
           <input
@@ -211,8 +211,8 @@ function DeleteAccountModal({ onClose, onConfirm }) {
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#F5F4FB', border: '1px solid #E9E6FB',
-            color: '#3A1020', fontWeight: 700, cursor: 'pointer',
+            background: '#F8F3EB', border: '1px solid #ECE2D6',
+            color: '#4A3138', fontWeight: 700, cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 14,
           }}>{t('common.cancel')}</button>
           <button
@@ -706,8 +706,8 @@ export default function ProfilePage() {
                   aria-pressed={active}
                   style={{
                     padding: '9px 16px', borderRadius: 999,
-                    background: active ? 'linear-gradient(135deg,#951345,#720D35)' : '#F8F7FF',
-                    border: `1.5px solid ${active ? 'transparent' : '#EDE9FF'}`,
+                    background: active ? 'linear-gradient(135deg,#951345,#720D35)' : '#FBF7F1',
+                    border: `1.5px solid ${active ? 'transparent' : '#ECE2D6'}`,
                     color: active ? '#fff' : '#5B4652',
                     fontWeight: active ? 800 : 600,
                     fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit',
@@ -728,13 +728,13 @@ export default function ProfilePage() {
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.displayName')}</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A6A62', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.displayName')}</label>
             <input className="input" style={{ padding: '11px 14px', fontSize: 14 }}
               value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={t('profile.yourName')} />
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.mobileNumber')}</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A6A62', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.mobileNumber')}</label>
             <div style={{ display: 'flex', gap: 7 }}>
               {/* Plain "+91" — the 🇮🇳 flag emoji used to sit here, but MIUI
                   and several other Android ROMs ship no regional-indicator
@@ -744,8 +744,8 @@ export default function ProfilePage() {
                   field. */}
               <span style={{
                 display: 'flex', alignItems: 'center',
-                padding: '11px 14px', background: '#F8F7FF',
-                border: '1.5px solid #E8E5FF', borderRadius: 14,
+                padding: '11px 14px', background: '#FBF7F1',
+                border: '1.5px solid #ECE2D6', borderRadius: 14,
                 fontSize: 14, fontWeight: 700, color: '#5B4652',
                 whiteSpace: 'nowrap', flexShrink: 0,
               }}>+91</span>
@@ -763,7 +763,7 @@ export default function ProfilePage() {
                 {t('profile.myCode')}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 3, color: '#0D0C1D', fontFamily: 'Sora, sans-serif' }}>
+                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 3, color: '#221419', fontFamily: 'Sora, sans-serif' }}>
                   {myInviteCode}
                 </div>
                 <button
@@ -829,7 +829,7 @@ export default function ProfilePage() {
 
           {/* Family list */}
           {allFamilies.length === 0 ? (
-            <div style={{ fontSize: 13, color: '#9C6B7A', textAlign: 'center', padding: '8px 0' }}>
+            <div style={{ fontSize: 13, color: '#7A6A62', textAlign: 'center', padding: '8px 0' }}>
               No families yet
             </div>
           ) : (
@@ -841,18 +841,18 @@ export default function ProfilePage() {
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '10px 12px', borderRadius: 12,
-                      background: isActive ? '#FDF0F5' : '#F8F7FF',
-                      border: `1.5px solid ${isActive ? '#951345' : '#E8E5FF'}`,
+                      background: isActive ? '#FDF0F5' : '#FBF7F1',
+                      border: `1.5px solid ${isActive ? '#951345' : '#ECE2D6'}`,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                     }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{
                         width: 36, height: 36, borderRadius: '50%',
-                        background: isActive ? '#951345' : '#E8E5FF',
+                        background: isActive ? '#951345' : '#ECE2D6',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 16, flexShrink: 0, overflow: 'hidden',
-                        border: `2px solid ${isActive ? '#951345' : '#D4D0F5'}`,
+                        border: `2px solid ${isActive ? '#951345' : '#DCCFC0'}`,
                       }}>
                         {avatarUrl
                           ? <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -861,7 +861,7 @@ export default function ProfilePage() {
                       </div>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 800, color: '#000' }}>{fam.name}</div>
-                        <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
+                        <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 1 }}>
                           {fam.role === 'admin' ? '👑 ' + t('profile.admin') : '👤 ' + t('profile.member')}
                         </div>
                       </div>
@@ -898,7 +898,7 @@ export default function ProfilePage() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2 }}>
                   {t('profile.alertSounds')}
                 </div>
-                <div style={{ fontSize: 12.5, color: '#9C6B7A', marginTop: 3, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 12.5, color: '#7A6A62', marginTop: 3, lineHeight: 1.5 }}>
                   {t('profile.alertSoundsSub')}
                 </div>
               </div>
@@ -922,9 +922,9 @@ export default function ProfilePage() {
                 borderTop: i === 0 ? 'none' : '1px solid #F7EFF3',
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{t('profile.sound.' + at.key)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#221419' }}>{t('profile.sound.' + at.key)}</div>
                   <div style={{
-                    fontSize: 11.5, color: '#9C6B7A', marginTop: 2,
+                    fontSize: 11.5, color: '#7A6A62', marginTop: 2,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {ringtones[at.key] || t('profile.default')}
@@ -936,7 +936,7 @@ export default function ProfilePage() {
                     title={`Use the default sound for ${t('profile.sound.' + at.key)}`}
                     style={{
                       background: 'none', border: 'none', cursor: 'pointer',
-                      color: '#9C6B7A', fontSize: 11.5, fontWeight: 700,
+                      color: '#7A6A62', fontSize: 11.5, fontWeight: 700,
                       fontFamily: 'inherit', padding: '6px 2px', flexShrink: 0,
                     }}
                   >
@@ -1012,7 +1012,7 @@ export default function ProfilePage() {
                   }}>
                     {item.icon}
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#0D0C1D' }}>{item.label}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#221419' }}>{item.label}</div>
                 </div>
                 <Toggle on={item.value} onToggle={item.handler} />
               </div>
@@ -1063,11 +1063,11 @@ export default function ProfilePage() {
                 </svg>
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#0D0C1D' }}>{t('profile.userGuide')}</div>
-                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>{t('profile.userGuideSub')}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#221419' }}>{t('profile.userGuide')}</div>
+                <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 1 }}>{t('profile.userGuideSub')}</div>
               </div>
             </div>
-            <span style={{ color: '#9C6B7A', fontSize: 16 }}>›</span>
+            <span style={{ color: '#7A6A62', fontSize: 16 }}>›</span>
           </div>
         </div>
 
@@ -1091,10 +1091,10 @@ export default function ProfilePage() {
               </div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>{t('profile.privacyPolicy')}</div>
-                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>{t('profile.privacyPolicySub')}</div>
+                <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 1 }}>{t('profile.privacyPolicySub')}</div>
               </div>
             </div>
-            <span style={{ color: '#9C6B7A', fontSize: 18, fontWeight: 300 }}>›</span>
+            <span style={{ color: '#7A6A62', fontSize: 18, fontWeight: 300 }}>›</span>
           </div>
         </div>
 
@@ -1146,10 +1146,10 @@ export default function ProfilePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{
                 width: 48, height: 48, borderRadius: '50%',
-                background: selectedFam.family_id === familyId ? '#951345' : '#E8E5FF',
+                background: selectedFam.family_id === familyId ? '#951345' : '#ECE2D6',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 22, flexShrink: 0, overflow: 'hidden',
-                border: `2px solid ${selectedFam.family_id === familyId ? '#951345' : '#D4D0F5'}`,
+                border: `2px solid ${selectedFam.family_id === familyId ? '#951345' : '#DCCFC0'}`,
               }}>
                 {avatarUrl
                   ? <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -1158,7 +1158,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <div style={{ fontSize: 18, fontWeight: 900, color: '#000' }}>{selectedFam.name}</div>
-                <div style={{ fontSize: 12, color: '#9C6B7A', marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: '#7A6A62', marginTop: 2 }}>
                   {selectedFam.role === 'admin' ? '👑 ' + t('profile.admin') : '👤 ' + t('profile.member')}
                   {selectedFam.family_id === familyId && <span style={{ marginLeft: 8, background: '#951345', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5 }}>ACTIVE</span>}
                 </div>
@@ -1231,16 +1231,16 @@ export default function ProfilePage() {
 
             <div style={{ overflowY: 'auto', flex: 1 }}>
               {viewFam.loading ? (
-                <div style={{ textAlign: 'center', padding: '24px 0', color: '#9C6B7A', fontSize: 13 }}>{t('profile.loadingMembers')}</div>
+                <div style={{ textAlign: 'center', padding: '24px 0', color: '#7A6A62', fontSize: 13 }}>{t('profile.loadingMembers')}</div>
               ) : viewFam.members.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '24px 0', color: '#9C6B7A', fontSize: 13 }}>{t('profile.noMembersFound')}</div>
+                <div style={{ textAlign: 'center', padding: '24px 0', color: '#7A6A62', fontSize: 13 }}>{t('profile.noMembersFound')}</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {viewFam.members.map((m) => (
                     <div key={m.user_id || m.id} style={{
                       display: 'flex', alignItems: 'center', gap: 12,
                       padding: '10px 12px', borderRadius: 12,
-                      background: '#F8F7FF', border: '1.5px solid #E8E5FF',
+                      background: '#FBF7F1', border: '1.5px solid #ECE2D6',
                     }}>
                       {m.avatar_url ? (
                         <img src={m.avatar_url} alt={m.display_name} style={{
@@ -1260,7 +1260,7 @@ export default function ProfilePage() {
                         <div style={{ fontSize: 14, fontWeight: 700, color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {m.display_name || t('profile.unknown')}
                         </div>
-                        <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
+                        <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 1 }}>
                           {m.role === 'admin' ? '👑 ' + t('profile.admin') : '👤 ' + t('profile.member')}
                         </div>
                       </div>

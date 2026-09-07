@@ -61,21 +61,21 @@ export function ReplyBar({ replyTo, senderName, onCancel }) {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 8,
       padding: '8px 16px',
-      background: '#F0EEFF',
+      background: '#F8F3EB',
       borderTop: '1px solid #D6D0FF',
-      borderLeft: '3px solid #7C3AED',
+      borderLeft: '3px solid #C0450F',
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: '#7C3AED', marginBottom: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: '#C0450F', marginBottom: 2 }}>
           {t('messages.replyingTo', { name: senderName || t('messages.family') })}
         </div>
-        <div style={{ fontSize: 12, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 12, color: '#7A6A62', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {messagePreviewText(t, replyTo)}
         </div>
       </div>
       <button onClick={onCancel} style={{
         background: 'none', border: 'none', cursor: 'pointer',
-        fontSize: 18, color: '#8480B0', padding: '0 4px', flexShrink: 0,
+        fontSize: 18, color: '#7A6A62', padding: '0 4px', flexShrink: 0,
       }}>✕</button>
     </div>
   )
@@ -110,7 +110,7 @@ export function ReactionChips({ reactions, myUserId, onReact, align }) {
             display: 'flex', alignItems: 'center', gap: 3,
             padding: '2px 7px', borderRadius: 12,
             background: '#fff',
-            border: c.mine ? '1.5px solid #951345' : '1.5px solid #F0E4EA',
+            border: c.mine ? '1.5px solid #951345' : '1.5px solid #ECE2D6',
             boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
             cursor: onReact ? 'pointer' : 'default',
             fontFamily: 'inherit', fontSize: 12, lineHeight: 1.5,
@@ -118,7 +118,7 @@ export function ReactionChips({ reactions, myUserId, onReact, align }) {
         >
           <span>{c.emoji}</span>
           {c.count > 1 && (
-            <span style={{ fontSize: 10.5, fontWeight: 800, color: '#9C6B7A' }}>{c.count}</span>
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: '#7A6A62' }}>{c.count}</span>
           )}
         </button>
       ))}
@@ -255,7 +255,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
         style={{
           position: 'fixed', top, left, width: WIDTH,
           background: '#fff', borderRadius: 14,
-          border: '1px solid #F0E4EA',
+          border: '1px solid #ECE2D6',
           boxShadow: '0 14px 36px rgba(20,8,24,0.24)',
           padding: 6, overflow: 'hidden',
         }}
@@ -298,7 +298,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
                 background: 'none', border: 'none', cursor: 'pointer',
                 fontFamily: 'inherit', textAlign: 'left',
                 display: 'flex', alignItems: 'center', gap: 10,
-                color: a.danger ? a.color : '#0D0C1D',
+                color: a.danger ? a.color : '#221419',
                 fontSize: 13.5, fontWeight: 700,
               }}
             >
@@ -344,8 +344,8 @@ export function EditModal({ msg, onClose, onSave, subtitle }) {
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0D0C1D' }}>{t('messages.editTitle')}</div>
-            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#221419' }}>{t('messages.editTitle')}</div>
+            <div style={{ fontSize: 11, color: '#9E8C86', marginTop: 1 }}>
               {subtitle || t('messages.editSubtitle')}
             </div>
           </div>
@@ -357,21 +357,21 @@ export function EditModal({ msg, onClose, onSave, subtitle }) {
           autoFocus
           style={{
             width: '100%', padding: '14px 16px', borderRadius: 14,
-            border: '1.5px solid #E5E7EB', fontSize: 14,
+            border: '1.5px solid #ECE2D6', fontSize: 14,
             fontFamily: 'inherit', resize: 'none', outline: 'none',
             minHeight: 90, boxSizing: 'border-box', marginBottom: 16,
             background: '#FAFAFA', lineHeight: 1.5,
             transition: 'border-color 0.2s',
           }}
           onFocus={e => e.target.style.borderColor = '#059669'}
-          onBlur={e => e.target.style.borderColor = '#E5E7EB'}
+          onBlur={e => e.target.style.borderColor = '#ECE2D6'}
         />
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#F8F7FF', border: '1px solid #EDE9FF',
-            color: '#6B7280', fontWeight: 700, cursor: 'pointer',
+            background: '#FBF7F1', border: '1px solid #ECE2D6',
+            color: '#7A6A62', fontWeight: 700, cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 14,
           }}>Cancel</button>
           <button onClick={handleSave} disabled={saving || !text.trim()} style={{

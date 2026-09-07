@@ -9,68 +9,115 @@
    ══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Primary palette ── */
-  --indigo:        #951345;
-  --indigo-dark:   #720D35;
-  --indigo-deep:   #16040C;
-  --indigo-mid:    #B01650;
-  --violet:        #C0185A;
-  --violet-light:  #FAE8EF;
+  /* ── Brand · deep maroon (unchanged identity) ── */
+  --brand:        #951345;
+  --brand-dark:   #720D35;
+  --brand-deep:   #4A0820;
+  --brand-mid:    #B01650;
+  --brand-bright: #C0185A;
+  --brand-tint:   #FBEAF0;
+
+  /* ── Accent · coral (attention, counts, signals) ── */
+  --coral:       #FF6B4A;
+  --coral-mid:   #F2542D;
+  --coral-deep:  #C0450F;
+  --coral-ink:   #9E3608;
+  --coral-tint:  #FFF0EA;
+
+  /* ── Accent · amber (warm secondary, warnings) ── */
+  --amber:       #F4A62A;
+  --amber-mid:   #DE8A0C;
+  --amber-deep:  #8A6410;
+  --amber-light: #FEF5E3;
 
   /* ── Status ── */
+  --emerald:       #059669;
+  --emerald-vivid: #0FB981;
+  --emerald-light: #DFF7EC;
   --rose:          #E11D48;
-  --rose-light:    #FFF1F4;
-  --emerald:       #10B981;
-  --emerald-light: #D1FAE5;
-  --amber:         #F59E0B;
-  --amber-light:   #FEF3C7;
+  --rose-deep:     #BE123C;
+  --rose-light:    #FFF0F3;
   --sky:           #0EA5E9;
-  --sky-light:     #E0F2FE;
+  --sky-light:     #E5F4FE;
+  --teal:          #0E8C87;
 
-  /* ── Gold ── */
-  --gold-1:    #FDF0CC;
+  /* ── Gold · restrained, hairlines only ── */
+  --gold-1:    #FBEBC4;
   --gold:      #E8C96A;
   --gold-2:    #C8962E;
   --gold-3:    #A07020;
-  --gold-soft: rgba(232,201,106,0.45);
+  --gold-soft: rgba(232,201,106,0.42);
 
-  /* ── Aliases ── */
-  --blue:       #951345;
-  --blue-light: #FAE8EF;
-  --red:        #E11D48;
-  --red-light:  #FFF1F4;
+  /* ── Legacy aliases · keep existing markup working ── */
+  --indigo:       #951345;
+  --indigo-dark:  #720D35;
+  --indigo-deep:  #16040C;
+  --indigo-mid:   #B01650;
+  --violet:       #C0185A;
+  --violet-light: #FBEAF0;
+  --blue:         #951345;
+  --blue-light:   #FBEAF0;
+  --red:          #E11D48;
+  --red-light:    #FFF0F3;
 
-  /* ── Surfaces · warm ivory with rose depth ── */
-  --bg:       #FAF5F7;
-  --bg2:      #F3EBEe;
+  /* ── Surfaces · warm ivory / soft cream (was pinkish grey) ── */
+  --bg:       #FBF7F1;
+  --bg2:      #F5EFE6;
   --surface:  #FFFFFF;
-  --surface2: #FDF9FB;
-  --surface3: #F8F2F5;
-  --border:   #EEE0E6;
-  --border2:  #DECDCE;
-  --text:     #140810;
-  --text2:    #38101E;
-  --muted:    #9A6474;
-  --muted2:   #C098A6;
+  --surface2: #FFFDF9;
+  --surface3: #F8F3EB;
+  --border:   #ECE2D6;
+  --border2:  #DCCFC0;
+
+  /* ── Ink · warm neutral, not maroon ── */
+  --text:   #221419;
+  --text2:  #4A3138;
+  --muted:  #7A6A62;   /* AA on cream — 4.84:1 */
+  --muted2: #9E8C86;
+  --muted3: #C3B7A8;
 
   /* ── Gradients ── */
-  --grad-hero:     linear-gradient(145deg, #951345 0%, #720D35 55%, #4A0820 100%);
-  --grad-card:     linear-gradient(160deg, #FFFFFF 0%, #FDF7FA 100%);
-  --grad-gold:     linear-gradient(90deg, #E8C96A 0%, #C8962E 100%);
-  --grad-maroon:   linear-gradient(135deg, #951345 0%, #720D35 100%);
-  --grad-emerald:  linear-gradient(135deg, #059669 0%, #047857 100%);
-  --grad-message:  linear-gradient(135deg, #951345 0%, #B01650 100%);
+  --grad-hero:    linear-gradient(148deg, #A01549 0%, #7A0E39 52%, #4A0820 100%);
+  --grad-card:    linear-gradient(162deg, #FFFFFF 0%, #FFFCF7 100%);
+  --grad-gold:    linear-gradient(90deg, #E8C96A 0%, #C8962E 100%);
+  --grad-maroon:  linear-gradient(135deg, #A01549 0%, #720D35 100%);
+  --grad-coral:   linear-gradient(135deg, #FF7E56 0%, #F2542D 100%);
+  --grad-emerald: linear-gradient(135deg, #10B981 0%, #047857 100%);
+  --grad-message: linear-gradient(135deg, #A01549 0%, #B01650 100%);
 
-  /* ── Shadows · warm maroon-tinted depth ── */
-  --shadow-xs: 0 1px 3px rgba(20,4,12,0.06), 0 1px 2px rgba(149,19,69,0.04);
-  --shadow-sm: 0 2px 8px rgba(20,4,12,0.08), 0 4px 16px rgba(149,19,69,0.07);
-  --shadow:    0 6px 20px rgba(20,4,12,0.10), 0 12px 40px rgba(149,19,69,0.10);
-  --shadow-md: 0 10px 32px rgba(20,4,12,0.12), 0 20px 60px rgba(149,19,69,0.14);
-  --shadow-lg: 0 18px 48px rgba(20,4,12,0.16), 0 34px 84px rgba(149,19,69,0.18);
-  --shadow-xl: 0 28px 72px rgba(20,4,12,0.28), 0 12px 36px rgba(149,19,69,0.22);
-  --shadow-glow: 0 0 0 3px rgba(192,24,90,0.14), 0 6px 26px rgba(149,19,69,0.32);
-  --shadow-gold: 0 4px 20px rgba(200,150,46,0.28);
+  /* ── Elevation · warm-neutral, layered ──
+     A tight contact shadow for the edge, a mid layer for lift, a wide soft
+     layer for air. Replaces the single maroon-tinted blurs, which read as a
+     colour wash rather than depth. */
+  --shadow-xs:
+    0 1px 2px rgba(58,34,20,0.05),
+    0 2px 6px rgba(58,34,20,0.05);
+  --shadow-sm:
+    0 1px 2px rgba(58,34,20,0.06),
+    0 4px 10px rgba(58,34,20,0.07),
+    0 10px 24px rgba(58,34,20,0.05);
+  --shadow:
+    0 1px 2px rgba(58,34,20,0.07),
+    0 6px 16px rgba(58,34,20,0.09),
+    0 18px 40px rgba(58,34,20,0.08);
+  --shadow-md:
+    0 2px 4px rgba(58,34,20,0.08),
+    0 10px 24px rgba(58,34,20,0.11),
+    0 26px 56px rgba(58,34,20,0.10);
+  --shadow-lg:
+    0 3px 6px rgba(58,34,20,0.09),
+    0 16px 36px rgba(58,34,20,0.14),
+    0 40px 84px rgba(58,34,20,0.13);
+  --shadow-xl:
+    0 4px 10px rgba(30,14,8,0.12),
+    0 24px 56px rgba(30,14,8,0.20),
+    0 56px 120px rgba(30,14,8,0.22);
+  --shadow-brand: 0 8px 26px rgba(149,19,69,0.30), 0 2px 5px rgba(74,8,32,0.16);
+  --shadow-coral: 0 6px 20px rgba(242,84,45,0.32), 0 2px 4px rgba(158,54,8,0.14);
+  --shadow-glow:  0 0 0 3px rgba(192,24,90,0.13), 0 6px 24px rgba(149,19,69,0.28);
+  --shadow-gold:  0 4px 18px rgba(200,150,46,0.24);
   --hairline-gold: inset 0 1px 0 var(--gold-soft);
+  --inset-top:     inset 0 1px 0 rgba(255,255,255,0.92);
 
   /* ── Shape ── */
   --radius-xs:  8px;
@@ -79,6 +126,9 @@
   --radius-lg:  22px;
   --radius-xl:  28px;
   --radius-2xl: 36px;
+
+  --font-display: 'Sora', 'Inter', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, sans-serif;
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -90,7 +140,7 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: radial-gradient(ellipse at 30% 20%, #3D0820 0%, #0E0308 55%, #060104 100%);
+  background: radial-gradient(ellipse at 30% 18%, #3A0A1E 0%, #150509 58%, #090204 100%);
   background-attachment: fixed;
 }
 
@@ -522,7 +572,7 @@ body {
   transition: all 0.22s var(--ease);
   letter-spacing: 0.1px;
 }
-.nav-item.active { color: var(--indigo); }
+.nav-item.active { color: var(--brand); font-weight: 800; }
 .nav-item.active .nav-icon-wrap {
   background: rgba(149,19,69,0.09);
   border-radius: 16px;
@@ -555,38 +605,105 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.9);
+  box-shadow: var(--shadow-sm), var(--inset-top);
   cursor: pointer;
-  transition: all 0.24s var(--ease);
-  border: 1.5px solid var(--border);
+  transition: transform 0.24s var(--ease), box-shadow 0.24s var(--ease), border-color 0.24s var(--ease);
+  border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
 }
-/* Left accent bar */
+/* Left status rail — always visible, colour-coded by presence */
 .member-card::before {
   content: '';
-  position: absolute; left: 0; top: 12px; bottom: 12px;
-  width: 3px; border-radius: 3px;
-  background: var(--grad-gold);
-  opacity: 0;
-  transition: opacity 0.22s var(--ease);
+  position: absolute; left: 0; top: 10px; bottom: 10px;
+  width: 3.5px; border-radius: 0 4px 4px 0;
+  background: var(--border2);
+  transition: background 0.24s var(--ease), box-shadow 0.24s var(--ease);
 }
 .member-card::after {
   content: '';
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(149,19,69,0.03) 0%, transparent 60%);
+  background: linear-gradient(135deg, rgba(255,107,74,0.05) 0%, transparent 58%);
   opacity: 0;
   transition: opacity 0.22s var(--ease);
   pointer-events: none;
 }
 .member-card:hover {
   transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: rgba(149,19,69,0.16);
+  box-shadow: var(--shadow-md), var(--inset-top);
+  border-color: var(--border2);
 }
-.member-card:hover::before { opacity: 1; }
-.member-card:hover::after  { opacity: 1; }
-.member-card:active { transform: scale(0.985); box-shadow: var(--shadow-sm); }
+.member-card:hover::after { opacity: 1; }
+.member-card:active { transform: scale(0.985) translateY(0); box-shadow: var(--shadow-sm); }
+
+/* Online: brighter surface, deeper lift, emerald rail */
+.member-card.is-online {
+  background: linear-gradient(162deg, #FFFFFF 0%, #FFFDF8 100%);
+  border-color: rgba(15,185,129,0.22);
+  box-shadow:
+    0 1px 2px rgba(58,34,20,0.06),
+    0 6px 16px rgba(58,34,20,0.10),
+    0 20px 44px rgba(58,34,20,0.09),
+    var(--inset-top);
+}
+.member-card.is-online::before {
+  background: linear-gradient(180deg, #14C38E, #059669);
+  box-shadow: 0 0 12px rgba(15,185,129,0.55);
+}
+.member-card.is-online:hover {
+  border-color: rgba(15,185,129,0.34);
+  box-shadow:
+    0 2px 4px rgba(58,34,20,0.08),
+    0 12px 26px rgba(58,34,20,0.13),
+    0 30px 62px rgba(58,34,20,0.11),
+    var(--inset-top);
+}
+
+/* Offline: settles back into the page — flatter, dimmer rail */
+.member-card.is-offline {
+  background: linear-gradient(162deg, #FDFAF5 0%, #F9F4EC 100%);
+  box-shadow: var(--shadow-xs), inset 0 1px 0 rgba(255,255,255,0.7);
+}
+.member-card.is-offline::before { background: var(--muted3); }
+.member-card.is-offline .avatar { filter: saturate(0.72); }
+.member-card.is-offline:hover {
+  box-shadow: var(--shadow-sm), var(--inset-top);
+  transform: translateY(-2px);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SOS EMERGENCY NUMBER BADGE (100 / 108 / 112)
+   White on solid maroon, ringed in white so it separates from the
+   tinted tile behind it — it used to be dark maroon on a dark tint.
+   ══════════════════════════════════════════════════════════════ */
+.sos-call-badge {
+  position: absolute; top: 8px; right: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 30px; height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--grad-maroon);
+  color: #FFFFFF;
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 0.6px;
+  font-variant-numeric: tabular-nums;
+  border: 1.5px solid rgba(255,255,255,0.95);
+  box-shadow:
+    0 2px 6px rgba(74,8,32,0.34),
+    0 0 0 1px rgba(149,19,69,0.16),
+    inset 0 1px 0 rgba(255,255,255,0.28);
+  text-shadow: 0 1px 1px rgba(74,8,32,0.45);
+  pointer-events: none;
+}
+/* Non-emergency tiles, so the two groups read apart */
+.sos-call-badge.is-secondary {
+  background: var(--grad-coral);
+  box-shadow:
+    0 2px 6px rgba(158,54,8,0.30),
+    0 0 0 1px rgba(242,84,45,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.32);
+  text-shadow: 0 1px 1px rgba(158,54,8,0.40);
+}
 
 .avatar {
   width: 52px; height: 52px;
@@ -603,20 +720,22 @@ body {
 }
 
 .member-info { flex: 1; min-width: 0; position: relative; z-index: 2; }
-.member-name { font-weight: 700; font-size: 15px; color: var(--text) !important; letter-spacing: -0.2px; }
-.member-meta { font-size: 12px; color: var(--muted) !important; margin-top: 3px; font-weight: 500; }
+.member-name { font-weight: 800; font-size: 15.5px; color: var(--text) !important; letter-spacing: -0.25px; line-height: 1.25; }
+.member-meta { font-size: 12px; color: var(--muted) !important; margin-top: 3px; font-weight: 500; letter-spacing: 0.15px; }
 
 .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .status-online {
-  background: #10B981 !important;
-  box-shadow: 0 0 0 3px rgba(16,185,129,0.22), 0 0 10px rgba(16,185,129,0.55) !important;
+  background: var(--emerald-vivid) !important;
+  box-shadow: 0 0 0 3px rgba(15,185,129,0.20), 0 0 10px rgba(15,185,129,0.55) !important;
 }
 .status-offline { background: var(--border2); }
 
 .section-title {
-  font-size: 12px; font-weight: 700;
+  font-size: 11px; font-weight: 800;
   color: var(--muted);
-  letter-spacing: 0.3px; margin: 4px 0 12px;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  margin: 6px 0 12px;
 }
 
 /* ── Settings / Info Card ── */
@@ -625,11 +744,11 @@ body {
   border-radius: var(--radius-lg);
   padding: 18px 20px;
   margin-bottom: 12px;
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.9);
-  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-sm), var(--inset-top);
+  border: 1px solid var(--border);
   transition: box-shadow 0.22s var(--ease), transform 0.22s var(--ease);
 }
-.settings-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+.settings-card:hover { box-shadow: var(--shadow), var(--inset-top); transform: translateY(-2px); }
 
 /* ══════════════════════════════════════════════════════════════
    POPUP / OVERLAY
@@ -732,17 +851,17 @@ body {
   border-radius: var(--radius-lg);
   padding: 18px;
   margin-bottom: 12px;
-  border-left: 3.5px solid var(--rose);
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.9);
+  border-left: 4px solid var(--coral-mid);
+  box-shadow: var(--shadow-sm), var(--inset-top);
   transition: all 0.22s var(--ease);
 }
 .alert-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
 .alert-card.resolved { border-left-color: var(--emerald); opacity: 0.60; }
 .alert-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .alert-name { font-weight: 700; font-size: 14px; color: var(--text); }
-.badge { font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px; letter-spacing: 0.2px; }
-.badge-active { background: var(--rose-light); color: var(--rose); box-shadow: inset 0 0 0 1px rgba(244,63,94,0.18); }
-.badge-resolved { background: var(--emerald-light); color: #047857; box-shadow: inset 0 0 0 1px rgba(16,185,129,0.20); }
+.badge { font-size: 10.5px; font-weight: 800; padding: 5px 12px; border-radius: 20px; letter-spacing: 0.6px; text-transform: uppercase; }
+.badge-active { background: var(--grad-coral); color: #fff; box-shadow: 0 3px 10px rgba(242,84,45,0.34), inset 0 1px 0 rgba(255,255,255,0.28); }
+.badge-resolved { background: var(--emerald-light); color: #04624B; box-shadow: inset 0 0 0 1px rgba(15,185,129,0.28); }
 .alert-message { font-size: 14px; color: var(--text2); margin-bottom: 8px; font-weight: 600; }
 .alert-meta { font-size: 12px; color: var(--muted); line-height: 1.9; font-weight: 500; }
 .resolve-btn {
@@ -1012,8 +1131,9 @@ body {
   position: absolute; top: -4px; right: -6px;
   min-width: 18px; height: 18px; padding: 0 5px;
   border-radius: 9px;
-  background: linear-gradient(135deg, #E11D48, #BE123C);
+  background: var(--grad-coral);
   color: #fff; font-size: 10px; font-weight: 800;
+  font-variant-numeric: tabular-nums;
   line-height: 18px; text-align: center;
   pointer-events: none;
   box-shadow: 0 2px 6px rgba(225,29,72,0.45);

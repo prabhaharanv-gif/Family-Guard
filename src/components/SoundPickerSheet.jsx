@@ -96,13 +96,13 @@ export default function SoundPickerSheet({ type, title, onClose, onSaved }) {
         <span style={{
           flex: 1, minWidth: 0, fontSize: 14,
           fontWeight: on ? 800 : 600,
-          color: on ? '#951345' : '#0D0C1D',
+          color: on ? '#951345' : '#221419',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {label}
         </span>
         {isDefault && (
-          <span style={{ fontSize: 11, color: '#9C6B7A', flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: '#7A6A62', flexShrink: 0 }}>
             {t('profile.appSound')}
           </span>
         )}
@@ -139,13 +139,13 @@ export default function SoundPickerSheet({ type, title, onClose, onSaved }) {
           fontSize: 11, fontWeight: 800, color: '#951345',
           textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2,
         }}>{t('profile.chooseSound')}</div>
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#0D0C1D', marginBottom: 10 }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: '#221419', marginBottom: 10 }}>
           {title}
         </div>
 
         <div ref={listRef} style={{ maxHeight: '46vh', overflowY: 'auto', marginBottom: 14 }}>
           {items === null ? (
-            <div style={{ padding: '24px 0', textAlign: 'center', color: '#9C6B7A', fontSize: 13 }}>
+            <div style={{ padding: '24px 0', textAlign: 'center', color: '#7A6A62', fontSize: 13 }}>
               {t('common.loading')}
             </div>
           ) : (
@@ -162,7 +162,7 @@ export default function SoundPickerSheet({ type, title, onClose, onSaved }) {
             of explanation under a list of 90 sounds was the longest thing on
             the sheet. The label survives as the accessible name. */}
         <div style={{
-          display: 'flex', borderTop: '1px solid #F0E4EA', marginBottom: 12,
+          display: 'flex', borderTop: '1px solid #ECE2D6', marginBottom: 12,
         }}>
           <SourceButton
             source="music"
@@ -174,7 +174,7 @@ export default function SoundPickerSheet({ type, title, onClose, onSaved }) {
             }
           />
           {/* A hairline between them, so two tap targets do not read as one. */}
-          <div style={{ width: 1, background: '#F0E4EA', margin: '8px 0' }} />
+          <div style={{ width: 1, background: '#ECE2D6', margin: '8px 0' }} />
           <SourceButton
             source="files"
             label={t('profile.soundFromFiles')}
@@ -189,8 +189,8 @@ export default function SoundPickerSheet({ type, title, onClose, onSaved }) {
             onClick={() => { stopPreview(); onClose() }}
             style={{
               flex: 1, padding: 14, borderRadius: 14,
-              background: '#F5F4FB', border: '1px solid #E9E6FB',
-              color: '#3A1020', fontWeight: 700, cursor: 'pointer',
+              background: '#F8F3EB', border: '1px solid #ECE2D6',
+              color: '#4A3138', fontWeight: 700, cursor: 'pointer',
               fontFamily: 'inherit', fontSize: 14,
             }}
           >{t('common.cancel')}</button>

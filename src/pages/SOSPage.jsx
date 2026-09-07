@@ -72,14 +72,14 @@ const CALL_BADGE_BG = { '100': '#6B0B2C', '108': '#951345', '112': '#C0185A' }
    the notification function, so it stays English on purpose; `key` is what
    the UI translates. */
 const QUICK_MESSAGES = [
-  { key: 'police',     label: 'Need Police Help',  Icon: Icons.Police,      color: '#720D35', bg: '#F5EBF0', call: '100', emergency: true  },
-  { key: 'violence',   label: 'Under Violence',    Icon: Icons.Violence,    color: '#8A0F3A', bg: '#F8ECF1', call: '100', emergency: true  },
-  { key: 'harassment', label: 'Under Harassment',  Icon: Icons.Harassment,  color: '#C0185A', bg: '#FEF0F6', call: '100', emergency: true  },
-  { key: 'ambulance',  label: 'Need Ambulance',    Icon: Icons.Ambulance,   color: '#951345', bg: '#FDF0F5', call: '108', emergency: true  },
-  { key: 'disaster',   label: 'Natural Disaster',  Icon: Icons.Disaster,    color: '#6B0B2C', bg: '#F2E8EC', call: '108', emergency: true  },
-  { key: 'fire',       label: 'Fire Around Me',    Icon: Icons.Fire,        color: '#B01650', bg: '#FDF2F6', call: '112', emergency: true  },
-  { key: 'theft',      label: 'Theft',             Icon: Icons.Theft,       color: '#A01040', bg: '#FAF0F4', call: '100', emergency: false },
-  { key: 'money',      label: 'Need Money',        Icon: Icons.Money,       color: '#951345', bg: '#FDF0F5', call: null,  emergency: false },
+  { key: 'police',     label: 'Need Police Help',  Icon: Icons.Police,      color: '#720D35', bg: '#F7E9EF', call: '100', emergency: true  },
+  { key: 'violence',   label: 'Under Violence',    Icon: Icons.Violence,    color: '#B3260F', bg: '#FFEFE9', call: '100', emergency: true  },
+  { key: 'harassment', label: 'Under Harassment',  Icon: Icons.Harassment,  color: '#A31352', bg: '#FCEBF3', call: '100', emergency: true  },
+  { key: 'ambulance',  label: 'Need Ambulance',    Icon: Icons.Ambulance,   color: '#951345', bg: '#FDECF2', call: '108', emergency: true  },
+  { key: 'disaster',   label: 'Natural Disaster',  Icon: Icons.Disaster,    color: '#0E6F72', bg: '#E4F3F3', call: '108', emergency: true  },
+  { key: 'fire',       label: 'Fire Around Me',    Icon: Icons.Fire,        color: '#B35309', bg: '#FEF1E1', call: '112', emergency: true  },
+  { key: 'theft',      label: 'Theft',             Icon: Icons.Theft,       color: '#8A5A12', bg: '#FBF1DF', call: '100', emergency: false },
+  { key: 'money',      label: 'Need Money',        Icon: Icons.Money,       color: '#046B4F', bg: '#E6F6EF', call: null,  emergency: false },
 ]
 /* i18n-exempt:end */
 
@@ -152,19 +152,19 @@ function ConfirmSheet({ msg, onConfirm, onCancel }) {
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
             fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 900,
-            color: '#0D0C1D', marginBottom: 8, letterSpacing: -0.4,
+            color: '#221419', marginBottom: 8, letterSpacing: -0.4,
           }}>
             {t('sos.msg.' + msg.key)}
           </div>
-          <div style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.5 }}>
+          <div style={{ fontSize: 14, color: '#7A6A62', lineHeight: 1.5 }}>
             {msg.call ? t('sos.confirmBodyCall', { number: msg.call }) : t('sos.confirmBody')}
           </div>
         </div>
 
         {/* What happens */}
         <div style={{
-          background: '#F8F7FF', borderRadius: 14, padding: '14px 16px',
-          marginBottom: 24, border: '1px solid #EDE9FF',
+          background: '#FBF7F1', borderRadius: 14, padding: '14px 16px',
+          marginBottom: 24, border: '1px solid #ECE2D6',
         }}>
           {[
             { icon: '📍', text: t('sos.willShareLocation') },
@@ -176,7 +176,7 @@ function ConfirmSheet({ msg, onConfirm, onCancel }) {
               marginBottom: i < 2 ? 10 : 0,
             }}>
               <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-              <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>{item.text}</span>
+              <span style={{ fontSize: 13, color: '#4A3138', fontWeight: 500 }}>{item.text}</span>
             </div>
           ))}
         </div>
@@ -184,8 +184,8 @@ function ConfirmSheet({ msg, onConfirm, onCancel }) {
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onCancel} style={{
             flex: 1, padding: '14px', borderRadius: 14,
-            background: '#F8F7FF', border: '1px solid #EDE9FF',
-            color: '#6B7280', fontWeight: 700, fontSize: 14,
+            background: '#FBF7F1', border: '1px solid #ECE2D6',
+            color: '#7A6A62', fontWeight: 700, fontSize: 14,
             fontFamily: 'inherit', cursor: 'pointer',
           }}>{t('common.cancel')}</button>
           <button onClick={onConfirm} style={{
@@ -534,7 +534,7 @@ export default function SOSPage() {
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #F0E4EA', flexShrink: 0 }}>
+      <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #ECE2D6', flexShrink: 0 }}>
         {[
           { key: 'send',    label: t('sos.tabSend') },
           { key: 'history', label: t('sos.tabHistory') + (activeCount > 0 ? ` (${activeCount})` : '') },
@@ -542,7 +542,7 @@ export default function SOSPage() {
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
             flex: 1, padding: '13px 0', background: 'none', border: 'none',
             fontFamily: 'inherit', fontWeight: 700, fontSize: 14, cursor: 'pointer',
-            color: activeTab === tab.key ? '#951345' : '#9C6B7A',
+            color: activeTab === tab.key ? '#951345' : '#7A6A62',
             borderBottom: activeTab === tab.key ? '2.5px solid #951345' : '2.5px solid transparent',
             transition: 'all 0.2s',
           }}>
@@ -570,7 +570,7 @@ export default function SOSPage() {
           </div>
 
           {/* Other help section */}
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#9C6B7A', letterSpacing: 0.3, marginBottom: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#7A6A62', letterSpacing: 0.3, marginBottom: 10 }}>
             {t('sos.otherHelp')}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -636,7 +636,7 @@ export default function SOSPage() {
                     </div>
                     <div>
                       <div className="alert-name">{isOwn ? t('common.you') : member?.display_name || t('sos.family')}</div>
-                      <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>{dateStr}</div>
+                      <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 1 }}>{dateStr}</div>
                     </div>
                   </div>
                   <span className={'badge ' + (alert.is_resolved ? 'badge-resolved' : 'badge-active')}>
@@ -690,33 +690,43 @@ function SOSButton({ msg, onTap, disabled }) {
       onClick={() => !disabled && onTap(msg)}
       disabled={disabled}
       style={{
-        background: disabled ? '#F5F4FB' : msg.bg,
-        border: `1.5px solid ${disabled ? '#E9E6FB' : msg.color + '40'}`,
+        background: disabled ? '#F8F3EB' : msg.bg,
+        border: `1px solid ${disabled ? '#ECE2D6' : msg.color + '26'}`,
         borderRadius: 18, padding: '18px 12px',
         cursor: disabled ? 'not-allowed' : 'pointer',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'space-between',
         gap: 10, fontFamily: 'inherit', height: '100%',
-        boxShadow: disabled ? 'none' : `0 4px 16px ${msg.color}12`,
+        boxShadow: disabled
+          ? 'none'
+          : `0 1px 2px rgba(58,34,20,0.06), 0 5px 14px ${msg.color}1F, 0 14px 30px ${msg.color}14, inset 0 1px 0 rgba(255,255,255,0.85)`,
         position: 'relative',
         transition: 'all 0.18s ease',
       }}>
       {msg.call && (
         <div style={{
           position: 'absolute', top: 8, right: 8,
-          background: CALL_BADGE_BG[msg.call] || msg.color, borderRadius: 8,
-          padding: '2px 7px', fontSize: 9, fontWeight: 800,
-          color: '#fff', letterSpacing: 0.3,
+          background: CALL_BADGE_BG[msg.call] || msg.color, borderRadius: 999,
+          minWidth: 30, height: 20, padding: '0 8px',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 11, fontWeight: 800, letterSpacing: 0.6,
+          fontVariantNumeric: 'tabular-nums',
+          color: '#fff',
+          // Ringed in white and shadowed so the pill separates from the tile
+          // tint behind it — it used to read as dark maroon on a dark tint.
+          border: '1.5px solid rgba(255,255,255,0.95)',
+          boxShadow: '0 2px 6px rgba(74,8,32,0.34), inset 0 1px 0 rgba(255,255,255,0.28)',
+          textShadow: '0 1px 1px rgba(74,8,32,0.45)',
         }}>
           {msg.call}
         </div>
       )}
-      <div style={{ color: disabled ? '#C0B8C8' : msg.color, marginTop: 4 }}>
+      <div style={{ color: disabled ? '#C3B7A8' : msg.color, marginTop: 4 }}>
         <msg.Icon />
       </div>
       <span style={{
         fontSize: 12, fontWeight: 700, lineHeight: 1.3,
-        color: disabled ? '#C0B8C8' : msg.color,
+        color: disabled ? '#C3B7A8' : msg.color,
         textAlign: 'center', width: '100%',
       }}>
         {t('sos.msg.' + msg.key)}

@@ -137,8 +137,8 @@ export default function MapPage() {
                       {member?.display_name?.[0]?.toUpperCase()}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: 14, color: '#0D0C1D' }}>{member?.display_name}</div>
-                      <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: '#221419' }}>{member?.display_name}</div>
+                      <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 1 }}>
                         🕐 {new Date(targetLoc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
@@ -173,8 +173,8 @@ export default function MapPage() {
                         {loc.displayName?.[0]?.toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 800, fontSize: 14, color: '#0D0C1D' }}>{loc.displayName}</div>
-                        <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
+                        <div style={{ fontWeight: 800, fontSize: 14, color: '#221419' }}>{loc.displayName}</div>
+                        <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 1 }}>
                           🕐 {new Date(loc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
@@ -183,7 +183,7 @@ export default function MapPage() {
                       target="_blank" rel="noopener noreferrer"
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                        background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
+                        background: 'linear-gradient(135deg, #C0450F, #C0450F)',
                         color: '#fff', padding: '8px 14px', borderRadius: 10,
                         fontWeight: 700, fontSize: 12, textDecoration: 'none',
                         boxShadow: '0 3px 10px rgba(79,70,229,0.3)',

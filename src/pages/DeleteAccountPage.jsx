@@ -29,7 +29,7 @@ function Card({ title, children }) {
       }}>
         {title}
       </div>
-      <div style={{ fontSize: 13.5, color: '#3A1020', lineHeight: 1.65 }}>
+      <div style={{ fontSize: 13.5, color: '#4A3138', lineHeight: 1.65 }}>
         {children}
       </div>
     </div>
@@ -44,7 +44,7 @@ export default function DeleteAccountPage() {
     <div style={{
       position: 'fixed', inset: 0,
       display: 'flex', flexDirection: 'column',
-      background: '#F8F7FF',
+      background: '#FBF7F1',
       zIndex: 100,
     }}>
       {/* Header — same shape as PrivacyPolicyPage so the two public pages match */}

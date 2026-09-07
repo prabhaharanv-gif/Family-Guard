@@ -112,7 +112,7 @@ export function MediaBubble({ msg, isOwn }) {
         width: 220, maxWidth: '100%', boxSizing: 'border-box',
         padding: '8px 10px', borderRadius: 10, textDecoration: 'none',
         background: isOwn ? 'rgba(255,255,255,0.16)' : '#F8EEF3',
-        border: isOwn ? '1px solid rgba(255,255,255,0.25)' : '1px solid #F0E4EA',
+        border: isOwn ? '1px solid rgba(255,255,255,0.25)' : '1px solid #ECE2D6',
         color: 'inherit',
       }}
     >
@@ -209,7 +209,7 @@ export function AttachButton({ onPick, onError, disabled }) {
       icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></>,
     },
     {
-      kind: 'video', label: t('messages.mediaVideo'), mime: 'video/*', color: '#7C3AED',
+      kind: 'video', label: t('messages.mediaVideo'), mime: 'video/*', color: '#C0450F',
       icon: <><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" /></>,
     },
     {
@@ -249,7 +249,7 @@ export function AttachButton({ onPick, onError, disabled }) {
         style={{
           width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
           background: anchor ? MAROON : '#F8EEF3',
-          border: `1.5px solid ${anchor ? MAROON : '#F0E4EA'}`,
+          border: `1.5px solid ${anchor ? MAROON : '#ECE2D6'}`,
           color: anchor ? '#fff' : MAROON,
           cursor: disabled ? 'default' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -274,7 +274,7 @@ export function AttachButton({ onPick, onError, disabled }) {
             style={{
               position: 'fixed', top, left, width: MENU_WIDTH,
               background: '#fff', borderRadius: 14,
-              border: '1px solid #F0E4EA',
+              border: '1px solid #ECE2D6',
               boxShadow: '0 14px 36px rgba(20,8,24,0.24)',
               padding: 6, overflow: 'hidden',
             }}
@@ -289,7 +289,7 @@ export function AttachButton({ onPick, onError, disabled }) {
                     background: 'none', border: 'none', cursor: 'pointer',
                     fontFamily: 'inherit', textAlign: 'left',
                     display: 'flex', alignItems: 'center', gap: 10,
-                    color: '#0D0C1D', fontSize: 13.5, fontWeight: 700,
+                    color: '#221419', fontSize: 13.5, fontWeight: 700,
                   }}
                 >
                   <span style={{
@@ -416,7 +416,7 @@ export function VoiceRecorder({ onRecorded, onError, disabled }) {
           onClick={() => stop(true)}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            color: '#9C6B7A', fontSize: 13, fontWeight: 700,
+            color: '#7A6A62', fontSize: 13, fontWeight: 700,
             fontFamily: 'inherit', padding: '0 6px',
           }}
         >{t('common.cancel')}</button>
@@ -444,7 +444,7 @@ export function VoiceRecorder({ onRecorded, onError, disabled }) {
       aria-label={t('messages.recordVoice')}
       style={{
         width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-        background: '#F8EEF3', border: '1.5px solid #F0E4EA',
+        background: '#F8EEF3', border: '1.5px solid #ECE2D6',
         color: MAROON, cursor: disabled ? 'default' : 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         opacity: disabled ? 0.5 : 1,
@@ -490,7 +490,7 @@ export function PendingMediaBar({ pending, uploading, onCancel }) {
           {uploading ? t('messages.mediaUploading') : label}
         </div>
         <div style={{
-          fontSize: 11, color: '#9C6B7A', overflow: 'hidden',
+          fontSize: 11, color: '#7A6A62', overflow: 'hidden',
           textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {pending.durationMs ? formatDuration(pending.durationMs) : pending.file?.name}
@@ -501,7 +501,7 @@ export function PendingMediaBar({ pending, uploading, onCancel }) {
         style={{
           background: 'none', border: 'none',
           cursor: uploading ? 'default' : 'pointer',
-          fontSize: 18, color: '#8480B0', padding: '0 4px', flexShrink: 0,
+          fontSize: 18, color: '#7A6A62', padding: '0 4px', flexShrink: 0,
         }}
       >✕</button>
     </div>

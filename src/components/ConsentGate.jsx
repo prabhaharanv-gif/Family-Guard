@@ -82,9 +82,9 @@ export default function ConsentGate({ children }) {
 
   if (!agreed) {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: '#F8F7FF', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: '#FBF7F1', display: 'flex', flexDirection: 'column' }}>
         {showPolicy ? (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 510, background: '#F8F7FF', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 510, background: '#FBF7F1', display: 'flex', flexDirection: 'column' }}>
             <div style={{
               background: 'linear-gradient(135deg, #951345 0%, #720D35 100%)',
               padding: '16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
@@ -113,10 +113,10 @@ export default function ConsentGate({ children }) {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 24px' }}>
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
               <div style={{ fontSize: 56, marginBottom: 12 }}>🛡️</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#0D0C1D', marginBottom: 8, fontFamily: 'Sora, sans-serif' }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#221419', marginBottom: 8, fontFamily: 'Sora, sans-serif' }}>
                 Before You Continue
               </div>
-              <div style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 14, color: '#7A6A62', lineHeight: 1.6 }}>
                 We've updated our Privacy Policy. Please review and accept it to continue using Famora.
               </div>
             </div>
@@ -130,17 +130,17 @@ export default function ConsentGate({ children }) {
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: 14,
                 background: '#fff', borderRadius: 14, padding: '14px 16px',
-                marginBottom: 10, border: '1px solid #F0EAF5',
+                marginBottom: 10, border: '1px solid #ECE2D6',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
               }}>
                 <span style={{ fontSize: 22, flexShrink: 0 }}>{item.icon}</span>
-                <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.4 }}>{item.text}</span>
+                <span style={{ fontSize: 13, color: '#4A3138', lineHeight: 1.4 }}>{item.text}</span>
               </div>
             ))}
 
             <button onClick={() => setShowPolicy(true)} style={{
               width: '100%', padding: '13px 16px', borderRadius: 14, marginTop: 6,
-              background: '#F8F7FF', border: '1.5px solid #E9E6FB',
+              background: '#FBF7F1', border: '1.5px solid #ECE2D6',
               color: '#951345', fontWeight: 700, fontSize: 14,
               fontFamily: 'inherit', cursor: 'pointer', marginBottom: 12,
             }}>

@@ -108,7 +108,7 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
         <div style={{ fontSize: 11, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
           {t('family.setNicknameTitle', { name: member.display_name })}
         </div>
-        <div style={{ fontSize: 12, color: '#8480B0', marginBottom: 14, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 12, color: '#7A6A62', marginBottom: 14, lineHeight: 1.4 }}>
           {t('family.nicknamePrivate', { name: member.display_name })}
         </div>
         <input
@@ -121,8 +121,8 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#F5F4FB', border: '1px solid #E9E6FB',
-            color: '#3A1020', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
+            background: '#F8F3EB', border: '1px solid #ECE2D6',
+            color: '#4A3138', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
           }}>{t('common.cancel')}</button>
           <button onClick={handleSave} disabled={saving} style={{
             flex: 1, padding: 14, borderRadius: 14,
@@ -486,7 +486,7 @@ export default function FamilyPage() {
               </div>
             </div>
 
-            <div style={{ fontSize: 11, color: '#9C6B7A', marginBottom: 12, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 11, color: '#7A6A62', marginBottom: 12, lineHeight: 1.4 }}>
               {t('family.joinScreenNote')}
             </div>
 
@@ -519,7 +519,7 @@ export default function FamilyPage() {
               width: '100%', padding: '10px 14px', borderRadius: 13,
               background: codeCopied ? '#D1FAE5' : '#F7F4F8',
               border: codeCopied ? '1.5px solid #10B981' : '1.5px solid #EDE7EF',
-              color: codeCopied ? '#059669' : '#3A1020', fontWeight: 800, fontSize: 13.5,
+              color: codeCopied ? '#059669' : '#4A3138', fontWeight: 800, fontSize: 13.5,
               fontFamily: 'inherit', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
               transition: 'all 0.2s',
@@ -579,12 +579,12 @@ export default function FamilyPage() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
-                        fontSize: 13, fontWeight: 700, color: '#0D0C1D', marginBottom: 2,
+                        fontSize: 13, fontWeight: 700, color: '#221419', marginBottom: 2,
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>
                         {fam.name}
                       </div>
-                      <div style={{ fontSize: 11, color: '#9C6B7A' }}>
+                      <div style={{ fontSize: 11, color: '#7A6A62' }}>
                         {fam.role === 'admin' ? '👑 ' + t('family.admin') : '👤 ' + t('family.member')} · {fam.invite_code}
                       </div>
                     </div>
@@ -780,7 +780,7 @@ export default function FamilyPage() {
                   </div>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: '#000' }}>{req.requester_name}</div>
-                    <div style={{ fontSize: 12, color: '#9C6B7A', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: '#7A6A62', marginTop: 2 }}>
                       {t('family.wantsToJoin')} · {new Date(req.created_at).toLocaleTimeString()}
                     </div>
                   </div>
@@ -856,7 +856,7 @@ export default function FamilyPage() {
             return (
               <div
                 key={m.id}
-                className="member-card"
+                className={'member-card ' + (online ? 'is-online' : 'is-offline')}
                 onClick={e => {
                   if (didLongPress.current) { didLongPress.current = false; return }
                   setMemberAnchor(e.currentTarget.getBoundingClientRect())
@@ -883,15 +883,15 @@ export default function FamilyPage() {
                   <div style={{
                     position: 'absolute', bottom: 1, right: 1,
                     width: 13, height: 13, borderRadius: '50%',
-                    background: online ? '#10B981' : '#D1D5DB',
+                    background: online ? '#10B981' : '#C3B7A8',
                     border: '2.5px solid #fff',
                     boxShadow: online ? '0 0 0 2px rgba(16,185,129,0.25), 0 0 8px rgba(16,185,129,0.5)' : 'none',
                     transition: 'all 0.3s',
                   }} />
                 </div>
                 <div className="member-info">
-                  <div className="member-name" style={{ color: '#0D0C1D' }}>{nameFor(m)}</div>
-                  <div className="member-meta" style={{ color: '#8480B0' }}>
+                  <div className="member-name" style={{ color: '#221419' }}>{nameFor(m)}</div>
+                  <div className="member-meta" style={{ color: '#7A6A62' }}>
                     {online ? (
                       <span style={{ color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
@@ -936,7 +936,7 @@ export default function FamilyPage() {
                   // supporting detail and competed with the member name; grey
                   // would read as disabled. Green is avoided because it sat
                   // beside the green "Live" pin and the two merged.
-                  const color = '#9C6B7A'
+                  const color = '#7A6A62'
                   // Stale readings were previously faded to 55% opacity, on
                   // the reasoning that a battery only drains so an old value
                   // always reads high. In practice it just looked like two
@@ -1021,12 +1021,12 @@ export default function FamilyPage() {
                     const hasFix = hasLocationRow && !!loc.lat && !!loc.lng
                       && !(loc.lat === 0 && loc.lng === 0)
                     const waiting = !sharingOff && !gpsOff && !hasFix
-                    const pinFill = sharingOff || waiting ? '#D1D5DB' : (gpsOff ? '#E11D48' : '#10B981')
+                    const pinFill = sharingOff || waiting ? '#C3B7A8' : (gpsOff ? '#E11D48' : '#10B981')
                     const label   = sharingOff ? t('family.gpsOff')
                       : gpsOff ? t('family.gpsNoFix')
                       : waiting ? t('family.gpsWaiting')
                       : t('family.gpsLive')
-                    const labelColor = waiting ? '#9C6B7A' : (gpsOff || sharingOff ? '#E11D48' : '#10B981')
+                    const labelColor = waiting ? '#7A6A62' : (gpsOff || sharingOff ? '#E11D48' : '#10B981')
                     return (
                       <>
                         <div style={{ position: 'relative', width: 28, height: 28 }}>
@@ -1073,7 +1073,7 @@ export default function FamilyPage() {
                     }
                     return (
                       <span style={{
-                        fontSize: 9, fontWeight: 600, color: '#6B7280',
+                        fontSize: 9, fontWeight: 600, color: '#7A6A62',
                         marginTop: 1, whiteSpace: 'nowrap',
                       }}>
                         {label || ' '}

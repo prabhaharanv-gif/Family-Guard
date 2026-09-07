@@ -197,7 +197,7 @@ export default function SosReliabilitySetup() {
           One-time safety setup
         </div>
 
-        <div style={{ fontSize: 21, fontWeight: 800, color: '#0D0C1D', marginBottom: 10 }}>
+        <div style={{ fontSize: 21, fontWeight: 800, color: '#221419', marginBottom: 10 }}>
           {current.title}
         </div>
 
@@ -206,7 +206,7 @@ export default function SosReliabilitySetup() {
         </p>
 
         <div style={{
-          background: '#FDF5F8', border: '1px solid #F0E4EA',
+          background: '#FDF5F8', border: '1px solid #ECE2D6',
           borderRadius: 12, padding: '12px 14px', marginBottom: 20,
           fontSize: 13, color: '#7A5563', lineHeight: 1.5,
         }}>
@@ -226,21 +226,21 @@ export default function SosReliabilitySetup() {
         <div style={{ display: 'flex', gap: 10 }}>
           {step > 0 && (
             <button onClick={() => setStep(s => s - 1)} style={{
-              flex: 1, padding: 13, borderRadius: 14, background: '#F8F7FF',
-              border: '1px solid #EDE9FF', color: '#6B7280', fontWeight: 700,
+              flex: 1, padding: 13, borderRadius: 14, background: '#FBF7F1',
+              border: '1px solid #ECE2D6', color: '#7A6A62', fontWeight: 700,
               fontFamily: 'inherit', fontSize: 14, cursor: 'pointer',
             }}>Back</button>
           )}
           {!isLast ? (
             <button onClick={() => setStep(s => s + 1)} style={{
               flex: 2, padding: 13, borderRadius: 14,
-              background: '#0D0C1D', border: 'none', color: '#fff',
+              background: '#221419', border: 'none', color: '#fff',
               fontWeight: 700, fontFamily: 'inherit', fontSize: 14, cursor: 'pointer',
             }}>I've done this — Next</button>
           ) : (
             <button onClick={dismiss} style={{
               flex: 2, padding: 13, borderRadius: 14,
-              background: '#0D0C1D', border: 'none', color: '#fff',
+              background: '#221419', border: 'none', color: '#fff',
               fontWeight: 700, fontFamily: 'inherit', fontSize: 14, cursor: 'pointer',
             }}>Done</button>
           )}
@@ -248,7 +248,7 @@ export default function SosReliabilitySetup() {
 
         <button onClick={dismiss} style={{
           width: '100%', marginTop: 12, padding: 8, background: 'none',
-          border: 'none', color: '#9CA3AF', fontSize: 13, fontFamily: 'inherit',
+          border: 'none', color: '#9E8C86', fontSize: 13, fontFamily: 'inherit',
           cursor: 'pointer', textDecoration: 'underline',
         }}>
           Skip for now

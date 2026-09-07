@@ -24,7 +24,7 @@ function Section({ meta, content, topicsLabel, open, onToggle }) {
       background: '#fff',
       borderRadius: 18,
       marginBottom: 12,
-      border: '1px solid #F0EAF5',
+      border: '1px solid #ECE2D6',
       boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
       overflow: 'hidden',
     }}>
@@ -48,12 +48,12 @@ function Section({ meta, content, topicsLabel, open, onToggle }) {
           {/* line-height 1.4 rather than 1: Indic scripts stack marks above and
               below the base character and get clipped at tighter leading. */}
           <div style={{
-            fontSize: 15, fontWeight: 800, color: '#0D0C1D',
+            fontSize: 15, fontWeight: 800, color: '#221419',
             fontFamily: 'Sora, sans-serif', lineHeight: 1.4,
           }}>
             {content.title}
           </div>
-          <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 2, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 2, lineHeight: 1.5 }}>
             {topicsLabel}
           </div>
         </div>
@@ -81,7 +81,7 @@ function Section({ meta, content, topicsLabel, open, onToggle }) {
                 fontSize: 10, fontWeight: 900,
               }}>{i + 1}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0D0C1D', marginBottom: 3, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 800, color: '#221419', marginBottom: 3, lineHeight: 1.5 }}>
                   {label}
                 </div>
                 <div style={{ fontSize: 12.5, color: '#5B4652', lineHeight: 1.75 }}>
@@ -126,7 +126,7 @@ export default function UserManualPage() {
     <div style={{
       position: 'fixed', inset: 0,
       display: 'flex', flexDirection: 'column',
-      background: '#F8F7FF',
+      background: '#FBF7F1',
       zIndex: 100,
     }}>
       {/* Header */}
@@ -190,13 +190,13 @@ export default function UserManualPage() {
       <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 16px 40px' }}>
 
         <div style={{
-          background: 'linear-gradient(135deg, #FDF0F5, #F0EEFF)',
+          background: 'linear-gradient(135deg, #FDF0F5, #F8F3EB)',
           borderRadius: 18, padding: '18px 20px', marginBottom: 14,
           border: '1.5px solid #E8DFFF',
           boxShadow: '0 2px 12px rgba(149,19,69,0.08)',
         }}>
           <div style={{ fontSize: 22, marginBottom: 8 }}>📖</div>
-          <div style={{ fontSize: 14, color: '#3A1020', lineHeight: 1.75, fontWeight: 500 }}>
+          <div style={{ fontSize: 14, color: '#4A3138', lineHeight: 1.75, fontWeight: 500 }}>
             {t.introLead}{' '}
             <strong style={{ color: '#951345' }}>{t.introStrong}</strong>
             {' '}{t.introTail}
@@ -219,7 +219,7 @@ export default function UserManualPage() {
         })}
 
         <div style={{
-          textAlign: 'center', fontSize: 11, color: '#9C6B7A',
+          textAlign: 'center', fontSize: 11, color: '#7A6A62',
           padding: '18px 10px 0', lineHeight: 1.8,
         }}>
           {t.footer}

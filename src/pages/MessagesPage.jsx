@@ -543,7 +543,7 @@ export default function MessagesPage() {
       </div>
 
       {/* Chat / Personal / Calls tabs */}
-      <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #F0E4EA', flexShrink: 0 }}>
+      <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #ECE2D6', flexShrink: 0 }}>
         {[{ key: 'chat', label: t('messages.tabFamily') }, { key: 'personal', label: t('messages.tabPersonal') }, { key: 'calls', label: t('messages.tabCalls') }].map(tab => (
           <button key={tab.key} onClick={() => {
             if (tab.key === 'personal' && activeTab === 'personal') setPersonalReset(n => n + 1)
@@ -551,7 +551,7 @@ export default function MessagesPage() {
           }} style={{
             flex: 1, padding: '12px 0', background: 'none', border: 'none',
             borderBottom: activeTab === tab.key ? '2.5px solid #951345' : '2.5px solid transparent',
-            color: activeTab === tab.key ? '#951345' : '#9C6B7A',
+            color: activeTab === tab.key ? '#951345' : '#7A6A62',
             fontWeight: activeTab === tab.key ? 800 : 600,
             fontSize: 14, fontFamily: 'inherit', cursor: 'pointer',
           }}>{tab.label}</button>
@@ -569,20 +569,20 @@ export default function MessagesPage() {
       {activeTab === 'personal' && <PersonalChatPanel onDialog={setDialog} resetSignal={personalReset} onControls={setPersonalControls} />}
 
       {activeTab === 'chat' && showSearch && (
-        <div style={{ padding: '8px 16px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF' }}>
+        <div style={{ padding: '8px 16px', background: '#FBF7F1', borderBottom: '1px solid #ECE2D6' }}>
           <div style={{ position: 'relative' }}>
             <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search messages..." autoFocus
               style={{
                 width: '100%', padding: '10px 36px 10px 14px',
-                borderRadius: 12, border: '1.5px solid #EDE9FF',
+                borderRadius: 12, border: '1.5px solid #ECE2D6',
                 fontSize: 14, fontFamily: 'inherit', outline: 'none',
                 background: '#fff', boxSizing: 'border-box',
               }} />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} style={{
                 position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#9CA3AF',
+                background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#9E8C86',
               }}>✕</button>
             )}
           </div>
@@ -590,16 +590,16 @@ export default function MessagesPage() {
       )}
 
       {activeTab === 'chat' && Object.keys(typingUsers).length > 0 && (
-        <div style={{ padding: '6px 20px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF',
+        <div style={{ padding: '6px 20px', background: '#FBF7F1', borderBottom: '1px solid #ECE2D6',
           display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
             {[0,1,2].map(i => (
-              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#7C3AED',
+              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#C0450F',
                 animation: `tdot 1.2s ${i*0.2}s ease-in-out infinite` }} />
             ))}
           </div>
           <style>{`@keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}`}</style>
-          <span style={{ fontSize: 12, color: '#7C3AED', fontWeight: 600 }}>
+          <span style={{ fontSize: 12, color: '#C0450F', fontWeight: 600 }}>
             {Object.keys(typingUsers).length === 1
               ? t('messages.isTyping', { name: memberName(Object.keys(typingUsers)[0], t('messages.someone')) })
               : t('messages.severalTyping')}
@@ -692,14 +692,14 @@ export default function MessagesPage() {
                   textAlign: 'center', margin: '8px 0 12px',
                   display: 'flex', alignItems: 'center', gap: 10,
                 }}>
-                  <div style={{ flex: 1, height: 1, background: '#F0E4EA' }} />
+                  <div style={{ flex: 1, height: 1, background: '#ECE2D6' }} />
                   <div style={{
-                    fontSize: 11, fontWeight: 700, color: '#9C6B7A',
+                    fontSize: 11, fontWeight: 700, color: '#7A6A62',
                     background: '#FDF5F8', padding: '3px 12px',
-                    borderRadius: 20, border: '1px solid #F0E4EA',
+                    borderRadius: 20, border: '1px solid #ECE2D6',
                     whiteSpace: 'nowrap',
                   }}>{dateLabel}</div>
-                  <div style={{ flex: 1, height: 1, background: '#F0E4EA' }} />
+                  <div style={{ flex: 1, height: 1, background: '#ECE2D6' }} />
                 </div>
               )}
             <div style={{
@@ -751,7 +751,7 @@ export default function MessagesPage() {
                   onClick={() => { if (didLongPress.current) { didLongPress.current = false; return } }}
                   style={{
                     background: isOwn ? 'linear-gradient(135deg, #951345 0%, #B01650 100%)' : '#fff',
-                    color: isOwn ? '#fff' : '#0D0C1D',
+                    color: isOwn ? '#fff' : '#221419',
                     padding: '10px 14px',
                     borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     fontSize: 14,
@@ -910,7 +910,7 @@ export default function MessagesPage() {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
               {t('messages.messageInfo')}
             </div>
-            <div style={{ background: '#F5F4FB', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#0D0C1D', marginBottom: 16 }}>
+            <div style={{ background: '#F8F3EB', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#221419', marginBottom: 16 }}>
               {detailMsg.content}
             </div>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#34B7F1', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -918,7 +918,7 @@ export default function MessagesPage() {
               {t('messages.readBy', { n: (reads[detailMsg.id] || []).length })}
             </div>
             {(reads[detailMsg.id] || []).length === 0 ? (
-              <div style={{ fontSize: 13, color: '#8480B0', marginBottom: 14 }}>{t('messages.noneRead')}</div>
+              <div style={{ fontSize: 13, color: '#7A6A62', marginBottom: 14 }}>{t('messages.noneRead')}</div>
             ) : (
               <div style={{ marginBottom: 14 }}>
                 {(reads[detailMsg.id] || []).map(r => {
@@ -929,8 +929,8 @@ export default function MessagesPage() {
                         {memberName(r.user_id, t('messages.member'))?.[0]?.toUpperCase() || '?'}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{memberName(r.user_id, t('messages.member'))}</div>
-                        <div style={{ fontSize: 11, color: '#8480B0' }}>{new Date(r.read_at).toLocaleString()}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#221419' }}>{memberName(r.user_id, t('messages.member'))}</div>
+                        <div style={{ fontSize: 11, color: '#7A6A62' }}>{new Date(r.read_at).toLocaleString()}</div>
                       </div>
                     </div>
                   )
@@ -943,7 +943,7 @@ export default function MessagesPage() {
               if (pending.length === 0) return null
               return (
                 <>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#8480B0', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#7A6A62', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ display: 'inline-flex' }}><SingleTick /></span>
                     {t('messages.deliveredNotRead', { n: pending.length })}
                   </div>
@@ -953,7 +953,7 @@ export default function MessagesPage() {
                         <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: m.avatar_color || '#951345', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
                           {memberName(m.user_id, t('messages.member'))?.[0]?.toUpperCase() || '?'}
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{memberName(m.user_id, t('messages.member'))}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#221419' }}>{memberName(m.user_id, t('messages.member'))}</div>
                       </div>
                     ))}
                   </div>

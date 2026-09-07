@@ -53,7 +53,7 @@ export default function AnchoredMenu({ anchor, items = [], onClose, width = 210,
         style={{
           position: 'fixed', top, left, width,
           background: '#fff', borderRadius: 14,
-          border: '1px solid #F0E4EA',
+          border: '1px solid #ECE2D6',
           boxShadow: '0 14px 36px rgba(20,8,24,0.24)',
           padding: 6, overflow: 'hidden',
         }}
@@ -81,13 +81,13 @@ export default function AnchoredMenu({ anchor, items = [], onClose, width = 210,
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{
                   display: 'block', fontSize: 13.5, fontWeight: 700,
-                  color: a.danger ? (a.color || '#E11D48') : '#0D0C1D',
+                  color: a.danger ? (a.color || '#E11D48') : '#221419',
                 }}>
                   {a.label}
                 </span>
                 {a.sub && (
                   <span style={{
-                    display: 'block', fontSize: 11, color: '#9C6B7A', marginTop: 1,
+                    display: 'block', fontSize: 11, color: '#7A6A62', marginTop: 1,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {a.sub}

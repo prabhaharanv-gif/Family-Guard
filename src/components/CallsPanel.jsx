@@ -167,7 +167,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff' }}>
       {selectMode && (
         <div style={{
-          padding: '8px 16px', background: '#FDF0F5', borderBottom: '1px solid #F0E4EA',
+          padding: '8px 16px', background: '#FDF0F5', borderBottom: '1px solid #ECE2D6',
           fontSize: 12, color: '#951345', fontWeight: 700,
         }}>
           {selected.size} selected · tap to select more
@@ -177,11 +177,11 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
       <PullToRefresh onRefresh={load}>
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 30, color: '#9C6B7A', fontSize: 13 }}>Loading…</div>
+          <div style={{ textAlign: 'center', padding: 30, color: '#7A6A62', fontSize: 13 }}>Loading…</div>
         ) : calls.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9C6B7A' }}>
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#7A6A62' }}>
             <div style={{ fontSize: 42, marginBottom: 10 }}>📞</div>
-            <div style={{ fontWeight: 800, color: '#3A1020', marginBottom: 4 }}>{t('calls.noCalls')}</div>
+            <div style={{ fontWeight: 800, color: '#4A3138', marginBottom: 4 }}>{t('calls.noCalls')}</div>
             <div style={{ fontSize: 13 }}>{t('calls.willAppear')}</div>
           </div>
         ) : calls.map(c => {
@@ -239,7 +239,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontWeight: 700, fontSize: 14,
-                  color: missed ? '#DC2626' : '#0D0C1D',
+                  color: missed ? '#DC2626' : '#221419',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>{name}</div>
                 {/* Plain inline text, not a flex row. As flex children each
@@ -248,7 +248,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
                     and made those rows taller than the rest. nowrap plus an
                     ellipsis keeps every row exactly one line. */}
                 <div style={{
-                  fontSize: 12, color: '#8480B0', marginTop: 2,
+                  fontSize: 12, color: '#7A6A62', marginTop: 2,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>
                   {isVideo ? '📹' : '📞'}{' '}
@@ -260,7 +260,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
                 </div>
               </div>
 
-              <div style={{ fontSize: 11, color: '#9C6B7A', flexShrink: 0, whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: 11, color: '#7A6A62', flexShrink: 0, whiteSpace: 'nowrap' }}>
                 {formatWhen(t, c.started_at)}
               </div>
 

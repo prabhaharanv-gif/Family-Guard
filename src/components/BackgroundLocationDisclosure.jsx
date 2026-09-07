@@ -38,7 +38,7 @@ export default function BackgroundLocationDisclosure({ open, onAccept, onDecline
         </div>
 
         <div style={{
-          fontSize: 19, fontWeight: 800, color: '#0D0C1D',
+          fontSize: 19, fontWeight: 800, color: '#221419',
           fontFamily: 'Sora, sans-serif', textAlign: 'center', marginBottom: 14,
         }}>
           Share location with your family
@@ -47,13 +47,13 @@ export default function BackgroundLocationDisclosure({ open, onAccept, onDecline
         <div style={{ fontSize: 14, color: '#4B5563', lineHeight: 1.65, marginBottom: 16 }}>
           Famora collects location data to show your position to your family
           group on a shared map, and to include it in SOS alerts —{' '}
-          <strong style={{ color: '#0D0C1D' }}>
+          <strong style={{ color: '#221419' }}>
             even when the app is closed or not in use
           </strong>.
         </div>
 
         <div style={{
-          background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 14,
+          background: '#F9FAFB', border: '1px solid #ECE2D6', borderRadius: 14,
           padding: '13px 15px', marginBottom: 20,
           fontSize: 13, color: '#4B5563', lineHeight: 1.7,
         }}>
@@ -80,7 +80,7 @@ export default function BackgroundLocationDisclosure({ open, onAccept, onDecline
           style={{
             width: '100%', padding: '11px 0', borderRadius: 14,
             background: 'none', border: 'none',
-            color: '#9C6B7A', fontWeight: 600, fontSize: 14,
+            color: '#7A6A62', fontWeight: 600, fontSize: 14,
             fontFamily: 'inherit', cursor: 'pointer',
           }}
         >

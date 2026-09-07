@@ -71,7 +71,7 @@ export default function SettingsPage() {
           <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
             {t('settings.language')}
           </div>
-          <div style={{ fontSize: 11, color: '#9C6B7A', marginBottom: 10, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 11, color: '#7A6A62', marginBottom: 10, lineHeight: 1.5 }}>
             {t('settings.languageSub')}
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -84,8 +84,8 @@ export default function SettingsPage() {
                   aria-pressed={active}
                   style={{
                     padding: '9px 16px', borderRadius: 999,
-                    background: active ? 'linear-gradient(135deg,#951345,#720D35)' : '#F8F7FF',
-                    border: `1.5px solid ${active ? 'transparent' : '#EDE9FF'}`,
+                    background: active ? 'linear-gradient(135deg,#951345,#720D35)' : '#FBF7F1',
+                    border: `1.5px solid ${active ? 'transparent' : '#ECE2D6'}`,
                     color: active ? '#fff' : '#5B4652',
                     fontWeight: active ? 800 : 600,
                     fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit',
@@ -147,10 +147,10 @@ export default function SettingsPage() {
               <span style={{ fontSize: 20, flexShrink: 0 }}>📖</span>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#000', lineHeight: 1.45 }}>{t('settings.userGuide')}</div>
-                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1, lineHeight: 1.5 }}>{t('settings.userGuideSub')}</div>
+                <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 1, lineHeight: 1.5 }}>{t('settings.userGuideSub')}</div>
               </div>
             </div>
-            <span style={{ color: '#9C6B7A', fontSize: 16, flexShrink: 0 }}>›</span>
+            <span style={{ color: '#7A6A62', fontSize: 16, flexShrink: 0 }}>›</span>
           </div>
         </div>
 
@@ -161,7 +161,7 @@ export default function SettingsPage() {
               <span style={{ fontSize: 20, flexShrink: 0 }}>🔒</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: '#000', lineHeight: 1.45 }}>{t('settings.privacyPolicy')}</span>
             </div>
-            <span style={{ color: '#9C6B7A', fontSize: 16, flexShrink: 0 }}>›</span>
+            <span style={{ color: '#7A6A62', fontSize: 16, flexShrink: 0 }}>›</span>
           </div>
         </div>
 
