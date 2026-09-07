@@ -269,8 +269,8 @@ export default function MapAllPage() {
                       </div>
                     )}
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: 14, color: '#0D0C1D' }}>{loc.displayName}</div>
-                      <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: '#221419' }}>{loc.displayName}</div>
+                      <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 1 }}>
                         🕐 {new Date(loc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                       </div>
                       {/* Stale warning — if location is older than 5 minutes */}

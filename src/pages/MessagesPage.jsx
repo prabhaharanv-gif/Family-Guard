@@ -39,21 +39,21 @@ function ReplyBar({ replyTo, members, onCancel }) {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 8,
       padding: '8px 16px',
-      background: '#F0EEFF',
+      background: '#F8F3EB',
       borderTop: '1px solid #D6D0FF',
-      borderLeft: '3px solid #7C3AED',
+      borderLeft: '3px solid #C0450F',
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: '#7C3AED', marginBottom: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: '#C0450F', marginBottom: 2 }}>
           Replying to {sender?.display_name || 'Family'}
         </div>
-        <div style={{ fontSize: 12, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 12, color: '#7A6A62', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {replyTo.content}
         </div>
       </div>
       <button onClick={onCancel} style={{
         background: 'none', border: 'none', cursor: 'pointer',
-        fontSize: 18, color: '#8480B0', padding: '0 4px', flexShrink: 0,
+        fontSize: 18, color: '#7A6A62', padding: '0 4px', flexShrink: 0,
       }}>✕</button>
     </div>
   )
@@ -85,12 +85,12 @@ function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onInfo, onC
   const actions = [
     {
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C0450F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
         </svg>
       ),
       label: 'Reply', sub: 'Reply to this message',
-      color: '#4F46E5', bg: '#EEF2FF', fn: onReply, show: true,
+      color: '#C0450F', bg: '#FFF0EA', fn: onReply, show: true,
     },
     {
       icon: (
@@ -114,12 +114,12 @@ function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onInfo, onC
     },
     {
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6A62" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
       ),
       label: 'Message Info', sub: 'See who has read this',
-      color: '#6B7280', bg: '#F9FAFB', fn: onInfo, show: isOwn,
+      color: '#7A6A62', bg: '#F9FAFB', fn: onInfo, show: isOwn,
     },
   ].filter(a => a.show)
 
@@ -130,7 +130,7 @@ function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onInfo, onC
 
         {/* Message preview */}
         <div style={{
-          background: 'linear-gradient(135deg, #FDF7FA 0%, #F8F0F5 100%)',
+          background: 'linear-gradient(135deg, #FFFDF9 0%, #F8F3EB 100%)',
           borderRadius: 16, padding: '14px 16px',
           marginBottom: 20,
           border: '1.5px solid #EEE0E6',
@@ -139,13 +139,13 @@ function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onInfo, onC
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <div style={{
               width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-              background: isOwn ? '#951345' : '#6B7280',
+              background: isOwn ? '#951345' : '#7A6A62',
             }} />
-            <div style={{ fontSize: 11, fontWeight: 700, color: isOwn ? '#951345' : '#6B7280', letterSpacing: 0.2 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: isOwn ? '#951345' : '#7A6A62', letterSpacing: 0.2 }}>
               {isOwn ? 'Your message' : 'Message'}
             </div>
           </div>
-          <div style={{ fontSize: 13, color: '#0D0C1D', lineHeight: 1.5, maxHeight: 72, overflow: 'hidden' }}>
+          <div style={{ fontSize: 13, color: '#221419', lineHeight: 1.5, maxHeight: 72, overflow: 'hidden' }}>
             {msg.content}
           </div>
         </div>
@@ -169,7 +169,7 @@ function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onInfo, onC
               </div>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: a.color }}>{a.label}</div>
-                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>{a.sub}</div>
+                <div style={{ fontSize: 11, color: '#9E8C86', marginTop: 1 }}>{a.sub}</div>
               </div>
               <svg style={{ marginLeft: 'auto', opacity: 0.3 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={a.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6"/>
@@ -178,12 +178,12 @@ function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onInfo, onC
           ))}
 
           {/* Divider */}
-          <div style={{ height: 1, background: '#F0EAF5', margin: '4px 0' }} />
+          <div style={{ height: 1, background: '#ECE2D6', margin: '4px 0' }} />
 
           <button onClick={onClose} style={{
             width: '100%', padding: '13px 16px', borderRadius: 14,
-            background: '#F8F7FF', border: '1px solid #EDE9FF',
-            color: '#6B7280', fontWeight: 600, fontSize: 14,
+            background: '#FBF7F1', border: '1px solid #ECE2D6',
+            color: '#7A6A62', fontWeight: 600, fontSize: 14,
             fontFamily: 'inherit', cursor: 'pointer',
           }}>
             Cancel
@@ -225,8 +225,8 @@ function EditModal({ msg, onClose, onSave }) {
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0D0C1D' }}>Edit Message</div>
-            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>Changes are visible to all family members</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#221419' }}>Edit Message</div>
+            <div style={{ fontSize: 11, color: '#9E8C86', marginTop: 1 }}>Changes are visible to all family members</div>
           </div>
         </div>
 
@@ -236,21 +236,21 @@ function EditModal({ msg, onClose, onSave }) {
           autoFocus
           style={{
             width: '100%', padding: '14px 16px', borderRadius: 14,
-            border: '1.5px solid #E5E7EB', fontSize: 14,
+            border: '1.5px solid #ECE2D6', fontSize: 14,
             fontFamily: 'inherit', resize: 'none', outline: 'none',
             minHeight: 90, boxSizing: 'border-box', marginBottom: 16,
-            background: '#FAFAFA', lineHeight: 1.5,
+            background: '#FBF7F1', lineHeight: 1.5,
             transition: 'border-color 0.2s',
           }}
           onFocus={e => e.target.style.borderColor = '#059669'}
-          onBlur={e => e.target.style.borderColor = '#E5E7EB'}
+          onBlur={e => e.target.style.borderColor = '#ECE2D6'}
         />
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#F8F7FF', border: '1px solid #EDE9FF',
-            color: '#6B7280', fontWeight: 700, cursor: 'pointer',
+            background: '#FBF7F1', border: '1px solid #ECE2D6',
+            color: '#7A6A62', fontWeight: 700, cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 14,
           }}>Cancel</button>
           <button onClick={handleSave} disabled={saving || !text.trim()} style={{
@@ -550,20 +550,20 @@ export default function MessagesPage() {
       </div>
 
       {showSearch && (
-        <div style={{ padding: '8px 16px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF' }}>
+        <div style={{ padding: '8px 16px', background: '#FBF7F1', borderBottom: '1px solid #ECE2D6' }}>
           <div style={{ position: 'relative' }}>
             <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search messages..." autoFocus
               style={{
                 width: '100%', padding: '10px 36px 10px 14px',
-                borderRadius: 12, border: '1.5px solid #EDE9FF',
+                borderRadius: 12, border: '1.5px solid #ECE2D6',
                 fontSize: 14, fontFamily: 'inherit', outline: 'none',
                 background: '#fff', boxSizing: 'border-box',
               }} />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} style={{
                 position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#9CA3AF',
+                background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#9E8C86',
               }}>✕</button>
             )}
           </div>
@@ -571,16 +571,16 @@ export default function MessagesPage() {
       )}
 
       {Object.keys(typingUsers).length > 0 && (
-        <div style={{ padding: '6px 20px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF',
+        <div style={{ padding: '6px 20px', background: '#FBF7F1', borderBottom: '1px solid #ECE2D6',
           display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
             {[0,1,2].map(i => (
-              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#7C3AED',
+              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#C0450F',
                 animation: `tdot 1.2s ${i*0.2}s ease-in-out infinite` }} />
             ))}
           </div>
           <style>{`@keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}`}</style>
-          <span style={{ fontSize: 12, color: '#7C3AED', fontWeight: 600 }}>
+          <span style={{ fontSize: 12, color: '#C0450F', fontWeight: 600 }}>
             {Object.keys(typingUsers).length === 1
               ? `${members[Object.keys(typingUsers)[0]]?.display_name || 'Someone'} is typing...`
               : 'Several people are typing...'}
@@ -668,14 +668,14 @@ export default function MessagesPage() {
                   textAlign: 'center', margin: '8px 0 12px',
                   display: 'flex', alignItems: 'center', gap: 10,
                 }}>
-                  <div style={{ flex: 1, height: 1, background: '#F0E4EA' }} />
+                  <div style={{ flex: 1, height: 1, background: '#ECE2D6' }} />
                   <div style={{
-                    fontSize: 11, fontWeight: 700, color: '#9C6B7A',
-                    background: '#FDF5F8', padding: '3px 12px',
-                    borderRadius: 20, border: '1px solid #F0E4EA',
+                    fontSize: 11, fontWeight: 700, color: '#7A6A62',
+                    background: '#F5EFE6', padding: '3px 12px',
+                    borderRadius: 20, border: '1px solid #ECE2D6',
                     whiteSpace: 'nowrap',
                   }}>{dateLabel}</div>
-                  <div style={{ flex: 1, height: 1, background: '#F0E4EA' }} />
+                  <div style={{ flex: 1, height: 1, background: '#ECE2D6' }} />
                 </div>
               )}
             <div style={{
@@ -718,7 +718,7 @@ export default function MessagesPage() {
                   onClick={() => { if (didLongPress.current) { didLongPress.current = false; return } }}
                   style={{
                     background: isOwn ? 'linear-gradient(135deg, #951345 0%, #B01650 100%)' : '#fff',
-                    color: isOwn ? '#fff' : '#0D0C1D',
+                    color: isOwn ? '#fff' : '#221419',
                     padding: '10px 14px',
                     borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     fontSize: 14,
@@ -832,7 +832,7 @@ export default function MessagesPage() {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
               Message Info
             </div>
-            <div style={{ background: '#F5F4FB', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#0D0C1D', marginBottom: 16 }}>
+            <div style={{ background: '#F8F3EB', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#221419', marginBottom: 16 }}>
               {detailMsg.content}
             </div>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#34B7F1', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -840,7 +840,7 @@ export default function MessagesPage() {
               Read by {(reads[detailMsg.id] || []).length}
             </div>
             {(reads[detailMsg.id] || []).length === 0 ? (
-              <div style={{ fontSize: 13, color: '#8480B0', marginBottom: 14 }}>No one has read this yet.</div>
+              <div style={{ fontSize: 13, color: '#7A6A62', marginBottom: 14 }}>No one has read this yet.</div>
             ) : (
               <div style={{ marginBottom: 14 }}>
                 {(reads[detailMsg.id] || []).map(r => {
@@ -851,8 +851,8 @@ export default function MessagesPage() {
                         {m?.display_name?.[0]?.toUpperCase() || '?'}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{m?.display_name || 'Member'}</div>
-                        <div style={{ fontSize: 11, color: '#8480B0' }}>{new Date(r.read_at).toLocaleString()}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#221419' }}>{m?.display_name || 'Member'}</div>
+                        <div style={{ fontSize: 11, color: '#7A6A62' }}>{new Date(r.read_at).toLocaleString()}</div>
                       </div>
                     </div>
                   )
@@ -865,7 +865,7 @@ export default function MessagesPage() {
               if (pending.length === 0) return null
               return (
                 <>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#8480B0', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#7A6A62', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ display: 'inline-flex' }}><SingleTick /></span>
                     Delivered · not read ({pending.length})
                   </div>
@@ -875,7 +875,7 @@ export default function MessagesPage() {
                         <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: m.avatar_color || '#951345', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
                           {m.display_name?.[0]?.toUpperCase() || '?'}
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{m.display_name || 'Member'}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#221419' }}>{m.display_name || 'Member'}</div>
                       </div>
                     ))}
                   </div>

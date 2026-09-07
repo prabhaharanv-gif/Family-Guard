@@ -113,10 +113,10 @@ export default function OnboardingPage() {
           </div>
           <button onClick={() => { navigator.clipboard.writeText(inviteCode); setDialog({ type: 'alert', title: 'Code Copied', message: 'Share this code with your family members so they can join.' }) }}
             style={{
-              marginTop: 12, background: 'linear-gradient(135deg, #4F46E5, #7C3AED)', color: '#fff',
+              marginTop: 12, background: 'linear-gradient(135deg, #A01549, #720D35)', color: '#fff',
               border: 'none', borderRadius: 10, padding: '10px 24px',
               fontWeight: 700, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit',
-              boxShadow: '0 4px 14px rgba(79,70,229,0.35)',
+              boxShadow: '0 4px 14px rgba(149,19,69,0.35)',
             }}>📋 Copy Code</button>
         </div>
 

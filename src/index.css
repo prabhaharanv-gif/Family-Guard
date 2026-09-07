@@ -2,5 +2,7 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: #1E1B4B;
+  /* Deep warm maroon-black behind the phone shell — matches the
+     body ambient gradient instead of the old indigo. */
+  background: #150509;
 }

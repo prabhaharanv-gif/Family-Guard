@@ -4,7 +4,7 @@ const SECTIONS = [
   {
     icon: '📋',
     title: 'What We Collect',
-    color: '#4F46E5',
+    color: '#C0450F',
     items: [
       'Mobile number (used to create your account)',
       'Display name and optional profile photo',
@@ -29,7 +29,7 @@ const SECTIONS = [
   {
     icon: '🛡️',
     title: 'How We Protect It',
-    color: '#7C3AED',
+    color: '#C0450F',
     items: [
       'All data stored on Supabase (SOC 2 compliant servers)',
       'Row Level Security ensures you only access your family\'s data',
@@ -80,7 +80,7 @@ export default function PrivacyPolicyPage() {
     <div style={{
       position: 'fixed', inset: 0,
       display: 'flex', flexDirection: 'column',
-      background: '#F8F7FF',
+      background: '#FBF7F1',
       zIndex: 100,
     }}>
       {/* Header */}
@@ -115,13 +115,13 @@ export default function PrivacyPolicyPage() {
 
         {/* Intro card */}
         <div style={{
-          background: 'linear-gradient(135deg, #FDF0F5, #F0EEFF)',
+          background: 'linear-gradient(135deg, #FDF0F5, #F8F3EB)',
           borderRadius: 18, padding: '18px 20px', marginBottom: 14,
           border: '1.5px solid #E8DFFF',
           boxShadow: '0 2px 12px rgba(149,19,69,0.08)',
         }}>
           <div style={{ fontSize: 22, marginBottom: 8 }}>🛡️</div>
-          <div style={{ fontSize: 14, color: '#3A1020', lineHeight: 1.6, fontWeight: 500 }}>
+          <div style={{ fontSize: 14, color: '#4A3138', lineHeight: 1.6, fontWeight: 500 }}>
             FamilyGuard is built on a simple promise:{' '}
             <strong style={{ color: '#951345' }}>your data belongs to you and your family — nobody else.</strong>
             {' '}We collect only what is necessary to keep your family safe and connected.
@@ -133,7 +133,7 @@ export default function PrivacyPolicyPage() {
             background: '#fff',
             borderRadius: 18, padding: '16px 18px',
             marginBottom: 12,
-            border: '1px solid #F0EAF5',
+            border: '1px solid #ECE2D6',
             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           }}>
             {/* Section header */}
@@ -147,7 +147,7 @@ export default function PrivacyPolicyPage() {
               }}>
                 {section.icon}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#0D0C1D' }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#221419' }}>
                 {section.title}
               </div>
             </div>
@@ -178,11 +178,11 @@ export default function PrivacyPolicyPage() {
         <div style={{
           background: '#fff', borderRadius: 18,
           padding: '18px 20px', textAlign: 'center',
-          border: '1px solid #F0EAF5',
+          border: '1px solid #ECE2D6',
           boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
         }}>
           <div style={{ fontSize: 20, marginBottom: 8 }}>📩</div>
-          <div style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>
+          <div style={{ fontSize: 13, color: '#7A6A62', lineHeight: 1.6 }}>
             Questions about your privacy?<br />
             <a href="mailto:info@scoopinnovations.in" style={{ color: '#951345', fontWeight: 700, textDecoration: 'none' }}>
               info@scoopinnovations.in

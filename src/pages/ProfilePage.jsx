@@ -14,7 +14,7 @@ function Toggle({ on, onToggle }) {
       onClick={onToggle}
       style={{
         width: 46, height: 26, borderRadius: 13,
-        background: on ? '#951345' : '#D1D5DB',
+        background: on ? '#951345' : '#C3B7A8',
         border: 'none', cursor: 'pointer', position: 'relative',
         transition: 'all 0.25s', flexShrink: 0,
         boxShadow: on ? '0 2px 8px rgba(149,19,69,0.35)' : 'none',
@@ -46,8 +46,8 @@ function ChangePasswordModal({ onClose, userEmail }) {
   useBackButton(true, onClose)
 
   const EyeIcon = ({ off }) => off
-    ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
-    : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+    ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6A62" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
+    : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6A62" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
 
   const handleSave = async () => {
     setErr('')
@@ -98,7 +98,7 @@ function ChangePasswordModal({ onClose, userEmail }) {
             </div>
 
             {/* Divider */}
-            <div style={{ height: 1, background: '#F0E4EA', margin: '4px 0 12px' }} />
+            <div style={{ height: 1, background: '#ECE2D6', margin: '4px 0 12px' }} />
 
             {/* New password */}
             <div style={{ position: 'relative', marginBottom: 12 }}>
@@ -132,8 +132,8 @@ function ChangePasswordModal({ onClose, userEmail }) {
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={onClose} style={{
                 flex: 1, padding: 14, borderRadius: 14,
-                background: '#F5F4FB', border: '1px solid #E9E6FB',
-                color: '#3A1020', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
+                background: '#F8F3EB', border: '1px solid #ECE2D6',
+                color: '#4A3138', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
               }}>Cancel</button>
               <button onClick={handleSave} disabled={busy} style={{
                 flex: 1, padding: 14, borderRadius: 14,
@@ -186,7 +186,7 @@ function DeleteAccountModal({ onClose, onConfirm }) {
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, color: '#374151', fontWeight: 600, marginBottom: 6 }}>
+          <div style={{ fontSize: 12, color: '#4A3138', fontWeight: 600, marginBottom: 6 }}>
             Type <strong>DELETE</strong> to confirm
           </div>
           <input
@@ -202,8 +202,8 @@ function DeleteAccountModal({ onClose, onConfirm }) {
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#F5F4FB', border: '1px solid #E9E6FB',
-            color: '#3A1020', fontWeight: 700, cursor: 'pointer',
+            background: '#F8F3EB', border: '1px solid #ECE2D6',
+            color: '#4A3138', fontWeight: 700, cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 14,
           }}>Cancel</button>
           <button
@@ -588,7 +588,7 @@ export default function ProfilePage() {
         {error && <div className="error-msg">{error}</div>}
         {saved && (
           <div style={{
-            background: '#D1FAE5', border: '1px solid #10B981',
+            background: '#D1FAE5', border: '1px solid #0FB981',
             color: '#059669', padding: '8px 14px', borderRadius: 12,
             fontSize: 13, fontWeight: 700, marginBottom: 10, textAlign: 'center',
           }}>✅ Profile saved!</div>
@@ -601,15 +601,15 @@ export default function ProfilePage() {
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6 }}>Display Name</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A6A62', letterSpacing: 0.2, display: 'block', marginBottom: 6 }}>Display Name</label>
             <input className="input" style={{ padding: '11px 14px', fontSize: 14 }}
               value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your name" />
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: 0.2, display: 'block', marginBottom: 6 }}>Mobile Number</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A6A62', letterSpacing: 0.2, display: 'block', marginBottom: 6 }}>Mobile Number</label>
             <div style={{ display: 'flex', gap: 7 }}>
-              <span style={{ padding: '10px 9px', background: '#F8F7FF', border: '1.5px solid #E8E5FF', borderRadius: 14, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>🇮🇳 +91</span>
+              <span style={{ padding: '10px 9px', background: '#FBF7F1', border: '1.5px solid #ECE2D6', borderRadius: 14, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>🇮🇳 +91</span>
               <input className="input" type="tel" style={{ padding: '11px 14px', fontSize: 14, flex: 1 }}
                 value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))} placeholder="9876543210" maxLength={10} />
             </div>
@@ -624,7 +624,7 @@ export default function ProfilePage() {
                 My Code
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 3, color: '#0D0C1D', fontFamily: 'Sora, sans-serif' }}>
+                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 3, color: '#221419', fontFamily: 'Sora, sans-serif' }}>
                   {myInviteCode}
                 </div>
                 <button onClick={() => setShowInviteSheet(true)} style={{
@@ -677,7 +677,7 @@ export default function ProfilePage() {
 
           {/* Family list */}
           {allFamilies.length === 0 ? (
-            <div style={{ fontSize: 13, color: '#9C6B7A', textAlign: 'center', padding: '8px 0' }}>
+            <div style={{ fontSize: 13, color: '#7A6A62', textAlign: 'center', padding: '8px 0' }}>
               No families yet
             </div>
           ) : (
@@ -689,18 +689,18 @@ export default function ProfilePage() {
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '10px 12px', borderRadius: 12,
-                      background: isActive ? '#FDF0F5' : '#F8F7FF',
-                      border: `1.5px solid ${isActive ? '#951345' : '#E8E5FF'}`,
+                      background: isActive ? '#FDF0F5' : '#FBF7F1',
+                      border: `1.5px solid ${isActive ? '#951345' : '#ECE2D6'}`,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                     }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{
                         width: 36, height: 36, borderRadius: '50%',
-                        background: isActive ? '#951345' : '#E8E5FF',
+                        background: isActive ? '#951345' : '#ECE2D6',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 16, flexShrink: 0, overflow: 'hidden',
-                        border: `2px solid ${isActive ? '#951345' : '#D4D0F5'}`,
+                        border: `2px solid ${isActive ? '#951345' : '#DCCFC0'}`,
                       }}>
                         {avatarUrl
                           ? <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -709,7 +709,7 @@ export default function ProfilePage() {
                       </div>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 800, color: '#000' }}>{fam.name}</div>
-                        <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
+                        <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 1 }}>
                           {fam.role === 'admin' ? '👑 Admin' : '👤 Member'}
                         </div>
                       </div>
@@ -772,12 +772,12 @@ export default function ProfilePage() {
                   }}>
                     {item.icon}
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#0D0C1D' }}>{item.label}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#221419' }}>{item.label}</div>
                 </div>
                 <Toggle on={item.value} onToggle={item.handler} />
               </div>
               {i < arr.length - 1 && (
-                <div style={{ height: 1, background: '#F5EEF2', margin: '10px 0' }} />
+                <div style={{ height: 1, background: '#ECE2D6', margin: '10px 0' }} />
               )}
             </div>
           ))}
@@ -825,10 +825,10 @@ export default function ProfilePage() {
               </div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>Privacy Policy</div>
-                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>How we protect your data</div>
+                <div style={{ fontSize: 11, color: '#7A6A62', marginTop: 1 }}>How we protect your data</div>
               </div>
             </div>
-            <span style={{ color: '#9C6B7A', fontSize: 18, fontWeight: 300 }}>›</span>
+            <span style={{ color: '#7A6A62', fontSize: 18, fontWeight: 300 }}>›</span>
           </div>
         </div>
 
@@ -878,10 +878,10 @@ export default function ProfilePage() {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
               Share My Code
             </div>
-            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 5, color: '#0D0C1D', fontFamily: 'Sora, sans-serif', marginBottom: 4 }}>
+            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 5, color: '#221419', fontFamily: 'Sora, sans-serif', marginBottom: 4 }}>
               {myInviteCode}
             </div>
-            <div style={{ fontSize: 12, color: '#9C6B7A', marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: '#7A6A62', marginBottom: 20 }}>
               Ask your family member to enter this code on the Add Member screen
             </div>
 
@@ -927,9 +927,9 @@ export default function ProfilePage() {
               setTimeout(() => { setCodeCopied(false); setShowInviteSheet(false) }, 1200)
             }} style={{
               width: '100%', padding: '14px 16px', borderRadius: 14,
-              background: codeCopied ? '#D1FAE5' : '#F5F4FB',
-              border: codeCopied ? '1.5px solid #10B981' : '1.5px solid #E9E6FB',
-              color: codeCopied ? '#059669' : '#3A1020', fontWeight: 800, fontSize: 15,
+              background: codeCopied ? '#D1FAE5' : '#F8F3EB',
+              border: codeCopied ? '1.5px solid #0FB981' : '1.5px solid #ECE2D6',
+              color: codeCopied ? '#059669' : '#4A3138', fontWeight: 800, fontSize: 15,
               fontFamily: 'inherit', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 12, transition: 'all 0.2s',
             }}>
@@ -953,10 +953,10 @@ export default function ProfilePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{
                 width: 48, height: 48, borderRadius: '50%',
-                background: selectedFam.family_id === familyId ? '#951345' : '#E8E5FF',
+                background: selectedFam.family_id === familyId ? '#951345' : '#ECE2D6',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 22, flexShrink: 0, overflow: 'hidden',
-                border: `2px solid ${selectedFam.family_id === familyId ? '#951345' : '#D4D0F5'}`,
+                border: `2px solid ${selectedFam.family_id === familyId ? '#951345' : '#DCCFC0'}`,
               }}>
                 {avatarUrl
                   ? <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -965,7 +965,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <div style={{ fontSize: 18, fontWeight: 900, color: '#000' }}>{selectedFam.name}</div>
-                <div style={{ fontSize: 12, color: '#9C6B7A', marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: '#7A6A62', marginTop: 2 }}>
                   {selectedFam.role === 'admin' ? '👑 Admin' : '👤 Member'}
                   {selectedFam.family_id === familyId && <span style={{ marginLeft: 8, background: '#951345', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5 }}>ACTIVE</span>}
                 </div>

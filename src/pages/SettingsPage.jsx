@@ -107,7 +107,7 @@ export default function SettingsPage() {
               <span style={{ fontSize: 20 }}>🔒</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>Privacy Policy</span>
             </div>
-            <span style={{ color: '#9C6B7A', fontSize: 16 }}>›</span>
+            <span style={{ color: '#7A6A62', fontSize: 16 }}>›</span>
           </div>
         </div>
 

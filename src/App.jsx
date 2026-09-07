@@ -149,19 +149,19 @@ function GlobalSOSAlert({ alert, onDismiss }) {
 // Condensed policy content reused inside ConsentGate's "Read Full Policy" view
 function PolicyContent() {
   const sections = [
-    { icon: '📋', title: 'What We Collect', color: '#4F46E5', items: ['Mobile number for account creation', 'Display name and optional profile photo', 'Real-time location (only when sharing is ON)', 'Messages within your family group', 'SOS alerts you send or receive', 'Device push notification token for alerts'] },
+    { icon: '📋', title: 'What We Collect', color: '#C0450F', items: ['Mobile number for account creation', 'Display name and optional profile photo', 'Real-time location (only when sharing is ON)', 'Messages within your family group', 'SOS alerts you send or receive', 'Device push notification token for alerts'] },
     { icon: '🔒', title: 'How We Use It', color: '#059669', items: ['Location shared only with your own family group', 'Messages visible only to your family members', 'Push tokens used only for SOS and message alerts', 'We never sell or share your data', 'We never read your messages'] },
-    { icon: '🛡️', title: 'How We Protect It', color: '#7C3AED', items: ['Data stored on SOC 2 compliant Supabase servers', 'Row Level Security on all tables', 'Passwords bcrypt hashed — we cannot see them', 'All API calls require authentication'] },
+    { icon: '🛡️', title: 'How We Protect It', color: '#C0450F', items: ['Data stored on SOC 2 compliant Supabase servers', 'Row Level Security on all tables', 'Passwords bcrypt hashed — we cannot see them', 'All API calls require authentication'] },
     { icon: '🗑️', title: 'Data Retention', color: '#D97706', items: ['Messages are automatically deleted after 90 days', 'Resolved SOS alerts are deleted after 30 days', 'Only your current location is stored — no history is kept', 'Delete your account and all data anytime from Profile'] },
     { icon: '✅', title: 'Your Rights', color: '#16A34A', items: ['Turn off location sharing anytime in Profile → Privacy', 'Delete account and all data from Profile → Delete My Account', 'Leave any family group at any time'] },
   ]
   return (
     <div>
       {sections.map(s => (
-        <div key={s.title} style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 10, border: '1px solid #F0EAF5' }}>
+        <div key={s.title} style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 10, border: '1px solid #ECE2D6' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span style={{ fontSize: 18 }}>{s.icon}</span>
-            <span style={{ fontSize: 14, fontWeight: 800, color: '#0D0C1D' }}>{s.title}</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: '#221419' }}>{s.title}</span>
           </div>
           {s.items.map((item, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
@@ -171,8 +171,8 @@ function PolicyContent() {
           ))}
         </div>
       ))}
-      <div style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', textAlign: 'center', border: '1px solid #F0EAF5' }}>
-        <div style={{ fontSize: 13, color: '#6B7280' }}>Questions? <a href="mailto:info@scoopinnovations.in" style={{ color: '#951345', fontWeight: 700 }}>info@scoopinnovations.in</a></div>
+      <div style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', textAlign: 'center', border: '1px solid #ECE2D6' }}>
+        <div style={{ fontSize: 13, color: '#7A6A62' }}>Questions? <a href="mailto:info@scoopinnovations.in" style={{ color: '#951345', fontWeight: 700 }}>info@scoopinnovations.in</a></div>
       </div>
     </div>
   )
@@ -193,12 +193,12 @@ function ConsentGate({ children }) {
     return (
       <div style={{
         position: 'fixed', inset: 0, zIndex: 999,
-        background: '#F8F7FF',
+        background: '#FBF7F1',
         display: 'flex', flexDirection: 'column',
       }}>
         {showPolicy ? (
           // Full policy view — position fixed so it escapes app-shell overflow:hidden
-          <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#F8F7FF', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#FBF7F1', display: 'flex', flexDirection: 'column' }}>
             <div style={{
               background: 'linear-gradient(135deg, #951345 0%, #720D35 100%)',
               padding: '16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
@@ -231,10 +231,10 @@ function ConsentGate({ children }) {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 24px' }}>
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
               <div style={{ fontSize: 56, marginBottom: 12 }}>🛡️</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#0D0C1D', marginBottom: 8, fontFamily: 'Sora, sans-serif' }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#221419', marginBottom: 8, fontFamily: 'Sora, sans-serif' }}>
                 Before You Continue
               </div>
-              <div style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 14, color: '#7A6A62', lineHeight: 1.6 }}>
                 We've updated our Privacy Policy. Please review and accept it to continue using FamilyGuard.
               </div>
             </div>
@@ -249,17 +249,17 @@ function ConsentGate({ children }) {
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: 14,
                 background: '#fff', borderRadius: 14, padding: '14px 16px',
-                marginBottom: 10, border: '1px solid #F0EAF5',
+                marginBottom: 10, border: '1px solid #ECE2D6',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
               }}>
                 <span style={{ fontSize: 22, flexShrink: 0 }}>{item.icon}</span>
-                <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.4 }}>{item.text}</span>
+                <span style={{ fontSize: 13, color: '#4A3138', lineHeight: 1.4 }}>{item.text}</span>
               </div>
             ))}
 
             <button onClick={() => setShowPolicy(true)} style={{
               width: '100%', padding: '13px 16px', borderRadius: 14, marginTop: 6,
-              background: '#F8F7FF', border: '1.5px solid #E9E6FB',
+              background: '#FBF7F1', border: '1.5px solid #ECE2D6',
               color: '#951345', fontWeight: 700, fontSize: 14,
               fontFamily: 'inherit', cursor: 'pointer', marginBottom: 12,
             }}>

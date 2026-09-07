@@ -78,7 +78,7 @@ function MemberActionSheet({ member, displayName, isOwner, onClose, onEditName, 
         <div className="popup-handle" />
 
         {/* Member info header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #F0E4EA' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #ECE2D6' }}>
           <div style={{
             width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
             background: member.avatar_color && member.avatar_color !== '#4F8EF7' ? member.avatar_color : '#951345',
@@ -89,7 +89,7 @@ function MemberActionSheet({ member, displayName, isOwner, onClose, onEditName, 
           </div>
           <div>
             <div style={{ fontWeight: 800, fontSize: 17, color: '#000' }}>{shown}</div>
-            <div style={{ fontSize: 12, color: '#9C6B7A', marginTop: 3 }}>{member.phone || 'No phone saved'}</div>
+            <div style={{ fontSize: 12, color: '#7A6A62', marginTop: 3 }}>{member.phone || 'No phone saved'}</div>
           </div>
         </div>
 
@@ -129,8 +129,8 @@ function MemberActionSheet({ member, displayName, isOwner, onClose, onEditName, 
 
           <button onClick={onClose} style={{
             width: '100%', padding: '13px 18px', borderRadius: 14,
-            background: '#F5F4FB', border: '1px solid #E9E6FB',
-            color: '#3A1020', fontWeight: 600, fontSize: 14,
+            background: '#F8F3EB', border: '1px solid #ECE2D6',
+            color: '#4A3138', fontWeight: 600, fontSize: 14,
             cursor: 'pointer', fontFamily: 'inherit',
           }}>
             Cancel
@@ -161,7 +161,7 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
         <div style={{ fontSize: 11, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
           Set Nickname · {member.display_name}
         </div>
-        <div style={{ fontSize: 12, color: '#8480B0', marginBottom: 14, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 12, color: '#7A6A62', marginBottom: 14, lineHeight: 1.4 }}>
           This nickname is private — only you see it. {member.display_name} and everyone else still see their own name.
         </div>
         <input
@@ -177,8 +177,8 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#F5F4FB', border: '1px solid #E9E6FB',
-            color: '#3A1020', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
+            background: '#F8F3EB', border: '1px solid #ECE2D6',
+            color: '#4A3138', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
           }}>Cancel</button>
           <button onClick={handleSave} disabled={saving} style={{
             flex: 1, padding: 14, borderRadius: 14,
@@ -460,9 +460,9 @@ export default function FamilyPage() {
                     onClick={() => { switchFamily(fam.family_id); setShowFamilySwitcher(false) }}
                     style={{
                       width: '100%', padding: '14px 16px', borderRadius: 16,
-                      background: isActive ? 'linear-gradient(135deg, #951345, #720D35)' : '#F8F7FF',
-                      border: isActive ? 'none' : '1.5px solid #EDE9FF',
-                      color: isActive ? '#fff' : '#0D0C1D',
+                      background: isActive ? 'linear-gradient(135deg, #951345, #720D35)' : '#FBF7F1',
+                      border: isActive ? 'none' : '1.5px solid #ECE2D6',
+                      color: isActive ? '#fff' : '#221419',
                       fontWeight: isActive ? 800 : 600, fontSize: 14,
                       fontFamily: 'inherit', cursor: isActive ? 'default' : 'pointer',
                       textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12,
@@ -470,7 +470,7 @@ export default function FamilyPage() {
                     }}>
                     <div style={{
                       width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                      background: isActive ? 'rgba(255,255,255,0.18)' : '#F0EEFF',
+                      background: isActive ? 'rgba(255,255,255,0.18)' : '#F8F3EB',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -636,7 +636,7 @@ export default function FamilyPage() {
                   </div>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: '#000' }}>{req.requester_name}</div>
-                    <div style={{ fontSize: 12, color: '#9C6B7A', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: '#7A6A62', marginTop: 2 }}>
                       Wants to join · {new Date(req.created_at).toLocaleTimeString()}
                     </div>
                   </div>
@@ -699,7 +699,7 @@ export default function FamilyPage() {
             return (
               <div
                 key={m.id}
-                className="member-card"
+                className={'member-card ' + (online ? 'is-online' : 'is-offline')}
                 onClick={() => { if (didLongPress.current) { didLongPress.current = false; return }; setSelectedMember(m) }}
                 onMouseDown={() => startLongPress(m)}
                 onMouseUp={cancelLongPress}
@@ -722,18 +722,20 @@ export default function FamilyPage() {
                   <div style={{
                     position: 'absolute', bottom: 1, right: 1,
                     width: 13, height: 13, borderRadius: '50%',
-                    background: online ? '#10B981' : '#D1D5DB',
-                    border: '2.5px solid #fff',
-                    boxShadow: online ? '0 0 0 2px rgba(16,185,129,0.25), 0 0 8px rgba(16,185,129,0.5)' : 'none',
+                    background: online ? '#0FB981' : '#C3B7A8',
+                    border: '2.5px solid #FFFDF9',
+                    boxShadow: online
+                      ? '0 0 0 2px rgba(15,185,129,0.22), 0 0 10px rgba(15,185,129,0.65)'
+                      : '0 1px 2px rgba(58,34,20,0.14)',
                     transition: 'all 0.3s',
                   }} />
                 </div>
                 <div className="member-info">
-                  <div className="member-name" style={{ color: '#0D0C1D' }}>{nameFor(m)}</div>
-                  <div className="member-meta" style={{ color: '#8480B0' }}>
+                  <div className="member-name" style={{ color: '#221419', fontWeight: 800 }}>{nameFor(m)}</div>
+                  <div className="member-meta" style={{ color: '#7A6A62', fontWeight: 500 }}>
                     {online ? (
-                      <span style={{ color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+                      <span style={{ color: '#047857', fontWeight: 800, letterSpacing: 0.4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0FB981', boxShadow: '0 0 6px rgba(15,185,129,0.7)', display: 'inline-block' }} />
                         Online
                       </span>
                     ) : lastSeen ? (
@@ -754,23 +756,23 @@ export default function FamilyPage() {
                     {/* Map pin SVG */}
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
-                        fill={loc?.isSharing ? '#10B981' : '#D1D5DB'} />
-                      <circle cx="12" cy="9" r="2.5" fill="#fff" />
+                        fill={loc?.isSharing ? '#0FB981' : '#C3B7A8'} />
+                      <circle cx="12" cy="9" r="2.5" fill="#FFFDF9" />
                     </svg>
                     {/* Strike-through X overlay when not sharing */}
                     {!loc?.isSharing && (
                       <svg width="28" height="28" viewBox="0 0 24 24"
                         style={{ position: 'absolute', top: 0, left: 0 }}>
                         <line x1="4" y1="4" x2="20" y2="20"
-                          stroke="#E11D48" strokeWidth="2.5" strokeLinecap="round" />
+                          stroke="#C0450F" strokeWidth="2.5" strokeLinecap="round" />
                         <line x1="20" y1="4" x2="4" y2="20"
-                          stroke="#E11D48" strokeWidth="2.5" strokeLinecap="round" />
+                          stroke="#C0450F" strokeWidth="2.5" strokeLinecap="round" />
                       </svg>
                     )}
                   </div>
                   <span style={{
-                    fontSize: 9, fontWeight: 700, letterSpacing: 0.2,
-                    color: loc?.isSharing ? '#10B981' : '#E11D48',
+                    fontSize: 9.5, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase',
+                    color: loc?.isSharing ? '#047857' : '#C0450F',
                   }}>
                     {loc?.isSharing ? 'Live' : 'Off'}
                   </span>
@@ -784,8 +786,8 @@ export default function FamilyPage() {
                     if (!label) return null
                     return (
                       <span style={{
-                        fontSize: 9, fontWeight: 600, color: '#6B7280',
-                        marginTop: 1, whiteSpace: 'nowrap',
+                        fontSize: 9.5, fontWeight: 500, color: '#9E8C86',
+                        marginTop: 2, whiteSpace: 'nowrap', letterSpacing: 0.2,
                       }}>
                         {label}
                       </span>

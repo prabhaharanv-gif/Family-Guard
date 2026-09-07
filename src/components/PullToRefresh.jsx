@@ -69,7 +69,7 @@ export default function PullToRefresh({ onRefresh, children }) {
       }}>
         <div style={{
           width: 28, height: 28, borderRadius: '50%',
-          border: '3px solid #F0E4EA', borderTopColor: '#951345',
+          border: '3px solid #ECE2D6', borderTopColor: '#951345',
           transform: `rotate(${refreshing ? 0 : rotate}deg)`,
           animation: refreshing ? 'ptr-spin 0.7s linear infinite' : 'none',
           opacity: pull > 4 ? 1 : 0,

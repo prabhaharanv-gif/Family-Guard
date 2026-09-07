@@ -40,7 +40,7 @@ export default function MemberPopup({ member, onClose }) {
             disabled={!hasPhone}
             style={{
               width: '100%', padding: '16px 18px', borderRadius: 16,
-              background: hasPhone ? '#059669' : '#D1D5DB',
+              background: hasPhone ? '#059669' : '#C3B7A8',
               border: 'none', color: '#fff',
               fontWeight: 800, fontSize: 16, cursor: hasPhone ? 'pointer' : 'not-allowed',
               fontFamily: 'inherit',
@@ -54,7 +54,7 @@ export default function MemberPopup({ member, onClose }) {
 
           {hasPhone && (
             <div style={{
-              textAlign: 'center', fontSize: 12, color: '#9C6B7A',
+              textAlign: 'center', fontSize: 12, color: '#7A6A62',
               marginTop: 10, fontWeight: 600,
             }}>
               {member.phone}

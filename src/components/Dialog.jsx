@@ -58,7 +58,7 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
         {/* Handle */}
         <div style={{
           width: 40, height: 4, borderRadius: 2,
-          background: '#E5E7EB', margin: '12px auto 24px',
+          background: '#ECE2D6', margin: '12px auto 24px',
         }} />
 
         {/* Icon */}
@@ -74,7 +74,7 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
         {/* Title */}
         <div style={{
           textAlign: 'center', fontSize: 17, fontWeight: 800,
-          color: '#0D0C1D', marginBottom: 8, fontFamily: 'Sora, sans-serif',
+          color: '#221419', marginBottom: 8, fontFamily: 'Sora, sans-serif',
         }}>
           {resolvedTitle}
         </div>
@@ -82,7 +82,7 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
         {/* Message */}
         {message && (
           <div style={{
-            textAlign: 'center', fontSize: 14, color: '#6B7280',
+            textAlign: 'center', fontSize: 14, color: '#7A6A62',
             lineHeight: 1.55, marginBottom: 24, padding: '0 8px',
           }}>
             {message}
@@ -94,8 +94,8 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
           {isConfirm && (
             <button onClick={onClose} style={{
               flex: 1, padding: '14px 0', borderRadius: 14,
-              background: '#F5F4FB', border: '1px solid #EDE9FF',
-              color: '#6B7280', fontWeight: 700, fontSize: 14,
+              background: '#F8F3EB', border: '1px solid #ECE2D6',
+              color: '#7A6A62', fontWeight: 700, fontSize: 14,
               fontFamily: 'inherit', cursor: 'pointer',
             }}>
               Cancel

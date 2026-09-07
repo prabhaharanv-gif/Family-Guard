@@ -8,12 +8,12 @@ const toEmail = (mobile) => `91${mobile.replace(/[^0-9]/g, '')}@familyguard.app`
 // Clean open/closed eye icon — no emoji. `open` = password visible.
 function EyeIcon({ open }) {
   return open ? (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6A62" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   ) : (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6A62" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" />
       <line x1="2" y1="2" x2="22" y2="22" />
     </svg>
@@ -96,19 +96,19 @@ export default function RegisterPage() {
 
         <form onSubmit={handleRegister} noValidate>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Your name</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7A6A62", marginBottom: 6, letterSpacing: 0.2 }}>Your name</label>
             <input className="input" type="text" value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g. Prabhakaran" required />
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Mobile number</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7A6A62", marginBottom: 6, letterSpacing: 0.2 }}>Mobile number</label>
             <div style={{ display: 'flex', gap: 8 }}>
               <div style={{
-                background: '#F5F4FB', border: '1.5px solid #E9E6FB',
+                background: '#F8F3EB', border: '1.5px solid #ECE2D6',
                 borderRadius: 12, padding: '10px 12px',
-                fontWeight: 700, fontSize: 14, color: '#3A1020',
+                fontWeight: 700, fontSize: 14, color: '#4A3138',
                 whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6,
               }}>
                 🇮🇳 +91
@@ -120,7 +120,7 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Password</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7A6A62", marginBottom: 6, letterSpacing: 0.2 }}>Password</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showPassword ? 'text' : 'password'} value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -138,7 +138,7 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>Confirm password</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7A6A62", marginBottom: 6, letterSpacing: 0.2 }}>Confirm password</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showConfirm ? 'text' : 'password'} value={confirm}
                 onChange={e => setConfirm(e.target.value)}
@@ -159,16 +159,16 @@ export default function RegisterPage() {
           <div style={{
             display: 'flex', alignItems: 'flex-start', gap: 10,
             margin: '4px 0 8px', padding: '12px 14px',
-            background: agreed ? '#F0FDF4' : '#F8F7FF',
+            background: agreed ? '#F0FDF4' : '#FBF7F1',
             borderRadius: 12,
-            border: `1.5px solid ${agreed ? '#10B981' : '#E9E6FB'}`,
+            border: `1.5px solid ${agreed ? '#0FB981' : '#ECE2D6'}`,
             transition: 'all 0.2s', cursor: 'pointer',
           }} onClick={() => setAgreed(a => !a)}>
             {/* Custom checkbox */}
             <div style={{
               width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
-              background: agreed ? '#10B981' : '#fff',
-              border: `2px solid ${agreed ? '#10B981' : '#C4BEE8'}`,
+              background: agreed ? '#0FB981' : '#fff',
+              border: `2px solid ${agreed ? '#0FB981' : '#C4BEE8'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.2s',
             }}>
@@ -178,7 +178,7 @@ export default function RegisterPage() {
                 </svg>
               )}
             </div>
-            <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5, userSelect: 'none' }}>
+            <div style={{ fontSize: 13, color: '#4A3138', lineHeight: 1.5, userSelect: 'none' }}>
               I have read and agree to the{' '}
               <Link
                 to="/privacy"
