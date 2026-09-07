@@ -2,6 +2,7 @@ import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from './supabase'
 import { authLog, describeSession } from './authDebug'
+import { adoptNativeSession } from './nativeSession'
 
 /**
  * Keeps the Supabase session alive across app suspend/resume.
@@ -64,9 +65,21 @@ export async function ensureFreshSession(reason = 'unknown') {
 
     const { data, error: refreshError } = await supabase.auth.refreshSession()
     if (refreshError) {
-      // Offline or a transient server error. The stored session is left alone
-      // on purpose so the next resume can retry — do NOT sign the user out.
       authLog('refresh-FAILED', { reason, error: refreshError.message, ...describeSession(session) })
+
+      // A rejected refresh token usually means the background location service
+      // renewed the session natively while the app was closed — Supabase
+      // rotates on renewal, so our copy was revoked the moment the service got
+      // its new one. The service holds the live token; take it and carry on.
+      const adopted = await adoptNativeSession(`${reason}-after-refresh-failure`)
+      if (adopted) {
+        const { data: { session: fresh } } = await supabase.auth.getSession()
+        authLog('recovered-from-native', { reason, ...describeSession(fresh) })
+        return fresh
+      }
+
+      // Otherwise offline or a transient server error. Leave the stored
+      // session alone so the next resume can retry — never sign the user out.
       return session
     }
 
@@ -92,6 +105,10 @@ export function initSessionKeepAlive() {
     App.addListener('appStateChange', async ({ isActive }) => {
       authLog(isActive ? 'app-foreground' : 'app-background')
       if (isActive) {
+        // Adopt first: while we slept the service may have renewed the session,
+        // which revoked our copy. Refreshing with the stale one would fail and
+        // erase it.
+        await adoptNativeSession('app-resumed')
         await ensureFreshSession('app-resumed')
         // Restart the library's own ticker — it was frozen while backgrounded.
         supabase.auth.startAutoRefresh()

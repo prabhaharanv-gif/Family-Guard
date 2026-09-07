@@ -256,6 +256,31 @@ public class LocationPlugin extends Plugin {
     }
 
     /**
+     * Hand the service's current tokens back to JS.
+     *
+     * The service renews the session natively while the app is closed, and
+     * Supabase rotates the refresh token on every renewal — the old one is
+     * revoked the moment a new one is issued. The service persists the new
+     * token here, but the WebView's localStorage still holds the old one, so
+     * the next refresh from JS presents a revoked token, Supabase rejects it
+     * as already used, and supabase-js erases the session: the user lands on
+     * the login screen having done nothing wrong.
+     *
+     * JS already pushes its tokens down on every refresh (updateSessionToken).
+     * This is the missing return path, so the WebView can adopt whatever the
+     * service renewed while it was asleep.
+     */
+    @PluginMethod
+    public void getSessionTokens(PluginCall call) {
+        SharedPreferences prefs = getContext()
+            .getSharedPreferences(LocationForegroundService.PREF_NAME, Context.MODE_PRIVATE);
+        JSObject result = new JSObject();
+        result.put("sessionToken", prefs.getString(LocationForegroundService.KEY_SESSION, null));
+        result.put("refreshToken", prefs.getString(LocationForegroundService.KEY_REFRESH, null));
+        call.resolve(result);
+    }
+
+    /**
      * Called when the user's session token refreshes — update it so the
      * running service always uses a valid JWT for Supabase RPC calls.
      * Also updates the refresh token when provided, so the service can keep

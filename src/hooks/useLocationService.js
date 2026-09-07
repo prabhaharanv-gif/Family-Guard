@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { registerPlugin, Capacitor } from '@capacitor/core'
+import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
-
-const LocationService = registerPlugin('LocationService')
+import { LocationService } from '../lib/nativeSession'
 
 const DISCLOSURE_DECLINED_KEY = 'bg_location_disclosure_declined'
 const declinedBefore  = () => { try { return localStorage.getItem(DISCLOSURE_DECLINED_KEY) === '1' } catch { return false } }

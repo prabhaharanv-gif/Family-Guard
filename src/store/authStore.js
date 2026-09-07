@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { adoptNativeSession } from '../lib/nativeSession'
 
 export const useAuthStore = create((set, get) => ({
   user:        null,
@@ -10,7 +11,20 @@ export const useAuthStore = create((set, get) => ({
   loading:     true,
 
   initialize: async () => {
-    const { data: { session } } = await supabase.auth.getSession()
+    let { data: { session } } = await supabase.auth.getSession()
+
+    // No session in the WebView does not yet mean signed out. The background
+    // location service renews the session natively while the app is closed,
+    // and because Supabase rotates refresh tokens that renewal revokes the
+    // copy held here — supabase-js then discards it as unusable. The service
+    // holds the live one, so ask before showing anyone the login screen.
+    if (!session) {
+      const adopted = await adoptNativeSession('startup')
+      if (adopted) {
+        ({ data: { session } } = await supabase.auth.getSession())
+      }
+    }
+
     if (session?.user) {
       await get().loadFamily(session.user.id)
       set({ user: session.user, loading: false })
@@ -34,7 +48,10 @@ export const useAuthStore = create((set, get) => ({
         await get().loadFamily(session.user.id)
         if (event === 'TOKEN_REFRESHED' && get().user?.id === session.user.id) return
         set({ user: session.user })
-      } else {
+      } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        // Only a real sign-out clears state. This previously cleared on any
+        // session-less event, so a transient gap during token renewal could
+        // drop the user on the login screen with a usable session in storage.
         set({ user: null, familyId: null, familyName: null, inviteCode: null, allFamilies: [] })
       }
     })
