@@ -1,6 +1,7 @@
 import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from './supabase'
+import { authLog, describeSession } from './authDebug'
 
 /**
  * Keeps the Supabase session alive across app suspend/resume.
@@ -43,28 +44,36 @@ export async function ensureFreshSession(reason = 'unknown') {
   try {
     const { data: { session }, error } = await supabase.auth.getSession()
     if (error) {
-      console.warn(`[session] getSession failed (${reason}):`, error.message)
+      authLog('getSession-failed', { reason, error: error.message })
       return null
     }
-    if (!session) return null
+    if (!session) {
+      authLog('no-session', { reason })
+      return null
+    }
 
     const expiresAt = (session.expires_at ?? 0) * 1000
     const msLeft    = expiresAt - Date.now()
 
-    if (msLeft > REFRESH_THRESHOLD_MS) return session
+    if (msLeft > REFRESH_THRESHOLD_MS) {
+      authLog('token-healthy', { reason, ...describeSession(session) })
+      return session
+    }
+
+    authLog('refresh-attempt', { reason, ...describeSession(session) })
 
     const { data, error: refreshError } = await supabase.auth.refreshSession()
     if (refreshError) {
       // Offline or a transient server error. The stored session is left alone
       // on purpose so the next resume can retry — do NOT sign the user out.
-      console.warn(`[session] refresh failed (${reason}):`, refreshError.message)
+      authLog('refresh-FAILED', { reason, error: refreshError.message, ...describeSession(session) })
       return session
     }
 
-    console.log(`[session] token refreshed (${reason})`)
+    authLog('refresh-ok', { reason, ...describeSession(data.session) })
     return data.session
   } catch (e) {
-    console.warn(`[session] refresh threw (${reason}):`, e?.message)
+    authLog('refresh-threw', { reason, error: e?.message })
     return null
   }
 }
@@ -81,6 +90,7 @@ export function initSessionKeepAlive() {
   // Activity is paused and resumed.
   if (Capacitor.isNativePlatform()) {
     App.addListener('appStateChange', async ({ isActive }) => {
+      authLog(isActive ? 'app-foreground' : 'app-background')
       if (isActive) {
         await ensureFreshSession('app-resumed')
         // Restart the library's own ticker — it was frozen while backgrounded.

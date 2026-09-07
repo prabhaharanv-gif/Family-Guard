@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { authLog, describeSession } from '../lib/authDebug'
 
 export const useAuthStore = create((set, get) => ({
   user:        null,
@@ -18,6 +19,7 @@ export const useAuthStore = create((set, get) => ({
     set({ _initialised: true })
 
     const { data: { session } } = await supabase.auth.getSession()
+    authLog('startup-getSession', describeSession(session))
     if (session?.user) {
       await get().loadFamily(session.user.id)
       set({ user: session.user, loading: false })
@@ -26,6 +28,7 @@ export const useAuthStore = create((set, get) => ({
     }
 
     supabase.auth.onAuthStateChange(async (event, session) => {
+      authLog(`event:${event}`, describeSession(session))
       if (session?.user) {
         await get().loadFamily(session.user.id)
         set({ user: session.user })
@@ -40,6 +43,7 @@ export const useAuthStore = create((set, get) => ({
       // SIGNED_OUT is emitted when the user signs out and when the refresh
       // token is genuinely rejected; everything else is left alone.
       if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        authLog('CLEARING-USER-STATE', { event })
         set({ user: null, familyId: null, familyName: null, inviteCode: null, allFamilies: [] })
       }
     })
@@ -142,6 +146,7 @@ export const useAuthStore = create((set, get) => ({
   },
 
   signOut: async () => {
+    authLog('user-tapped-signout')
     await supabase.auth.signOut()
     set({ user: null, familyId: null, familyName: null, inviteCode: null, allFamilies: [] })
   },
