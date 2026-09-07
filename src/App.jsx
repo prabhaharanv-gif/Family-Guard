@@ -22,6 +22,7 @@ import { useLocationService } from './hooks/useLocationService'
 import { useLocationBroadcast } from './hooks/useLocationBroadcast'
 import { useHeartbeat } from './hooks/useHeartbeat'
 import { initBackHandler, pushCloser, removeCloser } from './lib/backHandler'
+import { initSessionKeepAlive } from './lib/sessionKeepAlive'
 import Layout from './components/Layout'
 
 // ── Native siren bridge (Android) ────────────────────────────────────────────
@@ -300,7 +301,13 @@ export default function App() {
   const [unreadMessages, setUnreadMessages] = useState(0)
   const location = useLocation()
   const navigate  = useNavigate()
-  useEffect(() => { initialize() }, [])
+  useEffect(() => {
+    initialize()
+    // Refresh the access token on every app resume. Without this the
+    // WebView's frozen timers let the token expire and the app appears
+    // to log itself out after about an hour.
+    initSessionKeepAlive()
+  }, [])
   useHeartbeat(user?.id, familyId)
 
   // Expose a global navigator so native code can deep-link into /messages

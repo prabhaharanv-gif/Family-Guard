@@ -8,8 +8,15 @@ export const useAuthStore = create((set, get) => ({
   inviteCode:  null,
   allFamilies: [],   // [{ family_id, name, invite_code, created_by, role }]
   loading:     true,
+  _initialised: false,
 
   initialize: async () => {
+    // Guard against a second subscription. React StrictMode mounts effects
+    // twice in development, and every extra onAuthStateChange listener is one
+    // more chance to clobber state.
+    if (get()._initialised) return
+    set({ _initialised: true })
+
     const { data: { session } } = await supabase.auth.getSession()
     if (session?.user) {
       await get().loadFamily(session.user.id)
@@ -17,11 +24,22 @@ export const useAuthStore = create((set, get) => ({
     } else {
       set({ loading: false })
     }
+
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         await get().loadFamily(session.user.id)
         set({ user: session.user })
-      } else {
+        return
+      }
+
+      // Only a real sign-out clears local state.
+      //
+      // This used to clear on ANY event that arrived without a session, which
+      // meant a transient event during token renewal could bounce the user to
+      // the login screen with a perfectly valid session still in storage.
+      // SIGNED_OUT is emitted when the user signs out and when the refresh
+      // token is genuinely rejected; everything else is left alone.
+      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
         set({ user: null, familyId: null, familyName: null, inviteCode: null, allFamilies: [] })
       }
     })
