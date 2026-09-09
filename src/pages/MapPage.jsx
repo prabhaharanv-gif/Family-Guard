@@ -5,6 +5,7 @@ import L from 'leaflet'
 import { useAuthStore } from '../store/authStore'
 import { useLocations } from '../hooks/useLocations'
 import { supabase } from '../lib/supabase'
+import { avatarColor } from '../lib/avatarColor'
 import SmoothMarker from '../components/SmoothMarker'
 import { useT } from '../i18n'
 
@@ -124,20 +125,20 @@ export default function MapPage() {
           {targetLoc && (
             <SmoothMarker
               position={[targetLoc.lat, targetLoc.lng]}
-              icon={createIcon(member?.avatar_color || '#4F8EF7', member?.display_name?.[0] || '?')}
+              icon={createIcon(avatarColor(member?.avatar_color), member?.display_name?.[0] || '?')}
             >
               <div style={{ minWidth: 160, fontFamily: 'Inter, sans-serif', padding: '2px 0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                     <div style={{
                       width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                      background: member?.avatar_color || '#951345',
+                      background: avatarColor(member?.avatar_color),
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#fff', fontWeight: 800, fontSize: 15, border: '2px solid #951345',
+                      color: '#fff', fontWeight: 800, fontSize: 15, border: '2px solid #8B0D3D',
                     }}>
                       {member?.display_name?.[0]?.toUpperCase()}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: 14, color: '#0D0C1D' }}>{member?.display_name}</div>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: '#2A0A18' }}>{member?.display_name}</div>
                       <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
                         🕐 {new Date(targetLoc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
@@ -147,10 +148,10 @@ export default function MapPage() {
                     target="_blank" rel="noopener noreferrer"
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                      background: 'linear-gradient(135deg, #951345, #720D35)',
+                      background: 'linear-gradient(135deg, #8B0D3D, #6E0A30)',
                       color: '#fff', padding: '8px 14px', borderRadius: 10,
                       fontWeight: 700, fontSize: 12, textDecoration: 'none',
-                      boxShadow: '0 3px 10px rgba(149,19,69,0.3)',
+                      boxShadow: '0 3px 10px rgba(139,13,61,0.3)',
                     }}>🗺️ Open in Google Maps</a>
                 </div>
             </SmoothMarker>
@@ -161,19 +162,19 @@ export default function MapPage() {
             .filter(([uid]) => uid !== targetUserId)
             .map(([uid, loc]) => (
               <SmoothMarker key={uid} position={[loc.lat, loc.lng]}
-                icon={createIcon(loc.avatarColor || '#ccc', loc.displayName?.[0] || '?')}>
+                icon={createIcon(avatarColor(loc.avatarColor), loc.displayName?.[0] || '?')}>
                 <div style={{ minWidth: 160, fontFamily: 'Inter, sans-serif', padding: '2px 0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                       <div style={{
                         width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                        background: loc.avatarColor || '#4F8EF7',
+                        background: avatarColor(loc.avatarColor),
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#fff', fontWeight: 800, fontSize: 15, border: '2px solid #4F8EF7',
+                        color: '#fff', fontWeight: 800, fontSize: 15, border: '2px solid #8B0D3D',
                       }}>
                         {loc.displayName?.[0]?.toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 800, fontSize: 14, color: '#0D0C1D' }}>{loc.displayName}</div>
+                        <div style={{ fontWeight: 800, fontSize: 14, color: '#2A0A18' }}>{loc.displayName}</div>
                         <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
                           🕐 {new Date(loc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
@@ -183,10 +184,10 @@ export default function MapPage() {
                       target="_blank" rel="noopener noreferrer"
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                        background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
+                        background: 'linear-gradient(135deg, #8B0D3D, #A5124A)',
                         color: '#fff', padding: '8px 14px', borderRadius: 10,
                         fontWeight: 700, fontSize: 12, textDecoration: 'none',
-                        boxShadow: '0 3px 10px rgba(79,70,229,0.3)',
+                        boxShadow: '0 3px 10px rgba(139,13,61,0.3)',
                       }}>🗺️ Open in Google Maps</a>
                   </div>
               </SmoothMarker>
@@ -201,11 +202,11 @@ export default function MapPage() {
             style={{
               position: 'absolute', right: 14, bottom: 18, zIndex: 1000,
               display: 'flex', alignItems: 'center', gap: 7,
-              background: 'linear-gradient(135deg,#951345,#720D35)',
+              background: 'linear-gradient(135deg,#8B0D3D,#6E0A30)',
               border: 'none', borderRadius: 999, padding: '10px 16px',
               color: '#fff', fontWeight: 700, fontSize: 13,
               fontFamily: 'inherit', cursor: 'pointer',
-              boxShadow: '0 4px 16px rgba(149,19,69,0.4)',
+              boxShadow: '0 4px 16px rgba(139,13,61,0.4)',
             }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -222,17 +223,17 @@ export default function MapPage() {
       <div style={{
         background: '#fff', padding: '14px 20px',
         display: 'flex', alignItems: 'center', gap: 12,
-        borderTop: '1px solid #E4EAF8', flexShrink: 0,
+        borderTop: '1px solid #ECE0E5', flexShrink: 0,
       }}>
         <button onClick={() => navigate(-1)} style={{
           width: 38, height: 38, borderRadius: '50%',
-          border: 'none', background: '#F0F4FF',
+          border: 'none', background: '#F8F0F3',
           fontSize: 18, cursor: 'pointer', flexShrink: 0,
         }}>←</button>
 
         <div style={{
           width: 40, height: 40, borderRadius: '50%',
-          background: member?.avatar_color || '#4F8EF7',
+          background: avatarColor(member?.avatar_color),
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: '#fff', fontWeight: 800, fontSize: 16, flexShrink: 0,
         }}>
@@ -241,7 +242,7 @@ export default function MapPage() {
 
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>{member?.display_name || 'Loading...'}</div>
-          <div style={{ fontSize: 12, color: '#8892A4', marginTop: 2 }}>
+          <div style={{ fontSize: 12, color: '#7D5A67', marginTop: 2 }}>
             {targetLoc
               ? `📍 Updated ${new Date(targetLoc.updatedAt).toLocaleTimeString()}`
               : '⚠️ Location not shared yet — allow location access'}

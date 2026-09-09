@@ -194,12 +194,12 @@ function SpeedBadge({ loc, size = 34 }) {
       // quadrant and buried the face.
       position: 'absolute', right: -14, bottom: -8,
       width: size, height: size, borderRadius: '50%',
-      background: '#951345', border: '2px solid #fff',
+      background: '#8B0D3D', border: '2px solid #fff',
       boxSizing: 'border-box',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       color: '#fff', lineHeight: 1,
-      boxShadow: '0 2px 6px rgba(149,19,69,0.45)',
+      boxShadow: '0 2px 6px rgba(139,13,61,0.45)',
       pointerEvents: 'none',
       // Nothing may leave the circle, whatever the platform does to the font.
       overflow: 'hidden',
@@ -355,7 +355,7 @@ export default function MapAllPage() {
           style={{
             background: showFindFam ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)',
             border: '1.5px solid rgba(255,255,255,0.4)',
-            color: showFindFam ? '#951345' : '#fff',
+            color: showFindFam ? '#8B0D3D' : '#fff',
             borderRadius: 10, padding: '8px 14px',
             fontWeight: 800, fontSize: 13,
             fontFamily: 'inherit', cursor: 'pointer',
@@ -379,7 +379,7 @@ export default function MapAllPage() {
           style={{
             background: 'rgba(255,255,255,0.92)',
             border: '1.5px solid #fff',
-            color: '#951345', borderRadius: 10,
+            color: '#8B0D3D', borderRadius: 10,
             width: 36, height: 36,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: refreshing ? 'wait' : 'pointer', flexShrink: 0,
@@ -387,7 +387,7 @@ export default function MapAllPage() {
         >
           <svg
             width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
             style={{ animation: refreshing ? 'famguard-spin 0.7s linear infinite' : 'none' }}
           >
             <polyline points="23 4 23 10 17 10"/>
@@ -442,7 +442,7 @@ export default function MapAllPage() {
               key={uid}
               position={[loc.lat, loc.lng]}
               icon={createIcon(
-                loc.avatarColor || '#951345',
+                loc.avatarColor || '#8B0D3D',
                 loc.displayName?.[0]?.toUpperCase() || '?',
                 loc.avatarUrl || null
               )}
@@ -452,14 +452,14 @@ export default function MapAllPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                     <div style={{ position: 'relative', flexShrink: 0, marginRight: 14 }}>
                       {loc.avatarUrl ? (
-                        <img src={loc.avatarUrl} alt={loc.displayName} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid #951345' }} />
+                        <img src={loc.avatarUrl} alt={loc.displayName} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid #8B0D3D' }} />
                       ) : (
                         <div style={{
                           width: 40, height: 40, borderRadius: '50%',
-                          background: loc.avatarColor || '#951345',
+                          background: loc.avatarColor || '#8B0D3D',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           color: '#fff', fontWeight: 800, fontSize: 15,
-                          border: '2px solid #951345', boxSizing: 'border-box',
+                          border: '2px solid #8B0D3D', boxSizing: 'border-box',
                         }}>
                           {loc.displayName?.[0]?.toUpperCase()}
                         </div>
@@ -467,7 +467,7 @@ export default function MapAllPage() {
                       <SpeedBadge loc={loc} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: 14, color: '#0D0C1D' }}>{loc.displayName}</div>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: '#2A0A18' }}>{loc.displayName}</div>
                       <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
                         Last Loc Time · {new Date(loc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
@@ -485,10 +485,10 @@ export default function MapAllPage() {
                     target="_blank" rel="noopener noreferrer"
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                      background: 'linear-gradient(135deg, #951345, #720D35)',
+                      background: 'linear-gradient(135deg, #8B0D3D, #6E0A30)',
                       color: '#fff', padding: '8px 14px', borderRadius: 10,
                       fontWeight: 700, fontSize: 12, textDecoration: 'none',
-                      boxShadow: '0 3px 10px rgba(149,19,69,0.3)',
+                      boxShadow: '0 3px 10px rgba(139,13,61,0.3)',
                     }}
                   >
                     🗺️ Open in Google Maps
@@ -511,13 +511,13 @@ export default function MapAllPage() {
             position: 'absolute', top: 70, right: 12, zIndex: 400,
             background: '#fff', borderRadius: 16,
             boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-            border: '1px solid #F0E4EA',
+            border: '1px solid #ECE0E5',
             minWidth: 200, maxWidth: 260,
             overflow: 'hidden',
           }}>
             {/* Header */}
             <div style={{
-              background: 'linear-gradient(135deg, #951345, #720D35)',
+              background: 'linear-gradient(135deg, #8B0D3D, #6E0A30)',
               padding: '10px 14px',
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
@@ -561,14 +561,14 @@ export default function MapAllPage() {
                     <div style={{ position: 'relative', flexShrink: 0, marginRight: 14 }}>
                       {loc.avatarUrl ? (
                         <img src={loc.avatarUrl} alt={loc.displayName}
-                          style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid #951345' }} />
+                          style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid #8B0D3D' }} />
                       ) : (
                         <div style={{
                           width: 40, height: 40, borderRadius: '50%',
-                          background: loc.avatarColor || '#951345',
+                          background: loc.avatarColor || '#8B0D3D',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           color: '#fff', fontWeight: 800, fontSize: 15,
-                          border: '2px solid #951345', boxSizing: 'border-box',
+                          border: '2px solid #8B0D3D', boxSizing: 'border-box',
                         }}>
                           {loc.displayName?.[0]?.toUpperCase()}
                         </div>
@@ -577,12 +577,12 @@ export default function MapAllPage() {
                     </div>
                     {/* Name + distance + last loc time */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0D0C1D', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#2A0A18', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
                         {loc.displayName}
                         {myLoc && uid !== user?.id && (() => {
                           const dist = formatDistance(myLoc.lat, myLoc.lng, loc.lat, loc.lng)
                           return dist ? (
-                            <span style={{ fontSize: 11, fontWeight: 600, color: '#951345' }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: '#8B0D3D' }}>
                               ({dist})
                             </span>
                           ) : null
@@ -593,7 +593,7 @@ export default function MapAllPage() {
                       </div>
                     </div>
                     {/* Arrow */}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 18 15 12 9 6"/>
                     </svg>
                   </button>

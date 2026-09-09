@@ -46,15 +46,15 @@ export default function AnchoredMenu({ anchor, items = [], onClose, width = 210,
   return (
     <div
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(13,12,29,0.16)' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(42,10,24,0.16)' }}
     >
       <div
         onClick={e => e.stopPropagation()}
         style={{
           position: 'fixed', top, left, width,
           background: '#fff', borderRadius: 14,
-          border: '1px solid #F0E4EA',
-          boxShadow: '0 14px 36px rgba(20,8,24,0.24)',
+          border: '1px solid #ECE0E5',
+          boxShadow: '0 14px 36px rgba(20,4,10,0.24)',
           padding: 6, overflow: 'hidden',
         }}
       >
@@ -74,14 +74,14 @@ export default function AnchoredMenu({ anchor, items = [], onClose, width = 210,
               }}
             >
               {a.icon && (
-                <span style={{ color: a.color || '#951345', display: 'flex', flexShrink: 0 }}>
+                <span style={{ color: a.color || '#8B0D3D', display: 'flex', flexShrink: 0 }}>
                   {a.icon}
                 </span>
               )}
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{
                   display: 'block', fontSize: 13.5, fontWeight: 700,
-                  color: a.danger ? (a.color || '#E11D48') : '#0D0C1D',
+                  color: a.danger ? (a.color || '#E11D48') : '#2A0A18',
                 }}>
                   {a.label}
                 </span>

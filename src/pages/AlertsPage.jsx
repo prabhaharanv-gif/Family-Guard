@@ -59,8 +59,8 @@ export default function AlertsPage() {
         <h1 className="page-title" style={{ margin: 0 }}>SOS Alerts</h1>
         {resolvedCount > 0 && (
           <button onClick={handleClearHistory} disabled={clearing} style={{
-            background: '#FFF0F3', border: '1px solid #951345',
-            color: '#951345', borderRadius: 10,
+            background: '#FFF0F3', border: '1px solid #8B0D3D',
+            color: '#8B0D3D', borderRadius: 10,
             padding: '7px 12px', fontWeight: 700, fontSize: 12,
             cursor: 'pointer', fontFamily: 'inherit',
           }}>

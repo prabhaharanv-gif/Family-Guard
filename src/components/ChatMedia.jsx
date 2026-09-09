@@ -15,7 +15,7 @@ import { MEDIA_MAX_BYTES, formatBytes, mediaKindOf, signedMediaUrl } from '../li
  * sending, so a failed send never leaves an orphaned object in storage.
  */
 
-const MAROON = '#951345'
+const MAROON = '#8B0D3D'
 
 // ── A private-bucket file needs a signed URL, and signing is async ──────────
 // Null until it resolves, so every consumer draws a placeholder first.
@@ -45,7 +45,7 @@ function ImageViewer({ url, onClose }) {
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 4000,
-        background: 'rgba(8,4,10,0.94)',
+        background: 'rgba(10,3,6,0.94)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
     >
@@ -111,8 +111,8 @@ export function MediaBubble({ msg, isOwn }) {
         display: 'flex', alignItems: 'center', gap: 10,
         width: 220, maxWidth: '100%', boxSizing: 'border-box',
         padding: '8px 10px', borderRadius: 10, textDecoration: 'none',
-        background: isOwn ? 'rgba(255,255,255,0.16)' : '#F8EEF3',
-        border: isOwn ? '1px solid rgba(255,255,255,0.25)' : '1px solid #F0E4EA',
+        background: isOwn ? 'rgba(255,255,255,0.16)' : '#F8F0F3',
+        border: isOwn ? '1px solid rgba(255,255,255,0.25)' : '1px solid #ECE0E5',
         color: 'inherit',
       }}
     >
@@ -205,11 +205,11 @@ export function AttachButton({ onPick, onError, disabled }) {
 
   const items = [
     {
-      kind: 'image', label: t('messages.mediaPhoto'), mime: 'image/*', color: '#0EA5E9',
+      kind: 'image', label: t('messages.mediaPhoto'), mime: 'image/*', color: '#B01650',
       icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></>,
     },
     {
-      kind: 'video', label: t('messages.mediaVideo'), mime: 'video/*', color: '#7C3AED',
+      kind: 'video', label: t('messages.mediaVideo'), mime: 'video/*', color: '#A5124A',
       icon: <><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" /></>,
     },
     {
@@ -248,8 +248,8 @@ export function AttachButton({ onPick, onError, disabled }) {
         aria-label={t('messages.attach')}
         style={{
           width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-          background: anchor ? MAROON : '#F8EEF3',
-          border: `1.5px solid ${anchor ? MAROON : '#F0E4EA'}`,
+          background: anchor ? MAROON : '#F8F0F3',
+          border: `1.5px solid ${anchor ? MAROON : '#ECE0E5'}`,
           color: anchor ? '#fff' : MAROON,
           cursor: disabled ? 'default' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -267,15 +267,15 @@ export function AttachButton({ onPick, onError, disabled }) {
       {anchor && (
         <div
           onClick={() => setAnchor(null)}
-          style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(13,12,29,0.16)' }}
+          style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(42,10,24,0.16)' }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
               position: 'fixed', top, left, width: MENU_WIDTH,
               background: '#fff', borderRadius: 14,
-              border: '1px solid #F0E4EA',
-              boxShadow: '0 14px 36px rgba(20,8,24,0.24)',
+              border: '1px solid #ECE0E5',
+              boxShadow: '0 14px 36px rgba(20,4,10,0.24)',
               padding: 6, overflow: 'hidden',
             }}
           >
@@ -289,7 +289,7 @@ export function AttachButton({ onPick, onError, disabled }) {
                     background: 'none', border: 'none', cursor: 'pointer',
                     fontFamily: 'inherit', textAlign: 'left',
                     display: 'flex', alignItems: 'center', gap: 10,
-                    color: '#0D0C1D', fontSize: 13.5, fontWeight: 700,
+                    color: '#2A0A18', fontSize: 13.5, fontWeight: 700,
                   }}
                 >
                   <span style={{
@@ -444,7 +444,7 @@ export function VoiceRecorder({ onRecorded, onError, disabled }) {
       aria-label={t('messages.recordVoice')}
       style={{
         width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-        background: '#F8EEF3', border: '1.5px solid #F0E4EA',
+        background: '#F8F0F3', border: '1.5px solid #ECE0E5',
         color: MAROON, cursor: disabled ? 'default' : 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         opacity: disabled ? 0.5 : 1,
@@ -470,7 +470,7 @@ export function PendingMediaBar({ pending, uploading, onCancel }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
-      padding: '8px 16px', background: '#F8EEF3',
+      padding: '8px 16px', background: '#F8F0F3',
       borderTop: '1px solid #F0D8E2',
     }}>
       {pending.previewUrl ? (
@@ -501,7 +501,7 @@ export function PendingMediaBar({ pending, uploading, onCancel }) {
         style={{
           background: 'none', border: 'none',
           cursor: uploading ? 'default' : 'pointer',
-          fontSize: 18, color: '#8480B0', padding: '0 4px', flexShrink: 0,
+          fontSize: 18, color: '#836370', padding: '0 4px', flexShrink: 0,
         }}
       >✕</button>
     </div>

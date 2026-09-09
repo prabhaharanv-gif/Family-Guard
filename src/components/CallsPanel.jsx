@@ -167,8 +167,8 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff' }}>
       {selectMode && (
         <div style={{
-          padding: '8px 16px', background: '#FDF0F5', borderBottom: '1px solid #F0E4EA',
-          fontSize: 12, color: '#951345', fontWeight: 700,
+          padding: '8px 16px', background: '#FDF0F5', borderBottom: '1px solid #ECE0E5',
+          fontSize: 12, color: '#8B0D3D', fontWeight: 700,
         }}>
           {selected.size} selected · tap to select more
         </div>
@@ -219,8 +219,8 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
               {selectMode && (
                 <div style={{
                   width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                  border: `2px solid ${isSel ? '#951345' : '#D4C4CC'}`,
-                  background: isSel ? '#951345' : 'transparent',
+                  border: `2px solid ${isSel ? '#8B0D3D' : '#D4C4CC'}`,
+                  background: isSel ? '#8B0D3D' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#fff', fontSize: 12, fontWeight: 900,
                 }}>{isSel ? '✓' : ''}</div>
@@ -228,7 +228,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
 
               <div style={{
                 width: 42, height: 42, borderRadius: '50%', flexShrink: 0, overflow: 'hidden',
-                background: '#951345', display: 'flex', alignItems: 'center',
+                background: '#8B0D3D', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 16,
               }}>
                 {other?.avatar_url
@@ -239,7 +239,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontWeight: 700, fontSize: 14,
-                  color: missed ? '#DC2626' : '#0D0C1D',
+                  color: missed ? '#DC2626' : '#2A0A18',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>{name}</div>
                 {/* Plain inline text, not a flex row. As flex children each
@@ -248,7 +248,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
                     and made those rows taller than the rest. nowrap plus an
                     ellipsis keeps every row exactly one line. */}
                 <div style={{
-                  fontSize: 12, color: '#8480B0', marginTop: 2,
+                  fontSize: 12, color: '#836370', marginTop: 2,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>
                   {isVideo ? '📹' : '📞'}{' '}
@@ -281,11 +281,11 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
                   }}
                 >
                   {isVideo ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
                     </svg>
                   ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
                     </svg>
                   )}

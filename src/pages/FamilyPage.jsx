@@ -10,7 +10,7 @@ import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import { setNicknameLocally, useNicknames } from '../hooks/useNicknames'
 
-const AVATAR_COLORS = ['#951345','#720D35','#C0185A','#A01040','#B01650','#8A0F3A','#6B0B2C']
+const AVATAR_COLORS = ['#8B0D3D','#6E0A30','#B01650','#A01040','#A5124A','#8A0F3A','#6B0B2C']
 
 // Takes the translator rather than reading the store directly, so these stay
 // pure functions and re-render with the rest of the card on a language switch.
@@ -105,10 +105,10 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
     <div className="overlay" onClick={onClose}>
       <div className="popup" onClick={e => e.stopPropagation()}>
         <div className="popup-handle" />
-        <div style={{ fontSize: 11, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: '#8B0D3D', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
           {t('family.setNicknameTitle', { name: member.display_name })}
         </div>
-        <div style={{ fontSize: 12, color: '#8480B0', marginBottom: 14, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 12, color: '#836370', marginBottom: 14, lineHeight: 1.4 }}>
           {t('family.nicknamePrivate', { name: member.display_name })}
         </div>
         <input
@@ -121,12 +121,12 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#F5F4FB', border: '1px solid #E9E6FB',
+            background: '#F8F0F3', border: '1px solid #ECE0E5',
             color: '#3A1020', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
           }}>{t('common.cancel')}</button>
           <button onClick={handleSave} disabled={saving} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#951345', border: 'none',
+            background: '#8B0D3D', border: 'none',
             color: '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
           }}>{saving ? t('common.saving') : t('common.save')}</button>
         </div>
@@ -462,7 +462,7 @@ export default function FamilyPage() {
             <div className="popup-handle" style={{ margin: '9px auto 13px' }} />
 
             <div style={{
-              fontSize: 10.5, fontWeight: 700, color: '#951345',
+              fontSize: 10.5, fontWeight: 700, color: '#8B0D3D',
               letterSpacing: 0.2, marginBottom: 8,
             }}>
               {t('family.inviteTo', { family: familyName })}
@@ -472,7 +472,7 @@ export default function FamilyPage() {
                 the box, so the border just frames it rather than decorating. */}
             <div style={{
               background: 'transparent',
-              border: '2px solid #951345',
+              border: '2px solid #8B0D3D',
               borderRadius: 16,
               padding: '9px 12px',
               marginBottom: 9,
@@ -480,7 +480,7 @@ export default function FamilyPage() {
             }}>
               <div style={{
                 fontSize: 22, fontWeight: 900, letterSpacing: 4,
-                color: '#951345', fontFamily: 'Sora, sans-serif', lineHeight: 1.15,
+                color: '#8B0D3D', fontFamily: 'Sora, sans-serif', lineHeight: 1.15,
               }}>
                 {inviteCode}
               </div>
@@ -517,14 +517,14 @@ export default function FamilyPage() {
               setTimeout(() => { setCodeCopied(false); setShowInviteSheet(false) }, 1200)
             }} style={{
               width: '100%', padding: '10px 14px', borderRadius: 13,
-              background: codeCopied ? '#D1FAE5' : '#F7F4F8',
-              border: codeCopied ? '1.5px solid #10B981' : '1.5px solid #EDE7EF',
+              background: codeCopied ? '#D1FAE5' : '#F8F0F3',
+              border: codeCopied ? '1.5px solid #10B981' : '1.5px solid #ECE0E5',
               color: codeCopied ? '#059669' : '#3A1020', fontWeight: 800, fontSize: 13.5,
               fontFamily: 'inherit', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
               transition: 'all 0.2s',
             }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : '#951345'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : '#8B0D3D'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
               </svg>
               {codeCopied ? t('family.copied') : t('family.copyCode')}
@@ -539,7 +539,7 @@ export default function FamilyPage() {
         <div className="overlay" onClick={() => setShowFamilySwitcher(false)}>
           <div className="popup" onClick={e => e.stopPropagation()}>
             <div className="popup-handle" />
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#951345', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#8B0D3D', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
               {t('family.switchFamily')}
             </div>
             {/* Same flat list as Find Family Member on the map: rows divided by
@@ -567,19 +567,19 @@ export default function FamilyPage() {
                     }}>
                     <div style={{
                       width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                      background: isActive ? '#951345' : '#F5EFF6',
+                      background: isActive ? '#8B0D3D' : '#F8F0F3',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                        <circle cx="9" cy="7" r="3" fill={isActive ? '#fff' : '#951345'}/>
-                        <path d="M3 20C3 16.134 5.686 13 9 13C12.314 13 15 16.134 15 20H3Z" fill={isActive ? '#fff' : '#951345'}/>
-                        <circle cx="17.5" cy="8.5" r="2.2" fill={isActive ? 'rgba(255,255,255,0.7)' : '#C0185A'}/>
-                        <path d="M13.5 20C13.5 17.239 15.239 15 17.5 15C19.761 15 21.5 17.239 21.5 20H13.5Z" fill={isActive ? 'rgba(255,255,255,0.7)' : '#C0185A'}/>
+                        <circle cx="9" cy="7" r="3" fill={isActive ? '#fff' : '#8B0D3D'}/>
+                        <path d="M3 20C3 16.134 5.686 13 9 13C12.314 13 15 16.134 15 20H3Z" fill={isActive ? '#fff' : '#8B0D3D'}/>
+                        <circle cx="17.5" cy="8.5" r="2.2" fill={isActive ? 'rgba(255,255,255,0.7)' : '#B01650'}/>
+                        <path d="M13.5 20C13.5 17.239 15.239 15 17.5 15C19.761 15 21.5 17.239 21.5 20H13.5Z" fill={isActive ? 'rgba(255,255,255,0.7)' : '#B01650'}/>
                       </svg>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
-                        fontSize: 13, fontWeight: 700, color: '#0D0C1D', marginBottom: 2,
+                        fontSize: 13, fontWeight: 700, color: '#2A0A18', marginBottom: 2,
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>
                         {fam.name}
@@ -590,12 +590,12 @@ export default function FamilyPage() {
                     </div>
                     {isActive ? (
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                        stroke="#951345" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        stroke="#8B0D3D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12"/>
                       </svg>
                     ) : (
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="9 18 15 12 9 6"/>
                       </svg>
                     )}
@@ -718,7 +718,7 @@ export default function FamilyPage() {
             style={{
               background: 'rgba(255,255,255,0.92)',
               border: '1.5px solid #fff',
-              color: '#951345',
+              color: '#8B0D3D',
               borderRadius: 10,
               padding: '7px 12px',
               fontWeight: 800,
@@ -732,7 +732,7 @@ export default function FamilyPage() {
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="17 1 21 5 17 9"/>
               <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
               <polyline points="7 23 3 19 7 15"/>
@@ -825,10 +825,10 @@ export default function FamilyPage() {
           <div className="empty-state">
             <div className="empty-emoji">
               <svg width="52" height="52" viewBox="0 0 24 24" fill="none">
-                <circle cx="7" cy="7.5" r="3" fill="#951345" />
-                <path d="M2 19c0-3 2.2-5 5-5s5 2 5 5" fill="#C0185A" />
+                <circle cx="7" cy="7.5" r="3" fill="#8B0D3D" />
+                <path d="M2 19c0-3 2.2-5 5-5s5 2 5 5" fill="#B01650" />
                 <circle cx="17" cy="7.5" r="3" fill="#F59E0B" />
-                <path d="M12 19c0-3 2.2-5 5-5s5 2 5 5" fill="#0EA5E9" />
+                <path d="M12 19c0-3 2.2-5 5-5s5 2 5 5" fill="#B01650" />
               </svg>
             </div>
             <div className="empty-text">{t('family.noMembers')}</div>
@@ -856,7 +856,7 @@ export default function FamilyPage() {
             return (
               <div
                 key={m.id}
-                className="member-card"
+                className={'member-card ' + (online ? 'is-online' : 'is-offline')}
                 onClick={e => {
                   if (didLongPress.current) { didLongPress.current = false; return }
                   setMemberAnchor(e.currentTarget.getBoundingClientRect())
@@ -883,15 +883,15 @@ export default function FamilyPage() {
                   <div style={{
                     position: 'absolute', bottom: 1, right: 1,
                     width: 13, height: 13, borderRadius: '50%',
-                    background: online ? '#10B981' : '#D1D5DB',
+                    background: online ? '#10B981' : '#C7B3BC',
                     border: '2.5px solid #fff',
                     boxShadow: online ? '0 0 0 2px rgba(16,185,129,0.25), 0 0 8px rgba(16,185,129,0.5)' : 'none',
                     transition: 'all 0.3s',
                   }} />
                 </div>
                 <div className="member-info">
-                  <div className="member-name" style={{ color: '#0D0C1D' }}>{nameFor(m)}</div>
-                  <div className="member-meta" style={{ color: '#8480B0' }}>
+                  <div className="member-name" style={{ color: '#2A0A18' }}>{nameFor(m)}</div>
+                  <div className="member-meta" style={{ color: '#836370' }}>
                     {online ? (
                       <span style={{ color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
@@ -976,7 +976,7 @@ export default function FamilyPage() {
                           the muted rose so charging is readable at a glance
                           without competing with the green "Live" pin. */}
                       {charging && (
-                        <svg width="9" height="13" viewBox="0 0 8 12" fill="#2563EB" aria-hidden="true">
+                        <svg width="9" height="13" viewBox="0 0 8 12" fill="#6B0B2C" aria-hidden="true">
                           <path d="M4.6 0 0 6.6h2.7L2.2 12 7.4 5.1H4.4L4.6 0z" />
                         </svg>
                       )}
@@ -1021,7 +1021,7 @@ export default function FamilyPage() {
                     const hasFix = hasLocationRow && !!loc.lat && !!loc.lng
                       && !(loc.lat === 0 && loc.lng === 0)
                     const waiting = !sharingOff && !gpsOff && !hasFix
-                    const pinFill = sharingOff || waiting ? '#D1D5DB' : (gpsOff ? '#E11D48' : '#10B981')
+                    const pinFill = sharingOff || waiting ? '#C7B3BC' : (gpsOff ? '#E11D48' : '#10B981')
                     const label   = sharingOff ? t('family.gpsOff')
                       : gpsOff ? t('family.gpsNoFix')
                       : waiting ? t('family.gpsWaiting')
@@ -1073,7 +1073,7 @@ export default function FamilyPage() {
                     }
                     return (
                       <span style={{
-                        fontSize: 9, fontWeight: 600, color: '#6B7280',
+                        fontSize: 9, fontWeight: 600, color: '#7D5A67',
                         marginTop: 1, whiteSpace: 'nowrap',
                       }}>
                         {label || ' '}
@@ -1119,7 +1119,7 @@ export default function FamilyPage() {
                 onClick: () => handleStartCall(selectedMember, 'voice'),
               },
               {
-                label: t('family.videoCall'), color: '#951345',
+                label: t('family.videoCall'), color: '#8B0D3D',
                 icon: (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
@@ -1156,10 +1156,10 @@ export default function FamilyPage() {
           style={{
             position: 'absolute', right: 18, bottom: 18, zIndex: 20,
             width: 56, height: 56, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #951345, #720D35)',
+            background: 'linear-gradient(135deg, #8B0D3D, #6E0A30)',
             border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 6px 20px rgba(149,19,69,0.42)',
+            boxShadow: '0 6px 20px rgba(139,13,61,0.42)',
             padding: 0,
           }}
         >

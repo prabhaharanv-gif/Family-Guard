@@ -112,6 +112,19 @@ public class CallRingingService extends Service {
 
     public static volatile boolean isRunning = false;
 
+    /**
+     * Whether the alert Activity came up at any point during THIS alert.
+     *
+     * promoteIfAlertMissing() used to ask CallRingingActivity.isShowing(),
+     * which is about the present moment: answer or reject the call inside the
+     * 1.2s window and the Activity is already gone when the check runs, so an
+     * alert the user demonstrably saw was recorded as blocked. That false
+     * positive is expensive — it is what makes the setup sheet reappear — so
+     * the question asked is now "did it ever appear", which cannot be undone
+     * by the user being quick.
+     */
+    public static volatile boolean alertAppeared = false;
+
     // The running service, so CallRingingActivity can report that the alert is
     // up. Held the same way RingtonePlugin holds its preview: the call comes
     // from another component entirely.
@@ -201,6 +214,7 @@ public class CallRingingService extends Service {
 
         isRunning = true;
         instance   = this;
+        alertAppeared = false;
 
         // startForeground() MUST be called within a few seconds of this method
         // starting or the OS kills the process — wrapped defensively so any
@@ -422,6 +436,11 @@ public class CallRingingService extends Service {
      * a second time.
      */
     public static void alertShown() {
+        // Recorded before the guard below, not inside it: the Activity is on
+        // screen whether or not the service is still around to quiet its
+        // notification, and this flag is the evidence promoteIfAlertMissing()
+        // reads.
+        alertAppeared = true;
         CallRingingService self = instance;
         if (self == null || !isRunning) return;
         try {
@@ -448,7 +467,7 @@ public class CallRingingService extends Service {
      * race the launch that already worked.
      */
     private void promoteIfAlertMissing() {
-        if (!isRunning || CallRingingActivity.isShowing()) return;
+        if (!isRunning || alertAppeared || CallRingingActivity.isShowing()) return;
         Log.w("FamoraCall", "CallRingingService: alert did not appear — attaching full-screen intent");
         // The background activity start was refused. Recorded so the setup
         // sheet can ask for the permission that causes it — see KEY_ALERT_BLOCKED.

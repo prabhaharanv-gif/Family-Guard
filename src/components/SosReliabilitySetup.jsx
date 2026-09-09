@@ -34,6 +34,14 @@ const STORAGE_KEY = 'sos_oem_setup_done_v1'
  * relevant step first, regardless of having been dismissed before. The next
  * alert that DOES appear clears the flag, so it stops on its own once fixed —
  * it asks when there is evidence of a problem, and never otherwise.
+ *
+ * Dismissing the sheet clears that flag as well. Not a loophole: the evidence
+ * has done its job the moment it has been shown and acted on. Without it the
+ * sheet could not be dismissed at all — the blocked check deliberately
+ * overrides the never-show-again flag, so someone who granted the permission
+ * and came straight back still met the sheet on every foreground, forever,
+ * because only an alert arriving later could clear it. A permission that is
+ * genuinely still off produces fresh evidence at the next alert.
  */
 export default function SosReliabilitySetup() {
   const t = useT()
@@ -101,6 +109,17 @@ export default function SosReliabilitySetup() {
   const dismiss = () => {
     try { localStorage.setItem(STORAGE_KEY, '1') } catch {}
     setVisible(false)
+    // The recorded failure is spent once it has been shown and acted on.
+    //
+    // Clearing it is what makes "Done" and "Skip for now" mean anything here:
+    // evaluate() ignores the never-show-again flag while a failure stands, by
+    // design, so leaving the native flag set turned this sheet into something
+    // the user could not dismiss at all — it came back on every foreground,
+    // for good, because only a later alert that DID reach the screen could
+    // clear it. If the permission is still off, the next blocked alert records
+    // it again and the sheet returns on fresh evidence.
+    setAlertBlocked(false)
+    try { CallAlarm.clearAlertBlocked() } catch {}
   }
 
   const openAutostart = () => { try { SOSAlarm.openAutostartSettings() } catch {} }
@@ -168,7 +187,7 @@ export default function SosReliabilitySetup() {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 100000,
-      background: 'rgba(13,12,29,0.72)',
+      background: 'rgba(42,10,24,0.72)',
       display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
     }}>
       <div style={{
@@ -184,29 +203,29 @@ export default function SosReliabilitySetup() {
           {steps.map((_, i) => (
             <div key={i} style={{
               width: i === step ? 22 : 7, height: 7, borderRadius: 4,
-              background: i === step ? '#951345' : '#E7DCE2',
+              background: i === step ? '#8B0D3D' : '#E7DCE2',
               transition: 'all 0.2s',
             }} />
           ))}
         </div>
 
         <div style={{
-          fontSize: 12, fontWeight: 800, color: '#951345',
+          fontSize: 12, fontWeight: 800, color: '#8B0D3D',
           letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 8,
         }}>
           One-time safety setup
         </div>
 
-        <div style={{ fontSize: 21, fontWeight: 800, color: '#0D0C1D', marginBottom: 10 }}>
+        <div style={{ fontSize: 21, fontWeight: 800, color: '#2A0A18', marginBottom: 10 }}>
           {current.title}
         </div>
 
-        <p style={{ fontSize: 14, color: '#4B4B63', lineHeight: 1.55, marginBottom: 14 }}>
+        <p style={{ fontSize: 14, color: '#4A1226', lineHeight: 1.55, marginBottom: 14 }}>
           {current.body}
         </p>
 
         <div style={{
-          background: '#FDF5F8', border: '1px solid #F0E4EA',
+          background: '#F8F0F3', border: '1px solid #ECE0E5',
           borderRadius: 12, padding: '12px 14px', marginBottom: 20,
           fontSize: 13, color: '#7A5563', lineHeight: 1.5,
         }}>
@@ -215,10 +234,10 @@ export default function SosReliabilitySetup() {
 
         <button onClick={current.action.fn} style={{
           width: '100%', padding: 15, borderRadius: 14,
-          background: 'linear-gradient(135deg, #951345, #B01650)',
+          background: 'linear-gradient(135deg, #8B0D3D, #A5124A)',
           border: 'none', color: '#fff', fontWeight: 800, fontSize: 15,
           fontFamily: 'inherit', cursor: 'pointer', marginBottom: 12,
-          boxShadow: '0 6px 18px rgba(149,19,69,0.32)',
+          boxShadow: '0 6px 18px rgba(139,13,61,0.32)',
         }}>
           {current.action.label}
         </button>
@@ -226,21 +245,21 @@ export default function SosReliabilitySetup() {
         <div style={{ display: 'flex', gap: 10 }}>
           {step > 0 && (
             <button onClick={() => setStep(s => s - 1)} style={{
-              flex: 1, padding: 13, borderRadius: 14, background: '#F8F7FF',
-              border: '1px solid #EDE9FF', color: '#6B7280', fontWeight: 700,
+              flex: 1, padding: 13, borderRadius: 14, background: '#F8F0F3',
+              border: '1px solid #ECE0E5', color: '#7D5A67', fontWeight: 700,
               fontFamily: 'inherit', fontSize: 14, cursor: 'pointer',
             }}>Back</button>
           )}
           {!isLast ? (
             <button onClick={() => setStep(s => s + 1)} style={{
               flex: 2, padding: 13, borderRadius: 14,
-              background: '#0D0C1D', border: 'none', color: '#fff',
+              background: '#2A0A18', border: 'none', color: '#fff',
               fontWeight: 700, fontFamily: 'inherit', fontSize: 14, cursor: 'pointer',
             }}>I've done this — Next</button>
           ) : (
             <button onClick={dismiss} style={{
               flex: 2, padding: 13, borderRadius: 14,
-              background: '#0D0C1D', border: 'none', color: '#fff',
+              background: '#2A0A18', border: 'none', color: '#fff',
               fontWeight: 700, fontFamily: 'inherit', fontSize: 14, cursor: 'pointer',
             }}>Done</button>
           )}
@@ -248,7 +267,7 @@ export default function SosReliabilitySetup() {
 
         <button onClick={dismiss} style={{
           width: '100%', marginTop: 12, padding: 8, background: 'none',
-          border: 'none', color: '#9CA3AF', fontSize: 13, fontFamily: 'inherit',
+          border: 'none', color: '#836370', fontSize: 13, fontFamily: 'inherit',
           cursor: 'pointer', textDecoration: 'underline',
         }}>
           Skip for now

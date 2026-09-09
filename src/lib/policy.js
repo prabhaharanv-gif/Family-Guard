@@ -44,12 +44,12 @@
 
 // Order and presentation, shared by every language.
 export const SECTION_META = [
-  { key: 'collect',   icon: '📋',  color: '#4F46E5' },
+  { key: 'collect',   icon: '📋',  color: '#8B0D3D' },
   { key: 'use',       icon: '🔒',  color: '#059669' },
   { key: 'calls',     icon: '📞',  color: '#B01650' },
   { key: 'crash',     icon: '🐞',  color: '#DC2626' },
-  { key: 'providers', icon: '🤝',  color: '#0EA5E9' },
-  { key: 'protect',   icon: '🛡️', color: '#7C3AED' },
+  { key: 'providers', icon: '🤝',  color: '#B01650' },
+  { key: 'protect',   icon: '🛡️', color: '#A5124A' },
   { key: 'retention', icon: '🗑️', color: '#D97706' },
   { key: 'choices',   icon: '✅',  color: '#16A34A' },
 ]

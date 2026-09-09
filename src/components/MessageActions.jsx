@@ -61,21 +61,21 @@ export function ReplyBar({ replyTo, senderName, onCancel }) {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 8,
       padding: '8px 16px',
-      background: '#F0EEFF',
-      borderTop: '1px solid #D6D0FF',
-      borderLeft: '3px solid #7C3AED',
+      background: '#FAE8EF',
+      borderTop: '1px solid #DCC9D2',
+      borderLeft: '3px solid #A5124A',
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: '#7C3AED', marginBottom: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: '#A5124A', marginBottom: 2 }}>
           {t('messages.replyingTo', { name: senderName || t('messages.family') })}
         </div>
-        <div style={{ fontSize: 12, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 12, color: '#7D5A67', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {messagePreviewText(t, replyTo)}
         </div>
       </div>
       <button onClick={onCancel} style={{
         background: 'none', border: 'none', cursor: 'pointer',
-        fontSize: 18, color: '#8480B0', padding: '0 4px', flexShrink: 0,
+        fontSize: 18, color: '#836370', padding: '0 4px', flexShrink: 0,
       }}>✕</button>
     </div>
   )
@@ -98,9 +98,14 @@ export function ReactionChips({ reactions, myUserId, onReact, align }) {
 
   return (
     <div style={{
-      display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4,
-      justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
-      paddingLeft: 4, paddingRight: 4,
+      // Hung off the bubble's bottom edge rather than stacked under it. Laid
+      // out in the normal flow the chip read as a second message from the same
+      // person — its own row, its own rounded white pill, sitting where the
+      // next bubble would be. Overlapping the corner it belongs to is what
+      // makes it read as part of the message instead.
+      position: 'absolute', bottom: -10, zIndex: 2,
+      ...(align === 'right' ? { right: 8 } : { left: 8 }),
+      display: 'flex', gap: 3,
     }}>
       {[...counts.values()].map((c) => (
         <button
@@ -108,17 +113,20 @@ export function ReactionChips({ reactions, myUserId, onReact, align }) {
           onClick={() => onReact?.(c.emoji)}
           style={{
             display: 'flex', alignItems: 'center', gap: 3,
-            padding: '2px 7px', borderRadius: 12,
+            padding: '1px 6px', borderRadius: 11,
             background: '#fff',
-            border: c.mine ? '1.5px solid #951345' : '1.5px solid #F0E4EA',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            // Ringed in the page background, not in a border colour: the chip
+            // sits ON the bubble, and without the gap it punches for itself the
+            // two shapes merge into one blob.
+            border: c.mine ? '1.5px solid #8B0D3D' : '1.5px solid var(--bg)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
             cursor: onReact ? 'pointer' : 'default',
-            fontFamily: 'inherit', fontSize: 12, lineHeight: 1.5,
+            fontFamily: 'inherit', fontSize: 11.5, lineHeight: 1.55,
           }}
         >
           <span>{c.emoji}</span>
           {c.count > 1 && (
-            <span style={{ fontSize: 10.5, fontWeight: 800, color: '#9C6B7A' }}>{c.count}</span>
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#9C6B7A' }}>{c.count}</span>
           )}
         </button>
       ))}
@@ -157,7 +165,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
   const t = useT()
   const actions = [
     {
-      label: t('messages.reply'), color: '#951345', fn: onReply, show: true,
+      label: t('messages.reply'), color: '#8B0D3D', fn: onReply, show: true,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
@@ -170,7 +178,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
       // text is on screen regardless, so a failure is not worth an error.
       // Hidden on an attachment sent without a caption — there is no text to
       // copy, and an action that silently does nothing reads as broken.
-      label: t('messages.copy'), color: '#951345', show: !!msg?.content,
+      label: t('messages.copy'), color: '#8B0D3D', show: !!msg?.content,
       fn: () => { try { navigator.clipboard?.writeText(msg?.content || '') } catch { /* on screen anyway */ } },
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -179,7 +187,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
       ),
     },
     {
-      label: t('messages.edit'), color: '#951345', fn: onEdit, show: isOwn,
+      label: t('messages.edit'), color: '#8B0D3D', fn: onEdit, show: isOwn,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -188,7 +196,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
       ),
     },
     {
-      label: t('messages.messageInfo'), color: '#951345', fn: onInfo, show: isOwn,
+      label: t('messages.messageInfo'), color: '#8B0D3D', fn: onInfo, show: isOwn,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -248,15 +256,15 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
   return (
     <div
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(13,12,29,0.16)' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(42,10,24,0.16)' }}
     >
       <div
         onClick={e => e.stopPropagation()}
         style={{
           position: 'fixed', top, left, width: WIDTH,
           background: '#fff', borderRadius: 14,
-          border: '1px solid #F0E4EA',
-          boxShadow: '0 14px 36px rgba(20,8,24,0.24)',
+          border: '1px solid #ECE0E5',
+          boxShadow: '0 14px 36px rgba(20,4,10,0.24)',
           padding: 6, overflow: 'hidden',
         }}
       >
@@ -276,7 +284,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
                   aria-label={emoji}
                   style={{
                     width: 33, height: 33, borderRadius: '50%',
-                    border: myReaction === emoji ? '2px solid #951345' : '2px solid transparent',
+                    border: myReaction === emoji ? '2px solid #8B0D3D' : '2px solid transparent',
                     background: myReaction === emoji ? '#FDF2F6' : 'none',
                     cursor: 'pointer', fontSize: 19, lineHeight: 1,
                     padding: 0, fontFamily: 'inherit',
@@ -298,7 +306,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
                 background: 'none', border: 'none', cursor: 'pointer',
                 fontFamily: 'inherit', textAlign: 'left',
                 display: 'flex', alignItems: 'center', gap: 10,
-                color: a.danger ? a.color : '#0D0C1D',
+                color: a.danger ? a.color : '#2A0A18',
                 fontSize: 13.5, fontWeight: 700,
               }}
             >
@@ -344,8 +352,8 @@ export function EditModal({ msg, onClose, onSave, subtitle }) {
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0D0C1D' }}>{t('messages.editTitle')}</div>
-            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#2A0A18' }}>{t('messages.editTitle')}</div>
+            <div style={{ fontSize: 11, color: '#836370', marginTop: 1 }}>
               {subtitle || t('messages.editSubtitle')}
             </div>
           </div>
@@ -357,26 +365,26 @@ export function EditModal({ msg, onClose, onSave, subtitle }) {
           autoFocus
           style={{
             width: '100%', padding: '14px 16px', borderRadius: 14,
-            border: '1.5px solid #E5E7EB', fontSize: 14,
+            border: '1.5px solid #ECE0E5', fontSize: 14,
             fontFamily: 'inherit', resize: 'none', outline: 'none',
             minHeight: 90, boxSizing: 'border-box', marginBottom: 16,
             background: '#FAFAFA', lineHeight: 1.5,
             transition: 'border-color 0.2s',
           }}
           onFocus={e => e.target.style.borderColor = '#059669'}
-          onBlur={e => e.target.style.borderColor = '#E5E7EB'}
+          onBlur={e => e.target.style.borderColor = '#ECE0E5'}
         />
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#F8F7FF', border: '1px solid #EDE9FF',
-            color: '#6B7280', fontWeight: 700, cursor: 'pointer',
+            background: '#F8F0F3', border: '1px solid #ECE0E5',
+            color: '#7D5A67', fontWeight: 700, cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 14,
           }}>Cancel</button>
           <button onClick={handleSave} disabled={saving || !text.trim()} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: text.trim() ? 'linear-gradient(135deg, #951345, #720D35)' : '#F5E8EE',
+            background: text.trim() ? 'linear-gradient(135deg, #8B0D3D, #6E0A30)' : '#F5E8EE',
             border: 'none', color: '#fff', fontWeight: 700,
             cursor: text.trim() ? 'pointer' : 'not-allowed',
             fontFamily: 'inherit', fontSize: 14,

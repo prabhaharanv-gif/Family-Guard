@@ -2,8 +2,11 @@
  * FamilyIllustration
  *
  * Decorative outline drawing that fills the empty space under a short family
- * list. Line art only, in the maroon theme at low opacity, so it reads as a
- * watermark and never competes with the member cards above it.
+ * list. Line art only, in a soft pink at low opacity, so it reads as a
+ * watermark on the cream background and never competes with the member cards
+ * above it. Pink rather than the maroon of the header and buttons: at
+ * watermark weight the maroon went muddy grey-brown against cream, while the
+ * pink stays legibly rosy.
  *
  * The motif carries the app's themes in one composition: a protective arc over
  * a house, a heart in the gable, and two parents standing close with two
@@ -11,7 +14,7 @@
  *
  * aria-hidden — it is purely decorative and adds nothing for a screen reader.
  */
-export default function FamilyIllustration({ width = 240, opacity = 0.22 }) {
+export default function FamilyIllustration({ width = 240, opacity = 0.6 }) {
   return (
     <svg
       width={width}
@@ -22,7 +25,7 @@ export default function FamilyIllustration({ width = 240, opacity = 0.22 }) {
       style={{ display: 'block', maxWidth: '100%', opacity }}
     >
       <g
-        stroke="#951345"
+        stroke="#E79BBB"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"

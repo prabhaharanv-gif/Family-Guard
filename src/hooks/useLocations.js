@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { avatarColor } from '../lib/avatarColor'
 import { cacheSet, cacheGet } from './useOfflineCache'
 
 export function useLocations(familyId) {
@@ -51,7 +52,7 @@ export function useLocations(familyId) {
             lng:         l.lng,
             updatedAt:   l.updated_at,
             displayName: m.display_name || 'Member',
-            avatarColor: m.avatar_color || '#951345',
+            avatarColor: avatarColor(m.avatar_color),
             avatarUrl:   m.avatar_url   || null,
             isSharing:   l.is_sharing,
             battery:     l.battery_level ?? null,
@@ -125,7 +126,7 @@ export function useLocations(familyId) {
                 .single()
                 .then(({ data: m }) => (m ? {
                   displayName: m.display_name || 'Member',
-                  avatarColor: m.avatar_color || '#951345',
+                  avatarColor: avatarColor(m.avatar_color),
                   avatarUrl:   m.avatar_url   || null,
                 } : null))
 

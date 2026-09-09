@@ -162,6 +162,7 @@ public class SOSSirenService extends Service {
         // the in-app overlay is suppressed on Android to match.
         forceScreenOn();
         SOSAlertActivity.isShowing = false;
+        SOSAlertActivity.appearedSinceReset = false;
         launchAlertActivity(senderName, message);
 
         // Fallback: if the alert never appeared, post a heads-up notification so
@@ -180,7 +181,7 @@ public class SOSSirenService extends Service {
             // Either outcome is evidence about whether this phone lets the app
             // take over the screen from the background — the one permission the
             // setup sheet cannot read. See KEY_ALERT_BLOCKED.
-            if (SOSAlertActivity.isShowing) {
+            if (SOSAlertActivity.appearedSinceReset || SOSAlertActivity.isShowing) {
                 MyFirebaseMessagingService.setAlertBlocked(getApplicationContext(), false);
                 return;
             }

@@ -115,10 +115,10 @@ export default function OnboardingPage() {
           </div>
           <button onClick={() => { navigator.clipboard.writeText(inviteCode); setDialog({ type: 'alert', title: t('settings.codeCopied'), message: t('settings.codeCopiedMsg') }) }}
             style={{
-              marginTop: 12, background: 'linear-gradient(135deg, #4F46E5, #7C3AED)', color: '#fff',
+              marginTop: 12, background: 'linear-gradient(135deg, #8B0D3D, #A5124A)', color: '#fff',
               border: 'none', borderRadius: 10, padding: '10px 24px',
               fontWeight: 700, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit',
-              boxShadow: '0 4px 14px rgba(79,70,229,0.35)',
+              boxShadow: '0 4px 14px rgba(139,13,61,0.35)',
             }}>📋 {t('onboarding.copyCode')}</button>
         </div>
 

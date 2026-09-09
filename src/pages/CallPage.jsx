@@ -451,7 +451,7 @@ export default function CallPage() {
 
 const styles = {
   page: {
-    position: 'fixed', inset: 0, background: 'linear-gradient(160deg, #720D35 0%, #2A0414 100%)',
+    position: 'fixed', inset: 0, background: 'linear-gradient(160deg, #6E0A30 0%, #2A0414 100%)',
     display: 'flex', flexDirection: 'column', zIndex: 800, color: '#fff', fontFamily: 'inherit',
   },
   center: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' },
@@ -503,15 +503,15 @@ const styles = {
     boxSizing: 'border-box', padding: 0,
     borderRadius: '50%',
     border: '1.5px solid rgba(255,255,255,0.28)',
-    background: 'rgba(149,19,69,0.45)',          // maroon glass over the gradient
+    background: 'rgba(139,13,61,0.45)',          // maroon glass over the gradient
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     cursor: 'pointer', color: '#fff',
     backdropFilter: 'blur(6px)',
     transition: 'background 0.18s, border-color 0.18s',
   },
   smallBtnActive: {
-    background: '#951345',
+    background: '#8B0D3D',
     borderColor: 'rgba(255,255,255,0.75)',
-    boxShadow: '0 4px 14px rgba(149,19,69,0.55)',
+    boxShadow: '0 4px 14px rgba(139,13,61,0.55)',
   },
 }

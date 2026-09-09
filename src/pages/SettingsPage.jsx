@@ -36,10 +36,10 @@ export default function SettingsPage() {
       <div className="page-content">
         {/* Profile Card */}
         <div style={{
-          background: 'linear-gradient(135deg, #1a1f6e 0%, #2d1b69 100%)',
+          background: 'linear-gradient(135deg, #6E0A30 0%, #48061F 100%)',
           borderRadius: 20, padding: 20, marginBottom: 16,
           display: 'flex', alignItems: 'center', gap: 16,
-          boxShadow: '0 8px 32px rgba(91,110,245,0.25)',
+          boxShadow: '0 8px 32px rgba(139,13,61,0.25)',
         }}>
           <div style={{
             width: 56, height: 56, borderRadius: '50%',
@@ -84,8 +84,8 @@ export default function SettingsPage() {
                   aria-pressed={active}
                   style={{
                     padding: '9px 16px', borderRadius: 999,
-                    background: active ? 'linear-gradient(135deg,#951345,#720D35)' : '#F8F7FF',
-                    border: `1.5px solid ${active ? 'transparent' : '#EDE9FF'}`,
+                    background: active ? 'linear-gradient(135deg,#8B0D3D,#6E0A30)' : '#F8F0F3',
+                    border: `1.5px solid ${active ? 'transparent' : '#ECE0E5'}`,
                     color: active ? '#fff' : '#5B4652',
                     fontWeight: active ? 800 : 600,
                     fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit',

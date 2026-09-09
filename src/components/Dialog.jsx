@@ -25,7 +25,7 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
   const isConfirm = type === 'confirm'
   const isError   = type === 'error'
 
-  const accent = isError ? '#DC2626' : '#951345'
+  const accent = isError ? '#DC2626' : '#8B0D3D'
   const iconBg  = isError ? '#FEF2F2' : isConfirm ? '#FFF7ED' : '#F0FDF4'
   const iconBorder = isError ? '#FCA5A5' : isConfirm ? '#FCD34D' : '#6EE7B7'
   const icon = isError ? '⚠️' : isConfirm ? '❓' : '✓'
@@ -75,7 +75,7 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
         {/* Title */}
         <div style={{
           textAlign: 'center', fontSize: 15.5, fontWeight: 800,
-          color: '#0D0C1D', marginBottom: 6, fontFamily: 'Sora, sans-serif',
+          color: '#2A0A18', marginBottom: 6, fontFamily: 'Sora, sans-serif',
         }}>
           {resolvedTitle}
         </div>
@@ -83,7 +83,7 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
         {/* Message */}
         {message && (
           <div style={{
-            textAlign: 'center', fontSize: 13, color: '#6B7280',
+            textAlign: 'center', fontSize: 13, color: '#7D5A67',
             lineHeight: 1.5, marginBottom: 16,
           }}>
             {message}
@@ -95,8 +95,8 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
           {isConfirm && (
             <button onClick={onClose} style={{
               flex: 1, padding: '11px 0', borderRadius: 12,
-              background: '#F5F4FB', border: '1px solid #EDE9FF',
-              color: '#6B7280', fontWeight: 700, fontSize: 13.5,
+              background: '#F8F0F3', border: '1px solid #ECE0E5',
+              color: '#7D5A67', fontWeight: 700, fontSize: 13.5,
               fontFamily: 'inherit', cursor: 'pointer',
             }}>
               {t('common.cancel')}
@@ -107,7 +107,7 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
             onClick={() => { onConfirm?.(); onClose() }}
             style={{
               flex: 1, padding: '11px 0', borderRadius: 12,
-              background: `linear-gradient(135deg, ${accent}, ${isError ? '#B91C1C' : '#720D35'})`,
+              background: `linear-gradient(135deg, ${accent}, ${isError ? '#B91C1C' : '#6E0A30'})`,
               border: 'none', color: '#fff', fontWeight: 700, fontSize: 13.5,
               fontFamily: 'inherit', cursor: 'pointer',
               boxShadow: `0 4px 14px ${accent}40`,

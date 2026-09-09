@@ -20,11 +20,11 @@ function Card({ title, children }) {
   return (
     <div style={{
       background: '#fff', borderRadius: 16, padding: '16px 18px',
-      marginBottom: 12, border: '1.5px solid #EFE9F5',
-      boxShadow: '0 2px 12px rgba(149,19,69,0.06)',
+      marginBottom: 12, border: '1.5px solid #ECE0E5',
+      boxShadow: '0 2px 12px rgba(139,13,61,0.06)',
     }}>
       <div style={{
-        fontSize: 14, fontWeight: 800, color: '#951345',
+        fontSize: 14, fontWeight: 800, color: '#8B0D3D',
         fontFamily: 'Sora, sans-serif', marginBottom: 6, lineHeight: 1.4,
       }}>
         {title}
@@ -44,15 +44,15 @@ export default function DeleteAccountPage() {
     <div style={{
       position: 'fixed', inset: 0,
       display: 'flex', flexDirection: 'column',
-      background: '#F8F7FF',
+      background: 'var(--bg)',
       zIndex: 100,
     }}>
       {/* Header — same shape as PrivacyPolicyPage so the two public pages match */}
       <div style={{
-        background: 'linear-gradient(135deg, #951345 0%, #720D35 100%)',
+        background: 'linear-gradient(135deg, #8B0D3D 0%, #6E0A30 100%)',
         padding: '16px 16px 20px',
         flexShrink: 0,
-        boxShadow: '0 2px 12px rgba(149,19,69,0.25)',
+        boxShadow: '0 2px 12px rgba(139,13,61,0.25)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {/* Goes to the app root rather than back: this page is usually opened
@@ -101,9 +101,9 @@ export default function DeleteAccountPage() {
           {t('deletePage.optionEmailBody', { email: CONTACT_EMAIL })}
           <div style={{ marginTop: 10 }}>
             <a href={`mailto:${CONTACT_EMAIL}?subject=Delete my Famora account`} style={{
-              display: 'inline-block', background: 'var(--blue-light, #F1EEFF)',
-              border: '1.5px solid #E8DFFF', borderRadius: 10,
-              padding: '8px 14px', color: '#951345', fontWeight: 700,
+              display: 'inline-block', background: 'var(--blue-light, #FAE8EF)',
+              border: '1.5px solid #DCC9D2', borderRadius: 10,
+              padding: '8px 14px', color: '#8B0D3D', fontWeight: 700,
               fontSize: 13, textDecoration: 'none',
             }}>
               ✉️ {CONTACT_EMAIL}
@@ -121,7 +121,7 @@ export default function DeleteAccountPage() {
 
         <button onClick={() => navigate('/')} style={{
           width: '100%', padding: 14, borderRadius: 14, marginTop: 4,
-          background: 'linear-gradient(135deg,#951345,#720D35)', border: 'none',
+          background: 'linear-gradient(135deg,#8B0D3D,#6E0A30)', border: 'none',
           color: '#fff', fontWeight: 700, fontSize: 14.5,
           fontFamily: 'inherit', cursor: 'pointer',
         }}>

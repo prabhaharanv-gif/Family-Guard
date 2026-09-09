@@ -99,6 +99,25 @@ public class CallAlarmPlugin extends Plugin {
         call.resolve(ret);
     }
 
+    /**
+     * Clear the recorded failure once the user has been shown the setup sheet
+     * and dismissed it.
+     *
+     * Without this the flag was write-once from the app's point of view: only a
+     * later alert that DID reach the screen could clear it, so a user who
+     * granted the permission and came straight back still met the sheet on
+     * every single foreground — "Done" and "Skip for now" both set a
+     * never-show-again flag that the blocked check deliberately ignores. The
+     * evidence has been acted on at that point, so it is spent; if the
+     * permission really is still off, the next alert that fails records it
+     * again and the sheet returns on fresh evidence rather than stale.
+     */
+    @PluginMethod
+    public void clearAlertBlocked(PluginCall call) {
+        MyFirebaseMessagingService.setAlertBlocked(getContext(), false);
+        call.resolve(new JSObject().put("cleared", true));
+    }
+
     @PluginMethod
     public void isRinging(PluginCall call) {
         JSObject ret = new JSObject();

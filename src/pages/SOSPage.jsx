@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Geolocation } from '@capacitor/geolocation'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
+import { avatarColor } from '../lib/avatarColor'
 import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 import Dialog from '../components/Dialog'
@@ -62,7 +63,7 @@ const Icons = {
 }
 
 // Call-number badge backgrounds — same maroon family, distinct shade per emergency number
-const CALL_BADGE_BG = { '100': '#6B0B2C', '108': '#951345', '112': '#C0185A' }
+const CALL_BADGE_BG = { '100': '#6B0B2C', '108': '#8B0D3D', '112': '#B01650' }
 
 // `label` is the English text stored in sos_alerts.message and read by the
 // send-sos-notification function. It stays English deliberately: one alert is
@@ -72,14 +73,14 @@ const CALL_BADGE_BG = { '100': '#6B0B2C', '108': '#951345', '112': '#C0185A' }
    the notification function, so it stays English on purpose; `key` is what
    the UI translates. */
 const QUICK_MESSAGES = [
-  { key: 'police',     label: 'Need Police Help',  Icon: Icons.Police,      color: '#720D35', bg: '#F5EBF0', call: '100', emergency: true  },
+  { key: 'police',     label: 'Need Police Help',  Icon: Icons.Police,      color: '#6E0A30', bg: '#F5EBF0', call: '100', emergency: true  },
   { key: 'violence',   label: 'Under Violence',    Icon: Icons.Violence,    color: '#8A0F3A', bg: '#F8ECF1', call: '100', emergency: true  },
-  { key: 'harassment', label: 'Under Harassment',  Icon: Icons.Harassment,  color: '#C0185A', bg: '#FEF0F6', call: '100', emergency: true  },
-  { key: 'ambulance',  label: 'Need Ambulance',    Icon: Icons.Ambulance,   color: '#951345', bg: '#FDF0F5', call: '108', emergency: true  },
+  { key: 'harassment', label: 'Under Harassment',  Icon: Icons.Harassment,  color: '#B01650', bg: '#FEF0F6', call: '100', emergency: true  },
+  { key: 'ambulance',  label: 'Need Ambulance',    Icon: Icons.Ambulance,   color: '#8B0D3D', bg: '#FDF0F5', call: '108', emergency: true  },
   { key: 'disaster',   label: 'Natural Disaster',  Icon: Icons.Disaster,    color: '#6B0B2C', bg: '#F2E8EC', call: '108', emergency: true  },
-  { key: 'fire',       label: 'Fire Around Me',    Icon: Icons.Fire,        color: '#B01650', bg: '#FDF2F6', call: '112', emergency: true  },
+  { key: 'fire',       label: 'Fire Around Me',    Icon: Icons.Fire,        color: '#A5124A', bg: '#FDF2F6', call: '112', emergency: true  },
   { key: 'theft',      label: 'Theft',             Icon: Icons.Theft,       color: '#A01040', bg: '#FAF0F4', call: '100', emergency: false },
-  { key: 'money',      label: 'Need Money',        Icon: Icons.Money,       color: '#951345', bg: '#FDF0F5', call: null,  emergency: false },
+  { key: 'money',      label: 'Need Money',        Icon: Icons.Money,       color: '#8B0D3D', bg: '#FDF0F5', call: null,  emergency: false },
 ]
 /* i18n-exempt:end */
 
@@ -152,19 +153,19 @@ function ConfirmSheet({ msg, onConfirm, onCancel }) {
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
             fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 900,
-            color: '#0D0C1D', marginBottom: 8, letterSpacing: -0.4,
+            color: '#2A0A18', marginBottom: 8, letterSpacing: -0.4,
           }}>
             {t('sos.msg.' + msg.key)}
           </div>
-          <div style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.5 }}>
+          <div style={{ fontSize: 14, color: '#7D5A67', lineHeight: 1.5 }}>
             {msg.call ? t('sos.confirmBodyCall', { number: msg.call }) : t('sos.confirmBody')}
           </div>
         </div>
 
         {/* What happens */}
         <div style={{
-          background: '#F8F7FF', borderRadius: 14, padding: '14px 16px',
-          marginBottom: 24, border: '1px solid #EDE9FF',
+          background: '#F8F0F3', borderRadius: 14, padding: '14px 16px',
+          marginBottom: 24, border: '1px solid #ECE0E5',
         }}>
           {[
             { icon: '📍', text: t('sos.willShareLocation') },
@@ -176,7 +177,7 @@ function ConfirmSheet({ msg, onConfirm, onCancel }) {
               marginBottom: i < 2 ? 10 : 0,
             }}>
               <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-              <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>{item.text}</span>
+              <span style={{ fontSize: 13, color: '#4A1226', fontWeight: 500 }}>{item.text}</span>
             </div>
           ))}
         </div>
@@ -184,8 +185,8 @@ function ConfirmSheet({ msg, onConfirm, onCancel }) {
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onCancel} style={{
             flex: 1, padding: '14px', borderRadius: 14,
-            background: '#F8F7FF', border: '1px solid #EDE9FF',
-            color: '#6B7280', fontWeight: 700, fontSize: 14,
+            background: '#F8F0F3', border: '1px solid #ECE0E5',
+            color: '#7D5A67', fontWeight: 700, fontSize: 14,
             fontFamily: 'inherit', cursor: 'pointer',
           }}>{t('common.cancel')}</button>
           <button onClick={onConfirm} style={{
@@ -496,7 +497,7 @@ export default function SOSPage() {
             style={{
               background: 'rgba(255,255,255,0.92)',
               border: '1.5px solid #fff',
-              color: '#951345',
+              color: '#8B0D3D',
               borderRadius: 10,
               padding: '7px 12px',
               fontWeight: 800,
@@ -508,7 +509,7 @@ export default function SOSPage() {
               flexShrink: 0,
               zIndex: 1,
             }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
             </svg>
             {t('sos.clearResolved', { n: alerts.filter(a => a.is_resolved).length })}
@@ -519,7 +520,7 @@ export default function SOSPage() {
       {/* Alarm active banner */}
       {alarmOn && (
         <div style={{
-          background: 'linear-gradient(90deg, #951345, #B01650)',
+          background: 'linear-gradient(90deg, #8B0D3D, #A5124A)',
           color: '#fff', padding: '10px 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           flexShrink: 0, gap: 10,
@@ -534,7 +535,7 @@ export default function SOSPage() {
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #F0E4EA', flexShrink: 0 }}>
+      <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #ECE0E5', flexShrink: 0 }}>
         {[
           { key: 'send',    label: t('sos.tabSend') },
           { key: 'history', label: t('sos.tabHistory') + (activeCount > 0 ? ` (${activeCount})` : '') },
@@ -542,8 +543,8 @@ export default function SOSPage() {
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
             flex: 1, padding: '13px 0', background: 'none', border: 'none',
             fontFamily: 'inherit', fontWeight: 700, fontSize: 14, cursor: 'pointer',
-            color: activeTab === tab.key ? '#951345' : '#9C6B7A',
-            borderBottom: activeTab === tab.key ? '2.5px solid #951345' : '2.5px solid transparent',
+            color: activeTab === tab.key ? '#8B0D3D' : '#9C6B7A',
+            borderBottom: activeTab === tab.key ? '2.5px solid #8B0D3D' : '2.5px solid transparent',
             transition: 'all 0.2s',
           }}>
             {tab.label}
@@ -557,7 +558,7 @@ export default function SOSPage() {
         <div style={{ padding: '16px 14px' }}>
 
           {/* Emergency section */}
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.3, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#8B0D3D', letterSpacing: 0.3, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#E11D48', animation: 'sos-pulse 1.5s ease-in-out infinite' }} />
             {t('sos.emergency')}
             <style>{`@keyframes sos-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }`}</style>
@@ -595,13 +596,13 @@ export default function SOSPage() {
                   <path d="M40 12L16 22V40C16 54 26.4 67.2 40 70C53.6 67.2 64 54 64 40V22L40 12Z"
                     fill="url(#emptyShieldGrad)"/>
                   <path d="M40 16L20 25V40C20 52 28.8 63.6 40 66C51.2 63.6 60 52 60 40V25L40 16Z"
-                    fill="none" stroke="rgba(232,201,106,0.6)" strokeWidth="1.5"/>
+                    fill="none" stroke="rgba(212,175,55,0.6)" strokeWidth="1.5"/>
                   <path d="M32 40l5.5 5.5L50 33"
                     stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
                   <defs>
                     <linearGradient id="emptyShieldGrad" x1="16" y1="12" x2="64" y2="70" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#C0185A"/>
-                      <stop offset="100%" stopColor="#4A0820"/>
+                      <stop offset="0%" stopColor="#B01650"/>
+                      <stop offset="100%" stopColor="#48061F"/>
                     </linearGradient>
                   </defs>
                 </svg>
@@ -628,7 +629,7 @@ export default function SOSPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{
                       width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                      background: member?.avatar_color || '#951345',
+                      background: avatarColor(member?.avatar_color),
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       color: '#fff', fontWeight: 800, fontSize: 14,
                     }}>
@@ -649,8 +650,8 @@ export default function SOSPage() {
                 {alert.lat && alert.lat !== 0 && (
                   <a href={`https://www.google.com/maps?q=${alert.lat},${alert.lng}`}
                     target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: 13, color: '#951345', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    style={{ fontSize: 13, color: '#8B0D3D', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                     </svg>
                     {t('sos.viewOnMaps')}
@@ -690,8 +691,8 @@ function SOSButton({ msg, onTap, disabled }) {
       onClick={() => !disabled && onTap(msg)}
       disabled={disabled}
       style={{
-        background: disabled ? '#F5F4FB' : msg.bg,
-        border: `1.5px solid ${disabled ? '#E9E6FB' : msg.color + '40'}`,
+        background: disabled ? '#F8F0F3' : msg.bg,
+        border: `1.5px solid ${disabled ? '#ECE0E5' : msg.color + '40'}`,
         borderRadius: 18, padding: '18px 12px',
         cursor: disabled ? 'not-allowed' : 'pointer',
         display: 'flex', flexDirection: 'column',
@@ -704,19 +705,27 @@ function SOSButton({ msg, onTap, disabled }) {
       {msg.call && (
         <div style={{
           position: 'absolute', top: 8, right: 8,
-          background: CALL_BADGE_BG[msg.call] || msg.color, borderRadius: 8,
-          padding: '2px 7px', fontSize: 9, fontWeight: 800,
-          color: '#fff', letterSpacing: 0.3,
+          background: CALL_BADGE_BG[msg.call] || msg.color, borderRadius: 999,
+          minWidth: 30, height: 20, padding: '0 8px',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 11, fontWeight: 800, letterSpacing: 0.6,
+          fontVariantNumeric: 'tabular-nums',
+          color: '#fff',
+          // Ringed in white and shadowed so the pill separates from the tile
+          // tint behind it — at 9px on a bare fill it read as dark-on-dark.
+          border: '1.5px solid rgba(255,255,255,0.95)',
+          boxShadow: '0 2px 6px rgba(72,6,31,0.34), inset 0 1px 0 rgba(255,255,255,0.28)',
+          textShadow: '0 1px 1px rgba(72,6,31,0.45)',
         }}>
           {msg.call}
         </div>
       )}
-      <div style={{ color: disabled ? '#C0B8C8' : msg.color, marginTop: 4 }}>
+      <div style={{ color: disabled ? 'var(--muted3)' : msg.color, marginTop: 4 }}>
         <msg.Icon />
       </div>
       <span style={{
         fontSize: 12, fontWeight: 700, lineHeight: 1.3,
-        color: disabled ? '#C0B8C8' : msg.color,
+        color: disabled ? '#C7B3BC' : msg.color,
         textAlign: 'center', width: '100%',
       }}>
         {t('sos.msg.' + msg.key)}

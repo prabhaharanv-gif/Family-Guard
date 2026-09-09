@@ -58,13 +58,13 @@ export default class ErrorBoundary extends Component {
           ⚠️
         </div>
         <div style={{
-          fontSize: 20, fontWeight: 800, color: '#0D0C1D',
+          fontSize: 20, fontWeight: 800, color: '#2A0A18',
           fontFamily: 'Sora, sans-serif', marginBottom: 10,
         }}>
           Something went wrong
         </div>
         <div style={{
-          fontSize: 14, color: '#6B7280', lineHeight: 1.6,
+          fontSize: 14, color: '#7D5A67', lineHeight: 1.6,
           marginBottom: 28, maxWidth: 300,
         }}>
           {APP_NAME} ran into a problem on this page. Your data is safe.
@@ -73,10 +73,10 @@ export default class ErrorBoundary extends Component {
           onClick={() => this.setState({ hasError: false, error: null, info: null, showDetails: false })}
           style={{
             padding: '13px 28px', borderRadius: 14,
-            background: 'linear-gradient(135deg, #951345, #720D35)',
+            background: 'linear-gradient(135deg, #8B0D3D, #6E0A30)',
             border: 'none', color: '#fff', fontWeight: 700, fontSize: 15,
             fontFamily: 'inherit', cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(149,19,69,0.35)',
+            boxShadow: '0 4px 14px rgba(139,13,61,0.35)',
             marginBottom: 12,
           }}
         >
@@ -106,7 +106,7 @@ export default class ErrorBoundary extends Component {
             <pre style={{
               marginTop: 10, maxWidth: '100%', maxHeight: 220, overflow: 'auto',
               background: '#fff', border: '1px solid #F3D4DD', borderRadius: 12,
-              padding: 12, fontSize: 11, lineHeight: 1.5, color: '#6B7280',
+              padding: 12, fontSize: 11, lineHeight: 1.5, color: '#7D5A67',
               textAlign: 'left', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             }}>{detail}</pre>
             <button

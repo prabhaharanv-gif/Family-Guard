@@ -1,0 +1,74 @@
+# Builds the debug APK in the cloud, so a device build is not the only way to
+# find out whether the app compiles — and so an APK can be downloaded without
+# a local Android toolchain.
+#
+# GitHub's ubuntu runners ship the Android SDK and JDK already, which is what
+# makes this possible; nothing here needs installing from Google directly.
+name: Android debug APK
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # .env is gitignored (correctly — it is machine-local), but Vite inlines
+      # these at build time, so the web build needs them present.
+      #
+      # With the secrets set, the APK talks to the real project and is
+      # installable. Without them it still compiles, which is the point: a
+      # compile error in the Java or the web build is caught either way.
+      - name: Write .env
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          echo "VITE_SUPABASE_URL=${SUPABASE_URL:-https://placeholder.supabase.co}" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-placeholder-anon-key}" >> .env
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::warning::VITE_SUPABASE_URL secret not set — this APK compiles but will not connect. Add the repository secrets to get an installable build."
+          fi
+
+      - name: Lint
+        run: npx oxlint
+        continue-on-error: true
+
+      - name: Build web assets
+        run: npm run build
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      # The repo was created on Windows, so gradlew arrives without its
+      # executable bit on a Linux runner. The bit is now set in git too; this
+      # keeps the job working if it is ever lost again.
+      - name: Build debug APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+        working-directory: android
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: famora-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

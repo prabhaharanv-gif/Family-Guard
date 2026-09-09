@@ -7,12 +7,12 @@ import { useT } from '../i18n'
 // Clean open/closed eye icon — no emoji. `open` = password visible.
 function EyeIcon({ open }) {
   return open ? (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#836370" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   ) : (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#836370" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" />
       <line x1="2" y1="2" x2="22" y2="22" />
     </svg>
@@ -151,20 +151,20 @@ export default function RegisterPage() {
         <div className="auth-logo" style={{ background: 'none', boxShadow: 'none', width: 'auto', height: 'auto', marginBottom: 14 }}>
           <div style={{
             width: 72, height: 72, borderRadius: 22,
-            background: 'linear-gradient(145deg, #951345 0%, #720D35 55%, #4A0820 100%)',
+            background: 'linear-gradient(145deg, #8B0D3D 0%, #6E0A30 55%, #48061F 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto',
             boxShadow:
-              'inset 0 2px 0 rgba(255,255,255,0.22), inset 0 0 0 1.5px rgba(232,201,106,0.45), 0 16px 44px rgba(66,12,36,0.60), 0 0 50px rgba(149,19,69,0.35)',
+              'inset 0 2px 0 rgba(255,255,255,0.22), inset 0 0 0 1.5px rgba(212,175,55,0.45), 0 16px 44px rgba(66,12,36,0.60), 0 0 50px rgba(139,13,61,0.35)',
           }}>
             <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
               <path d="M24 4L8 11V24C8 33.6 15.2 42.4 24 44C32.8 42.4 40 33.6 40 24V11L24 4Z" fill="url(#shieldGradR)"/>
               <path d="M24 7L10 13.2V24C10 32.5 16.4 40.4 24 42C31.6 40.4 38 32.5 38 24V13.2L24 7Z"
-                fill="none" stroke="rgba(232,201,106,0.50)" strokeWidth="1.2"/>
+                fill="none" stroke="rgba(212,175,55,0.50)" strokeWidth="1.2"/>
               <path d="M17 24.5L21.5 29L31 19" stroke="white" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
               <defs>
                 <linearGradient id="shieldGradR" x1="8" y1="4" x2="40" y2="44" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#C0185A"/><stop offset="100%" stopColor="#4A0820"/>
+                  <stop offset="0%" stopColor="#B01650"/><stop offset="100%" stopColor="#48061F"/>
                 </linearGradient>
               </defs>
             </svg>
@@ -180,7 +180,7 @@ export default function RegisterPage() {
         {step === 2 ? (
           <form onSubmit={handleVerifyOtp} noValidate>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('register.verificationCode')}</label>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7D5A67", marginBottom: 6, letterSpacing: 0.2 }}>{t('register.verificationCode')}</label>
               <input className="input" type="text" inputMode="numeric" value={otp} autoFocus
                 onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
                 placeholder={t('reset.sixDigitCode')} required
@@ -194,13 +194,13 @@ export default function RegisterPage() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
               <button type="button" onClick={() => { setStep(1); setOtp(''); setError('') }}
-                style={{ background: 'none', border: 'none', color: '#6B7280', fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0 }}>
+                style={{ background: 'none', border: 'none', color: '#7D5A67', fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0 }}>
                 ← {t('register.changeNumber')}
               </button>
               <button type="button" onClick={handleResendOtp} disabled={resendIn > 0 || loading}
                 style={{
                   background: 'none', border: 'none', fontWeight: 700, fontSize: 13, padding: 0,
-                  color: resendIn > 0 ? '#B0AAC8' : '#951345',
+                  color: resendIn > 0 ? '#C7B3BC' : '#8B0D3D',
                   cursor: resendIn > 0 ? 'default' : 'pointer',
                 }}>
                 {resendIn > 0 ? t('reset.resendIn', { n: resendIn }) : t('reset.resendCode')}
@@ -210,17 +210,17 @@ export default function RegisterPage() {
         ) : (
         <form onSubmit={handleSendOtp} noValidate>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('register.yourName')}</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7D5A67", marginBottom: 6, letterSpacing: 0.2 }}>{t('register.yourName')}</label>
             <input className="input" type="text" value={name}
               onChange={e => setName(e.target.value)}
               required />
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.mobileNumber')}</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7D5A67", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.mobileNumber')}</label>
             <div style={{ display: 'flex', gap: 8 }}>
               <div style={{
-                background: '#F5F4FB', border: '1.5px solid #E9E6FB',
+                background: '#F8F0F3', border: '1.5px solid #ECE0E5',
                 borderRadius: 12, padding: '10px 12px',
                 fontWeight: 700, fontSize: 14, color: '#3A1020',
                 whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6,
@@ -234,7 +234,7 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.password')}</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7D5A67", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.password')}</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showPassword ? 'text' : 'password'} value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -252,7 +252,7 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('register.confirmPassword')}</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7D5A67", marginBottom: 6, letterSpacing: 0.2 }}>{t('register.confirmPassword')}</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showConfirm ? 'text' : 'password'} value={confirm}
                 onChange={e => setConfirm(e.target.value)}
@@ -273,16 +273,16 @@ export default function RegisterPage() {
           <div style={{
             display: 'flex', alignItems: 'flex-start', gap: 10,
             margin: '4px 0 8px', padding: '12px 14px',
-            background: agreed ? '#F0FDF4' : '#F8F7FF',
+            background: agreed ? '#F0FDF4' : '#F8F0F3',
             borderRadius: 12,
-            border: `1.5px solid ${agreed ? '#10B981' : '#E9E6FB'}`,
+            border: `1.5px solid ${agreed ? '#10B981' : '#ECE0E5'}`,
             transition: 'all 0.2s', cursor: 'pointer',
           }} onClick={() => setAgreed(a => !a)}>
             {/* Custom checkbox */}
             <div style={{
               width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
               background: agreed ? '#10B981' : '#fff',
-              border: `2px solid ${agreed ? '#10B981' : '#C4BEE8'}`,
+              border: `2px solid ${agreed ? '#10B981' : '#DCC9D2'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.2s',
             }}>
@@ -292,12 +292,12 @@ export default function RegisterPage() {
                 </svg>
               )}
             </div>
-            <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5, userSelect: 'none' }}>
+            <div style={{ fontSize: 13, color: '#4A1226', lineHeight: 1.5, userSelect: 'none' }}>
               {t('register.agreeLead')}{' '}
               <Link
                 to="/privacy"
                 onClick={e => e.stopPropagation()}
-                style={{ color: '#951345', fontWeight: 700, textDecoration: 'underline' }}
+                style={{ color: '#8B0D3D', fontWeight: 700, textDecoration: 'underline' }}
               >
                 {t('register.agreeLink')}
               </Link>

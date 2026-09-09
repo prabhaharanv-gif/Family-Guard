@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { registerPlugin, Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
+import { avatarColor } from '../lib/avatarColor'
 import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 import Dialog from '../components/Dialog'
@@ -454,11 +455,11 @@ export default function MessagesPage() {
               <button onClick={callControls.deleteSelected}
                 disabled={callControls.busy || callControls.selectedCount === 0} style={{
                 background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
-                color: '#951345', borderRadius: 10, padding: '7px 12px',
+                color: '#8B0D3D', borderRadius: 10, padding: '7px 12px',
                 fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
                 whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
               }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
                 </svg>
                 Delete ({callControls.selectedCount})
@@ -468,11 +469,11 @@ export default function MessagesPage() {
           {activeTab === 'calls' && !callControls?.selectMode && callControls?.clearableCount > 0 && (
             <button onClick={callControls.clearAll} disabled={callControls.busy} style={{
               background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
-              color: '#951345', borderRadius: 10, padding: '7px 12px',
+              color: '#8B0D3D', borderRadius: 10, padding: '7px 12px',
               fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
               whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
               {callControls.busy ? t('messages.clearing') : t('messages.clearCount', { n: callControls.clearableCount })}
@@ -481,11 +482,11 @@ export default function MessagesPage() {
           {activeTab === 'chat' && visibleMessages.length > 0 && (
             <button onClick={handleClearMessages} disabled={clearing} style={{
               background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
-              color: '#951345', borderRadius: 10, padding: '7px 12px',
+              color: '#8B0D3D', borderRadius: 10, padding: '7px 12px',
               fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
               whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
               {clearing ? t('messages.clearing') : t('messages.clearChat')}
@@ -497,12 +498,12 @@ export default function MessagesPage() {
           {activeTab === 'personal' && personalControls?.canClear && (
             <button onClick={personalControls.clearThread} disabled={personalControls.clearing} style={{
               background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
-              color: '#951345', borderRadius: 10, padding: '7px 12px',
+              color: '#8B0D3D', borderRadius: 10, padding: '7px 12px',
               fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
               cursor: personalControls.clearing ? 'wait' : 'pointer',
               whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
               {personalControls.clearing ? t('messages.clearing') : t('messages.clearChat')}
@@ -534,7 +535,7 @@ export default function MessagesPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke={showSearch ? '#951345' : '#fff'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              stroke={showSearch ? '#8B0D3D' : '#fff'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
           </button>
@@ -543,15 +544,15 @@ export default function MessagesPage() {
       </div>
 
       {/* Chat / Personal / Calls tabs */}
-      <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #F0E4EA', flexShrink: 0 }}>
+      <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #ECE0E5', flexShrink: 0 }}>
         {[{ key: 'chat', label: t('messages.tabFamily') }, { key: 'personal', label: t('messages.tabPersonal') }, { key: 'calls', label: t('messages.tabCalls') }].map(tab => (
           <button key={tab.key} onClick={() => {
             if (tab.key === 'personal' && activeTab === 'personal') setPersonalReset(n => n + 1)
             setActiveTab(tab.key)
           }} style={{
             flex: 1, padding: '12px 0', background: 'none', border: 'none',
-            borderBottom: activeTab === tab.key ? '2.5px solid #951345' : '2.5px solid transparent',
-            color: activeTab === tab.key ? '#951345' : '#9C6B7A',
+            borderBottom: activeTab === tab.key ? '2.5px solid #8B0D3D' : '2.5px solid transparent',
+            color: activeTab === tab.key ? '#8B0D3D' : '#9C6B7A',
             fontWeight: activeTab === tab.key ? 800 : 600,
             fontSize: 14, fontFamily: 'inherit', cursor: 'pointer',
           }}>{tab.label}</button>
@@ -569,20 +570,20 @@ export default function MessagesPage() {
       {activeTab === 'personal' && <PersonalChatPanel onDialog={setDialog} resetSignal={personalReset} onControls={setPersonalControls} />}
 
       {activeTab === 'chat' && showSearch && (
-        <div style={{ padding: '8px 16px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF' }}>
+        <div style={{ padding: '8px 16px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)' }}>
           <div style={{ position: 'relative' }}>
             <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search messages..." autoFocus
               style={{
                 width: '100%', padding: '10px 36px 10px 14px',
-                borderRadius: 12, border: '1.5px solid #EDE9FF',
+                borderRadius: 12, border: '1.5px solid var(--border)',
                 fontSize: 14, fontFamily: 'inherit', outline: 'none',
                 background: '#fff', boxSizing: 'border-box',
               }} />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} style={{
                 position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#9CA3AF',
+                background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#836370',
               }}>✕</button>
             )}
           </div>
@@ -590,16 +591,16 @@ export default function MessagesPage() {
       )}
 
       {activeTab === 'chat' && Object.keys(typingUsers).length > 0 && (
-        <div style={{ padding: '6px 20px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF',
+        <div style={{ padding: '6px 20px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
             {[0,1,2].map(i => (
-              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#7C3AED',
+              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--indigo)',
                 animation: `tdot 1.2s ${i*0.2}s ease-in-out infinite` }} />
             ))}
           </div>
           <style>{`@keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}`}</style>
-          <span style={{ fontSize: 12, color: '#7C3AED', fontWeight: 600 }}>
+          <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600 }}>
             {Object.keys(typingUsers).length === 1
               ? t('messages.isTyping', { name: memberName(Object.keys(typingUsers)[0], t('messages.someone')) })
               : t('messages.severalTyping')}
@@ -631,7 +632,14 @@ export default function MessagesPage() {
 
         {msgsLoaded && visibleMessages.length === 0 && (
           <div className="empty-state">
-            <div className="empty-emoji">💬</div>
+            <svg className="empty-art" width="76" height="76" viewBox="0 0 72 72"
+              fill="none" aria-hidden="true" focusable="false">
+              <path d="M12 30c0-9.4 10.7-17 24-17s24 7.6 24 17-10.7 17-24 17c-2.7 0-5.3-.3-7.7-.9l-11.1 6.2a1 1 0 0 1-1.5-1l1.6-8.5C14.1 39.7 12 35.1 12 30Z"
+                stroke="#E79BBB" strokeWidth="2.4" strokeLinejoin="round" />
+              <circle cx="26" cy="30" r="2.6" fill="#E79BBB" />
+              <circle cx="36" cy="30" r="2.6" fill="#E79BBB" />
+              <circle cx="46" cy="30" r="2.6" fill="#E79BBB" />
+            </svg>
             <div className="empty-text">{t('messages.noMessages')}</div>
             <div className="empty-sub">{t('messages.sendFirst')}</div>
           </div>
@@ -639,7 +647,12 @@ export default function MessagesPage() {
 
         {msgsLoaded && searchQuery && visibleMessages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
           <div className="empty-state">
-            <div className="empty-emoji">🔍</div>
+            <svg className="empty-art" width="76" height="76" viewBox="0 0 72 72"
+              fill="none" aria-hidden="true" focusable="false">
+              <circle cx="32" cy="31" r="17" stroke="#E79BBB" strokeWidth="2.4" />
+              <path d="M44.5 43.5 L57 56" stroke="#E79BBB" strokeWidth="2.4" strokeLinecap="round" />
+              <path d="M24 26a11 11 0 0 1 8-4" stroke="#E79BBB" strokeWidth="2" strokeLinecap="round" opacity="0.55" />
+            </svg>
             <div className="empty-text">{t('messages.noResults')}</div>
             <div className="empty-sub">{t('messages.noMatch', { query: searchQuery })}</div>
           </div>
@@ -692,14 +705,14 @@ export default function MessagesPage() {
                   textAlign: 'center', margin: '8px 0 12px',
                   display: 'flex', alignItems: 'center', gap: 10,
                 }}>
-                  <div style={{ flex: 1, height: 1, background: '#F0E4EA' }} />
+                  <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                   <div style={{
-                    fontSize: 11, fontWeight: 700, color: '#9C6B7A',
-                    background: '#FDF5F8', padding: '3px 12px',
-                    borderRadius: 20, border: '1px solid #F0E4EA',
+                    fontSize: 11, fontWeight: 700, color: 'var(--muted)',
+                    background: 'var(--bg2)', padding: '3px 12px',
+                    borderRadius: 20, border: '1px solid var(--border)',
                     whiteSpace: 'nowrap',
                   }}>{dateLabel}</div>
-                  <div style={{ flex: 1, height: 1, background: '#F0E4EA' }} />
+                  <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                 </div>
               )}
             <div style={{
@@ -720,7 +733,7 @@ export default function MessagesPage() {
                   ) : (
                     <div style={{
                       width: 32, height: 32, borderRadius: '50%',
-                      background: member?.avatar_color || '#951345',
+                      background: avatarColor(member?.avatar_color),
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       color: '#fff', fontWeight: 800, fontSize: 13, flexShrink: 0,
                     }}>
@@ -740,7 +753,14 @@ export default function MessagesPage() {
                   </div>
                 )}
 
-                {/* Bubble — long press for action sheet */}
+                {/* Bubble — long press for action sheet.
+                    Wrapped so the reaction chip can hang off its bottom edge;
+                    the extra margin below is the room that overhang needs, so
+                    it never lands on the timestamp. */}
+                <div style={{
+                  position: 'relative',
+                  marginBottom: (reactions[msg.id] || []).length ? 13 : 0,
+                }}>
                 <div
                   onMouseDown={e => startLongPress(msg, e)}
                   onMouseUp={cancelLongPress}
@@ -750,8 +770,8 @@ export default function MessagesPage() {
                   onTouchMove={cancelLongPress}
                   onClick={() => { if (didLongPress.current) { didLongPress.current = false; return } }}
                   style={{
-                    background: isOwn ? 'linear-gradient(135deg, #951345 0%, #B01650 100%)' : '#fff',
-                    color: isOwn ? '#fff' : '#0D0C1D',
+                    background: isOwn ? 'linear-gradient(135deg, #8B0D3D 0%, #A5124A 100%)' : '#fff',
+                    color: isOwn ? '#fff' : '#2A0A18',
                     padding: '10px 14px',
                     borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     fontSize: 14,
@@ -777,12 +797,13 @@ export default function MessagesPage() {
                   {msg.content}
                 </div>
 
-                <ReactionChips
-                  reactions={reactions[msg.id]}
-                  myUserId={user?.id}
-                  onReact={(emoji) => react(msg.id, emoji)}
-                  align={isOwn ? 'right' : 'left'}
-                />
+                  <ReactionChips
+                    reactions={reactions[msg.id]}
+                    myUserId={user?.id}
+                    onReact={(emoji) => react(msg.id, emoji)}
+                    align={isOwn ? 'right' : 'left'}
+                  />
+                </div>
 
                 {/* Timestamp + edited + ticks */}
                 <div style={{
@@ -857,8 +878,8 @@ export default function MessagesPage() {
           disabled={!canSend || sending}
           style={{
             width: 44, height: 44, borderRadius: '50%',
-            background: canSend ? 'linear-gradient(135deg, #951345 0%, #B01650 100%)' : '#DDB8C4',
-            border: 'none', color: canSend ? '#fff' : '#951345',
+            background: canSend ? 'linear-gradient(135deg, #8B0D3D 0%, #A5124A 100%)' : '#DDB8C4',
+            border: 'none', color: canSend ? '#fff' : '#8B0D3D',
             fontSize: 18, cursor: canSend ? 'pointer' : 'default',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'background 0.2s', flexShrink: 0,
@@ -907,10 +928,10 @@ export default function MessagesPage() {
         <div className="overlay" onClick={() => setDetailMsg(null)}>
           <div className="popup" onClick={e => e.stopPropagation()}>
             <div className="popup-handle" />
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#8B0D3D', letterSpacing: 0.2, marginBottom: 4 }}>
               {t('messages.messageInfo')}
             </div>
-            <div style={{ background: '#F5F4FB', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#0D0C1D', marginBottom: 16 }}>
+            <div style={{ background: 'var(--surface3)', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: 'var(--text)', marginBottom: 16 }}>
               {detailMsg.content}
             </div>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#34B7F1', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -918,19 +939,19 @@ export default function MessagesPage() {
               {t('messages.readBy', { n: (reads[detailMsg.id] || []).length })}
             </div>
             {(reads[detailMsg.id] || []).length === 0 ? (
-              <div style={{ fontSize: 13, color: '#8480B0', marginBottom: 14 }}>{t('messages.noneRead')}</div>
+              <div style={{ fontSize: 13, color: '#836370', marginBottom: 14 }}>{t('messages.noneRead')}</div>
             ) : (
               <div style={{ marginBottom: 14 }}>
                 {(reads[detailMsg.id] || []).map(r => {
                   const m = members[r.user_id]
                   return (
                     <div key={r.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0' }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: m?.avatar_color || '#4F8EF7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: avatarColor(m?.avatar_color), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
                         {memberName(r.user_id, t('messages.member'))?.[0]?.toUpperCase() || '?'}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{memberName(r.user_id, t('messages.member'))}</div>
-                        <div style={{ fontSize: 11, color: '#8480B0' }}>{new Date(r.read_at).toLocaleString()}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#2A0A18' }}>{memberName(r.user_id, t('messages.member'))}</div>
+                        <div style={{ fontSize: 11, color: '#836370' }}>{new Date(r.read_at).toLocaleString()}</div>
                       </div>
                     </div>
                   )
@@ -943,17 +964,17 @@ export default function MessagesPage() {
               if (pending.length === 0) return null
               return (
                 <>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#8480B0', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#836370', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ display: 'inline-flex' }}><SingleTick /></span>
                     {t('messages.deliveredNotRead', { n: pending.length })}
                   </div>
                   <div style={{ marginBottom: 4 }}>
                     {pending.map(m => (
                       <div key={m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', opacity: 0.7 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: m.avatar_color || '#951345', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: avatarColor(m.avatar_color), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
                           {memberName(m.user_id, t('messages.member'))?.[0]?.toUpperCase() || '?'}
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{memberName(m.user_id, t('messages.member'))}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#2A0A18' }}>{memberName(m.user_id, t('messages.member'))}</div>
                       </div>
                     ))}
                   </div>

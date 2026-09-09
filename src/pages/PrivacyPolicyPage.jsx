@@ -11,15 +11,15 @@ export default function PrivacyPolicyPage() {
     <div style={{
       position: 'fixed', inset: 0,
       display: 'flex', flexDirection: 'column',
-      background: '#F8F7FF',
+      background: 'var(--bg)',
       zIndex: 100,
     }}>
       {/* Header */}
       <div style={{
-        background: 'linear-gradient(135deg, #951345 0%, #720D35 100%)',
+        background: 'linear-gradient(135deg, #8B0D3D 0%, #6E0A30 100%)',
         padding: '16px 16px 20px',
         flexShrink: 0,
-        boxShadow: '0 2px 12px rgba(149,19,69,0.25)',
+        boxShadow: '0 2px 12px rgba(139,13,61,0.25)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={() => navigate(-1)} style={{
@@ -46,15 +46,15 @@ export default function PrivacyPolicyPage() {
 
         {/* Intro card */}
         <div style={{
-          background: 'linear-gradient(135deg, #FDF0F5, #F0EEFF)',
+          background: 'linear-gradient(135deg, #FDF0F5, #FAE8EF)',
           borderRadius: 18, padding: '18px 20px', marginBottom: 14,
-          border: '1.5px solid #E8DFFF',
-          boxShadow: '0 2px 12px rgba(149,19,69,0.08)',
+          border: '1.5px solid #DCC9D2',
+          boxShadow: '0 2px 12px rgba(139,13,61,0.08)',
         }}>
           <div style={{ fontSize: 22, marginBottom: 8 }}>🛡️</div>
           <div style={{ fontSize: 14, color: '#3A1020', lineHeight: 1.6, fontWeight: 500 }}>
             {p.promiseLead}{' '}
-            <strong style={{ color: '#951345' }}>{p.promiseStrong}</strong>
+            <strong style={{ color: '#8B0D3D' }}>{p.promiseStrong}</strong>
             {' '}{p.promiseTail}
           </div>
         </div>
@@ -64,7 +64,7 @@ export default function PrivacyPolicyPage() {
             background: '#fff',
             borderRadius: 18, padding: '16px 18px',
             marginBottom: 12,
-            border: '1px solid #F0EAF5',
+            border: '1px solid #ECE0E5',
             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           }}>
             {/* Section header */}
@@ -78,7 +78,7 @@ export default function PrivacyPolicyPage() {
               }}>
                 {section.icon}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#0D0C1D' }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#2A0A18' }}>
                 {section.title}
               </div>
             </div>
@@ -96,7 +96,7 @@ export default function PrivacyPolicyPage() {
                   }}>
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: section.color }} />
                   </div>
-                  <div style={{ fontSize: 13, color: '#4B5563', lineHeight: 1.55 }}>
+                  <div style={{ fontSize: 13, color: '#4A1226', lineHeight: 1.55 }}>
                     {item}
                   </div>
                 </div>
@@ -109,13 +109,13 @@ export default function PrivacyPolicyPage() {
         <div style={{
           background: '#fff', borderRadius: 18,
           padding: '18px 20px', textAlign: 'center',
-          border: '1px solid #F0EAF5',
+          border: '1px solid #ECE0E5',
           boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
         }}>
           <div style={{ fontSize: 20, marginBottom: 8 }}>📩</div>
-          <div style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>
+          <div style={{ fontSize: 13, color: '#7D5A67', lineHeight: 1.6 }}>
             {p.contactPrompt}<br />
-            <a href={`mailto:${p.contactEmail}`} style={{ color: '#951345', fontWeight: 700, textDecoration: 'none' }}>
+            <a href={`mailto:${p.contactEmail}`} style={{ color: '#8B0D3D', fontWeight: 700, textDecoration: 'none' }}>
               {p.contactEmail}
             </a>
           </div>

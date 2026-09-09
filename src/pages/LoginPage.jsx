@@ -5,12 +5,12 @@ import { useT } from '../i18n'
 
 function EyeIcon({ open }) {
   return open ? (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#836370" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   ) : (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8480B0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#836370" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" />
       <line x1="2" y1="2" x2="22" y2="22" />
     </svg>
@@ -113,8 +113,8 @@ function ForgotPasswordModal({ onClose }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
           }}>🔑</div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0D0C1D' }}>{t('reset.title')}</div>
-            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#2A0A18' }}>{t('reset.title')}</div>
+            <div style={{ fontSize: 11, color: '#836370', marginTop: 2 }}>
               {step === 1 ? t('reset.step1Sub')
                 : step === 2 ? t('reset.step2Sub', { mobile })
                 : t('reset.step3Sub')}
@@ -126,7 +126,7 @@ function ForgotPasswordModal({ onClose }) {
           <div style={{ textAlign: 'center', padding: '16px 0' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#16A34A', marginBottom: 8 }}>{t('reset.successTitle')}</div>
-            <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>
+            <div style={{ fontSize: 13, color: '#7D5A67', marginBottom: 20 }}>
               {t('reset.successBody')}
             </div>
             <button onClick={onClose} className="btn btn-primary">{t('reset.backToSignIn')}</button>
@@ -142,13 +142,13 @@ function ForgotPasswordModal({ onClose }) {
                   autoFocus style={{ marginBottom: 16 }} />
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={onClose} style={{
-                    flex: 1, padding: 14, borderRadius: 14, background: '#F8F7FF',
-                    border: '1px solid #EDE9FF', color: '#6B7280', fontWeight: 700,
+                    flex: 1, padding: 14, borderRadius: 14, background: '#F8F0F3',
+                    border: '1px solid #ECE0E5', color: '#7D5A67', fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>{t('common.cancel')}</button>
                   <button onClick={handleContinue} disabled={loading} style={{
                     flex: 2, padding: 14, borderRadius: 14,
-                    background: 'linear-gradient(135deg,#951345,#720D35)',
+                    background: 'linear-gradient(135deg,#8B0D3D,#6E0A30)',
                     border: 'none', color: '#fff', fontWeight: 800,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>{loading ? t('reset.checking') : t('common.continue') + ' →'}</button>
@@ -162,13 +162,13 @@ function ForgotPasswordModal({ onClose }) {
                   style={{ marginBottom: 16, textAlign: 'center', fontSize: 22, fontWeight: 800, letterSpacing: 6 }} />
                 <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
                   <button onClick={() => setStep(1)} style={{
-                    flex: 1, padding: 14, borderRadius: 14, background: '#F8F7FF',
-                    border: '1px solid #EDE9FF', color: '#6B7280', fontWeight: 700,
+                    flex: 1, padding: 14, borderRadius: 14, background: '#F8F0F3',
+                    border: '1px solid #ECE0E5', color: '#7D5A67', fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>← {t('common.back')}</button>
                   <button onClick={handleVerifyOtp} disabled={loading || otp.length !== 6} style={{
                     flex: 2, padding: 14, borderRadius: 14,
-                    background: 'linear-gradient(135deg,#951345,#720D35)',
+                    background: 'linear-gradient(135deg,#8B0D3D,#6E0A30)',
                     border: 'none', color: '#fff', fontWeight: 800,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>{loading ? t('reset.verifying') : t('reset.verify') + ' →'}</button>
@@ -176,7 +176,7 @@ function ForgotPasswordModal({ onClose }) {
                 <button onClick={handleResendOtp} disabled={resendIn > 0 || loading} style={{
                   display: 'block', margin: '0 auto', background: 'none', border: 'none',
                   fontWeight: 700, fontSize: 13, padding: 0,
-                  color: resendIn > 0 ? '#B0AAC8' : '#951345',
+                  color: resendIn > 0 ? '#C7B3BC' : '#8B0D3D',
                   cursor: resendIn > 0 ? 'default' : 'pointer',
                 }}>{resendIn > 0 ? t('reset.resendIn', { n: resendIn }) : t('reset.resendCode')}</button>
               </>
@@ -192,13 +192,13 @@ function ForgotPasswordModal({ onClose }) {
                   style={{ marginBottom: 16 }} />
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={() => setStep(2)} style={{
-                    flex: 1, padding: 14, borderRadius: 14, background: '#F8F7FF',
-                    border: '1px solid #EDE9FF', color: '#6B7280', fontWeight: 700,
+                    flex: 1, padding: 14, borderRadius: 14, background: '#F8F0F3',
+                    border: '1px solid #ECE0E5', color: '#7D5A67', fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>← {t('common.back')}</button>
                   <button onClick={handleReset} disabled={loading} style={{
                     flex: 2, padding: 14, borderRadius: 14,
-                    background: 'linear-gradient(135deg,#951345,#720D35)',
+                    background: 'linear-gradient(135deg,#8B0D3D,#6E0A30)',
                     border: 'none', color: '#fff', fontWeight: 800,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>{loading ? t('reset.resetting') : t('reset.title')}</button>
@@ -259,11 +259,11 @@ export default function LoginPage() {
         <div className="auth-logo" style={{ background: 'none', boxShadow: 'none', width: 'auto', height: 'auto', marginBottom: 20 }}>
           <div style={{
             width: 96, height: 96, borderRadius: 28,
-            background: 'linear-gradient(145deg, #951345 0%, #720D35 55%, #4A0820 100%)',
+            background: 'linear-gradient(145deg, #8B0D3D 0%, #6E0A30 55%, #48061F 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto',
             boxShadow:
-              'inset 0 2px 0 rgba(255,255,255,0.22), inset 0 0 0 1.5px rgba(232,201,106,0.45), 0 16px 44px rgba(66,12,36,0.60), 0 0 50px rgba(149,19,69,0.35)',
+              'inset 0 2px 0 rgba(255,255,255,0.22), inset 0 0 0 1.5px rgba(212,175,55,0.45), 0 16px 44px rgba(66,12,36,0.60), 0 0 50px rgba(139,13,61,0.35)',
           }}>
             <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
               {/* Shield body */}
@@ -271,14 +271,14 @@ export default function LoginPage() {
                 fill="url(#shieldGrad)" />
               {/* Gold inner rim */}
               <path d="M24 7L10 13.2V24C10 32.5 16.4 40.4 24 42C31.6 40.4 38 32.5 38 24V13.2L24 7Z"
-                fill="none" stroke="rgba(232,201,106,0.50)" strokeWidth="1.2"/>
+                fill="none" stroke="rgba(212,175,55,0.50)" strokeWidth="1.2"/>
               {/* Checkmark */}
               <path d="M17 24.5L21.5 29L31 19"
                 stroke="white" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
               <defs>
                 <linearGradient id="shieldGrad" x1="8" y1="4" x2="40" y2="44" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#C0185A"/>
-                  <stop offset="100%" stopColor="#4A0820"/>
+                  <stop offset="0%" stopColor="#B01650"/>
+                  <stop offset="100%" stopColor="#48061F"/>
                 </linearGradient>
               </defs>
             </svg>
@@ -290,13 +290,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin}>
           <div className="input-group">
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.mobileNumber')}</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7D5A67", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.mobileNumber')}</label>
             <input className="input" type="tel" value={mobile}
               onChange={e => setMobile(e.target.value)}
               placeholder="9876543210" autoComplete="tel" />
           </div>
           <div className="input-group">
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.password')}</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7D5A67", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.password')}</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showPassword ? 'text' : 'password'}
                 value={password} onChange={e => setPassword(e.target.value)}
@@ -317,7 +317,7 @@ export default function LoginPage() {
 
           <button type="button" onClick={() => setShowForgot(true)} style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            color: '#951345', fontWeight: 700, fontSize: 13,
+            color: '#8B0D3D', fontWeight: 700, fontSize: 13,
             fontFamily: 'inherit', marginTop: 12, width: '100%',
             display: 'block', textAlign: 'center',
           }}>

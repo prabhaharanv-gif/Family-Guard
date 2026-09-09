@@ -38,6 +38,16 @@ public class SOSAlertActivity extends Activity {
      */
     public static volatile boolean isShowing = false;
 
+    /**
+     * Whether this Activity appeared at all since the service last reset it.
+     *
+     * isShowing answers "is it up right now", which is the wrong question 1.2s
+     * after launch: a recipient who dismisses the alert immediately would have
+     * it recorded as never shown, and the OEM setup sheet would start nagging
+     * about a permission that is working.
+     */
+    public static volatile boolean appearedSinceReset = false;
+
     public static final String EXTRA_SENDER  = "sos_sender";
     public static final String EXTRA_MESSAGE = "sos_message";
     public static final String EXTRA_LAT     = "sos_lat";
@@ -46,6 +56,7 @@ public class SOSAlertActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         isShowing = true;
+        appearedSinceReset = true;
         super.onCreate(savedInstanceState);
         // Portrait is already declared in the manifest for all three activities,
         // but a manifest value is a request the platform may override: OEM skins
@@ -115,6 +126,7 @@ public class SOSAlertActivity extends Activity {
         if (message == null || message.isEmpty()) message = getString(R.string.sos_alert);
 
         isShowing = true;
+        appearedSinceReset = true;
         setContentView(buildLayout(sender, message, lat, lng));
     }
 

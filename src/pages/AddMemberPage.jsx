@@ -34,7 +34,7 @@ export default function AddMemberPage() {
         p_phone:        phone ? `+91${phone}` : null,
         p_relationship: relationship || null,
         p_bet_name:     betName || null,
-        p_avatar_color: selectedColor || '#951345',
+        p_avatar_color: selectedColor || '#8B0D3D',
       })
       if (error) throw error
       navigate('/')
@@ -64,7 +64,7 @@ export default function AddMemberPage() {
                 <div key={c} onClick={() => setSelectedColor(c)} style={{
                   width: 32, height: 32, borderRadius: '50%', background: c,
                   cursor: 'pointer',
-                  border: selectedColor === c ? '3px solid #1A1A2E' : '3px solid transparent',
+                  border: selectedColor === c ? '3px solid #2A0A18' : '3px solid transparent',
                   transition: 'border 0.15s',
                 }} />
               ))}

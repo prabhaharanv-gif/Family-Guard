@@ -22,17 +22,17 @@ export const LANGUAGES = [
 
 // Order of sections, with the presentation bits that never need translating.
 export const SECTION_META = [
-  { key: 'start',    icon: '🚀',      color: '#951345' },
-  { key: 'family',   icon: '👨‍👩‍👧', color: '#C0185A' },
-  { key: 'map',      icon: '🗺️',      color: '#0F766E' },
-  { key: 'messages', icon: '💬',      color: '#4F46E5' },
-  { key: 'calls',    icon: '📞',      color: '#7C3AED' },
+  { key: 'start',    icon: '🚀',      color: '#8B0D3D' },
+  { key: 'family',   icon: '👨‍👩‍👧', color: '#A5124A' },
+  { key: 'map',      icon: '🗺️',      color: '#6B0B2C' },
+  { key: 'messages', icon: '💬',      color: '#8B0D3D' },
+  { key: 'calls',    icon: '📞',      color: '#A5124A' },
   { key: 'sos',      icon: '🆘',      color: '#DC2626' },
-  { key: 'find',     icon: '📡',      color: '#2563EB' },
+  { key: 'find',     icon: '📡',      color: '#6B0B2C' },
   { key: 'privacy',  icon: '🔒',      color: '#059669' },
-  { key: 'profile',  icon: '⚙️',      color: '#0891B2' },
+  { key: 'profile',  icon: '⚙️',      color: '#48061F' },
   { key: 'reliable', icon: '🔔',      color: '#D97706' },
-  { key: 'tips',     icon: '💡',      color: '#6B21A8' },
+  { key: 'tips',     icon: '💡',      color: '#6E0A30' },
 ]
 
 export const MANUAL = {

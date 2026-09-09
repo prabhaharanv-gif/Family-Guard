@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { avatarColor } from '../lib/avatarColor'
 import { useT } from '../i18n'
 import { useAuthStore } from '../store/authStore'
 import { useHiddenMessages } from '../hooks/useHiddenMessages'
@@ -54,16 +55,16 @@ function Avatar({ member, size = 44, name }) {
   if (member.avatar_url) {
     return (
       <img src={member.avatar_url} alt={label}
-        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid #951345' }} />
+        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid #8B0D3D' }} />
     )
   }
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%', flexShrink: 0,
-      background: member.avatar_color && member.avatar_color !== '#4F8EF7' ? member.avatar_color : '#951345',
+      background: avatarColor(member.avatar_color),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       color: '#fff', fontWeight: 800, fontSize: size * 0.36,
-      border: '2px solid #951345', boxSizing: 'border-box',
+      border: '2px solid #8B0D3D', boxSizing: 'border-box',
     }}>
       {label?.[0]?.toUpperCase() || '?'}
     </div>
@@ -425,12 +426,12 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
         {/* Thread header — no back arrow; see the navigation note above. */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          padding: '10px 14px', borderBottom: '1px solid #F0E4EA', background: '#fff',
+          padding: '10px 14px', borderBottom: '1px solid #ECE0E5', background: '#fff',
           flexShrink: 0,
         }}>
           <Avatar member={openWith} size={36} name={otherName} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14.5, fontWeight: 800, color: '#0D0C1D' }}>{otherName}</div>
+            <div style={{ fontSize: 14.5, fontWeight: 800, color: '#2A0A18' }}>{otherName}</div>
           </div>
         </div>
 
@@ -454,7 +455,13 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
                 display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 8,
               }}>
                 <div style={{ maxWidth: '78%' }}>
-                  {/* Bubble — long press for the action sheet */}
+                  {/* Bubble — long press for the action sheet.
+                      Wrapped so the reaction chip can hang off its bottom
+                      edge; the margin below is the room that overhang needs. */}
+                  <div style={{
+                    position: 'relative',
+                    marginBottom: (reactions[m.id] || []).length ? 13 : 0,
+                  }}>
                   <div
                     onMouseDown={e => startLongPress(m, e)}
                     onMouseUp={cancelLongPress}
@@ -466,9 +473,9 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
                     style={{
                       padding: '9px 13px',
                       borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                      background: mine ? '#951345' : '#fff',
-                      color: mine ? '#fff' : '#0D0C1D',
-                      border: mine ? 'none' : '1px solid #F0E4EA',
+                      background: mine ? '#8B0D3D' : '#fff',
+                      color: mine ? '#fff' : '#2A0A18',
+                      border: mine ? 'none' : '1px solid #ECE0E5',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
                       cursor: 'default', userSelect: 'none',
                     }}
@@ -488,12 +495,13 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
                     )}
                   </div>
 
-                  <ReactionChips
-                    reactions={reactions[m.id]}
-                    myUserId={user?.id}
-                    onReact={(emoji) => react(m.id, emoji)}
-                    align={mine ? 'right' : 'left'}
-                  />
+                    <ReactionChips
+                      reactions={reactions[m.id]}
+                      myUserId={user?.id}
+                      onReact={(emoji) => react(m.id, emoji)}
+                      align={mine ? 'right' : 'left'}
+                    />
+                  </div>
 
                   {/* Timestamp + edited + ticks */}
                   <div style={{
@@ -537,7 +545,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
         {/* Composer */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          padding: '10px 12px', borderTop: '1px solid #F0E4EA',
+          padding: '10px 12px', borderTop: '1px solid #ECE0E5',
           background: '#fff', flexShrink: 0,
         }}>
           <AttachButton
@@ -570,7 +578,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
             aria-label="Send"
             style={{
               width: 44, height: 44, borderRadius: '50%', flexShrink: 0, border: 'none',
-              background: canSend ? '#951345' : '#E4D6DD',
+              background: canSend ? '#8B0D3D' : '#E4D6DD',
               color: '#fff', cursor: canSend ? 'pointer' : 'not-allowed',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
@@ -613,28 +621,28 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
           <div className="overlay" onClick={() => setDetailMsg(null)}>
             <div className="popup" onClick={e => e.stopPropagation()}>
               <div className="popup-handle" />
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#8B0D3D', letterSpacing: 0.2, marginBottom: 4 }}>
                 Message Info
               </div>
-              <div style={{ background: '#F5F4FB', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#0D0C1D', marginBottom: 16 }}>
+              <div style={{ background: '#F8F0F3', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#2A0A18', marginBottom: 16 }}>
                 {messagePreviewText(t, detailMsg)}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0' }}>
-                <span style={{ color: '#8480B0', display: 'inline-flex' }}><SingleTick /></span>
+                <span style={{ color: '#836370', display: 'inline-flex' }}><SingleTick /></span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>Sent</div>
-                  <div style={{ fontSize: 11, color: '#8480B0' }}>{new Date(detailMsg.created_at).toLocaleString()}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#2A0A18' }}>Sent</div>
+                  <div style={{ fontSize: 11, color: '#836370' }}>{new Date(detailMsg.created_at).toLocaleString()}</div>
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', opacity: detailMsg.read_at ? 1 : 0.7 }}>
-                <span style={{ color: detailMsg.read_at ? '#34B7F1' : '#8480B0', display: 'inline-flex' }}><DoubleTick /></span>
+                <span style={{ color: detailMsg.read_at ? '#34B7F1' : '#836370', display: 'inline-flex' }}><DoubleTick /></span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#2A0A18' }}>
                     {detailMsg.read_at ? t('personal.readBy', { name: otherName }) : t('personal.notReadYet')}
                   </div>
-                  <div style={{ fontSize: 11, color: '#8480B0' }}>
+                  <div style={{ fontSize: 11, color: '#836370' }}>
                     {detailMsg.read_at
                       ? new Date(detailMsg.read_at).toLocaleString()
                       : t('personal.notOpenedSince', { name: otherName })}
@@ -651,8 +659,8 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
                     </svg>
                   </span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>Edited</div>
-                    <div style={{ fontSize: 11, color: '#8480B0' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#2A0A18' }}>Edited</div>
+                    <div style={{ fontSize: 11, color: '#836370' }}>
                       {detailMsg.edited_at ? new Date(detailMsg.edited_at).toLocaleString() : ''}
                     </div>
                   </div>
@@ -694,7 +702,7 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
           >
             <Avatar member={m} name={nameOf(m)} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{nameOf(m)}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#2A0A18' }}>{nameOf(m)}</div>
               <div style={{
                 fontSize: 12, color: last ? '#5B4652' : '#B69AA6',
                 marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
