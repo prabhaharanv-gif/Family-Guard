@@ -410,6 +410,8 @@ export const UI = {
       refresh: 'Refresh map',
       recenter: 'Recentre',
       noMembersFound: 'No members found',
+      todayAt: 'Today {time}',
+      yesterdayAt: 'Yesterday {time}',
     },
 
     alerts: {
@@ -934,6 +936,8 @@ export const UI = {
       refresh: 'வரைபடத்தைப் புதுப்பி',
       recenter: 'மையப்படுத்து',
       noMembersFound: 'உறுப்பினர்கள் யாரும் இல்லை',
+      todayAt: 'இன்று {time}',
+      yesterdayAt: 'நேற்று {time}',
     },
 
     alerts: {
@@ -1458,6 +1462,8 @@ export const UI = {
       refresh: 'मानचित्र रीफ़्रेश करें',
       recenter: 'केंद्र में लाएँ',
       noMembersFound: 'कोई सदस्य नहीं मिला',
+      todayAt: 'आज {time}',
+      yesterdayAt: 'कल {time}',
     },
 
     alerts: {
@@ -1983,6 +1989,8 @@ export const UI = {
       refresh: 'మ్యాప్ రిఫ్రెష్ చేయి',
       recenter: 'కేంద్రీకరించు',
       noMembersFound: 'సభ్యులు కనబడలేదు',
+      todayAt: 'ఈరోజు {time}',
+      yesterdayAt: 'నిన్న {time}',
     },
 
     alerts: {
@@ -2508,6 +2516,8 @@ export const UI = {
       refresh: 'ನಕ್ಷೆ ರಿಫ್ರೆಶ್ ಮಾಡಿ',
       recenter: 'ಕೇಂದ್ರೀಕರಿಸಿ',
       noMembersFound: 'ಯಾವುದೇ ಸದಸ್ಯರು ಸಿಗಲಿಲ್ಲ',
+      todayAt: 'ಇಂದು {time}',
+      yesterdayAt: 'ನಿನ್ನೆ {time}',
     },
 
     alerts: {
@@ -3033,6 +3043,8 @@ export const UI = {
       refresh: 'മാപ്പ് പുതുക്കുക',
       recenter: 'കേന്ദ്രീകരിക്കുക',
       noMembersFound: 'അംഗങ്ങളെ കണ്ടെത്തിയില്ല',
+      todayAt: 'ഇന്ന് {time}',
+      yesterdayAt: 'ഇന്നലെ {time}',
     },
 
     alerts: {

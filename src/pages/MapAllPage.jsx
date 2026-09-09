@@ -7,6 +7,7 @@ import { useT } from '../i18n'
 import { useLocations } from '../hooks/useLocations'
 import { supabase } from '../lib/supabase'
 import { startBatteryReporting } from '../hooks/useBattery'
+import { formatLocationTime } from '../lib/locationTime'
 import SmoothMarker from '../components/SmoothMarker'
 
 delete L.Icon.Default.prototype._getIconUrl
@@ -469,7 +470,7 @@ export default function MapAllPage() {
                     <div>
                       <div style={{ fontWeight: 800, fontSize: 14, color: '#2A0A18' }}>{loc.displayName}</div>
                       <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
-                        Last Loc Time · {new Date(loc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        Last Loc Time · {formatLocationTime(t, loc.updatedAt)}
                       </div>
                       {/* Stale warning — if location is older than 15 minutes */}
                       {(Date.now() - new Date(loc.updatedAt)) > 15 * 60 * 1000 && (
@@ -589,7 +590,7 @@ export default function MapAllPage() {
                         })()}
                       </div>
                       <div style={{ fontSize: 11, color: stale ? '#D97706' : '#9C6B7A' }}>
-                        {stale ? '⚠️ ' : ''}Last Loc Time · {new Date(loc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {stale ? '⚠️ ' : ''}Last Loc Time · {formatLocationTime(t, loc.updatedAt)}
                       </div>
                     </div>
                     {/* Arrow */}
