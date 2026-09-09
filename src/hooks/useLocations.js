@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { avatarColor } from '../lib/avatarColor'
 import { cacheSet, cacheGet } from './useOfflineCache'
 
 export function useLocations(familyId) {
@@ -12,6 +13,11 @@ export function useLocations(familyId) {
 
   useEffect(() => {
     if (!familyId) return
+
+    // Guards a family switch: an in-flight fetch for the previous family must
+    // not resolve afterwards and repaint the map with the old family's members
+    // while the UI already says the new one.
+    let cancelled = false
 
     async function fetchAll() {
       const [{ data: locs }, { data: members }] = await Promise.all([
@@ -26,19 +32,27 @@ export function useLocations(familyId) {
           .eq('family_id', familyId),
       ])
 
+      if (cancelled) return
       if (locs && members) {
         const memberMap = {}
         members.forEach(m => { memberMap[m.user_id] = m })
         const map = {}
         locs.forEach(l => {
           if (!l.lat || !l.lng || (l.lat === 0 && l.lng === 0)) return
-          const m = memberMap[l.user_id] || {}
+          // Only people who are still in this family. A removed member keeps
+          // their row in `locations` — nothing deletes it — and this used to
+          // fall back to `|| {}`, so they carried on as a pin labelled
+          // "Member" long after being taken out of the family. The member list
+          // is the authority on who belongs here; a location with nobody
+          // behind it is not a person to draw.
+          const m = memberMap[l.user_id]
+          if (!m) return
           map[l.user_id] = {
             lat:         l.lat,
             lng:         l.lng,
             updatedAt:   l.updated_at,
             displayName: m.display_name || 'Member',
-            avatarColor: m.avatar_color || '#951345',
+            avatarColor: avatarColor(m.avatar_color),
             avatarUrl:   m.avatar_url   || null,
             isSharing:   l.is_sharing,
             battery:     l.battery_level ?? null,
@@ -49,7 +63,7 @@ export function useLocations(familyId) {
         setLocations(map)
         cacheSet(`locations:${familyId}`, map)
       }
-      setLoading(false)
+      if (!cancelled) setLoading(false)
     }
 
     fetchAll()
@@ -110,11 +124,16 @@ export function useLocations(familyId) {
                 .eq('family_id', familyId)
                 .eq('user_id', uid)
                 .single()
-                .then(({ data: m }) => ({
-                  displayName: m?.display_name || 'Member',
-                  avatarColor: m?.avatar_color || '#951345',
-                  avatarUrl:   m?.avatar_url   || null,
-                }))
+                .then(({ data: m }) => (m ? {
+                  displayName: m.display_name || 'Member',
+                  avatarColor: avatarColor(m.avatar_color),
+                  avatarUrl:   m.avatar_url   || null,
+                } : null))
+
+          // Same rule as the initial load above: no member record, no pin. A
+          // location update from someone who has been removed from the family
+          // is not a person to put back on the map.
+          if (!memberInfo) return
 
           setLocations(prev => {
             const next = {
@@ -149,6 +168,7 @@ export function useLocations(familyId) {
     const pollTimer = setInterval(fetchAll, 30_000)
 
     return () => {
+      cancelled = true
       supabase.removeChannel(channel)
       clearInterval(pollTimer)
     }

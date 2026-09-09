@@ -6,9 +6,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const PROJECT_ID = Deno.env.get('FIREBASE_PROJECT_ID') || 'family-guard-b343f'
 
 // ── JWT verification helpers ──────────────────────────────────────────────────
-// The Supabase webhook sends a service_role JWT in the Authorization header.
-// We verify that this token is our own service_role key — not a user JWT —
-// before trusting any record data in the body.
 function extractBearer(req: Request): string | null {
   const auth = req.headers.get('Authorization') || req.headers.get('authorization')
   if (!auth || !auth.startsWith('Bearer ')) return null
@@ -23,10 +20,6 @@ function b64urlDecode(seg: string): string {
   try { return atob(seg) } catch { return '' }
 }
 
-// Accept ANY structurally-valid service_role JWT for this project.
-// This is resilient to key rotation: legacy and new-format service_role
-// keys both carry role=service_role and ref=<project> in their payload.
-// Falls back to exact-match against the injected env key for non-JWT keys.
 function isServiceRoleJwt(token: string, serviceRoleKey: string): boolean {
   if (token && serviceRoleKey && token === serviceRoleKey) return true
   const parts = token.split('.')
@@ -127,9 +120,6 @@ function isValidUUID(v: unknown): v is string {
 serve(async (req) => {
   const srKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-  // ── STEP 1: Verify caller is service_role, not a normal user JWT ───────────
-  // This prevents any authenticated user from calling this function directly
-  // and feeding it a fabricated record body.
   const bearerToken = extractBearer(req)
   if (!bearerToken || !isServiceRoleJwt(bearerToken, srKey)) {
     console.warn('[SOS-FN] Rejected: unauthorized caller (not service_role)')
@@ -146,14 +136,12 @@ serve(async (req) => {
     try {
       parsed = JSON.parse(rawBody)
     } catch {
-      // Non-JSON body (e.g. leftover test calls) — ignore safely
       return new Response('Ignored: non-JSON body', { status: 200 })
     }
 
     const record = parsed?.record
     if (!record) return new Response('No record', { status: 200 })
 
-    // ── STEP 2: Validate record IDs before using them ─────────────────────
     if (!isValidUUID(record.user_id)) {
       console.warn('[SOS-FN] Invalid user_id format — rejecting')
       return new Response('Invalid payload', { status: 400 })
@@ -163,18 +151,11 @@ serve(async (req) => {
       return new Response('Invalid payload', { status: 400 })
     }
 
-    // ── STEP 3: Use service_role client to verify record actually exists ───
-    // This is the key cross-family protection: even if an attacker somehow
-    // sent a fabricated record with family_id=ANOTHER_FAMILY, the token
-    // query below would only return tokens for that family — which would be
-    // useless to the attacker since they don't control those devices.
-    // But we go further: verify the sos_alert record genuinely exists in DB.
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       srKey
     )
 
-    // Verify the SOS alert actually exists with the claimed user/family
     if (record.id && isValidUUID(record.id)) {
       const { data: verifiedAlert } = await supabase
         .from('sos_alerts')
@@ -190,7 +171,6 @@ serve(async (req) => {
       }
     }
 
-    // ── STEP 4: Fetch tokens scoped to the verified family ─────────────────
     const { data: tokens } = await supabase
       .from('device_tokens')
       .select('token')
@@ -201,7 +181,6 @@ serve(async (req) => {
       return new Response('No tokens', { status: 200 })
     }
 
-    // ── STEP 5: Fetch sender name from verified family ─────────────────────
     const { data: member } = await supabase
       .from('family_members')
       .select('display_name')
@@ -210,10 +189,8 @@ serve(async (req) => {
       .maybeSingle()
 
     const senderName = member?.display_name || 'A family member'
-    // Do NOT log the SOS message content or coordinates in production
     console.log(`[SOS-FN] Sending to ${tokens.length} device(s) in family ${record.family_id}`)
 
-    // ── STEP 6: Get Firebase access token ─────────────────────────────────
     const rawSA = Deno.env.get('FIREBASE_SERVICE_ACCOUNT')
     if (!rawSA) {
       console.error('[SOS-FN] FIREBASE_SERVICE_ACCOUNT missing')
@@ -232,25 +209,36 @@ serve(async (req) => {
       return new Response('Auth error', { status: 500 })
     }
 
-    // ── STEP 7: Send HYBRID FCM message (notification + data) ─────────────
-    // For a life-safety alert we MUST reach phones even when the app is fully
-    // closed / force-stopped, on ANY device brand, with no per-user battery
-    // setup. A data-only message relies on the app's background service waking
-    // up — which Android's battery optimizers frequently block. So we include:
-    //   • a `notification` block  → Android itself displays a loud, high-
-    //     priority heads-up notification on the `sos_alerts_v3` channel even
-    //     when the app is dead. Tapping it opens MainActivity and stops alarm.
-    //   • a `data` block          → when the app IS alive, onMessageReceived()
-    //     still fires and plays the full custom siren + overlay.
-    // The android.notification.channel_id MUST match the loud native channel.
-    // DATA-ONLY — no notification block so the channel melody never plays.
-    // SOSSirenService (started from onMessageReceived) shows its own foreground
-    // notification and plays the single custom siren. Exactly one alarm sound.
+    // ── STEP 7: Send HYBRID FCM payload ──────────────────────────────────────
+    //
+    // TWO-LAYER strategy for guaranteed lock screen delivery:
+    //
+    // LAYER 1 — `notification` block:
+    //   Android displays this natively even when app is FORCE-STOPPED.
+    //   Uses sos_alerts_v3 channel (IMPORTANCE_HIGH, alarm sound, bypass DnD).
+    //   This is what wakes the screen and shows the alert on the lock screen.
+    //
+    // LAYER 2 — `data` block:
+    //   When app IS alive (foreground/background), onMessageReceived() fires.
+    //   SOSSirenService starts → plays custom siren + shows full-screen overlay.
+    //   The native channel notification is suppressed by SOSSirenService taking
+    //   over — so users hear exactly ONE alarm sound, not two.
+    //
+    // Why both? Data-only relies on background service waking — Android battery
+    // optimisers (especially on Samsung/Xiaomi/OPPO) kill background services
+    // aggressively. The notification block bypasses this entirely.
+    const alertMessage = record.message || 'SOS Alert'
     const fcmPayload = {
+      // LAYER 1: notification block — wakes screen, shows on lock screen
+      notification: {
+        title: `🚨 SOS — ${senderName} needs help!`,
+        body:  alertMessage,
+      },
+      // LAYER 2: data block — picked up by onMessageReceived when app alive
       data: {
         type:      'sos',
         sender:    senderName,
-        message:   record.message || 'SOS Alert',
+        message:   alertMessage,
         family_id: String(record.family_id),
         lat:       String(record.lat ?? ''),
         lng:       String(record.lng ?? ''),
@@ -258,6 +246,17 @@ serve(async (req) => {
       android: {
         priority: 'high',
         ttl:      '60s',
+        notification: {
+          // Must match the channel created in MyFirebaseMessagingService.java
+          channel_id:            'sos_alerts_v3',
+          notification_priority: 'PRIORITY_MAX',
+          visibility:            'PUBLIC',
+          // Bypass DnD and vibrate even on silent mode
+          default_vibrate_timings: false,
+          vibrate_timings:         ['0s', '0.5s', '0.25s', '0.5s', '0.25s', '0.5s'],
+          // Clicking notification opens app
+          click_action:          'FLUTTER_NOTIFICATION_CLICK',
+        },
       },
     }
 

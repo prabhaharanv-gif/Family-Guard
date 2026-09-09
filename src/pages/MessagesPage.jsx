@@ -1,9 +1,24 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { registerPlugin, Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
+import { avatarColor } from '../lib/avatarColor'
 import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
 import Dialog from '../components/Dialog'
+import { useT } from '../i18n'
+import CallsPanel from '../components/CallsPanel'
+import { useHiddenMessages } from '../hooks/useHiddenMessages'
+import { readMuteLevel, writeMuteLevel, MUTE_LEVELS } from '../lib/muteLevel'
+import PersonalChatPanel from '../components/PersonalChatPanel'
+import {
+  SingleTick, DoubleTick, ReplyBar, ReplyQuote, MessageActionSheet, EditModal,
+  ReactionChips,
+} from '../components/MessageActions'
+import { AttachButton, MediaBubble, PendingMediaBar, VoiceRecorder } from '../components/ChatMedia'
+import { useNicknames } from '../hooks/useNicknames'
+import { useReactions } from '../hooks/useReactions'
+import { familyMediaFolder, uploadChatMedia } from '../lib/chatMedia'
 
 const MessagesPageNative = registerPlugin('MessagesPage')
 function notifyNativePageOpen(open) {
@@ -15,280 +30,42 @@ function setNativeMuteLevel(level) {
   try { MessagesPageNative.setMuteLevel({ level }) } catch (e) {}
 }
 
-function SingleTick() {
-  return (
-    <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-      <path d="M2 6.5 L5.5 10 L11 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-function DoubleTick() {
-  return (
-    <svg width="18" height="12" viewBox="0 0 18 12" fill="none">
-      <path d="M1 6.5 L4.5 10 L10 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M6 6.5 L9.5 10 L15 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-// ── Reply preview strip shown above the input ─────────────────────────────────
-function ReplyBar({ replyTo, members, onCancel }) {
-  if (!replyTo) return null
-  const sender = members[replyTo.user_id]
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 8,
-      padding: '8px 16px',
-      background: '#F0EEFF',
-      borderTop: '1px solid #D6D0FF',
-      borderLeft: '3px solid #7C3AED',
-    }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: '#7C3AED', marginBottom: 2 }}>
-          Replying to {sender?.display_name || 'Family'}
-        </div>
-        <div style={{ fontSize: 12, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {replyTo.content}
-        </div>
-      </div>
-      <button onClick={onCancel} style={{
-        background: 'none', border: 'none', cursor: 'pointer',
-        fontSize: 18, color: '#8480B0', padding: '0 4px', flexShrink: 0,
-      }}>✕</button>
-    </div>
-  )
-}
-
-// ── Quoted reply block shown inside a message bubble ─────────────────────────
-function ReplyQuote({ replyToId, messages, members }) {
-  const original = messages.find(m => m.id === replyToId)
-  if (!original) return null
-  const sender = members[original.user_id]
-  return (
-    <div style={{
-      borderLeft: '3px solid rgba(255,255,255,0.45)',
-      paddingLeft: 8, marginBottom: 6,
-      opacity: 0.85,
-    }}>
-      <div style={{ fontSize: 10, fontWeight: 800, marginBottom: 2 }}>
-        {sender?.display_name || 'Family'}
-      </div>
-      <div style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {original.content}
-      </div>
-    </div>
-  )
-}
-
-// ── Action sheet — long press on any message ──────────────────────────────────
-function MessageActionSheet({ msg, isOwn, onReply, onEdit, onDelete, onInfo, onClose }) {
-  const actions = [
-    {
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
-        </svg>
-      ),
-      label: 'Reply', sub: 'Reply to this message',
-      color: '#4F46E5', bg: '#EEF2FF', fn: onReply, show: true,
-    },
-    {
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-      ),
-      label: 'Edit', sub: 'Edit this message',
-      color: '#059669', bg: '#F0FDF4', fn: onEdit, show: isOwn,
-    },
-    {
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-          <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-        </svg>
-      ),
-      label: 'Delete', sub: 'Remove for everyone',
-      color: '#DC2626', bg: '#FEF2F2', fn: onDelete, show: isOwn,
-    },
-    {
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-      ),
-      label: 'Message Info', sub: 'See who has read this',
-      color: '#6B7280', bg: '#F9FAFB', fn: onInfo, show: isOwn,
-    },
-  ].filter(a => a.show)
-
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="popup" onClick={e => e.stopPropagation()} style={{ padding: '20px 16px 28px' }}>
-        <div className="popup-handle" />
-
-        {/* Message preview */}
-        <div style={{
-          background: 'linear-gradient(135deg, #FDF7FA 0%, #F8F0F5 100%)',
-          borderRadius: 16, padding: '14px 16px',
-          marginBottom: 20,
-          border: '1.5px solid #EEE0E6',
-          boxShadow: '0 2px 8px rgba(149,19,69,0.06)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <div style={{
-              width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-              background: isOwn ? '#951345' : '#6B7280',
-            }} />
-            <div style={{ fontSize: 11, fontWeight: 700, color: isOwn ? '#951345' : '#6B7280', letterSpacing: 0.2 }}>
-              {isOwn ? 'Your message' : 'Message'}
-            </div>
-          </div>
-          <div style={{ fontSize: 13, color: '#0D0C1D', lineHeight: 1.5, maxHeight: 72, overflow: 'hidden' }}>
-            {msg.content}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {actions.map((a, i) => (
-            <button key={a.label} onClick={() => { a.fn(); onClose() }} style={{
-              width: '100%', padding: '13px 16px', borderRadius: 14,
-              background: a.bg, border: `1px solid ${a.color}20`,
-              cursor: 'pointer', fontFamily: 'inherit',
-              display: 'flex', alignItems: 'center', gap: 14,
-              transition: 'all 0.15s',
-            }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-                background: a.color + '15', border: `1.5px solid ${a.color}25`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {a.icon}
-              </div>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: a.color }}>{a.label}</div>
-                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>{a.sub}</div>
-              </div>
-              <svg style={{ marginLeft: 'auto', opacity: 0.3 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={a.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-            </button>
-          ))}
-
-          {/* Divider */}
-          <div style={{ height: 1, background: '#F0EAF5', margin: '4px 0' }} />
-
-          <button onClick={onClose} style={{
-            width: '100%', padding: '13px 16px', borderRadius: 14,
-            background: '#F8F7FF', border: '1px solid #EDE9FF',
-            color: '#6B7280', fontWeight: 600, fontSize: 14,
-            fontFamily: 'inherit', cursor: 'pointer',
-          }}>
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Edit modal ────────────────────────────────────────────────────────────────
-function EditModal({ msg, onClose, onSave }) {
-  const [text, setText] = useState(msg.content)
-  const [saving, setSaving] = useState(false)
-
-  const handleSave = async () => {
-    if (!text.trim() || text.trim() === msg.content) { onClose(); return }
-    setSaving(true)
-    await onSave(msg.id, text.trim())
-    setSaving(false)
-    onClose()
-  }
-
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="popup" onClick={e => e.stopPropagation()} style={{ padding: '20px 16px 28px' }}>
-        <div className="popup-handle" />
-
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 12,
-            background: '#F0FDF4', border: '1.5px solid #BBF7D0',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0D0C1D' }}>Edit Message</div>
-            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>Changes are visible to all family members</div>
-          </div>
-        </div>
-
-        <textarea
-          value={text}
-          onChange={e => setText(e.target.value)}
-          autoFocus
-          style={{
-            width: '100%', padding: '14px 16px', borderRadius: 14,
-            border: '1.5px solid #E5E7EB', fontSize: 14,
-            fontFamily: 'inherit', resize: 'none', outline: 'none',
-            minHeight: 90, boxSizing: 'border-box', marginBottom: 16,
-            background: '#FAFAFA', lineHeight: 1.5,
-            transition: 'border-color 0.2s',
-          }}
-          onFocus={e => e.target.style.borderColor = '#059669'}
-          onBlur={e => e.target.style.borderColor = '#E5E7EB'}
-        />
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onClose} style={{
-            flex: 1, padding: 14, borderRadius: 14,
-            background: '#F8F7FF', border: '1px solid #EDE9FF',
-            color: '#6B7280', fontWeight: 700, cursor: 'pointer',
-            fontFamily: 'inherit', fontSize: 14,
-          }}>Cancel</button>
-          <button onClick={handleSave} disabled={saving || !text.trim()} style={{
-            flex: 1, padding: 14, borderRadius: 14,
-            background: text.trim() ? 'linear-gradient(135deg, #951345, #720D35)' : '#F5E8EE',
-            border: 'none', color: '#fff', fontWeight: 700,
-            cursor: text.trim() ? 'pointer' : 'not-allowed',
-            fontFamily: 'inherit', fontSize: 14,
-            boxShadow: text.trim() ? '0 4px 14px rgba(5,150,105,0.35)' : 'none',
-            transition: 'all 0.2s',
-          }}>
-            {saving ? 'Saving...' : '✓ Save Changes'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function MessagesPage() {
+  const t = useT()
+  const navigate = useNavigate()
   const { user, familyId } = useAuthStore()
+  const { hidden: hiddenMsgs, hide: hideMessage, hideMany } = useHiddenMessages('family', user?.id)
+  // The private name I have given each member — the same one shown on their
+  // family card. Without this the chat labelled everyone by the name they
+  // registered with, whatever the card said.
+  const { nameFor } = useNicknames()
+  const { reactions, react } = useReactions('family', familyId, user?.id)
   const [messages, setMessages]   = useState([])
   const [members, setMembers]     = useState({})
   const [msgsLoaded, setMsgsLoaded] = useState(false)
   const [reads, setReads]         = useState({})
   const [detailMsg, setDetailMsg] = useState(null)   // read-info popup
+  const [actionAnchor, setActionAnchor] = useState(null)
   const [actionMsg, setActionMsg] = useState(null)   // long-press action sheet
   const [editMsg, setEditMsg]     = useState(null)   // edit modal
   const [replyTo, setReplyTo]     = useState(null)   // message being replied to
   const [text, setText]           = useState('')
+  const [pendingMedia, setPendingMedia] = useState(null)  // { file, kind, durationMs, previewUrl }
   const [sending, setSending]     = useState(false)
   const [clearing, setClearing]   = useState(false)
-  const [muteLevel, setMuteLevel] = useState(() => {
-    try { return parseInt(localStorage.getItem('msg_mute_level') || '0', 10) } catch { return 0 }
-  })
+  const [refreshing, setRefreshing] = useState(false)
+  const [muteLevel, setMuteLevel] = useState(readMuteLevel)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch]   = useState(false)
   const [dialog, setDialog]           = useState(null) // { type, title, message, onConfirm }
+  // 'chat' = family-wide room, 'personal' = one-to-one threads, 'calls' = history
+  const [activeTab, setActiveTab]     = useState('chat')
+  // Bumped when the Personal tab is tapped while already open — closes an
+  // open thread, which is how you get back to the list now that the header
+  // has no back arrow (hardware back does the same on Android).
+  const [personalReset, setPersonalReset] = useState(0)
+  const [callControls, setCallControls] = useState(null) // reported by CallsPanel
+  const [personalControls, setPersonalControls] = useState(null) // reported by PersonalChatPanel
   const [typingUsers, setTypingUsers] = useState({})
   const bottomRef      = useRef(null)
   const longPressRef   = useRef(null)
@@ -304,6 +81,17 @@ export default function MessagesPage() {
   }, [])
 
   const otherMemberCount = Math.max(0, Object.keys(members).length - 1)
+
+  // What is actually on screen. Messages hidden for me — one "Delete for me",
+  // or a Clear Chat — are still in `messages`, so counting that array would
+  // leave an empty room claiming to have history and still offering to clear
+  // it.
+  const visibleMessages = messages.filter(m => !hiddenMsgs.has(m.id))
+
+  // Every name shown on this page goes through here: my nickname for that
+  // person if I set one, otherwise the name they chose for themselves.
+  const memberName = (uid, fallback) =>
+    nameFor(uid, members[uid]?.display_name || fallback)
 
   const loadReads = async () => {
     if (!familyId) return
@@ -322,7 +110,7 @@ export default function MessagesPage() {
   const reloadMessages = async () => {
     if (!familyId) return
     const [memRes, msgRes] = await Promise.all([
-      supabase.from('family_members').select('user_id, display_name, avatar_color').eq('family_id', familyId),
+      supabase.from('family_members').select('user_id, display_name, avatar_color, avatar_url').eq('family_id', familyId),
       supabase.from('messages').select('*').eq('family_id', familyId).order('created_at', { ascending: true }),
     ])
     if (memRes.data) {
@@ -336,7 +124,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!familyId) return
-    supabase.from('family_members').select('user_id, display_name, avatar_color')
+    supabase.from('family_members').select('user_id, display_name, avatar_color, avatar_url')
       .eq('family_id', familyId)
       .then(({ data }) => {
         if (data) { const map = {}; data.forEach(m => { map[m.user_id] = m }); setMembers(map) }
@@ -344,7 +132,11 @@ export default function MessagesPage() {
   }, [familyId])
 
   useEffect(() => {
-    if (!familyId) return
+    // No family to read from. The fetch below is what flips msgsLoaded, so
+    // returning early left the skeleton bubbles shimmering forever — the page
+    // looked like it was still loading a room that does not exist. Marking it
+    // loaded hands over to the empty state below.
+    if (!familyId) { setMsgsLoaded(true); return }
     supabase.from('messages').select('*').eq('family_id', familyId)
       .order('created_at', { ascending: true })
       .then(({ data }) => { if (data) setMessages(data); setMsgsLoaded(true) })
@@ -386,8 +178,18 @@ export default function MessagesPage() {
         })
       .subscribe()
 
-    return () => { document.removeEventListener('visibilitychange', onVisible); supabase.removeChannel(channel) }
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      supabase.removeChannel(channel)
+    }
   }, [familyId])
+
+  // Clear the typing throttle timer on unmount to prevent the leak
+  useEffect(() => {
+    return () => {
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     if (!familyId || !user) return
@@ -407,20 +209,86 @@ export default function MessagesPage() {
     return () => supabase.removeChannel(ch)
   }, [familyId, user])
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+  // The first paint of a loaded thread jumps straight to the newest message.
+  // Animating it meant watching the whole history scroll past on every visit
+  // to the page; later arrivals still slide in so the movement is noticed.
+  const didInitialScroll = useRef(false)
+  useEffect(() => {
+    if (!messages.length) return
+    bottomRef.current?.scrollIntoView({
+      behavior: didInitialScroll.current ? 'smooth' : 'instant',
+    })
+    didInitialScroll.current = true
+  }, [messages])
+
+  // An attachment is a message on its own, so either a caption or a file is
+  // enough to send.
+  const canSend = !!text.trim() || !!pendingMedia
+
+  // Revoking the object URL matters here: an image preview holds the whole
+  // file in memory until it is released, and people browse several before
+  // settling on one.
+  const clearPendingMedia = () => {
+    setPendingMedia(prev => {
+      if (prev?.previewUrl) { try { URL.revokeObjectURL(prev.previewUrl) } catch (e) {} }
+      return null
+    })
+  }
 
   // ── Send ────────────────────────────────────────────────────────────────────
   const sendMessage = async () => {
-    if (!text.trim() || sending) return
+    if (!canSend || sending) return
     setSending(true)
-    await supabase.from('messages').insert({
-      family_id:   familyId,
-      user_id:     user.id,
-      content:     text.trim(),
-      reply_to_id: replyTo?.id || null,
+
+    // Uploaded as part of sending rather than at pick time: a message that is
+    // never sent then leaves nothing behind in storage.
+    let media = null
+    if (pendingMedia) {
+      try {
+        media = await uploadChatMedia(familyMediaFolder(familyId, user.id), pendingMedia.file)
+      } catch (err) {
+        setSending(false)
+        setDialog({
+          type: 'error',
+          message: err?.message === 'too-big' ? t('messages.mediaTooBig')
+            : err?.message === 'unsupported' ? t('messages.mediaUnsupported')
+            : t('messages.mediaUploadFailed'),
+        })
+        return
+      }
+    }
+
+    let { error } = await supabase.rpc('send_message', {
+      p_family_id:        familyId,
+      p_content:          text.trim(),
+      p_reply_to_id:      replyTo?.id || null,
+      p_media_path:       media?.path || null,
+      p_media_type:       media?.type || null,
+      p_media_mime:       media?.mime || null,
+      p_media_size:       media?.size || null,
+      p_media_name:       media?.name || null,
+      p_media_duration_ms: pendingMedia?.durationMs ? Math.round(pendingMedia.durationMs) : null,
     })
-    setText('')
-    setReplyTo(null)
+
+    // PGRST202 is "no function with these arguments". It means this build is
+    // running against a database where the attachment migration has not been
+    // applied yet — during a rollout, or on a phone updated ahead of the
+    // server. A plain text message still works there, and silently failing to
+    // send one would be a far worse bug than not being able to attach a photo.
+    if (error?.code === 'PGRST202' && !media) {
+      ;({ error } = await supabase.rpc('send_message', {
+        p_family_id:   familyId,
+        p_content:     text.trim(),
+        p_reply_to_id: replyTo?.id || null,
+      }))
+    }
+    if (error) {
+      setDialog({ type: 'error', message: t('messages.sendFailed') })
+    } else {
+      setText('')
+      setReplyTo(null)
+      clearPendingMedia()
+    }
     setSending(false)
   }
 
@@ -430,38 +298,67 @@ export default function MessagesPage() {
       p_message_id:  msgId,
       p_new_content: newContent,
     })
-    if (error) setDialog({ type: 'error', message: 'Could not edit message. Please try again.' })
+    if (error) setDialog({ type: 'error', message: t('messages.editFailed') })
   }
 
   // ── Delete ──────────────────────────────────────────────────────────────────
   const handleDelete = (msg) => {
     setDialog({
       type: 'confirm',
-      title: 'Delete Message',
-      message: 'This will delete the message for everyone in the family.',
-      confirmLabel: 'Delete',
+      title: t('messages.deleteTitle'),
+      message: t('messages.deleteMsg'),
+      confirmLabel: t('common.delete'),
       onConfirm: async () => {
         const { error } = await supabase.rpc('delete_message', { p_message_id: msg.id })
-        if (error) setDialog({ type: 'error', message: 'Could not delete message. Please try again.' })
+        if (error) setDialog({ type: 'error', message: t('messages.deleteFailed') })
         else setMessages(prev => prev.filter(m => m.id !== msg.id))
       },
     })
   }
 
   // ── Clear chat ──────────────────────────────────────────────────────────────
+  // Clears the room for ME. It used to delete every row in the family, so one
+  // person tidying their screen wiped the history off everyone's phone — in a
+  // shared room that is destroying other people's messages, not housekeeping.
+  // The private threads keep the old meaning: see PersonalChatPanel.
   const handleClearMessages = () => {
     setDialog({
       type: 'confirm',
-      title: 'Clear All Messages',
-      message: 'This will delete all messages for everyone in this family and cannot be undone.',
-      confirmLabel: 'Clear Chat',
+      title: t('messages.clearTitle'),
+      message: t('messages.clearMsg'),
+      confirmLabel: t('messages.clearChat'),
       onConfirm: async () => {
         setClearing(true)
-        await supabase.from('messages').delete().eq('family_id', familyId)
-        setMessages([])
+        const { data, error } = await supabase.rpc('clear_family_chat_for_me', {
+          p_family_id: familyId,
+        })
         setClearing(false)
+        if (error) { setDialog({ type: 'error', message: t('messages.clearFailed') }); return }
+        // The RPC returns the ids it hid, so nothing has to be re-read; the
+        // messages stay in state and are filtered out by the hidden set.
+        hideMany((data || []).map(row => (typeof row === 'string' ? row : row.id)))
       },
     })
+  }
+
+  // Pull-to-refresh only arms once the list is scrolled to its very top, and
+  // these lists are anchored at the BOTTOM: refreshing meant dragging the whole
+  // history up first. The header offers it directly instead, for whichever tab
+  // is open. The Map screen already has the same control.
+  const handleRefresh = async () => {
+    if (refreshing) return
+    setRefreshing(true)
+    try {
+      if (activeTab === 'personal') await personalControls?.reload?.()
+      else if (activeTab === 'calls') await callControls?.reload?.()
+      else await reloadMessages()
+    } catch (e) {
+      // A failed refresh leaves what is already on screen; the realtime
+      // channels keep it current anyway, so this is a convenience, not a
+      // dependency.
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   const handleTextChange = (e) => {
@@ -474,28 +371,49 @@ export default function MessagesPage() {
 
   // ── Mute ────────────────────────────────────────────────────────────────────
   const handleMuteToggle = () => {
-    const next = (muteLevel + 1) % 3
+    const next = writeMuteLevel((muteLevel + 1) % MUTE_LEVELS)
     setMuteLevel(next)
-    try { localStorage.setItem('msg_mute_level', String(next)) } catch {}
     setNativeMuteLevel(next)
   }
   const MUTE_STATES = [
-    { icon: '🔔', tip: 'Notifications on' },
-    { icon: '🔕', tip: 'Sound muted' },
-    { icon: '🚫', tip: 'All muted' },
+    { tip: t('messages.notificationsOn') },
+    { tip: t('messages.soundMuted') },
+    { tip: t('messages.allMuted') },
   ]
+  // Never index blind — an unexpected stored level must not take the page down
+  const muteState = MUTE_STATES[muteLevel] || MUTE_STATES[0]
+  const MUTE_COLOR = muteLevel === 1 ? 'var(--gold)' : muteLevel === 2 ? 'var(--rose)' : '#fff'
 
   // ── Long press ──────────────────────────────────────────────────────────────
-  const startLongPress = (msg) => {
+  const startLongPress = (msg, e) => {
     didLongPress.current = false
+    // The rect is read here, not inside the timeout: React nulls
+    // currentTarget once the handler returns, so by the time the long press
+    // fires there is nothing left to measure.
+    const rect = e?.currentTarget?.getBoundingClientRect?.() ?? null
     longPressRef.current = setTimeout(() => {
       didLongPress.current = true
       try { if (navigator.vibrate) navigator.vibrate(40) } catch (e) {}
+      setActionAnchor(rect)
       setActionMsg(msg)
     }, 500)
   }
   const cancelLongPress = () => {
     if (longPressRef.current) clearTimeout(longPressRef.current)
+  }
+
+  // Redial from the call history. Mirrors handleStartCall on the family screen:
+  // create_call resolves the caller from auth.uid() server-side, so only the
+  // callee and type are passed.
+  const handleQuickCall = async (calleeId, callType) => {
+    if (!familyId || !calleeId) return
+    const { data, error } = await supabase.rpc('create_call', {
+      p_family_id: familyId,
+      p_callee_id: calleeId,
+      p_call_type: callType,
+    })
+    if (error) { setDialog({ type: 'error', message: error.message }); return }
+    navigate(`/call/${data.id}`)
   }
 
   return (
@@ -505,36 +423,111 @@ export default function MessagesPage() {
       <div className="top-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div>
-            <div className="top-bar-title">💬 Messages</div>
-            <button onClick={handleMuteToggle} title={MUTE_STATES[muteLevel].tip} style={{
+            <div className="top-bar-title">💬 {t('messages.title')}</div>
+            <button onClick={handleMuteToggle} title={muteState.tip} style={{
               marginTop: 3, background: 'none', border: 'none',
               cursor: 'pointer', padding: 0,
               display: 'flex', alignItems: 'center', gap: 5,
             }}>
-              <span style={{ fontSize: 15 }}>{MUTE_STATES[muteLevel].icon}</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke={MUTE_COLOR} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6.5 2.5 7.5a1 1 0 0 1-.7 1.7H4.2a1 1 0 0 1-.7-1.7C4.5 14.5 6 12.5 6 8z"/>
+                <path d="M10 20.5a2 2 0 0 0 4 0"/>
+                {muteLevel > 0 && <line x1="4" y1="4" x2="20" y2="20"/>}
+              </svg>
               {muteLevel > 0 && (
-                <span style={{ fontSize: 10, fontWeight: 700,
-                  color: muteLevel === 1 ? '#FFD700' : '#FF8080' }}>
-                  {muteLevel === 1 ? 'Sound off' : 'Muted'}
+                <span style={{ fontSize: 10, fontWeight: 700, color: MUTE_COLOR }}>
+                  {muteLevel === 1 ? t('messages.soundOff') : t('messages.muted')}
                 </span>
               )}
             </button>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
-          {messages.length > 0 && (
-            <button onClick={handleClearMessages} disabled={clearing} style={{
+          {activeTab === 'calls' && callControls?.selectMode && (
+            <>
+              <button onClick={callControls.cancelSelection} style={{
+                background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)',
+                color: '#fff', borderRadius: 10, padding: '7px 12px',
+                fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}>Cancel</button>
+              <button onClick={callControls.deleteSelected}
+                disabled={callControls.busy || callControls.selectedCount === 0} style={{
+                background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
+                color: '#8B0D3D', borderRadius: 10, padding: '7px 12px',
+                fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
+                whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
+                </svg>
+                Delete ({callControls.selectedCount})
+              </button>
+            </>
+          )}
+          {activeTab === 'calls' && !callControls?.selectMode && callControls?.clearableCount > 0 && (
+            <button onClick={callControls.clearAll} disabled={callControls.busy} style={{
               background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
-              color: '#951345', borderRadius: 10, padding: '7px 12px',
+              color: '#8B0D3D', borderRadius: 10, padding: '7px 12px',
               fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
               whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#951345" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
-              {clearing ? 'Clearing...' : 'Clear Chat'}
+              {callControls.busy ? t('messages.clearing') : t('messages.clearCount', { n: callControls.clearableCount })}
             </button>
           )}
+          {activeTab === 'chat' && visibleMessages.length > 0 && (
+            <button onClick={handleClearMessages} disabled={clearing} style={{
+              background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
+              color: '#8B0D3D', borderRadius: 10, padding: '7px 12px',
+              fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
+              whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+              {clearing ? t('messages.clearing') : t('messages.clearChat')}
+            </button>
+          )}
+          {/* Same button for an open personal thread. The panel reports the
+              action up rather than drawing its own, so the two tabs cannot
+              drift apart in style the way they had. */}
+          {activeTab === 'personal' && personalControls?.canClear && (
+            <button onClick={personalControls.clearThread} disabled={personalControls.clearing} style={{
+              background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
+              color: '#8B0D3D', borderRadius: 10, padding: '7px 12px',
+              fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
+              cursor: personalControls.clearing ? 'wait' : 'pointer',
+              whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+              {personalControls.clearing ? t('messages.clearing') : t('messages.clearChat')}
+            </button>
+          )}
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            title={t('common.retry')}
+            aria-label={t('messages.refresh')}
+            style={{
+              background: 'rgba(255,255,255,0.15)',
+              border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10,
+              padding: '7px 10px', cursor: refreshing ? 'default' : 'pointer',
+              flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+            <style>{'@keyframes msgspin{to{transform:rotate(360deg)}}'}</style>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              style={refreshing ? { animation: 'msgspin 0.8s linear infinite' } : undefined}>
+              <path d="M21 12a9 9 0 1 1-2.64-6.36" /><polyline points="21 3 21 9 15 9" />
+            </svg>
+          </button>
+          {activeTab === 'chat' && (
           <button onClick={() => setShowSearch(s => !s)} style={{
             background: showSearch ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)',
             border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10,
@@ -542,52 +535,81 @@ export default function MessagesPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke={showSearch ? '#951345' : '#fff'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              stroke={showSearch ? '#8B0D3D' : '#fff'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
           </button>
+          )}
         </div>
       </div>
 
-      {showSearch && (
-        <div style={{ padding: '8px 16px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF' }}>
+      {/* Chat / Personal / Calls tabs */}
+      <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #ECE0E5', flexShrink: 0 }}>
+        {[{ key: 'chat', label: t('messages.tabFamily') }, { key: 'personal', label: t('messages.tabPersonal') }, { key: 'calls', label: t('messages.tabCalls') }].map(tab => (
+          <button key={tab.key} onClick={() => {
+            if (tab.key === 'personal' && activeTab === 'personal') setPersonalReset(n => n + 1)
+            setActiveTab(tab.key)
+          }} style={{
+            flex: 1, padding: '12px 0', background: 'none', border: 'none',
+            borderBottom: activeTab === tab.key ? '2.5px solid #8B0D3D' : '2.5px solid transparent',
+            color: activeTab === tab.key ? '#8B0D3D' : '#9C6B7A',
+            fontWeight: activeTab === tab.key ? 800 : 600,
+            fontSize: 14, fontFamily: 'inherit', cursor: 'pointer',
+          }}>{tab.label}</button>
+        ))}
+      </div>
+
+      {activeTab === 'calls' && (
+        <CallsPanel
+          onDialog={setDialog}
+          onControls={setCallControls}
+          onCall={handleQuickCall}
+        />
+      )}
+
+      {activeTab === 'personal' && <PersonalChatPanel onDialog={setDialog} resetSignal={personalReset} onControls={setPersonalControls} />}
+
+      {activeTab === 'chat' && showSearch && (
+        <div style={{ padding: '8px 16px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)' }}>
           <div style={{ position: 'relative' }}>
             <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search messages..." autoFocus
               style={{
                 width: '100%', padding: '10px 36px 10px 14px',
-                borderRadius: 12, border: '1.5px solid #EDE9FF',
+                borderRadius: 12, border: '1.5px solid var(--border)',
                 fontSize: 14, fontFamily: 'inherit', outline: 'none',
                 background: '#fff', boxSizing: 'border-box',
               }} />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} style={{
                 position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#9CA3AF',
+                background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#836370',
               }}>✕</button>
             )}
           </div>
         </div>
       )}
 
-      {Object.keys(typingUsers).length > 0 && (
-        <div style={{ padding: '6px 20px', background: '#F8F7FF', borderBottom: '1px solid #EDE9FF',
+      {activeTab === 'chat' && Object.keys(typingUsers).length > 0 && (
+        <div style={{ padding: '6px 20px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
             {[0,1,2].map(i => (
-              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#7C3AED',
+              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--indigo)',
                 animation: `tdot 1.2s ${i*0.2}s ease-in-out infinite` }} />
             ))}
           </div>
           <style>{`@keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}`}</style>
-          <span style={{ fontSize: 12, color: '#7C3AED', fontWeight: 600 }}>
+          <span style={{ fontSize: 12, color: 'var(--indigo)', fontWeight: 600 }}>
             {Object.keys(typingUsers).length === 1
-              ? `${members[Object.keys(typingUsers)[0]]?.display_name || 'Someone'} is typing...`
-              : 'Several people are typing...'}
+              ? t('messages.isTyping', { name: memberName(Object.keys(typingUsers)[0], t('messages.someone')) })
+              : t('messages.severalTyping')}
           </span>
         </div>
       )}
 
+      {activeTab === 'chat' && (
+      <>
       {/* Messages list */}
       <PullToRefresh onRefresh={reloadMessages}>
       <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -608,27 +630,42 @@ export default function MessagesPage() {
           </>
         )}
 
-        {msgsLoaded && messages.length === 0 && (
+        {msgsLoaded && visibleMessages.length === 0 && (
           <div className="empty-state">
-            <div className="empty-emoji">💬</div>
-            <div className="empty-text">No messages yet</div>
-            <div className="empty-sub">Send the first message to your family!</div>
+            <svg className="empty-art" width="76" height="76" viewBox="0 0 72 72"
+              fill="none" aria-hidden="true" focusable="false">
+              <path d="M12 30c0-9.4 10.7-17 24-17s24 7.6 24 17-10.7 17-24 17c-2.7 0-5.3-.3-7.7-.9l-11.1 6.2a1 1 0 0 1-1.5-1l1.6-8.5C14.1 39.7 12 35.1 12 30Z"
+                stroke="#E79BBB" strokeWidth="2.4" strokeLinejoin="round" />
+              <circle cx="26" cy="30" r="2.6" fill="#E79BBB" />
+              <circle cx="36" cy="30" r="2.6" fill="#E79BBB" />
+              <circle cx="46" cy="30" r="2.6" fill="#E79BBB" />
+            </svg>
+            <div className="empty-text">{t('messages.noMessages')}</div>
+            <div className="empty-sub">{t('messages.sendFirst')}</div>
           </div>
         )}
 
-        {msgsLoaded && searchQuery && messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+        {msgsLoaded && searchQuery && visibleMessages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
           <div className="empty-state">
-            <div className="empty-emoji">🔍</div>
-            <div className="empty-text">No results</div>
-            <div className="empty-sub">No messages match "{searchQuery}"</div>
+            <svg className="empty-art" width="76" height="76" viewBox="0 0 72 72"
+              fill="none" aria-hidden="true" focusable="false">
+              <circle cx="32" cy="31" r="17" stroke="#E79BBB" strokeWidth="2.4" />
+              <path d="M44.5 43.5 L57 56" stroke="#E79BBB" strokeWidth="2.4" strokeLinecap="round" />
+              <path d="M24 26a11 11 0 0 1 8-4" stroke="#E79BBB" strokeWidth="2" strokeLinecap="round" opacity="0.55" />
+            </svg>
+            <div className="empty-text">{t('messages.noResults')}</div>
+            <div className="empty-sub">{t('messages.noMatch', { query: searchQuery })}</div>
           </div>
         )}
 
         {msgsLoaded && (() => {
           let lastDateLabel = null
+          // Hidden-for-me messages drop out before search, so a hidden message
+          // cannot resurface by matching a query.
+          const visible = visibleMessages
           const filtered = searchQuery
-            ? messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
-            : messages
+            ? visible.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
+            : visible
           return filtered.map((msg, idx) => {
             const isOwn  = msg.user_id === user?.id
             const member = members[msg.user_id]
@@ -655,8 +692,8 @@ export default function MessagesPage() {
             const msgDateStr = msgDate.toDateString()
             if (msgDateStr !== lastDateLabel) {
               lastDateLabel = msgDateStr
-              if (isSameDay(msgDate, today)) dateLabel = 'Today'
-              else if (isSameDay(msgDate, yesterday)) dateLabel = 'Yesterday'
+              if (isSameDay(msgDate, today)) dateLabel = t('messages.today')
+              else if (isSameDay(msgDate, yesterday)) dateLabel = t('messages.yesterday')
               else dateLabel = msgDate.toLocaleDateString([], { day: 'numeric', month: 'short', year: msgDate.getFullYear() !== today.getFullYear() ? 'numeric' : undefined })
             }
 
@@ -668,14 +705,14 @@ export default function MessagesPage() {
                   textAlign: 'center', margin: '8px 0 12px',
                   display: 'flex', alignItems: 'center', gap: 10,
                 }}>
-                  <div style={{ flex: 1, height: 1, background: '#F0E4EA' }} />
+                  <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                   <div style={{
-                    fontSize: 11, fontWeight: 700, color: '#9C6B7A',
-                    background: '#FDF5F8', padding: '3px 12px',
-                    borderRadius: 20, border: '1px solid #F0E4EA',
+                    fontSize: 11, fontWeight: 700, color: 'var(--muted)',
+                    background: 'var(--bg2)', padding: '3px 12px',
+                    borderRadius: 20, border: '1px solid var(--border)',
                     whiteSpace: 'nowrap',
                   }}>{dateLabel}</div>
-                  <div style={{ flex: 1, height: 1, background: '#F0E4EA' }} />
+                  <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                 </div>
               )}
             <div style={{
@@ -686,14 +723,23 @@ export default function MessagesPage() {
               {/* Avatar — shown only on first bubble of a run; placeholder keeps alignment */}
               {!isOwn && (
                 showSenderInfo ? (
-                  <div style={{
-                    width: 32, height: 32, borderRadius: '50%',
-                    background: member?.avatar_color || '#951345',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontWeight: 800, fontSize: 13, flexShrink: 0,
-                  }}>
-                    {member?.display_name?.[0]?.toUpperCase() || '?'}
-                  </div>
+                  // The photo, not just the initial: this list only ever drew a
+                  // coloured letter, even for members who had set one.
+                  member?.avatar_url ? (
+                    <img src={member.avatar_url} alt="" style={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      objectFit: 'cover', flexShrink: 0,
+                    }} />
+                  ) : (
+                    <div style={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: avatarColor(member?.avatar_color),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#fff', fontWeight: 800, fontSize: 13, flexShrink: 0,
+                    }}>
+                      {memberName(msg.user_id)?.[0]?.toUpperCase() || '?'}
+                    </div>
+                  )
                 ) : (
                   <div style={{ width: 32, flexShrink: 0 }} />
                 )
@@ -703,22 +749,29 @@ export default function MessagesPage() {
                 {/* Sender name — only on first bubble of a run */}
                 {!isOwn && showSenderInfo && (
                   <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 3, paddingLeft: 4 }}>
-                    {member?.display_name || 'Family'}
+                    {memberName(msg.user_id, t('messages.family'))}
                   </div>
                 )}
 
-                {/* Bubble — long press for action sheet */}
+                {/* Bubble — long press for action sheet.
+                    Wrapped so the reaction chip can hang off its bottom edge;
+                    the extra margin below is the room that overhang needs, so
+                    it never lands on the timestamp. */}
+                <div style={{
+                  position: 'relative',
+                  marginBottom: (reactions[msg.id] || []).length ? 13 : 0,
+                }}>
                 <div
-                  onMouseDown={() => startLongPress(msg)}
+                  onMouseDown={e => startLongPress(msg, e)}
                   onMouseUp={cancelLongPress}
                   onMouseLeave={cancelLongPress}
-                  onTouchStart={() => startLongPress(msg)}
+                  onTouchStart={e => startLongPress(msg, e)}
                   onTouchEnd={cancelLongPress}
                   onTouchMove={cancelLongPress}
                   onClick={() => { if (didLongPress.current) { didLongPress.current = false; return } }}
                   style={{
-                    background: isOwn ? 'linear-gradient(135deg, #951345 0%, #B01650 100%)' : '#fff',
-                    color: isOwn ? '#fff' : '#0D0C1D',
+                    background: isOwn ? 'linear-gradient(135deg, #8B0D3D 0%, #A5124A 100%)' : '#fff',
+                    color: isOwn ? '#fff' : '#2A0A18',
                     padding: '10px 14px',
                     borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     fontSize: 14,
@@ -728,9 +781,28 @@ export default function MessagesPage() {
                 >
                   {/* Reply quote */}
                   {msg.reply_to_id && (
-                    <ReplyQuote replyToId={msg.reply_to_id} messages={messages} members={members} />
+                    <ReplyQuote
+                      original={messages.find(x => x.id === msg.reply_to_id)}
+                      senderName={memberName(messages.find(x => x.id === msg.reply_to_id)?.user_id)}
+                    />
+                  )}
+                  {/* Attachment above the caption, which is how every chat
+                      lays this out — and an attachment with no caption then
+                      needs no empty text node under it. */}
+                  {msg.media_path && (
+                    <div style={{ marginBottom: msg.content ? 6 : 0 }}>
+                      <MediaBubble msg={msg} isOwn={isOwn} />
+                    </div>
                   )}
                   {msg.content}
+                </div>
+
+                  <ReactionChips
+                    reactions={reactions[msg.id]}
+                    myUserId={user?.id}
+                    onReact={(emoji) => react(msg.id, emoji)}
+                    align={isOwn ? 'right' : 'left'}
+                  />
                 </div>
 
                 {/* Timestamp + edited + ticks */}
@@ -760,7 +832,14 @@ export default function MessagesPage() {
       </PullToRefresh>
 
       {/* Reply bar above input */}
-      <ReplyBar replyTo={replyTo} members={members} onCancel={() => setReplyTo(null)} />
+      <ReplyBar replyTo={replyTo} senderName={memberName(replyTo?.user_id)} onCancel={() => setReplyTo(null)} />
+
+      {/* The picked photo/clip, waiting for its caption and the send button */}
+      <PendingMediaBar
+        pending={pendingMedia}
+        uploading={sending && !!pendingMedia}
+        onCancel={clearPendingMedia}
+      />
 
       {/* Input */}
       <div style={{
@@ -768,10 +847,15 @@ export default function MessagesPage() {
         borderTop: '1px solid var(--border)',
         display: 'flex', gap: 10, alignItems: 'flex-end',
       }}>
+        <AttachButton
+          onPick={setPendingMedia}
+          onError={(message) => setDialog({ type: 'error', message })}
+          disabled={sending}
+        />
         <textarea
           value={text}
           onChange={handleTextChange}
-          placeholder={replyTo ? 'Write a reply...' : 'Type a message...'}
+          placeholder={pendingMedia ? t('messages.addCaption') : replyTo ? t('messages.writeReply') : t('messages.typeMessage')}
           rows={1}
           style={{
             flex: 1, padding: '12px 14px', borderRadius: 24,
@@ -780,28 +864,43 @@ export default function MessagesPage() {
             background: 'var(--bg)', maxHeight: 100,
           }}
         />
+        {/* The microphone stands down while there is something to send, so
+            the row never offers two ways to act on the same draft. */}
+        {!canSend && !pendingMedia && (
+          <VoiceRecorder
+            onRecorded={setPendingMedia}
+            onError={(message) => setDialog({ type: 'error', message })}
+            disabled={sending}
+          />
+        )}
         <button
           onClick={sendMessage}
-          disabled={!text.trim() || sending}
+          disabled={!canSend || sending}
           style={{
             width: 44, height: 44, borderRadius: '50%',
-            background: text.trim() ? 'linear-gradient(135deg, #951345 0%, #B01650 100%)' : '#DDB8C4',
-            border: 'none', color: text.trim() ? '#fff' : '#951345',
-            fontSize: 18, cursor: text.trim() ? 'pointer' : 'default',
+            background: canSend ? 'linear-gradient(135deg, #8B0D3D 0%, #A5124A 100%)' : '#DDB8C4',
+            border: 'none', color: canSend ? '#fff' : '#8B0D3D',
+            fontSize: 18, cursor: canSend ? 'pointer' : 'default',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'background 0.2s', flexShrink: 0,
           }}
         >➤</button>
       </div>
+      </>
+      )}
 
       {/* ── Action sheet (long press) ── */}
       {actionMsg && (
         <MessageActionSheet
+          anchor={actionAnchor}
           msg={actionMsg}
           isOwn={actionMsg.user_id === user?.id}
+          myReaction={(reactions[actionMsg.id] || []).find(r => r.user_id === user?.id)?.emoji}
+          onReact={(emoji) => react(actionMsg.id, emoji)}
           onReply={() => { setReplyTo(actionMsg); setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100) }}
-          onEdit={() => setEditMsg(actionMsg)}
+          onEdit={() => { setEditMsg(actionMsg); setActionMsg(null) }}
           onDelete={() => handleDelete(actionMsg)}
+          onHide={() => hideMessage(actionMsg.id)}
           onInfo={() => setDetailMsg(actionMsg)}
           onClose={() => setActionMsg(null)}
         />
@@ -829,30 +928,30 @@ export default function MessagesPage() {
         <div className="overlay" onClick={() => setDetailMsg(null)}>
           <div className="popup" onClick={e => e.stopPropagation()}>
             <div className="popup-handle" />
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#951345', letterSpacing: 0.2, marginBottom: 4 }}>
-              Message Info
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#8B0D3D', letterSpacing: 0.2, marginBottom: 4 }}>
+              {t('messages.messageInfo')}
             </div>
-            <div style={{ background: '#F5F4FB', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: '#0D0C1D', marginBottom: 16 }}>
+            <div style={{ background: 'var(--surface3)', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: 'var(--text)', marginBottom: 16 }}>
               {detailMsg.content}
             </div>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#34B7F1', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ color: '#34B7F1', display: 'inline-flex' }}><DoubleTick /></span>
-              Read by {(reads[detailMsg.id] || []).length}
+              {t('messages.readBy', { n: (reads[detailMsg.id] || []).length })}
             </div>
             {(reads[detailMsg.id] || []).length === 0 ? (
-              <div style={{ fontSize: 13, color: '#8480B0', marginBottom: 14 }}>No one has read this yet.</div>
+              <div style={{ fontSize: 13, color: '#836370', marginBottom: 14 }}>{t('messages.noneRead')}</div>
             ) : (
               <div style={{ marginBottom: 14 }}>
                 {(reads[detailMsg.id] || []).map(r => {
                   const m = members[r.user_id]
                   return (
                     <div key={r.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0' }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: m?.avatar_color || '#4F8EF7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
-                        {m?.display_name?.[0]?.toUpperCase() || '?'}
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: avatarColor(m?.avatar_color), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
+                        {memberName(r.user_id, t('messages.member'))?.[0]?.toUpperCase() || '?'}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{m?.display_name || 'Member'}</div>
-                        <div style={{ fontSize: 11, color: '#8480B0' }}>{new Date(r.read_at).toLocaleString()}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#2A0A18' }}>{memberName(r.user_id, t('messages.member'))}</div>
+                        <div style={{ fontSize: 11, color: '#836370' }}>{new Date(r.read_at).toLocaleString()}</div>
                       </div>
                     </div>
                   )
@@ -865,17 +964,17 @@ export default function MessagesPage() {
               if (pending.length === 0) return null
               return (
                 <>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#8480B0', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#836370', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ display: 'inline-flex' }}><SingleTick /></span>
-                    Delivered · not read ({pending.length})
+                    {t('messages.deliveredNotRead', { n: pending.length })}
                   </div>
                   <div style={{ marginBottom: 4 }}>
                     {pending.map(m => (
                       <div key={m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', opacity: 0.7 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: m.avatar_color || '#951345', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
-                          {m.display_name?.[0]?.toUpperCase() || '?'}
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: avatarColor(m.avatar_color), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
+                          {memberName(m.user_id, t('messages.member'))?.[0]?.toUpperCase() || '?'}
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0D0C1D' }}>{m.display_name || 'Member'}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#2A0A18' }}>{memberName(m.user_id, t('messages.member'))}</div>
                       </div>
                     ))}
                   </div>

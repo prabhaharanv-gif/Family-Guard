@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+  Hindi notification channel labels.
+
+  Only the strings Android renders on our behalf live here. app_name and the
+  url-scheme values stay untranslated in values/ — the brand is the brand, and
+  the scheme is an identifier.
+-->
+<resources>
+    <string name="ch_sos_name">SOS आपातकालीन अलर्ट</string>
+    <string name="ch_sos_desc">परिवार के सदस्यों से आने वाले आपातकालीन SOS अलर्ट</string>
+
+    <string name="ch_sos_banner_name">SOS अलर्ट बैनर</string>
+    <string name="ch_sos_banner_desc">SOS अलर्ट बैनर — ध्वनि ऐप द्वारा दी जाती है</string>
+
+    <string name="ch_calls_name">आने वाली कॉल</string>
+    <string name="ch_calls_desc">परिवार के सदस्यों से आने वाली वॉइस और वीडियो कॉल</string>
+
+    <string name="ch_call_ring_name">आने वाली कॉल</string>
+    <string name="ch_call_ring_desc">परिवार के सदस्यों से आने वाली वॉइस/वीडियो कॉल</string>
+
+    <string name="ch_messages_name">पारिवारिक संदेश</string>
+    <string name="ch_messages_desc">परिवार के सदस्यों से नए संदेश</string>
+
+    <string name="ch_messages_silent_name">पारिवारिक संदेश (मौन)</string>
+    <string name="ch_messages_silent_desc">पारिवारिक संदेश — मौन मोड</string>
+
+    <string name="ch_location_name">लोकेशन ट्रैकिंग</string>
+    <string name="ch_location_desc">जब Famora आपकी लोकेशन ट्रैक कर रहा हो तब दिखता है</string>
+
+    <string name="ch_ping_name">मेरा फ़ोन ढूँढें</string>
+    <string name="ch_ping_desc">जब परिवार का कोई सदस्य फ़ोन ढूँढ़ता है तब यह फ़ोन बजता है</string>
+
+    <string name="a_family_member">परिवार का एक सदस्य</string>
+    <string name="sos_alert">SOS अलर्ट</string>
+
+    <!-- SOSAlertActivity — लॉक स्क्रीन के ऊपर दिखने वाला पूर्ण-स्क्रीन अलर्ट -->
+    <string name="sos_needs_help">%1$s को मदद चाहिए!</string>
+    <string name="sos_view_location">📍 लोकेशन देखें</string>
+    <string name="sos_open_app">Famora खोलें</string>
+    <string name="sos_stop_alarm">✋ समझ गया — अलार्म रोकें</string>
+
+    <!-- CallRingingActivity -->
+    <string name="call_incoming_voice">आने वाली वॉइस कॉल</string>
+    <string name="call_incoming_video">आने वाली वीडियो कॉल</string>
+    <string name="call_decline">✕ अस्वीकारें</string>
+    <string name="call_accept">✓ स्वीकारें</string>
+
+    <!-- सूचनाएँ -->
+    <string name="notif_sos_title">🚨 SOS — %1$s को मदद चाहिए!</string>
+    <string name="notif_sos_big">⚠️ %1$s को मदद चाहिए!\n\n%2$s\n\nFamora खोलने के लिए टैप करें।</string>
+    <string name="notif_call_voice_label">वॉइस कॉल</string>
+    <string name="notif_call_video_label">वीडियो कॉल</string>
+    <!-- Hindi puts the caller first: "<name> से <call type>" -->
+    <string name="notif_call_title">📞 %2$s से %1$s</string>
+    <string name="notif_tap_to_answer">उत्तर देने के लिए टैप करें</string>
+    <string name="notif_action_stop">रोकें</string>
+
+    <string name="notif_ping_title">📡 मिल गया!</string>
+    <string name="notif_ping_body">%1$s इस फ़ोन को ढूँढ़ रहे हैं</string>
+    <string name="notif_ping_big">%1$s इस फ़ोन को ढूँढ़ रहे हैं।\n\nआवाज़ बंद करने के लिए रोकें बटन दबाएँ।</string>
+    <string name="notif_location_body">आपके परिवार की सुरक्षा · लोकेशन चालू</string>
+    <string name="notif_tap_to_open">खोलने के लिए टैप करें</string>
+</resources>

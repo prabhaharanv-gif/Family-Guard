@@ -1,94 +1,25 @@
 import { useNavigate } from 'react-router-dom'
-
-const SECTIONS = [
-  {
-    icon: '📋',
-    title: 'What We Collect',
-    color: '#4F46E5',
-    items: [
-      'Mobile number (used to create your account)',
-      'Display name and optional profile photo',
-      'Real-time location (only when sharing is ON)',
-      'Messages sent within your family group',
-      'SOS alerts you send or receive',
-      'Device push notification token (for alerts)',
-    ],
-  },
-  {
-    icon: '🔒',
-    title: 'How We Use It',
-    color: '#059669',
-    items: [
-      'Location is shared only with your own family group — nobody else',
-      'Messages are visible only to your family group members',
-      'Push tokens are used only to deliver SOS and message alerts',
-      'We never sell, share, or use your data for advertising',
-      'We never read your messages for any purpose',
-    ],
-  },
-  {
-    icon: '🛡️',
-    title: 'How We Protect It',
-    color: '#7C3AED',
-    items: [
-      'All data stored on Supabase (SOC 2 compliant servers)',
-      'Row Level Security ensures you only access your family\'s data',
-      'Passwords are bcrypt hashed — we cannot see them',
-      'All API calls require authentication',
-      'Edge Functions verify caller identity before processing any data',
-    ],
-  },
-  {
-    icon: '🗑️',
-    title: 'Data Retention',
-    color: '#D97706',
-    items: [
-      'Messages are automatically deleted after 90 days',
-      'Resolved SOS alerts are deleted after 30 days',
-      'Your location is only stored as current position — no history kept',
-      'You can delete your account and all data anytime from Profile',
-    ],
-  },
-  {
-    icon: '👥',
-    title: 'Data Sharing',
-    color: '#0891B2',
-    items: [
-      'We do not share your data with any third parties',
-      'Firebase (Google) is used only to deliver push notifications',
-      'Supabase is used for database and authentication hosting',
-      'No analytics, no tracking, no ads',
-    ],
-  },
-  {
-    icon: '✅',
-    title: 'Your Rights',
-    color: '#16A34A',
-    items: [
-      'View all your data — it\'s in your own family group',
-      'Turn off location sharing anytime from Profile → Privacy',
-      'Delete your account and all data from Profile → Delete My Account',
-      'Leave any family group at any time',
-    ],
-  },
-]
+import { getPolicy } from '../lib/policy'
+import { useT } from '../i18n'
 
 export default function PrivacyPolicyPage() {
   const navigate = useNavigate()
+  const t = useT()
+  const p = getPolicy(t.lang)
 
   return (
     <div style={{
       position: 'fixed', inset: 0,
       display: 'flex', flexDirection: 'column',
-      background: '#F8F7FF',
+      background: 'var(--bg)',
       zIndex: 100,
     }}>
       {/* Header */}
       <div style={{
-        background: 'linear-gradient(135deg, #951345 0%, #720D35 100%)',
+        background: 'linear-gradient(135deg, #8B0D3D 0%, #6E0A30 100%)',
         padding: '16px 16px 20px',
         flexShrink: 0,
-        boxShadow: '0 2px 12px rgba(149,19,69,0.25)',
+        boxShadow: '0 2px 12px rgba(139,13,61,0.25)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={() => navigate(-1)} style={{
@@ -100,11 +31,11 @@ export default function PrivacyPolicyPage() {
             flexShrink: 0,
           }}>←</button>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', fontFamily: 'Sora, sans-serif' }}>
-              Privacy Policy
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', fontFamily: 'Sora, sans-serif', lineHeight: 1.35 }}>
+              {p.pageTitle}
             </div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>
-              Last updated: August 2026
+              {p.lastUpdatedLabel}: {p.lastUpdated}
             </div>
           </div>
         </div>
@@ -115,25 +46,25 @@ export default function PrivacyPolicyPage() {
 
         {/* Intro card */}
         <div style={{
-          background: 'linear-gradient(135deg, #FDF0F5, #F0EEFF)',
+          background: 'linear-gradient(135deg, #FDF0F5, #FAE8EF)',
           borderRadius: 18, padding: '18px 20px', marginBottom: 14,
-          border: '1.5px solid #E8DFFF',
-          boxShadow: '0 2px 12px rgba(149,19,69,0.08)',
+          border: '1.5px solid #DCC9D2',
+          boxShadow: '0 2px 12px rgba(139,13,61,0.08)',
         }}>
           <div style={{ fontSize: 22, marginBottom: 8 }}>🛡️</div>
           <div style={{ fontSize: 14, color: '#3A1020', lineHeight: 1.6, fontWeight: 500 }}>
-            FamilyGuard is built on a simple promise:{' '}
-            <strong style={{ color: '#951345' }}>your data belongs to you and your family — nobody else.</strong>
-            {' '}We collect only what is necessary to keep your family safe and connected.
+            {p.promiseLead}{' '}
+            <strong style={{ color: '#8B0D3D' }}>{p.promiseStrong}</strong>
+            {' '}{p.promiseTail}
           </div>
         </div>
 
-        {SECTIONS.map((section) => (
-          <div key={section.title} style={{
+        {p.sections.map((section) => (
+          <div key={section.key} style={{
             background: '#fff',
             borderRadius: 18, padding: '16px 18px',
             marginBottom: 12,
-            border: '1px solid #F0EAF5',
+            border: '1px solid #ECE0E5',
             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           }}>
             {/* Section header */}
@@ -147,7 +78,7 @@ export default function PrivacyPolicyPage() {
               }}>
                 {section.icon}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#0D0C1D' }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#2A0A18' }}>
                 {section.title}
               </div>
             </div>
@@ -165,7 +96,7 @@ export default function PrivacyPolicyPage() {
                   }}>
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: section.color }} />
                   </div>
-                  <div style={{ fontSize: 13, color: '#4B5563', lineHeight: 1.55 }}>
+                  <div style={{ fontSize: 13, color: '#4A1226', lineHeight: 1.55 }}>
                     {item}
                   </div>
                 </div>
@@ -178,14 +109,14 @@ export default function PrivacyPolicyPage() {
         <div style={{
           background: '#fff', borderRadius: 18,
           padding: '18px 20px', textAlign: 'center',
-          border: '1px solid #F0EAF5',
+          border: '1px solid #ECE0E5',
           boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
         }}>
           <div style={{ fontSize: 20, marginBottom: 8 }}>📩</div>
-          <div style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>
-            Questions about your privacy?<br />
-            <a href="mailto:info@scoopinnovations.in" style={{ color: '#951345', fontWeight: 700, textDecoration: 'none' }}>
-              info@scoopinnovations.in
+          <div style={{ fontSize: 13, color: '#7D5A67', lineHeight: 1.6 }}>
+            {p.contactPrompt}<br />
+            <a href={`mailto:${p.contactEmail}`} style={{ color: '#8B0D3D', fontWeight: 700, textDecoration: 'none' }}>
+              {p.contactEmail}
             </a>
           </div>
         </div>

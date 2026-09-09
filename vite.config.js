@@ -1,8 +1,20 @@
+import { execSync } from 'node:child_process'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Stamped into the bundle so the running app can say which build it is —
+// the fastest way to tell a real bug from a stale APK on a device.
+function buildId() {
+  let sha = 'nogit'
+  try { sha = execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() } catch {}
+  return `${sha} ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`
+}
+
 export default defineConfig({
+  define: {
+    __BUILD_ID__: JSON.stringify(buildId()),
+  },
   plugins: [
     react(),
     VitePWA({

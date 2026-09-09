@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { adoptNativeSession } from '../lib/nativeSession'
 
 export const useAuthStore = create((set, get) => ({
   user:        null,
@@ -10,7 +11,20 @@ export const useAuthStore = create((set, get) => ({
   loading:     true,
 
   initialize: async () => {
-    const { data: { session } } = await supabase.auth.getSession()
+    let { data: { session } } = await supabase.auth.getSession()
+
+    // No session in the WebView does not yet mean signed out. The background
+    // location service renews the session natively while the app is closed,
+    // and because Supabase rotates refresh tokens that renewal revokes the
+    // copy held here — supabase-js then discards it as unusable. The service
+    // holds the live one, so ask before showing anyone the login screen.
+    if (!session) {
+      const adopted = await adoptNativeSession('startup')
+      if (adopted) {
+        ({ data: { session } } = await supabase.auth.getSession())
+      }
+    }
+
     if (session?.user) {
       await get().loadFamily(session.user.id)
       set({ user: session.user, loading: false })
@@ -19,9 +33,25 @@ export const useAuthStore = create((set, get) => ({
     }
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        // TOKEN_REFRESHED fires roughly hourly and hands back a *fresh* user
+        // object for the same person. Storing it changes the object identity,
+        // which re-runs every effect keyed on `user` — tearing down and
+        // re-subscribing the global SOS / incoming-call / device-ping channels.
+        // supabase-js already pushes the new token to Realtime itself, so those
+        // channels stay authorised without our help. Re-subscribing gains
+        // nothing and leaves a brief window where an incoming SOS INSERT can
+        // land while no channel is listening, so keep the existing reference.
+        //
+        // The refresh below still runs: it is the only thing that picks up a
+        // family rename or a new membership while the app stays open, since
+        // nothing subscribes to the families table. Only the set() is skipped.
         await get().loadFamily(session.user.id)
+        if (event === 'TOKEN_REFRESHED' && get().user?.id === session.user.id) return
         set({ user: session.user })
-      } else {
+      } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        // Only a real sign-out clears state. This previously cleared on any
+        // session-less event, so a transient gap during token renewal could
+        // drop the user on the login screen with a usable session in storage.
         set({ user: null, familyId: null, familyName: null, inviteCode: null, allFamilies: [] })
       }
     })
@@ -37,13 +67,21 @@ export const useAuthStore = create((set, get) => ({
 
     if (data && data.length > 0) {
       // Build allFamilies list
+      // Admin families first, then the ones joined as a member, each group
+      // alphabetical. Sorted here rather than in the two screens that render
+      // this list, so the family switcher and the Profile list cannot disagree
+      // about the order.
       const allFamilies = data.map(m => ({
         family_id:  m.family_id,
         name:       m.families?.name || 'Unknown',
         invite_code: m.families?.invite_code,
         created_by: m.families?.created_by,
         role:       m.role,
-      }))
+      })).sort((a, b) => {
+        const rank = f => (f.role === 'admin' ? 0 : 1)
+        if (rank(a) !== rank(b)) return rank(a) - rank(b)
+        return (a.name || '').localeCompare(b.name || '')
+      })
 
       // Pick active family: saved preference → joined family → first
       const saved = (typeof localStorage !== 'undefined')
@@ -112,11 +150,9 @@ export const useAuthStore = create((set, get) => ({
   },
 
   leaveFamily: async (userId, familyId) => {
-    const { error } = await supabase
-      .from('family_members')
-      .delete()
-      .eq('user_id', userId)
-      .eq('family_id', familyId)
+    // SECURE: leave_family RPC — server validates the user can only remove themselves
+    // and enforces rules (e.g. owner must transfer before leaving)
+    const { error } = await supabase.rpc('leave_family', { p_family_id: familyId })
     if (error) throw error
 
     // Reload all families and switch to another one

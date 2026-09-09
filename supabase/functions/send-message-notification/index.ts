@@ -160,21 +160,46 @@ serve(async (req) => {
       .maybeSingle()
 
     const senderName = sender?.display_name || 'Family'
-    // Truncate preview to 100 chars — never log full content
-    const preview = typeof record.content === 'string'
-      ? record.content.substring(0, 100)
-      : 'New message'
+    // Truncate preview to 100 chars — never log full content.
+    // An attachment sent without a caption has content '', which would show as
+    // an empty notification, so it is named by what it is instead.
+    const mediaLabel = record.media_type === 'image' ? '📷 Photo'
+      : record.media_type === 'video' ? '🎬 Video'
+      : record.media_type === 'audio' ? '🎵 Audio'
+      : record.media_type === 'document' ? '📄 ' + (typeof record.media_name === 'string' && record.media_name ? record.media_name.substring(0, 60) : 'Document')
+      : ''
+    const text = typeof record.content === 'string' ? record.content.trim() : ''
+    const preview = text
+      ? text.substring(0, 100)
+      : (mediaLabel || 'New message')
 
     console.log(`[MSG-FN] New message in family ${record.family_id}`)
 
-    // Tokens for all OTHER family members
+    // Tokens for all OTHER family members. user_id comes along so each
+    // notification can be addressed with the name THAT recipient uses.
     const { data: tokens } = await supabase
       .from('device_tokens')
-      .select('token')
+      .select('token, user_id')
       .eq('family_id', record.family_id)
       .neq('user_id',  record.user_id)
 
     if (!tokens || tokens.length === 0) return new Response('No tokens', { status: 200 })
+
+    // A nickname is private to the person who set it: member_nicknames is
+    // keyed by owner_user_id, so the same sender is named differently on
+    // different phones. One query fetches every nickname pointing at this
+    // sender in this family; anyone without one falls back to display_name.
+    const { data: nicknameRows } = await supabase
+      .from('member_nicknames')
+      .select('owner_user_id, nickname')
+      .eq('family_id',      record.family_id)
+      .eq('target_user_id', record.user_id)
+
+    const nicknameByOwner = new Map<string, string>()
+    for (const row of nicknameRows || []) {
+      const nick = typeof row.nickname === 'string' ? row.nickname.trim() : ''
+      if (nick) nicknameByOwner.set(row.owner_user_id, nick)
+    }
 
     const rawSA = Deno.env.get('FIREBASE_SERVICE_ACCOUNT')
     if (!rawSA) return new Response('Config error', { status: 500 })
@@ -197,10 +222,10 @@ serve(async (req) => {
     // (foreground, background, killed), so MyFirebaseMessagingService can
     // check the mute level and Messages-page-open flag before deciding whether
     // to show a notification, play a sound, or stay silent.
-    const fcmPayload = {
+    const payloadFor = (recipientId: string) => ({
       data: {
         type:      'message',
-        sender:    senderName,
+        sender:    nicknameByOwner.get(recipientId) || senderName,
         content:   preview,
         family_id: String(record.family_id),
       },
@@ -208,10 +233,10 @@ serve(async (req) => {
         priority: 'high',
         ttl:      '300s',
       },
-    }
+    })
 
     const results = await Promise.all(
-      tokens.map(({ token }) => sendFCM(token, fcmPayload, accessToken))
+      tokens.map(({ token, user_id }) => sendFCM(token, payloadFor(user_id), accessToken))
     )
 
     let successCount = 0

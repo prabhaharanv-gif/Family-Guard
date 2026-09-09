@@ -1,0 +1,34 @@
+-- ═══════════════════════════════════════════════════════════════════════════
+-- family_members: REPLICA IDENTITY FULL, so a DELETE says which family it was
+-- ═══════════════════════════════════════════════════════════════════════════
+--
+-- Under the default replica identity a DELETE writes only the primary key to
+-- the WAL, so the old record carries `id` and nothing else. FamilyPage and
+-- PersonalChatPanel both watch for members leaving and need to know which
+-- family the row belonged to before they refetch; with FULL, payload.old
+-- carries family_id and they can check it.
+--
+-- The cost is WAL volume on updates to this table. It holds one row per person
+-- per family and its updates are 30-second heartbeats, so that is negligible.
+-- messages and direct_messages are already set this way.
+--
+-- ── What this is NOT ───────────────────────────────────────────────────────
+-- This was first written as the fix for a much bigger bug: Realtime was
+-- rejecting the whole `family-page` and `direct-messages` channels, naming a
+-- DELETE binding on this table, which silently killed live locations, presence
+-- and join requests on the Family screen and live delivery in the private
+-- threads (a sent message only appeared after a refresh).
+--
+-- Setting FULL did not fix that, and neither did dropping the binding's filter
+-- — Realtime went on refusing `[event: DELETE, table: family_members,
+-- filters: []]`. What fixed it was moving that one binding into a channel of
+-- its own on the client: alone it subscribes perfectly, and every other
+-- subscription it used to sit beside now survives. Whatever the server-side
+-- rule is, the client no longer lets one refused binding take a screen down
+-- with it. See the notes in FamilyPage.jsx and PersonalChatPanel.jsx.
+--
+-- This statement is kept because the DELETE payload is genuinely more useful
+-- with it, and those handlers now read family_id from it.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+alter table public.family_members replica identity full;

@@ -69,11 +69,17 @@ export default function SmoothMarker({
     if (from && to && from[0] === to[0] && from[1] === to[1]) return
 
     const distanceMeters = from ? map.distance(L.latLng(from), L.latLng(to)) : Infinity
+
+    // Snap instantly for very large jumps (teleport rather than slide across map)
     if (!from || distanceMeters > snapAbove) {
       marker.setLatLng(to)
       fromRef.current = to
       return
     }
+
+    // Ignore tiny movements — pure GPS noise under 10m.
+    // Without this, a stationary user's pin drifts constantly.
+    if (distanceMeters < 10) return
 
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
 

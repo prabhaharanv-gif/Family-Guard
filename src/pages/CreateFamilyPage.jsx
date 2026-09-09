@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useT } from '../i18n'
 
 export default function CreateFamilyPage() {
+  const t = useT()
   const [familyName, setFamilyName] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(false)
@@ -16,7 +18,7 @@ export default function CreateFamilyPage() {
     setError('')
 
     if (!user || !user.id) {
-      setError('You are not logged in. Please log in again.')
+      setError(t('createFamily.notLoggedIn'))
       return
     }
 
@@ -34,12 +36,12 @@ export default function CreateFamilyPage() {
       )
 
       if (fe) throw fe
-      if (!family) throw new Error('Family was not created')
+      if (!family) throw new Error(t('createFamily.notCreated'))
 
       await loadFamily(user.id)
       window.location.href = '/profile'
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.')
+      setError(err.message || t('createFamily.somethingWrong'))
       setLoading(false)
     }
   }
@@ -48,29 +50,27 @@ export default function CreateFamilyPage() {
     <div className="onboard-page">
       <div className="onboard-card">
         <div className="auth-logo">👨‍👩‍👧‍👦</div>
-        <h1 className="auth-title">Create Your Family</h1>
-        <p className="auth-subtitle">Set up your group to start sharing locations</p>
+        <h1 className="auth-title">{t('createFamily.title')}</h1>
+        <p className="auth-subtitle">{t('createFamily.sub')}</p>
 
         {error && <div className="error-msg">{error}</div>}
 
         <form onSubmit={handleCreate} noValidate>
           <div className="form-group">
-            <label>Family Name</label>
+            <label>{t('createFamily.familyName')}</label>
             <input
               className="input"
               value={familyName}
               onChange={e => setFamilyName(e.target.value)}
-              placeholder="e.g. The Prabhakarans"
               required
             />
           </div>
           <div className="form-group">
-            <label>Your Name in the Family</label>
+            <label>{t('createFamily.yourNameInFamily')}</label>
             <input
               className="input"
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
-              placeholder="e.g. Dad"
               required
             />
           </div>
@@ -80,12 +80,12 @@ export default function CreateFamilyPage() {
             disabled={loading}
             style={{ marginTop: 8 }}
           >
-            {loading ? 'Creating...' : 'Create Family'}
+            {loading ? t('createFamily.creating') : t('createFamily.create')}
           </button>
         </form>
 
         <p className="auth-link">
-          Have an invite code? <Link to="/join-family">Join Family</Link>
+          {t('createFamily.haveCode')} <Link to="/join-family">{t('createFamily.joinFamily')}</Link>
         </p>
       </div>
     </div>
