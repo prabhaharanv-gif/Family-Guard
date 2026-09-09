@@ -54,6 +54,44 @@ import com.getcapacitor.annotation.PermissionCallback;
 public class LocationPlugin extends Plugin {
 
     /**
+     * Whether the Activity is currently resumed.
+     *
+     * Read by LocationForegroundService to decide who may spend the Supabase
+     * refresh token. Supabase rotates on redemption — using a refresh token
+     * revokes it — so the WebView and the service cannot both refresh: whoever
+     * goes second is told "Invalid Refresh Token: Already Used", supabase-js
+     * treats that as unrecoverable and erases the session, and the user lands
+     * on the login screen having done nothing.
+     *
+     * While this is true the WebView owns the token and pushes each new pair
+     * down through updateSessionToken(); the service defers. While it is false
+     * the app may not even be running, so the service owns it and JS adopts
+     * whatever it holds on the way back in (lib/nativeSession.js).
+     *
+     * Defaults to false, not true. Android can start this process for the
+     * service alone, with no Activity and no WebView — on that path nothing
+     * would ever call handleOnResume, and a default of true would have the
+     * service deferring to a JS client that does not exist. False means the
+     * service refreshes on its own until an Activity actually resumes, which
+     * is the correct owner in that state.
+     *
+     * volatile because the service reads it from its own thread.
+     */
+    public static volatile boolean appInForeground = false;
+
+    @Override
+    public void handleOnResume() {
+        super.handleOnResume();
+        appInForeground = true;
+    }
+
+    @Override
+    public void handleOnPause() {
+        super.handleOnPause();
+        appInForeground = false;
+    }
+
+    /**
      * Requests ACCESS_BACKGROUND_LOCATION at runtime.
      *
      * WHY THIS EXISTS: @capacitor/geolocation's requestPermissions() only asks

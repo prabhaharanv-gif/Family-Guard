@@ -74,6 +74,11 @@ public class LocationForegroundService extends Service {
     public static final String KEY_SESSION     = "session_token";
     public static final String KEY_REFRESH     = "refresh_token";
 
+    // How many consecutive 401s to leave to the WebView before renewing anyway.
+    // At a ~95s heartbeat this is a little over three minutes of deferring.
+    private static final int MAX_DEFERRED_AUTH_RETRIES = 2;
+    private static int deferredAuthRetries = 0;
+
     // Quality thresholds — must match JS-side filters in useLocationBroadcast.js
     // Loosened to 100m: Fused indoor fixes (WiFi/cell) are often 20-80m, which
     // the old 50m gate rejected — leaving the pin frozen indoors.
@@ -616,6 +621,26 @@ public class LocationForegroundService extends Service {
         // at whatever position was last captured while the app was open. Instead, refresh
         // the session natively using the stored Supabase refresh token and retry once.
         if (code == 401 || code == 403) {
+            // Refreshing is split by lifecycle, because a Supabase refresh token is
+            // single-use: redeeming one revokes it, so two holders cannot both spend
+            // it. While the Activity is resumed the WebView owns the token and keeps
+            // it fresh, pushing each new pair down via updateSessionToken(). A refresh
+            // from here in that window is what produced "Invalid Refresh Token:
+            // Already Used" on the JS side, which erases the session and drops the
+            // user on the login screen.
+            //
+            // So defer while the app is in front and let the next heartbeat (~95s)
+            // pick up the token JS will have installed by then. deferredAuthRetries
+            // stops that becoming a deadlock: if the WebView is wedged or somehow
+            // never refreshes, fall through and renew anyway rather than let
+            // background tracking die.
+            if (LocationPlugin.appInForeground && deferredAuthRetries < MAX_DEFERRED_AUTH_RETRIES) {
+                deferredAuthRetries++;
+                Log.i(TAG, "⏸️ Push rejected (" + code + ") while app is in front — leaving the refresh to the WebView ("
+                        + deferredAuthRetries + "/" + MAX_DEFERRED_AUTH_RETRIES + ")");
+                return;
+            }
+            deferredAuthRetries = 0;
             Log.w(TAG, "⚠️ Push rejected (" + code + ") — attempting native session refresh");
             if (refreshAccessToken(prefs, supabaseUrl, supabaseKey)) {
                 code = doPush(prefs, supabaseUrl, supabaseKey, familyId, loc, battery, charging, speedKmh);
