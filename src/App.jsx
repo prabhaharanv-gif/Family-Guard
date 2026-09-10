@@ -163,7 +163,13 @@ export default function App() {
         />
       )}
 
-      <SosReliabilitySetup />
+      {/* Only once they are signed in AND in a family.
+          Mounted unconditionally, this met people on the login screen — a
+          brand-new install asking for autostart and overlay permissions before
+          the person had an account, let alone seen what the app does. Nothing
+          it asks for can matter until there is a family to receive an SOS from,
+          and by then the app has earned the question. */}
+      {user && familyId && <SosReliabilitySetup />}
       <BackgroundLocationDisclosure
         open={disclosureOpen}
         onAccept={acceptDisclosure}

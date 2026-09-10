@@ -97,6 +97,15 @@ public class MainActivity extends BridgeActivity {
         setupWebViewMediaPermissions();
         clearWebViewCacheIfAppUpdated();
 
+        // One line of permission truth per launch. On a release build there is no
+        // WebView console and no run-as, so this is the only way to see whether
+        // MIUI is actually letting alerts through — and it is the state support
+        // questions turn on, so it earns its place beyond this session.
+        android.util.Log.i("FamoraSetup",
+            "popupOverLockScreen=" + canPopupOverLockScreen(this)
+            + " (-1=unknown 0=denied 1=allowed)"
+            + " overlay=" + canDrawOverlays(this));
+
         handleSOSIntent(getIntent());
         handleCallIntent(getIntent());
     }
@@ -230,6 +239,65 @@ public class MainActivity extends BridgeActivity {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true;
         try { return android.provider.Settings.canDrawOverlays(ctx); }
         catch (Exception e) { return false; }
+    }
+
+    // ── MIUI's two hidden alert permissions ─────────────────────────────────
+    //
+    // On Xiaomi the toggle that actually decides whether an SOS can put itself
+    // on screen is NOT "Display over other apps" (SYSTEM_ALERT_WINDOW). It is a
+    // pair of MIUI-private AppOps under Settings > Other permissions:
+    //
+    //   10021  OP_BACKGROUND_START_ACTIVITY  "Display pop-up windows while
+    //                                         running in background"
+    //   10020  OP_SHOW_WHEN_LOCKED           "Show on lock screen"
+    //
+    // Granting SYSTEM_ALERT_WINDOW while leaving these off is a state a person
+    // reaches easily — the toggles live on different screens — and it looks like
+    // success from every public API. It is not: verified on the test Redmi with
+    // SYSTEM_ALERT_WINDOW allowed, appops still recorded a fresh
+    // "MIUIOP(10020): ignore; rejectTime" every time an alert tried to appear.
+    //
+    // Neither op has a public constant, so they are read through the @hide
+    // AppOpsManager.checkOpNoThrow(int, int, String) by reflection. That call
+    // can be blocked by non-SDK restrictions on some builds, so the result is
+    // three-valued and the caller is expected to keep its old behaviour on
+    // UNKNOWN rather than treat a failed read as either answer.
+    public static final int MIUI_OP_UNKNOWN = -1;
+    public static final int MIUI_OP_DENIED  =  0;
+    public static final int MIUI_OP_ALLOWED =  1;
+
+    private static final int MIUI_OP_BACKGROUND_START_ACTIVITY = 10021;
+    private static final int MIUI_OP_SHOW_WHEN_LOCKED          = 10020;
+
+    private static int checkMiuiOp(Context ctx, int op) {
+        try {
+            Object aom = ctx.getSystemService(Context.APP_OPS_SERVICE);
+            if (aom == null) return MIUI_OP_UNKNOWN;
+            java.lang.reflect.Method m = android.app.AppOpsManager.class
+                .getMethod("checkOpNoThrow", int.class, int.class, String.class);
+            Object r = m.invoke(aom, op, android.os.Process.myUid(), ctx.getPackageName());
+            if (!(r instanceof Integer)) return MIUI_OP_UNKNOWN;
+            // MODE_ALLOWED is 0. Everything else — IGNORED, ERRORED, DEFAULT —
+            // means the alert will not appear, so all of it reads as denied.
+            return ((Integer) r) == android.app.AppOpsManager.MODE_ALLOWED
+                ? MIUI_OP_ALLOWED : MIUI_OP_DENIED;
+        } catch (Throwable t) {
+            // Blocked by non-SDK restrictions, or not a MIUI build.
+            return MIUI_OP_UNKNOWN;
+        }
+    }
+
+    /**
+     * Can a full-screen alert actually reach the screen on this MIUI device?
+     * Both ops must be allowed; either one off keeps the alert as a banner.
+     */
+    public static int canPopupOverLockScreen(Context ctx) {
+        int bg   = checkMiuiOp(ctx, MIUI_OP_BACKGROUND_START_ACTIVITY);
+        int lock = checkMiuiOp(ctx, MIUI_OP_SHOW_WHEN_LOCKED);
+
+        if (bg == MIUI_OP_UNKNOWN || lock == MIUI_OP_UNKNOWN) return MIUI_OP_UNKNOWN;
+        return (bg == MIUI_OP_ALLOWED && lock == MIUI_OP_ALLOWED)
+            ? MIUI_OP_ALLOWED : MIUI_OP_DENIED;
     }
 
     public static void openOverlaySettings(Context ctx) {
