@@ -7,6 +7,7 @@ import { useLocations } from '../hooks/useLocations'
 import { supabase } from '../lib/supabase'
 import { avatarColor } from '../lib/avatarColor'
 import SmoothMarker from '../components/SmoothMarker'
+import MapCompass from '../components/MapCompass'
 import { useT } from '../i18n'
 import { formatLocationTime } from '../lib/locationTime'
 
@@ -194,6 +195,8 @@ export default function MapPage() {
               </SmoothMarker>
             ))}
         </MapContainer>
+
+        <MapCompass />
 
         {/* Only shown once the user has taken the viewport over, so it never
             competes for attention while the map is already following. */}
