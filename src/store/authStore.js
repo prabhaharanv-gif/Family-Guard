@@ -84,13 +84,29 @@ export const useAuthStore = create((set, get) => ({
       })
 
       // Pick active family: saved preference → joined family → first
+      //
+      // Resolved through allFamilies, not through `data`. The query has no
+      // ORDER BY, so `data` arrives in whatever order Postgres returns the rows
+      // — which is not stable between calls. Both fallbacks below therefore used
+      // to be able to pick a different family on two launches of the same
+      // install, so somebody in more than one family, with nothing saved yet,
+      // could open the app onto either one.
+      //
+      // allFamilies is already sorted (admin first, then alphabetical), so
+      // going through it makes the choice repeatable while keeping the existing
+      // preference: a family they joined wins over one they created, because
+      // the family somebody was invited into is the one they are usually here
+      // for.
       const saved = (typeof localStorage !== 'undefined')
         ? localStorage.getItem('activeFamilyId') : null
 
+      const rowFor = (id) => data.find(m => m.family_id === id)
+      const joined = allFamilies.find(f => f.created_by !== userId)
+
       const membership =
-        (saved && data.find(m => m.family_id === saved)) ||
-        data.find(m => m.families && m.families.created_by !== userId) ||
-        data[0]
+        (saved && rowFor(saved)) ||
+        (joined && rowFor(joined.family_id)) ||
+        rowFor(allFamilies[0].family_id)
 
       set({
         allFamilies,
