@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { App as CapApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import AnchoredMenu from '../components/AnchoredMenu'
@@ -312,6 +314,31 @@ export default function FamilyPage() {
     // Single parallel load — replaces the 5 individual queries that ran on mount
     loadData()
 
+    // ── Why presence also needs a catch-up read ───────────────────────────
+    // Signing in heals itself. The heartbeat repeats every 30s and each beat
+    // carries a last_active that moves past signed_out_at, so a live event lost
+    // on the way here is corrected within half a minute without anyone noticing.
+    //
+    // Signing out fires exactly once, ever. Miss that single UPDATE — the
+    // WebView was backgrounded, which on Android means no realtime is delivered
+    // to it at all; the socket had quietly dropped; the phone was on a dead
+    // network — and nothing later re-derives the stamp, so the member keeps
+    // reading as signed in until somebody pulls to refresh. That asymmetry is
+    // the whole of "the login icon updates itself but the logout one does not".
+    //
+    // So re-read the rows at each moment a missed event could be sitting
+    // unclaimed: when the channel (re)subscribes, and when the app is brought
+    // back to the foreground.
+    let subscribedOnce = false
+    let refreshing = false
+    const refreshMembers = async () => {
+      if (refreshing) return
+      refreshing = true
+      const { data } = await supabase.from('family_members').select('*').eq('family_id', familyId)
+      refreshing = false
+      if (data) setMembers(data)
+    }
+
     const channel = supabase
       .channel(`family-page:${familyId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'join_requests', filter: `family_id=eq.${familyId}` },
@@ -342,11 +369,31 @@ export default function FamilyPage() {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'family_members', filter: `family_id=eq.${familyId}` },
         (payload) => {
           if (payload.new) {
-            setMembers(prev => prev.map(m =>
-              m.user_id === payload.new.user_id
-                ? { ...m, last_active: payload.new.last_active, is_online: payload.new.is_online, avatar_url: payload.new.avatar_url || m.avatar_url, display_name: payload.new.display_name }
-                : m
-            ))
+            setMembers(prev => prev.map(m => {
+              if (m.user_id !== payload.new.user_id) return m
+              // Carry every column presence reads, not just the heartbeat pair.
+              //
+              // signed_out_at and privacy_agreed were missing here, so signing
+              // out only showed up on a reload: the stamp is the one presence
+              // change that arrives as an UPDATE and nothing later re-derives
+              // it. Signing back in looked live purely by luck — the heartbeat
+              // that follows carries last_active, which is enough to move the
+              // comparison in signInState back to 'in'.
+              //
+              // Absent is not the same as null. A payload that omits a column
+              // must leave what we hold alone; one that carries null must be
+              // able to blank it. `??` cannot tell those two apart, so ask.
+              const carry = (key) => (key in payload.new ? payload.new[key] : m[key])
+              return {
+                ...m,
+                last_active: carry('last_active'),
+                is_online: carry('is_online'),
+                signed_out_at: carry('signed_out_at'),
+                privacy_agreed: carry('privacy_agreed'),
+                avatar_url: payload.new.avatar_url || m.avatar_url,
+                display_name: carry('display_name'),
+              }
+            }))
           }
         })
       // Somebody joining or leaving is an INSERT/DELETE, which neither the
@@ -368,6 +415,14 @@ export default function FamilyPage() {
         // this one carries locations, presence and join requests.
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           console.warn('[FamilyPage] realtime subscribe failed:', status, err?.message || '')
+        }
+        // SUBSCRIBED arrives on the first connect and again after every silent
+        // reconnect. The first one has nothing to catch up on — loadData() is
+        // already in flight above — but every later one is closing a gap during
+        // which a sign-out could have gone past unseen.
+        if (status === 'SUBSCRIBED') {
+          if (subscribedOnce) refreshMembers()
+          subscribedOnce = true
         }
       })
 
@@ -394,9 +449,25 @@ export default function FamilyPage() {
         }
       })
 
+    // A backgrounded Android WebView is handed no realtime whatsoever, so a
+    // sign-out that happens while the family list sits behind another app never
+    // reaches the handler above. Both signals are registered because
+    // appStateChange is the one the native shell fires reliably and
+    // visibilitychange is the only one a plain browser has.
+    let resumeHandle
+    if (Capacitor.isNativePlatform()) {
+      resumeHandle = CapApp.addListener('appStateChange', ({ isActive }) => { if (isActive) refreshMembers() })
+    }
+    const onVisible = () => { if (document.visibilityState === 'visible') refreshMembers() }
+    document.addEventListener('visibilitychange', onVisible)
+
     return () => {
       supabase.removeChannel(channel)
       supabase.removeChannel(leaveChannel)
+      document.removeEventListener('visibilitychange', onVisible)
+      // Native addListener resolves to the handle; web returns it directly.
+      resumeHandle?.then?.(h => h.remove())
+      resumeHandle?.remove?.()
     }
   }, [familyId, user])
 

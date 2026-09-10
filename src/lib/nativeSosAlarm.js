@@ -23,8 +23,10 @@ export async function stopNativeSOSAlarm() {
  * Wake the screen and show the full-screen SOS alert via the native service.
  *
  * Used by the Realtime (websocket) path, which reaches the app while it is
- * alive but has no way to turn the display on from JS. Adds no sound — the
- * native service contributes screen-wake, vibration and the visual alert only.
+ * alive but has no way to turn the display on from JS. This is also what makes
+ * the noise: the native service plays the siren on the alarm stream for every
+ * delivery path, which is why useSosAlarm.js keeps its Web Audio beeps for web
+ * only. (An older comment here claimed this call was silent. It was not.)
  */
 export async function triggerNativeSOSAlert({ sender, message, lat, lng } = {}) {
   if (!Capacitor.isNativePlatform()) return

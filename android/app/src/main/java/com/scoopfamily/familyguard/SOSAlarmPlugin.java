@@ -54,10 +54,12 @@ public class SOSAlarmPlugin extends Plugin {
      * screen-wake previously only ran from the FCM push path, so an SOS arriving
      * over the websocket left the display off.
      *
-     * Note this deliberately adds no audio: SOSSirenService's synthesized siren
-     * is disabled and its foreground notification uses the silent sos_popup_v1
-     * channel, so this contributes screen-wake + vibration + the visual alert
-     * only, and cannot reintroduce the duplicate alarm sound.
+     * This DOES sound the siren. It once did not, and the note that used to sit
+     * here saying so outlived the code by long enough to send a volume bug hunt
+     * to the wrong file. SOSSirenService owns the audio on every delivery path;
+     * the duplicate-alarm worry this was guarding against is handled instead by
+     * useSosAlarm.js, which skips its Web Audio beeps on native, and by the
+     * silent sos_popup channel used for the foreground notification.
      */
     @PluginMethod
     public void trigger(PluginCall call) {
@@ -125,7 +127,17 @@ public class SOSAlarmPlugin extends Plugin {
         String oem = isXiaomi ? "xiaomi" : isOppo ? "oppo" : isVivo ? "vivo"
                    : isHuawei ? "huawei" : "other";
 
+        // Whether MIUI will actually let an alert onto the screen. Three-valued:
+        // "popupKnown" false means this ROM would not answer, and the checklist
+        // keeps its previous behaviour rather than guessing from a failed read.
+        int popup = MainActivity.canPopupOverLockScreen(getContext());
+        android.util.Log.i("FamoraSetup", "canPopupOverLockScreen=" + popup
+            + " (-1=unknown 0=denied 1=allowed) overlay="
+            + MainActivity.canDrawOverlays(getContext()));
+
         JSObject ret = new JSObject();
+        ret.put("popupKnown",   popup != MainActivity.MIUI_OP_UNKNOWN);
+        ret.put("popupGranted", popup == MainActivity.MIUI_OP_ALLOWED);
         ret.put("manufacturer", Build.MANUFACTURER);
         ret.put("brand", Build.BRAND);
         ret.put("model", Build.MODEL);

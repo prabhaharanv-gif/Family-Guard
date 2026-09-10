@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase'
 import { startBatteryReporting } from '../hooks/useBattery'
 import { formatLocationTime } from '../lib/locationTime'
 import SmoothMarker, { GLIDE_MS } from '../components/SmoothMarker'
+import MapCompass from '../components/MapCompass'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -592,6 +593,8 @@ export default function MapAllPage() {
             </SmoothMarker>
           ))}
         </MapContainer>
+
+        <MapCompass />
 
         {/* Following chip.
             The first version tracked silently, so there was no way to tell

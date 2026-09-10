@@ -6,6 +6,7 @@ const SOSAlarm  = registerPlugin('SOSAlarm')
 const CallAlarm = registerPlugin('CallAlarm')
 
 const STORAGE_KEY = 'sos_oem_setup_done_v1'
+const VISITED_KEY = 'sos_oem_visited_v1'
 
 /**
  * SosReliabilitySetup
@@ -15,47 +16,100 @@ const STORAGE_KEY = 'sos_oem_setup_done_v1'
  * the user manually enables "Autostart" and "Display pop-up windows while
  * running in background". These live on OEM-specific settings pages.
  *
- * This one-time gate detects those devices and walks the user to the right
- * pages. It stores a flag once completed so it never nags again. It renders
- * nothing on stock Android or once the user has dismissed it.
+ * ── Why this is one checklist and not a wizard ───────────────────────────────
+ * It used to be a step-per-permission flow: a full sheet each for autostart,
+ * pop-ups, overlay and full-screen intents, with Back / "I've done this — Next"
+ * between them. Two problems, both of which put people off granting anything:
  *
- * With one exception, and it is the important one. The pop-up permission is
- * the whole reason this sheet exists and it CANNOT be read — there is no API
- * for it, on any of these OEMs. So completion used to be judged on the two
- * permissions that can be read, and the sheet closed itself and set its
- * never-show-again flag while the unreadable one was still off. The user got a
- * dismissed setup screen and a broken full-screen alert, with nothing
- * connecting the two.
+ *   It looked like a gauntlet. Four sheets of system-permission language, with
+ *   progress dots promising more, is a lot to meet before you have decided the
+ *   app is worth trusting. One short list of switches asks for the same things
+ *   and reads as a small job.
  *
- * The permission cannot be read, but its ABSENCE is observable: when
- * CallRingingService or SOSSirenService starts its alert Activity and the
- * Activity does not appear, that is this permission being refused. The native
- * side records that (KEY_ALERT_BLOCKED) and this sheet reopens on it, with the
- * relevant step first, regardless of having been dismissed before. The next
- * alert that DOES appear clears the flag, so it stops on its own once fixed —
- * it asks when there is evidence of a problem, and never otherwise.
+ *   It asked for the same permission twice. The evidence-led step shown after a
+ *   blocked call and the generic "Allow Pop-up Alerts" step ran the same
+ *   openAppDetails() with the same hint, so someone who had just done as they
+ *   were told was sent back to do it again — which reads as "it didn't work".
+ *   Now there is one row per permission, and the blocked call is a line of
+ *   context above the list rather than a step of its own.
  *
- * Dismissing the sheet clears that flag as well. Not a loophole: the evidence
- * has done its job the moment it has been shown and acted on. Without it the
- * sheet could not be dismissed at all — the blocked check deliberately
- * overrides the never-show-again flag, so someone who granted the permission
- * and came straight back still met the sheet on every foreground, forever,
- * because only an alert arriving later could clear it. A permission that is
- * genuinely still off produces fresh evidence at the next alert.
+ * ── Disappearing on its own ─────────────────────────────────────────────────
+ * Nothing here needs a "Done" tap. evaluate() re-runs on every return to the
+ * app, so a permission granted in Settings is noticed on the way back and the
+ * sheet closes itself.
+ *
+ * That is exact for the two permissions Android will answer for — overlay and
+ * full-screen intents. Autostart and the pop-up permission cannot be read back
+ * on MIUI or ColorOS by any API, so for those "done" means the person opened
+ * that page and came back. That is a guess, and it is deliberately a generous
+ * one: the alternative is a sheet that can never close by itself.
+ *
+ * The guess is safe because it is not the last word. When CallRingingService or
+ * SOSSirenService launches its alert Activity and the Activity does not appear,
+ * that IS the pop-up permission being refused, and the native side records it
+ * (KEY_ALERT_BLOCKED). evaluate() reads that before honouring any stored flag,
+ * clears the optimistic mark on the row it concerns, and reopens the sheet. So
+ * a permission that was never really granted comes back on evidence, and one
+ * that was stays gone. The next alert that does reach the screen clears the
+ * flag, so this stops on its own once the phone is set up.
+ *
+ * Dismissing clears that evidence too — see dismiss().
  */
+
+// Reset only by a process restart, which is exactly the cadence wanted: a
+// verifiably-missing permission is raised once per app start, never repeatedly
+// while someone moves between apps.
+let reopenedThisLaunch = false
+
+const readVisited = () => {
+  try { return JSON.parse(localStorage.getItem(VISITED_KEY) || '{}') } catch { return {} }
+}
+const writeVisited = (v) => {
+  try { localStorage.setItem(VISITED_KEY, JSON.stringify(v)) } catch {}
+}
+
+// ── Row icons ────────────────────────────────────────────────────────────────
+// Drawn rather than emoji: the previous 📵 / 🪟 / 🔓 rendered in whatever the
+// OEM's font decided, sat oddly against the app's own icons, and two of them
+// said the wrong thing — 📵 means "phones prohibited", and a window pane is a
+// poor stand-in for a pop-up alert.
+const Icons = {
+  autostart: <><circle cx="12" cy="12" r="9" /><path d="M10 8.5 L16 12 L10 15.5 Z" /></>,
+  popup:     <><rect x="3" y="4" width="18" height="14" rx="2" /><path d="M8 21h8" /><path d="M8.5 9.5h7v5h-7z" /></>,
+  overlay:   <><rect x="3" y="7" width="12" height="12" rx="2" /><path d="M9 4h10a1 1 0 0 1 1 1v10" /></>,
+  fullscreen:<><path d="M4 9V5a1 1 0 0 1 1-1h4" /><path d="M20 9V5a1 1 0 0 0-1-1h-4" /><path d="M4 15v4a1 1 0 0 0 1 1h4" /><path d="M20 15v4a1 1 0 0 1-1 1h-4" /></>,
+}
+
+function RowIcon({ shape, done }) {
+  if (done) {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+        <circle cx="12" cy="12" r="10" fill="#059669" />
+        <polyline points="7.5 12.4 10.6 15.4 16.5 8.9" fill="none" stroke="#fff"
+                  strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D"
+         strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      {shape}
+    </svg>
+  )
+}
+
 export default function SosReliabilitySetup() {
   const t = useT()
-  const [info, setInfo]       = useState(null)
-  const [visible, setVisible] = useState(false)
-  const [step, setStep]       = useState(0)
+  const [info, setInfo]           = useState(null)
+  const [visible, setVisible]     = useState(false)
   const [overlayOk, setOverlayOk] = useState(true)
+  const [visited, setVisited]     = useState(readVisited)
   // Set by the native side after an alert failed to reach the screen.
   const [alertBlocked, setAlertBlocked] = useState(false)
 
-  // Re-checked on every return to the app, not just at startup: the user
-  // leaves to a system settings page to grant these, so the only moment we
-  // can see the result is when they come back. Without this the setup sheet
-  // stayed on screen even after everything had been granted.
+  // Re-checked on every return to the app, not just at startup: the user leaves
+  // to a system settings page to grant these, so coming back is the only moment
+  // the result can be seen. This is what closes the sheet without a Done tap.
   const evaluate = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return
 
@@ -65,32 +119,82 @@ export default function SosReliabilitySetup() {
     try { blocked = (await CallAlarm.getAlertBlocked())?.blocked === true } catch {}
     setAlertBlocked(blocked)
 
-    if (!blocked) {
-      try { if (localStorage.getItem(STORAGE_KEY) === '1') { setVisible(false); return } } catch {}
+    // Evidence beats the optimistic mark. If an alert was blocked then the
+    // pop-up permission is off no matter who tapped what, so drop that row's
+    // tick and let the list ask again.
+    let marks = readVisited()
+    if (blocked && marks.popup) {
+      marks = { ...marks, popup: false }
+      writeVisited(marks)
     }
+    setVisited(marks)
 
+    let dismissed = false
+    try { dismissed = localStorage.getItem(STORAGE_KEY) === '1' } catch {}
+
+    // The device is asked BEFORE the dismissal flag is honoured, because on MIUI
+    // the pop-up permission is readable and a stored "setup complete" over a
+    // permission Android will say is missing is simply wrong — that is the state
+    // this phone was left in: flag set, alerts still refused.
     let device = null
     try { device = await SOSAlarm.getDeviceInfo() } catch { return }
 
+    // A failed read must not read as "granted".
+    //
+    // This was `canOverlay = (await ...)?.granted !== false` with an empty
+    // catch, so a rejected bridge call or a malformed reply both left it true:
+    // the overlay row would silently drop out of the list and, with the other
+    // rows done, the sheet would close AND write its never-show-again flag over
+    // a permission nobody had checked. On a safety checklist the unknown case
+    // has to fail towards asking, not towards done.
+    //
+    // `overlayKnown` is what carries that. An unknown reading still keeps the
+    // row out of the list — a row nobody can clear would be worse, and
+    // openOverlaySettings() would likely fail for the same reason the read did
+    // — but it withholds the flag, so the next launch asks Android again
+    // instead of trusting a guess forever.
     let canOverlay = true
-    try { canOverlay = (await CallAlarm.canDrawOverlays())?.granted !== false } catch {}
+    let overlayKnown = false
+    try {
+      const res = await CallAlarm.canDrawOverlays()
+      if (typeof res?.granted === 'boolean') { canOverlay = res.granted; overlayKnown = true }
+    } catch { /* left unknown on purpose */ }
 
     setInfo(device)
     setOverlayOk(canOverlay)
 
-    // Autostart and the pop-up permission cannot be read back on MIUI/ColorOS,
-    // so completion is judged on the permissions we CAN verify — PLUS the
-    // absence of a recorded failure, which is the only evidence available about
-    // the ones we cannot. Without that second half this closed itself over a
-    // phone that could not show an alert at all.
-    const fsiOk = device.canUseFullScreenIntent !== false
-    if (fsiOk && canOverlay && !blocked) {
-      try { localStorage.setItem(STORAGE_KEY, '1') } catch {}
+    // Closing without a tap, in both senses: everything is granted, or — when a
+    // blocked alert was recorded on a phone that is not one of the restrictive
+    // OEMs and already holds every permission Android will report on — there is
+    // simply nothing left to ask for. Showing an empty checklist would be worse
+    // than showing nothing, so the evidence is cleared and the sheet stays away.
+    const rows = neededRows(device, canOverlay, marks)
+
+    // A dismissal covers the rows we can only guess at. It does not cover one
+    // Android will answer for: if a verifiable permission is off, the sheet
+    // comes back — once per app start, not on every return to the foreground,
+    // so it states the problem without hounding somebody who tapped Not now.
+    const provableGap = rows.some(r => !r.done && r.verifiable)
+    if (dismissed && !(provableGap && !reopenedThisLaunch)) { setVisible(false); return }
+    if (provableGap) {
+      reopenedThisLaunch = true
+      // Reopening means the stored "complete" is no longer true, so drop it.
+      // Without this the flag stayed set while the sheet was on screen, and the
+      // very next foreground — the one where they return from Settings — took
+      // the branch above and closed the sheet under them, whether or not they
+      // had granted anything.
+      try { localStorage.removeItem(STORAGE_KEY) } catch {}
+    }
+
+    if (rows.length === 0 || rows.every(r => r.done)) {
+      // Only remember "setup complete" when every reading behind it was real.
+      if (overlayKnown) { try { localStorage.setItem(STORAGE_KEY, '1') } catch {} }
+      if (blocked) { try { CallAlarm.clearAlertBlocked() } catch {} }
       setVisible(false)
       return
     }
 
-    if (blocked || device.isRestrictive || !fsiOk || !canOverlay) setVisible(true)
+    setVisible(true)
   }, [])
 
   useEffect(() => {
@@ -110,79 +214,39 @@ export default function SosReliabilitySetup() {
     try { localStorage.setItem(STORAGE_KEY, '1') } catch {}
     setVisible(false)
     // The recorded failure is spent once it has been shown and acted on.
-    //
-    // Clearing it is what makes "Done" and "Skip for now" mean anything here:
-    // evaluate() ignores the never-show-again flag while a failure stands, by
-    // design, so leaving the native flag set turned this sheet into something
-    // the user could not dismiss at all — it came back on every foreground,
-    // for good, because only a later alert that DID reach the screen could
-    // clear it. If the permission is still off, the next blocked alert records
-    // it again and the sheet returns on fresh evidence.
+    // Leaving it set would make this sheet undismissable: evaluate() ignores the
+    // never-show-again flag while a failure stands, by design, so it would come
+    // back on every foreground for good. If the permission really is still off,
+    // the next blocked alert records it again and the sheet returns on that.
     setAlertBlocked(false)
     try { CallAlarm.clearAlertBlocked() } catch {}
   }
 
-  const openAutostart = () => { try { SOSAlarm.openAutostartSettings() } catch {} }
-  const openAppDetails = () => { try { SOSAlarm.openAppDetailsSettings() } catch {} }
-  const openFsi = () => { try { SOSAlarm.openFullScreenIntentSettings() } catch {} }
-  const openOverlay = () => { try { CallAlarm.openOverlaySettings() } catch {} }
+  // Marked as we leave, not on return, because the unverifiable rows have
+  // nothing to read on the way back — see the note at the top of the file.
+  // Where a row IS verifiable (the MIUI pop-up ops, the overlay), the mark is
+  // irrelevant: neededRows reads the permission itself and ignores it.
+  const markVisited = (...keys) => {
+    const next = { ...visited }
+    keys.forEach(k => { next[k] = true })
+    writeVisited(next)
+    setVisited(next)
+  }
 
-  const oemLabel = {
-    xiaomi: 'Xiaomi / Redmi / POCO',
-    oppo:   'OPPO / Realme',
-    vivo:   'Vivo',
-    huawei: 'Huawei / Honor',
-    other:  'your device',
-  }[info.oem] || 'your device'
+  // The OEM permissions page: pop-up in background, show on lock screen, and
+  // display over other apps all live here, which is why it is the one button.
+  const openAppDetails = () => {
+    markVisited('popup')
+    try { SOSAlarm.openAppDetailsSettings() } catch {}
+  }
 
-  // OEM-specific instruction for the pop-up permission
-  const popupHint = {
-    xiaomi: 'Tap "Other permissions" → turn ON "Display pop-up windows while running in background" and "Show on lock screen".',
-    oppo:   'Enable "Allow floating windows" / "Display pop-up window while running in background".',
-    vivo:   'Enable "Display pop-up window while running in background" and "Show on lock screen".',
-    huawei: 'Enable "Show pop-up windows while running in background".',
-    other:  'Allow "Display over other apps" / "Appear on top".',
-  }[info.oem] || 'Allow "Display over other apps".'
+  const openAutostart = () => {
+    markVisited('autostart')
+    try { SOSAlarm.openAutostartSettings() } catch {}
+  }
 
-  const steps = [
-    // First when there is evidence, because it is the only step we KNOW is
-    // needed — the others are asked on suspicion. Named after what the user
-    // actually saw rather than after the permission, so it connects to the
-    // thing that went wrong on their phone.
-    ...(alertBlocked ? [{
-      title: '📵 A call could not open on your screen',
-      body: `An incoming call arrived but Famora was not allowed to show the answer screen, so it could only appear as a small banner. ${oemLabel} phones block this until it is switched on by hand.`,
-      action: { label: t('reliability.openPermissions'), fn: openAppDetails },
-      hint: popupHint,
-    }] : []),
-    {
-      title: '🔓 Allow Autostart',
-      body: `On ${oemLabel} phones, Famora must be allowed to start on its own so SOS alerts arrive even when the app is closed.`,
-      action: { label: t('reliability.openAutostart'), fn: openAutostart },
-      hint: 'Find Famora in the list and turn it ON, then come back here.',
-    },
-    {
-      title: '🪟 Allow Pop-up Alerts',
-      body: 'Famora needs permission to show the full-screen SOS alert over your lock screen.',
-      action: { label: t('reliability.openPermissions'), fn: openAppDetails },
-      hint: popupHint,
-    },
-    ...(!overlayOk ? [{
-      title: '🔔 Allow Display Over Other Apps',
-      body: 'This lets an incoming call take over the screen while you are using the phone, instead of appearing as a small banner.',
-      action: { label: t('reliability.openSetting'), fn: openOverlay },
-      hint: 'Turn ON "Display over other apps" (also called "Appear on top") for Famora, then come back here.',
-    }] : []),
-    ...(info.canUseFullScreenIntent === false ? [{
-      title: '📲 Allow Full-Screen Alerts',
-      body: 'Your Android version requires granting full-screen notifications for SOS to appear over the lock screen.',
-      action: { label: t('reliability.openFullScreen'), fn: openFsi },
-      hint: 'Turn ON "Allow full screen notifications" for Famora.',
-    }] : []),
-  ]
-
-  const current = steps[step]
-  const isLast  = step === steps.length - 1
+  const rows = buildRows(t, info, overlayOk, visited)
+  const remaining = rows.filter(r => !r.done).length
 
   return (
     <div style={{
@@ -192,87 +256,217 @@ export default function SosReliabilitySetup() {
     }}>
       <div style={{
         width: '100%', maxWidth: 460, background: '#fff',
-        borderRadius: '24px 24px 0 0', padding: '24px 20px 28px',
+        borderRadius: '24px 24px 0 0', padding: '22px 20px 26px',
         boxShadow: '0 -8px 40px rgba(0,0,0,0.25)',
         animation: 'sosSetupUp 0.28s ease',
       }}>
         <style>{`@keyframes sosSetupUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
 
-        {/* Progress dots */}
-        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 18 }}>
-          {steps.map((_, i) => (
-            <div key={i} style={{
-              width: i === step ? 22 : 7, height: 7, borderRadius: 4,
-              background: i === step ? '#8B0D3D' : '#E7DCE2',
-              transition: 'all 0.2s',
-            }} />
+        <div style={{
+          width: 38, height: 4, borderRadius: 2, background: '#ECE0E5',
+          margin: '0 auto 18px',
+        }} />
+
+        {/* Lead with what it buys, not with the word "permission". */}
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#2A0A18', marginBottom: 8, letterSpacing: -0.3 }}>
+          {t('reliability.title')}
+        </div>
+        <p style={{ fontSize: 14, color: '#6B4152', lineHeight: 1.5, marginBottom: alertBlocked ? 14 : 18 }}>
+          {t('reliability.intro', {
+            oem: oemLabel(t, info),
+            switches: remaining === 1
+              ? t('reliability.oneSwitch')
+              : t('reliability.someSwitches', { n: remaining }),
+          })}
+        </p>
+
+        {/* Only when the phone has actually failed to show one — the concrete
+            thing that happened, stated once, instead of a step of its own. */}
+        {alertBlocked && (
+          <div style={{
+            background: '#FEF0F5', border: '1px solid #F5D6E1', borderRadius: 12,
+            padding: '10px 13px', marginBottom: 16, fontSize: 13,
+            color: '#8B0D3D', lineHeight: 1.5, fontWeight: 600,
+          }}>
+            {t('reliability.blocked')}
+          </div>
+        )}
+
+        {/* One list, no per-row buttons.
+            Every toggle below Autostart lives on the same OEM permissions page,
+            so a button per row sent people to different screens for switches
+            sitting side by side. That is how the wrong one kept getting
+            flipped — on this phone an already-granted overlay permission got
+            turned back off while hunting for another. The list says what to
+            switch on; the single button opens the page holding them. */}
+        <div style={{
+          border: '1px solid #ECE0E5', borderRadius: 16, overflow: 'hidden', marginBottom: 16,
+        }}>
+          {rows.map((row, i) => (
+            <div key={row.key} style={{
+              display: 'flex', alignItems: 'flex-start', gap: 11,
+              padding: '12px 14px',
+              borderTop: i === 0 ? 'none' : '1px solid #F3E9ED',
+              background: row.done ? '#F7FBF9' : '#fff',
+            }}>
+              <div style={{ paddingTop: 1 }}><RowIcon shape={row.icon} done={row.done} /></div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 14, fontWeight: 700,
+                  color: row.done ? '#3F7460' : '#2A0A18', marginBottom: 2,
+                }}>
+                  {row.label}
+                </div>
+                <div style={{ fontSize: 12.5, color: '#8A6675', lineHeight: 1.45 }}>
+                  {row.done ? t('reliability.done') : row.sub}
+                </div>
+              </div>
+            </div>
           ))}
         </div>
 
-        <div style={{
-          fontSize: 12, fontWeight: 800, color: '#8B0D3D',
-          letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 8,
-        }}>
-          One-time safety setup
-        </div>
-
-        <div style={{ fontSize: 21, fontWeight: 800, color: '#2A0A18', marginBottom: 10 }}>
-          {current.title}
-        </div>
-
-        <p style={{ fontSize: 14, color: '#4A1226', lineHeight: 1.55, marginBottom: 14 }}>
-          {current.body}
-        </p>
-
-        <div style={{
-          background: '#F8F0F3', border: '1px solid #ECE0E5',
-          borderRadius: 12, padding: '12px 14px', marginBottom: 20,
-          fontSize: 13, color: '#7A5563', lineHeight: 1.5,
-        }}>
-          💡 {current.hint}
-        </div>
-
-        <button onClick={current.action.fn} style={{
-          width: '100%', padding: 15, borderRadius: 14,
-          background: 'linear-gradient(135deg, #8B0D3D, #A5124A)',
+        <button onClick={() => openAppDetails()} style={{
+          width: '100%', padding: 14, borderRadius: 14,
+          background: 'var(--grad-maroon, linear-gradient(135deg,#8B0D3D,#A5124A))',
           border: 'none', color: '#fff', fontWeight: 800, fontSize: 15,
-          fontFamily: 'inherit', cursor: 'pointer', marginBottom: 12,
-          boxShadow: '0 6px 18px rgba(139,13,61,0.32)',
+          fontFamily: 'inherit', cursor: 'pointer',
+          boxShadow: '0 6px 18px rgba(139,13,61,0.28)',
         }}>
-          {current.action.label}
+          {t('reliability.openSettings')}
         </button>
 
-        <div style={{ display: 'flex', gap: 10 }}>
-          {step > 0 && (
-            <button onClick={() => setStep(s => s - 1)} style={{
-              flex: 1, padding: 13, borderRadius: 14, background: '#F8F0F3',
-              border: '1px solid #ECE0E5', color: '#7D5A67', fontWeight: 700,
-              fontFamily: 'inherit', fontSize: 14, cursor: 'pointer',
-            }}>Back</button>
-          )}
-          {!isLast ? (
-            <button onClick={() => setStep(s => s + 1)} style={{
-              flex: 2, padding: 13, borderRadius: 14,
-              background: '#2A0A18', border: 'none', color: '#fff',
-              fontWeight: 700, fontFamily: 'inherit', fontSize: 14, cursor: 'pointer',
-            }}>I've done this — Next</button>
-          ) : (
-            <button onClick={dismiss} style={{
-              flex: 2, padding: 13, borderRadius: 14,
-              background: '#2A0A18', border: 'none', color: '#fff',
-              fontWeight: 700, fontFamily: 'inherit', fontSize: 14, cursor: 'pointer',
-            }}>Done</button>
-          )}
-        </div>
+        {/* Autostart is the one switch that genuinely lives elsewhere — a
+            separate activity in the OEM's security app. It gets a quiet link
+            rather than a second loud button. */}
+        {rows.some(r => r.key === 'autostart' && !r.done) && (
+          <button onClick={() => openAutostart()} style={{
+            width: '100%', marginTop: 10, padding: 9, background: 'none',
+            border: 'none', color: '#8B0D3D', fontSize: 13.5, fontWeight: 700,
+            fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'underline',
+          }}>
+            {t('reliability.openAutostart')}
+          </button>
+        )}
 
+        {/* No "Done": the sheet closes itself when the list is complete. This is
+            only the way out for someone who does not want to do it now. */}
         <button onClick={dismiss} style={{
-          width: '100%', marginTop: 12, padding: 8, background: 'none',
-          border: 'none', color: '#836370', fontSize: 13, fontFamily: 'inherit',
+          width: '100%', padding: 10, background: 'none', border: 'none',
+          color: '#836370', fontSize: 13.5, fontFamily: 'inherit',
           cursor: 'pointer', textDecoration: 'underline',
         }}>
-          Skip for now
+          {t('reliability.notNow')}
         </button>
       </div>
     </div>
   )
 }
+
+function oemLabel(t, info) {
+  return {
+    xiaomi: 'Xiaomi / Redmi / POCO',
+    oppo:   'OPPO / Realme',
+    vivo:   'Vivo',
+    huawei: 'Huawei / Honor',
+  }[info.oem] || t('reliability.someAndroid')
+}
+
+// Which permissions this phone still needs — and nothing user-facing in it.
+//
+// evaluate() decides whether to close the sheet from this list, and keeping it
+// free of translated text is what keeps evaluate() out of the render cycle:
+// useT() hands back a new function identity every render, so a `t` in
+// evaluate's dependency array would rebuild the callback each time and leave
+// its effect adding and removing listeners forever.
+//
+// `verifiable` is the honest part: true means Android answered the question and
+// `done` is a fact; false means nothing can read it back and `done` is only
+// "they went to the page". Nothing in the UI distinguishes the two — to the
+// person granting them it is the same job — but open() and the blocked-alert
+// evidence both depend on knowing which is which.
+function neededRows(info, overlayOk, visited) {
+  const rows = []
+
+  if (info.isRestrictive) {
+    rows.push({ key: 'autostart', verifiable: false, done: visited.autostart === true })
+
+    // On MIUI the pop-up permission IS readable, through two private AppOps —
+    // see MainActivity.canPopupOverLockScreen. Where the ROM answers, this row
+    // stops being a guess: it clears only when the alert can genuinely reach
+    // the screen, and stays put otherwise no matter how many times the settings
+    // page was opened.
+    //
+    // That distinction was not academic. On the test Redmi someone granted
+    // "Display over other apps", which is a different permission on a different
+    // screen; the row marked itself done, the overlay row correctly vanished
+    // because that op really was allowed, and the sheet closed over a phone
+    // that was still refusing every alert — appops recorded a fresh
+    // "MIUIOP(10020): ignore; rejectTime" each time one tried.
+    rows.push(info.popupKnown === true
+      ? { key: 'popup', verifiable: true,  done: info.popupGranted === true }
+      : { key: 'popup', verifiable: false, done: visited.popup === true })
+  }
+
+  // These two are only ever listed while they are off, because Android answers
+  // for them: granting one simply removes it from the list next time round.
+  if (!overlayOk) rows.push({ key: 'overlay', verifiable: true, done: false })
+  if (info.canUseFullScreenIntent === false) rows.push({ key: 'fsi', verifiable: true, done: false })
+
+  return rows
+}
+
+// Presentation for each key. Derived from neededRows rather than repeating its
+// conditions, so the list the sheet shows and the list it closes on cannot
+// drift apart.
+function buildRows(t, info, overlayOk, visited) {
+  const dress = {
+    autostart: {
+      icon: Icons.autostart,
+      label: t('reliability.autostart'),
+      sub: t('reliability.autostartSub'),
+      fn: () => SOSAlarm.openAutostartSettings(),
+    },
+    popup: {
+      icon: Icons.popup,
+      label: t('reliability.popup'),
+      sub: popupHint(info),
+      fn: () => SOSAlarm.openAppDetailsSettings(),
+    },
+    overlay: {
+      icon: Icons.overlay,
+      label: t('reliability.overlay'),
+      sub: t('reliability.overlaySub'),
+      fn: () => CallAlarm.openOverlaySettings(),
+    },
+    fsi: {
+      icon: Icons.fullscreen,
+      label: t('reliability.fullscreen'),
+      sub: t('reliability.fullscreenSub'),
+      fn: () => SOSAlarm.openFullScreenIntentSettings(),
+    },
+  }
+
+  return neededRows(info, overlayOk, visited).map(row => ({ ...row, ...dress[row.key] }))
+}
+
+/* i18n-exempt:start — these are the literal labels on the OEM's own settings
+   screen, quoted so the person can match them by eye. Translating them would
+   describe a toggle whose caption does not say that, which is worse than an
+   English string: MIUI in India overwhelmingly runs in English even where the
+   app is set to another language. The surrounding UI is translated; only the
+   captions being hunted for are not. */
+
+// The wording differs per OEM because the toggle is named differently on each,
+// and a person hunting a settings screen needs the label their phone uses.
+function popupHint(info) {
+  return {
+    // BOTH toggles, because canPopupOverLockScreen requires both ops (10021
+    // and 10020). Naming only one would leave the row unclearable for someone
+    // who did exactly as they were told.
+    xiaomi: 'Other permissions → turn on "Display pop-up windows while running in background" AND "Show on lock screen"',
+    oppo:   'Allow "Display pop-up window while running in background"',
+    vivo:   'Allow "Display pop-up window while running in background"',
+    huawei: 'Allow "Show pop-up windows while running in background"',
+  }[info.oem] || 'Allow "Display over other apps"'
+}
+/* i18n-exempt:end */
