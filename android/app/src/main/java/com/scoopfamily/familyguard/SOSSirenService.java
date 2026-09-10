@@ -45,7 +45,7 @@ public class SOSSirenService extends Service {
 
     // Silent-but-high-importance channel for the heads-up banner.
     // IMPORTANCE_HIGH = shows as peek banner. setSound(null) = no channel melody
-    // (AudioTrack in startSiren() provides the only audio).
+    // (startSiren() provides the only audio, on the alarm stream).
     // v2: was IMPORTANCE_HIGH, which made Android heads-up this notification as
     // a banner. That banner appeared alongside the full-screen alert — the same
     // emergency announced twice. IMPORTANCE_LOW keeps the service's required
@@ -382,6 +382,52 @@ public class SOSSirenService extends Service {
     //  Emergency siren — res/raw/emergency_alert.mp3, falling back to a
     //  synthesized sweep if it cannot be played.
     // ─────────────────────────────────────────────────────────────────────────
+    // Alarm routing for the siren. USAGE_ALARM is what puts the sound on
+    // STREAM_ALARM, which is exempt from silent/vibrate mode and from the media
+    // volume the person most likely turned down.
+    private static android.media.AudioAttributes alarmAttributes() {
+        return new android.media.AudioAttributes.Builder()
+            .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build();
+    }
+
+    /**
+     * Build a looping alarm-stream player, or null if the sound cannot be read.
+     *
+     * The attributes go in through the create() overload, NOT through a
+     * setAudioAttributes() call afterwards, and that distinction is the whole
+     * bug this method exists to prevent:
+     *
+     *   MediaPlayer.create(ctx, res) sets the data source AND prepares the
+     *   player before it returns. Attributes are only read while the player is
+     *   still unprepared, so a later setAudioAttributes() is rejected outright —
+     *   `E/MediaPlayerNative: trying to set audio attributes called in state 8`
+     *   in logcat, with no exception thrown on the Java side to notice. The
+     *   player keeps MediaPlayer's default USAGE_MEDIA and its output is opened
+     *   on STREAM_MUSIC, which adb confirmed as `startOutput() ... stream 3`.
+     *
+     * The consequence was an SOS siren that followed the MEDIA volume: on a
+     * phone turned down to zero — not silenced, just turned down — the alert
+     * arrived, lit the screen, vibrated, and made no sound at all, while
+     * raiseAlarmVolumeForAlert() below dutifully forced an alarm stream that
+     * nothing was playing on to maximum.
+     */
+    private android.media.MediaPlayer buildAlarmPlayer(android.net.Uri uri) {
+        try {
+            AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            int session = (am != null) ? am.generateAudioSessionId() : 0;
+            if (session < 0) session = 0;
+
+            return (uri != null)
+                ? android.media.MediaPlayer.create(this, uri, null, alarmAttributes(), session)
+                : android.media.MediaPlayer.create(this, R.raw.emergency_alert, alarmAttributes(), session);
+        } catch (Exception e) {
+            android.util.Log.w("FamoraSOS", "alarm player build failed: " + e.getMessage());
+            return null;
+        }
+    }
+
     private void startSiren() {
         stopSiren();
 
@@ -390,21 +436,15 @@ public class SOSSirenService extends Service {
         // mode, and unaffected by media or ringer volume.
         try {
             android.net.Uri chosen = RingtonePlugin.getUri(this, RingtonePlugin.KEY_SOS);
-            android.media.MediaPlayer mp = (chosen != null)
-                ? android.media.MediaPlayer.create(this, chosen)
-                : android.media.MediaPlayer.create(this, R.raw.emergency_alert);
+            android.media.MediaPlayer mp = buildAlarmPlayer(chosen);
             if (mp == null && chosen != null) {
                 // A chosen sound can disappear — an SD card removed, a file
                 // deleted, a URI whose permission was revoked. Falling back
                 // rather than going silent.
                 android.util.Log.w("FamoraSOS", "chosen SOS sound unavailable — using bundled default");
-                mp = android.media.MediaPlayer.create(this, R.raw.emergency_alert);
+                mp = buildAlarmPlayer(null);
             }
             if (mp != null) {
-                mp.setAudioAttributes(new android.media.AudioAttributes.Builder()
-                    .setUsage(android.media.AudioAttributes.USAGE_ALARM)
-                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build());
                 mp.setLooping(true);
                 mp.setVolume(1.0f, 1.0f);
                 mp.start();
