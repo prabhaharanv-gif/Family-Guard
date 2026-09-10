@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
-import { useT } from '../i18n'
+import { useT } from '../i18n'
+import AuthLanguagePicker from '../components/AuthLanguagePicker'
 
 // Clean open/closed eye icon — no emoji. `open` = password visible.
 function EyeIcon({ open }) {
@@ -147,6 +148,7 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-page">
+      <AuthLanguagePicker />
       <div className="auth-card" style={{ borderRadius: 28, padding: "28px 28px", maxHeight: "92vh", overflowY: "auto" }}>
         <div className="auth-logo" style={{ background: 'none', boxShadow: 'none', width: 'auto', height: 'auto', marginBottom: 14 }}>
           <div style={{

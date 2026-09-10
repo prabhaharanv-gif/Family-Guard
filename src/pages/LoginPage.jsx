@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useT } from '../i18n'
+import { useT } from '../i18n'
+import AuthLanguagePicker from '../components/AuthLanguagePicker'
 
 function EyeIcon({ open }) {
   return open ? (
@@ -254,6 +255,7 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
+      <AuthLanguagePicker />
       <div className="auth-card" style={{ borderRadius: 28, padding: "40px 32px" }}>
         {/* Brand shield — maroon + gold, no emoji to avoid OS colour override */}
         <div className="auth-logo" style={{ background: 'none', boxShadow: 'none', width: 'auto', height: 'auto', marginBottom: 20 }}>
