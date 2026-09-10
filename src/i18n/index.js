@@ -29,14 +29,23 @@ export const UI_LANGUAGES = [
 
 const LANG_KEY = 'famora_lang'
 
+// The app opens in English until someone chooses otherwise, and the device
+// locale is deliberately not consulted.
+//
+// It used to be: a phone set to Tamil started the app in Tamil. That reads well
+// in a demo and badly in practice. A family shares one app across phones set to
+// different languages, and the person setting up a relative's phone would find
+// the screens in a script they were not expecting, with the language picker
+// itself already translated — hardest to escape exactly when you most need to.
+// Someone who wants Tamil says so once, in Profile, and it sticks from then on.
+//
+// The stored value is the ONLY thing that can move the app off English, and
+// setLang writes it, so "opened it in their chosen language" means precisely
+// "chose it at least once".
 function initialLang() {
   try {
     const saved = localStorage.getItem(LANG_KEY)
     if (saved && UI[saved]) return saved
-    // No explicit choice yet: follow the device. navigator.language is
-    // "ta-IN" on a Tamil phone, so match on the prefix.
-    const device = (navigator.language || '').slice(0, 2).toLowerCase()
-    if (UI[device]) return device
   } catch (e) {}
   return 'en'
 }
