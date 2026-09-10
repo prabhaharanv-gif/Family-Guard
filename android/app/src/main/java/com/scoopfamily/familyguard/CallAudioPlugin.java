@@ -39,6 +39,22 @@ public class CallAudioPlugin extends Plugin {
                 int target = Math.max(am.getStreamVolume(AudioManager.STREAM_VOICE_CALL), (int) (max * 0.8));
                 am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, Math.min(target, max), 0);
             }
+
+            // Point the volume keys at the stream the call is actually on.
+            //
+            // Without this the Activity keeps its default, which is STREAM_MUSIC:
+            // pressing volume-up during a call raises the MEDIA volume, the
+            // on-screen slider says "Media" and runs to maximum, and the voice
+            // stream never moves. That is exactly the report — "very low even
+            // with the volume all the way up" — and no amount of pressing can
+            // fix it, because the keys are attached to the wrong stream.
+            //
+            // Must run on the UI thread: it touches Activity state.
+            final android.app.Activity activity = getActivity();
+            if (activity != null) {
+                activity.runOnUiThread(() ->
+                    activity.setVolumeControlStream(AudioManager.STREAM_VOICE_CALL));
+            }
             call.resolve(new JSObject().put("started", true));
         } catch (Exception e) {
             call.reject("Failed to start call audio routing: " + e.getMessage());
@@ -51,7 +67,20 @@ public class CallAudioPlugin extends Plugin {
         try {
             boolean speakerOn = call.getBoolean("speakerOn", false);
             AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
-            if (am != null) am.setSpeakerphoneOn(speakerOn);
+            if (am != null) {
+                am.setSpeakerphoneOn(speakerOn);
+                // Re-assert the level on the way to the loudspeaker. start()
+                // sets it once, but switching to speaker mid-call is exactly
+                // when a level chosen for the earpiece stops being enough — the
+                // same number of steps is far quieter across a room than held
+                // against an ear.
+                if (speakerOn) {
+                    int max = am.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
+                    int target = Math.max(am.getStreamVolume(AudioManager.STREAM_VOICE_CALL),
+                                          (int) Math.ceil(max * 0.9));
+                    am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, Math.min(target, max), 0);
+                }
+            }
             call.resolve(new JSObject().put("speakerOn", speakerOn));
         } catch (Exception e) {
             call.reject("Failed to set speaker: " + e.getMessage());
@@ -136,6 +165,14 @@ public class CallAudioPlugin extends Plugin {
             if (am != null) {
                 am.setSpeakerphoneOn(false);
                 am.setMode(AudioManager.MODE_NORMAL);
+            }
+
+            // Hand the keys back, or every later volume press outside a call
+            // would still be aimed at the voice stream.
+            final android.app.Activity activity = getActivity();
+            if (activity != null) {
+                activity.runOnUiThread(() ->
+                    activity.setVolumeControlStream(AudioManager.USE_DEFAULT_STREAM_TYPE));
             }
             call.resolve(new JSObject().put("stopped", true));
         } catch (Exception e) {

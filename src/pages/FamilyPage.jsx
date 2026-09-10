@@ -41,6 +41,90 @@ function isOnline(member) {
   return (Date.now() - new Date(member.last_active)) < ONLINE_STALE_MS
 }
 
+// Has this member ever actually signed in?
+//
+// The list mixes two kinds of row. A real member joins through the invite flow
+// and carries their own auth account. A placeholder contact is created by
+// add_family_contact() with `user_id := gen_random_uuid()` — a random id with
+// no account behind it — so the family can be laid out before everyone has
+// installed the app.
+//
+// Both rendered identically as offline, which is the confusion this answers:
+// "Dad is offline" and "Dad never installed it" looked the same.
+//
+// last_active is the signal because only update_member_heartbeat writes it, and
+// that RPC resolves the row from auth.uid() while the app is in the foreground.
+// Nothing else can set it — notably not the background location pushes, which
+// used to and are deliberately kept out of presence (see useHeartbeat).
+//
+// privacy_agreed is accepted too, as a belt-and-braces second witness: it is
+// set when a signed-in member accepts the consent gate. Being generous here is
+// deliberate — telling the family that someone has not set up the app when they
+// have is the worse of the two mistakes.
+function hasSignedIn(member) {
+  return !!member?.last_active || member?.privacy_agreed === true
+}
+
+// Three states, because "has an account" and "is signed in right now" are
+// different questions and the family needs both answered on one line:
+//
+//   'in'     signed in — the app is theirs and they have not signed out
+//   'out'    signed out deliberately, via the button in Profile
+//   'never'  a placeholder contact, added by hand, no account behind it
+//
+// signed_out_at is stamped on sign-out and never cleared; the next heartbeat
+// moves last_active past it, so the comparison flips back on its own when they
+// sign in again. See the 20260910050000 migration.
+//
+// The honest limit: an uninstall, a force-stop, a wiped phone or a session that
+// expired quietly all leave no chance to run anything, so those members keep
+// reading 'in'. Nothing available to the app distinguishes them from someone
+// whose phone is merely off.
+function signInState(member) {
+  if (!hasSignedIn(member)) return 'never'
+  const out = member?.signed_out_at
+  if (!out) return 'in'
+  const last = member?.last_active
+  return (!last || new Date(out) > new Date(last)) ? 'out' : 'in'
+}
+
+// Sits beside the member's name. Each state has its own shape as well as its
+// own colour, so the three still read apart for someone who cannot separate the
+// emerald from the rose:
+//
+//   in     tick
+//   out    door-and-arrow, the usual sign-out mark
+//   never  open ring with a dash
+const SIGN_IN_ICON_STROKE = { in: '#059669', out: '#B01650', never: '#C7B3BC' }
+
+function SignInIcon({ state, label }) {
+  return (
+    <svg
+      width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke={SIGN_IN_ICON_STROKE[state]}
+      strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"
+      style={{ flexShrink: 0, display: 'block' }}
+      role="img" aria-label={label}
+    >
+      <title>{label}</title>
+      {state === 'out' ? (
+        <>
+          <path d="M15 4.5H19a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5h-4" />
+          <polyline points="9.5 8 5.5 12 9.5 16" />
+          <line x1="5.5" y1="12" x2="14.5" y2="12" />
+        </>
+      ) : (
+        <>
+          <circle cx="12" cy="12" r="9.5" />
+          {state === 'in'
+            ? <polyline points="7.8 12.3 10.7 15.2 16.2 9.2" />
+            : <line x1="8.6" y1="12" x2="15.4" y2="12" />}
+        </>
+      )}
+    </svg>
+  )
+}
+
 // Haversine distance in km between two lat/lng points
 function distanceKm(lat1, lng1, lat2, lng2) {
   if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return null
@@ -845,6 +929,7 @@ export default function FamilyPage() {
             // device is still reporting, not that the person has the app open.
             // Using it here is what made a closed app read "Online · Just now".
             const online = isOnline(m) && m.show_online !== false
+            const signState = signInState(m)
             // show_last_seen was written to the database by the privacy toggle
             // and then never read here, so turning it off changed nothing on
             // screen. Mirrors how show_online is handled directly above.
@@ -890,7 +975,15 @@ export default function FamilyPage() {
                   }} />
                 </div>
                 <div className="member-info">
-                  <div className="member-name" style={{ color: '#2A0A18' }}>{nameFor(m)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                    <div className="member-name" style={{ color: '#2A0A18', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nameFor(m)}</div>
+                    <SignInIcon
+                      state={signState}
+                      label={t(signState === 'in' ? 'family.usingApp'
+                        : signState === 'out' ? 'family.signedOut'
+                        : 'family.notSignedIn')}
+                    />
+                  </div>
                   <div className="member-meta" style={{ color: '#836370' }}>
                     {online ? (
                       <span style={{ color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>

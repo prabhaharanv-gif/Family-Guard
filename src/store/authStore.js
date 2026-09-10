@@ -160,6 +160,14 @@ export const useAuthStore = create((set, get) => ({
   },
 
   signOut: async () => {
+    // Before auth.signOut(), not after: the RPC resolves the row from
+    // auth.uid(), which is gone the moment the session is torn down. Failing
+    // to mark is not worth blocking a sign-out over — the family list falls
+    // back to showing them as simply offline, which is what it did before.
+    try {
+      await supabase.rpc('mark_member_signed_out')
+    } catch { /* offline, or the migration has not been applied yet */ }
+
     await supabase.auth.signOut()
     set({ user: null, familyId: null, familyName: null, inviteCode: null, allFamilies: [] })
   },

@@ -302,6 +302,9 @@ export const UI = {
       videoCall: 'Video Call',
       phoneCall: 'Phone Call',
       noNumberSaved: 'No number saved',
+      usingApp: 'Using the app',
+      notSignedIn: 'Not signed in yet',
+      signedOut: 'Signed out',
     },
 
     messages: {
@@ -410,6 +413,12 @@ export const UI = {
       refresh: 'Refresh map',
       recenter: 'Recentre',
       noMembersFound: 'No members found',
+      todayAt: 'Today {time}',
+      yesterdayAt: 'Yesterday {time}',
+      following: 'Following {name}',
+      followPaused: 'Paused - {name}',
+      followResume: 'Resume',
+      followStop: 'Stop following',
     },
 
     alerts: {
@@ -825,6 +834,9 @@ export const UI = {
       videoCall: 'வீடியோ அழைப்பு',
       phoneCall: 'தொலைபேசி அழைப்பு',
       noNumberSaved: 'எண் சேமிக்கப்படவில்லை',
+      usingApp: 'ஆப்பைப் பயன்படுத்துகிறார்',
+      notSignedIn: 'இன்னும் உள்நுழையவில்லை',
+      signedOut: 'வெளியேறினார்',
     },
 
     messages: {
@@ -934,6 +946,12 @@ export const UI = {
       refresh: 'வரைபடத்தைப் புதுப்பி',
       recenter: 'மையப்படுத்து',
       noMembersFound: 'உறுப்பினர்கள் யாரும் இல்லை',
+      todayAt: 'இன்று {time}',
+      yesterdayAt: 'நேற்று {time}',
+      following: '{name} பின்துடர்கிறது',
+      followPaused: 'நிறுத்தப்பட்டது - {name}',
+      followResume: 'தொடர்',
+      followStop: 'பின்தொடர்வதை நிறுத்து',
     },
 
     alerts: {
@@ -1350,6 +1368,9 @@ export const UI = {
       videoCall: 'वीडियो कॉल',
       phoneCall: 'फ़ोन कॉल',
       noNumberSaved: 'कोई नंबर सहेजा नहीं गया',
+      usingApp: 'ऐप का उपयोग कर रहे हैं',
+      notSignedIn: 'अभी साइन इन नहीं किया',
+      signedOut: 'साइन आउट किया',
     },
 
     messages: {
@@ -1458,6 +1479,12 @@ export const UI = {
       refresh: 'मानचित्र रीफ़्रेश करें',
       recenter: 'केंद्र में लाएँ',
       noMembersFound: 'कोई सदस्य नहीं मिला',
+      todayAt: 'आज {time}',
+      yesterdayAt: 'कल {time}',
+      following: '{name} को फ़ॉलो कर रहे हैं',
+      followPaused: 'रुका हुआ - {name}',
+      followResume: 'फिर से शुरू',
+      followStop: 'फ़ॉलो रोकें',
     },
 
     alerts: {
@@ -1875,6 +1902,9 @@ export const UI = {
       videoCall: 'వీడియో కాల్',
       phoneCall: 'ఫోన్ కాల్',
       noNumberSaved: 'నంబర్ సేవ్ కాలేదు',
+      usingApp: 'యాప్‌ను ఉపయోగిస్తున్నారు',
+      notSignedIn: 'ఇంకా సైన్ ఇన్ చేయలేదు',
+      signedOut: 'సైన్ అవుట్ చేసారు',
     },
 
     messages: {
@@ -1983,6 +2013,12 @@ export const UI = {
       refresh: 'మ్యాప్ రిఫ్రెష్ చేయి',
       recenter: 'కేంద్రీకరించు',
       noMembersFound: 'సభ్యులు కనబడలేదు',
+      todayAt: 'ఈరోజు {time}',
+      yesterdayAt: 'నిన్న {time}',
+      following: '{name}ని అనుసరిస్తున్నారు',
+      followPaused: 'ఆగింది - {name}',
+      followResume: 'కొనసాగించు',
+      followStop: 'అనుసరించడం ఆపు',
     },
 
     alerts: {
@@ -2400,6 +2436,9 @@ export const UI = {
       videoCall: 'ವೀಡಿಯೊ ಕರೆ',
       phoneCall: 'ಫೋನ್ ಕರೆ',
       noNumberSaved: 'ಯಾವುದೇ ಸಂಖ್ಯೆ ಉಳಿಸಿಲ್ಲ',
+      usingApp: 'ಆಪ್ ಬಳಸುತ್ತಿದ್ದಾರೆ',
+      notSignedIn: 'ಇನ್ನೂ ಸೈನ್ ಇನ್ ಆಗಿಲ್ಲ',
+      signedOut: 'ಸೈನ್ ಔట್ ಆಗಿದ್ದಾರೆ',
     },
 
     messages: {
@@ -2508,6 +2547,12 @@ export const UI = {
       refresh: 'ನಕ್ಷೆ ರಿಫ್ರೆಶ್ ಮಾಡಿ',
       recenter: 'ಕೇಂದ್ರೀಕರಿಸಿ',
       noMembersFound: 'ಯಾವುದೇ ಸದಸ್ಯರು ಸಿಗಲಿಲ್ಲ',
+      todayAt: 'ಇಂದು {time}',
+      yesterdayAt: 'ನಿನ್ನೆ {time}',
+      following: '{name} ಅವರನ್ನು ಅನುಸರಿಸಲಾಗುತ್ತಿದೆ',
+      followPaused: 'ವಿರಾಮಗೊಂಡಿದೆ - {name}',
+      followResume: 'ಮುಂದುವರಿಸಿ',
+      followStop: 'ಅನುಸರಿಸುವುದನ್ನು ನಿಲ್ಲಿಸಿ',
     },
 
     alerts: {
@@ -2925,6 +2970,9 @@ export const UI = {
       videoCall: 'വീഡിയോ കോൾ',
       phoneCall: 'ഫോൺ കോൾ',
       noNumberSaved: 'നമ്പർ സേവ് ചെയ്തിട്ടില്ല',
+      usingApp: 'ആപ്പ് ഉപയോഗിക്കുന്നു',
+      notSignedIn: 'ഇതുവരെ സൈന് ഇന് ചെയ്തിട്ടില്ല',
+      signedOut: 'സൈന് ഓട്ട് ചെയ്തു',
     },
 
     messages: {
@@ -3033,6 +3081,12 @@ export const UI = {
       refresh: 'മാപ്പ് പുതുക്കുക',
       recenter: 'കേന്ദ്രീകരിക്കുക',
       noMembersFound: 'അംഗങ്ങളെ കണ്ടെത്തിയില്ല',
+      todayAt: 'ഇന്ന് {time}',
+      yesterdayAt: 'ഇന്നലെ {time}',
+      following: '{name} എന്നയാളെ പിന്തുടരുന്നു',
+      followPaused: 'നിര്ത്തി - {name}',
+      followResume: 'തുടരുക',
+      followStop: 'പിന്തുടരൽ നിർത്തുക',
     },
 
     alerts: {

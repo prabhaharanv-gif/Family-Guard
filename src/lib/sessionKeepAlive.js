@@ -37,6 +37,41 @@ let initialised = false
 // Refresh when the token has less than this long left (or is already expired).
 const REFRESH_THRESHOLD_MS = 5 * 60 * 1000
 
+// Who is allowed to spend the refresh token right now.
+//
+// Supabase refresh tokens are single-use: redeeming one issues a replacement
+// and revokes it. Two holders therefore cannot both refresh — whoever goes
+// second is told "Invalid Refresh Token: Already Used", and supabase-js treats
+// that as unrecoverable and erases the session.
+//
+// This app has exactly two holders: the WebView, and LocationForegroundService,
+// which keeps its own copy in SharedPreferences so it can post locations with
+// the app closed. So refreshing is split by lifecycle rather than shared:
+//
+//   foreground → JS owns it. Timers run, so the token never reaches expiry and
+//                the service never sees a 401 to react to.
+//   background → the service owns it. JS must not touch the token; on the way
+//                back in it adopts whatever the service now holds.
+//
+// The comment that used to sit on the periodic timer assumed Android freezes
+// JS timers while backgrounded, so no gate was needed. That is not true here:
+// the foreground location service keeps the process alive, and the WebView
+// keeps ticking with it. Traced on a Redmi (Android 12) — backgrounded at
+// 13:19:26, the periodic refresh fired anyway at 13:20:55 and lost the race.
+let appActive = true
+let periodicTimer = null
+
+function startPeriodic() {
+  if (periodicTimer) return
+  periodicTimer = setInterval(() => { ensureFreshSession('periodic') }, 5 * 60 * 1000)
+}
+
+function stopPeriodic() {
+  if (!periodicTimer) return
+  clearInterval(periodicTimer)
+  periodicTimer = null
+}
+
 /**
  * Refresh the access token if it is expired or close to it.
  * Safe to call as often as you like — it no-ops when the token is healthy.
@@ -58,6 +93,15 @@ export async function ensureFreshSession(reason = 'unknown') {
 
     if (msLeft > REFRESH_THRESHOLD_MS) {
       authLog('token-healthy', { reason, ...describeSession(session) })
+      return session
+    }
+
+    // Backgrounded: the service owns the token. Spending it here is what
+    // revokes the copy the service is about to use — and vice versa. Report
+    // the state and leave it alone; the resume path adopts what the service
+    // ends up holding.
+    if (!appActive) {
+      authLog('refresh-deferred-background', { reason, ...describeSession(session) })
       return session
     }
 
@@ -105,14 +149,20 @@ export function initSessionKeepAlive() {
     App.addListener('appStateChange', async ({ isActive }) => {
       authLog(isActive ? 'app-foreground' : 'app-background')
       if (isActive) {
-        // Adopt first: while we slept the service may have renewed the session,
-        // which revoked our copy. Refreshing with the stale one would fail and
-        // erase it.
+        // Order matters. Take ownership back only after adopting, so nothing
+        // here can spend a token the service has already replaced.
         await adoptNativeSession('app-resumed')
+        appActive = true
         await ensureFreshSession('app-resumed')
-        // Restart the library's own ticker — it was frozen while backgrounded.
+        // Restart the tickers — ours was stopped, and the library's is
+        // unreliable while the Activity is paused.
         supabase.auth.startAutoRefresh()
+        startPeriodic()
       } else {
+        // Hand ownership to the service before stopping anything, so a timer
+        // already in flight sees the flag and defers.
+        appActive = false
+        stopPeriodic()
         supabase.auth.stopAutoRefresh()
       }
     })
@@ -129,11 +179,15 @@ export function initSessionKeepAlive() {
   }
 
   // ── Belt and braces ──
-  // A foreground timer that checks every 5 minutes. On native this is frozen
-  // while backgrounded (which is fine — appStateChange covers that case), but
-  // it catches the app being left open and idle for hours, where the WebView
-  // may throttle the library's 30s ticker without pausing the Activity.
-  setInterval(() => { ensureFreshSession('periodic') }, 5 * 60 * 1000)
+  // A foreground timer that checks every 5 minutes, for the app being left
+  // open and idle for hours, where the WebView may throttle the library's 30s
+  // ticker without pausing the Activity.
+  //
+  // It is stopped on background rather than left to Android: this process
+  // hosts a foreground service, so its timers keep running when the Activity
+  // pauses, and a tick that lands while backgrounded spends a token the
+  // location service is relying on.
+  startPeriodic()
 
   // And once immediately, for the case where the app was launched from cold
   // with a session that expired while it was closed.

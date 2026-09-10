@@ -861,7 +861,10 @@ export default function MessagesPage() {
             flex: 1, padding: '12px 14px', borderRadius: 24,
             border: '1.5px solid var(--border)', fontSize: 14,
             fontFamily: 'inherit', resize: 'none', outline: 'none',
-            background: 'var(--bg)', maxHeight: 100,
+            // --surface3, not --bg: --bg is the cream the page already sits on,
+            // so the field disappeared into the bar around it. This is the same
+            // fill .input uses everywhere else, including the Personal tab.
+            background: 'var(--surface3)', maxHeight: 100,
           }}
         />
         {/* The microphone stands down while there is something to send, so

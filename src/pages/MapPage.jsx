@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase'
 import { avatarColor } from '../lib/avatarColor'
 import SmoothMarker from '../components/SmoothMarker'
 import { useT } from '../i18n'
+import { formatLocationTime } from '../lib/locationTime'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -140,7 +141,7 @@ export default function MapPage() {
                     <div>
                       <div style={{ fontWeight: 800, fontSize: 14, color: '#2A0A18' }}>{member?.display_name}</div>
                       <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
-                        🕐 {new Date(targetLoc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        🕐 {formatLocationTime(t, targetLoc.updatedAt)}
                       </div>
                     </div>
                   </div>
@@ -176,7 +177,7 @@ export default function MapPage() {
                       <div>
                         <div style={{ fontWeight: 800, fontSize: 14, color: '#2A0A18' }}>{loc.displayName}</div>
                         <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
-                          🕐 {new Date(loc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          🕐 {formatLocationTime(t, loc.updatedAt)}
                         </div>
                       </div>
                     </div>
@@ -244,7 +245,7 @@ export default function MapPage() {
           <div style={{ fontWeight: 700, fontSize: 15 }}>{member?.display_name || 'Loading...'}</div>
           <div style={{ fontSize: 12, color: '#7D5A67', marginTop: 2 }}>
             {targetLoc
-              ? `📍 Updated ${new Date(targetLoc.updatedAt).toLocaleTimeString()}`
+              ? `📍 Updated ${formatLocationTime(t, targetLoc.updatedAt)}`
               : '⚠️ Location not shared yet — allow location access'}
           </div>
         </div>

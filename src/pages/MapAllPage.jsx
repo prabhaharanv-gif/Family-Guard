@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { Geolocation } from '@capacitor/geolocation'
@@ -7,7 +7,8 @@ import { useT } from '../i18n'
 import { useLocations } from '../hooks/useLocations'
 import { supabase } from '../lib/supabase'
 import { startBatteryReporting } from '../hooks/useBattery'
-import SmoothMarker from '../components/SmoothMarker'
+import { formatLocationTime } from '../lib/locationTime'
+import SmoothMarker, { GLIDE_MS } from '../components/SmoothMarker'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -128,6 +129,85 @@ function FlyToMember({ target }) {
   return null
 }
 
+/**
+ * Keeps a chosen member on screen while they move.
+ *
+ * FlyToMember above is a one-shot: it takes the coordinates the member had at
+ * the moment they were tapped and flies there. That is right for finding
+ * someone and wrong for watching them — a member in a car leaves the viewport
+ * within a minute and has to be chased by hand.
+ *
+ * This pans instead, and only once they approach an edge. Re-centring on every
+ * fix would fight the user: a phone standing still wanders a few metres and the
+ * map would twitch continuously. panTo also keeps whatever zoom was chosen,
+ * where flyTo would snap it back.
+ *
+ * Deliberately close to FollowTarget in MapPage, which does the same job for the
+ * single-member screen. Not shared with it: that one also owns the first-fix
+ * centring and its own zoom, and the two differ enough that one component
+ * taking both sets of options would be harder to follow than the repetition.
+ */
+function FollowMember({ loc, following, onUserPanned }) {
+  const map = useMap()
+  // Whether following has already framed this member. Following engages in the
+  // same instant FlyToMember starts its zoom, and without this the recovery
+  // branch below fired immediately — the member is off screen at the map's
+  // resting zoom — and hard-set the view at the OLD zoom, cancelling the fly.
+  // Tapping a row then jumped to them without zooming in at all.
+  //
+  // So the first run after engaging is skipped: framing belongs to
+  // FlyToMember, and following only takes over once they actually move.
+  const framedRef = useRef(false)
+
+  // Dragging pauses rather than cancels, and the chip above the map says so —
+  // the first version cancelled silently on any drag, which on a touch map is
+  // constant, so following appeared never to work at all.
+  //
+  // Leaflet's own panTo and flyTo fire movestart, not dragstart, so the map
+  // following a member cannot pause itself.
+  useEffect(() => {
+    const pause = () => onUserPanned()
+    map.on('dragstart', pause)
+    return () => { map.off('dragstart', pause) }
+  }, [map, onUserPanned])
+
+  // Keeps them centred rather than nudging only once they near an edge. Edge
+  // nudging was the first attempt and it reads as broken: the marker drifts
+  // most of the way across the screen before anything happens, and at high zoom
+  // it can leave the viewport between two fixes and never come back.
+  //
+  // Centring is safe here precisely because positions are not continuous: the
+  // service only pushes after 15m of movement or a 90s heartbeat, so there is
+  // no GPS jitter to chase and the map moves in the same deliberate steps the
+  // marker does.
+  useEffect(() => {
+    if (!following) { framedRef.current = false; return }
+    if (!loc?.lat || !loc?.lng) return
+    if (!framedRef.current) { framedRef.current = true; return }
+
+    // If the marker is already off screen the animation cannot rescue it —
+    // panning takes GLIDE_MS, by which time another fix has usually arrived and
+    // restarted the whole thing. Jump straight there instead, then resume
+    // gliding. This is the safety net for a corner taken at speed, where the
+    // marker can leave the viewport between two fixes.
+    const p    = map.latLngToContainerPoint([loc.lat, loc.lng])
+    const size = map.getSize()
+    const offScreen = p.x < 0 || p.y < 0 || p.x > size.x || p.y > size.y
+    if (offScreen) {
+      map.setView([loc.lat, loc.lng], map.getZoom(), { animate: false })
+      return
+    }
+
+    // Matched to the marker's own glide so the two move as one. Any shorter and
+    // the map arrives first, leaving the marker trailing the centre by the
+    // difference — which at speed is tens of metres, and off screen when
+    // zoomed in.
+    map.panTo([loc.lat, loc.lng], { animate: true, duration: GLIDE_MS / 1000 })
+  }, [loc?.lat, loc?.lng, following, map])
+
+  return null
+}
+
 function FitAll({ locations }) {
   const map = useMap()
   const hasFit = useRef(false)
@@ -229,6 +309,16 @@ export default function MapAllPage() {
   const [refreshing, setRefreshing]   = useState(false)
   const [showFindFam, setShowFindFam] = useState(false)
   const [flyTarget, setFlyTarget]     = useState(null)  // { lat, lng } to fly to
+  // Whose marker to keep on screen. A uid rather than coordinates: the point is
+  // to track wherever they are now, not where they were when the row was tapped.
+  const [followUid, setFollowUid]       = useState(null)
+  // Dragging the map pauses following instead of ending it. Looking around
+  // should not silently undo the thing you asked for, and the chip over the map
+  // offers it straight back.
+  const [followPaused, setFollowPaused] = useState(false)
+  const pauseFollowing = useCallback(() => setFollowPaused(true), [])
+  const stopFollowing  = useCallback(() => { setFollowUid(null); setFollowPaused(false) }, [])
+  const startFollowing = useCallback(uid => { setFollowUid(uid); setFollowPaused(false) }, [])
   // null   = not yet tried (no banner)
   // 'perm' = permission denied
   // 'fail' = GPS failed AND no locations in DB yet (only show if map is empty)
@@ -423,7 +513,7 @@ export default function MapAllPage() {
       )}
 
       {/* Map */}
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
         <MapContainer
           center={[11.0168, 76.9558]}
           zoom={13}
@@ -436,6 +526,11 @@ export default function MapAllPage() {
 
           <FitAll locations={locations} />
           <FlyToMember target={flyTarget} />
+          <FollowMember
+            loc={followUid ? locations[followUid] : null}
+            following={!!followUid && !followPaused}
+            onUserPanned={pauseFollowing}
+          />
 
           {Object.entries(offsetOverlapping(locations)).map(([uid, loc]) => (
             <SmoothMarker
@@ -469,7 +564,7 @@ export default function MapAllPage() {
                     <div>
                       <div style={{ fontWeight: 800, fontSize: 14, color: '#2A0A18' }}>{loc.displayName}</div>
                       <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
-                        Last Loc Time · {new Date(loc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        Last Loc Time · {formatLocationTime(t, loc.updatedAt)}
                       </div>
                       {/* Stale warning — if location is older than 15 minutes */}
                       {(Date.now() - new Date(loc.updatedAt)) > 15 * 60 * 1000 && (
@@ -497,6 +592,50 @@ export default function MapAllPage() {
             </SmoothMarker>
           ))}
         </MapContainer>
+
+        {/* Following chip.
+            The first version tracked silently, so there was no way to tell
+            "following is on" from "following is broken" — and a stray drag
+            turned it off with nothing on screen to say so. This states which
+            member is being followed, says when a drag has paused it, and offers
+            it back in one tap without reopening Find Fam. */}
+        {followUid && locations[followUid] && (
+          <div style={{
+            position: 'absolute', left: '50%', bottom: 18, transform: 'translateX(-50%)',
+            zIndex: 1000, display: 'flex', alignItems: 'center', gap: 8,
+            background: followPaused ? '#FFFFFF' : 'var(--grad-maroon)',
+            color: followPaused ? 'var(--text)' : '#fff',
+            border: followPaused ? '1.5px solid var(--border2)' : 'none',
+            borderRadius: 999, padding: '8px 8px 8px 14px',
+            boxShadow: '0 6px 20px rgba(74,8,32,0.28)',
+            fontSize: 12.5, fontWeight: 700, maxWidth: '86%',
+          }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {followPaused
+                ? t('map.followPaused', { name: locations[followUid].displayName })
+                : t('map.following',    { name: locations[followUid].displayName })}
+            </span>
+            {followPaused && (
+              <button
+                onClick={() => startFollowing(followUid)}
+                style={{
+                  background: 'var(--grad-maroon)', color: '#fff', border: 'none',
+                  borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: 800,
+                  fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0,
+                }}>{t('map.followResume')}</button>
+            )}
+            <button
+              onClick={stopFollowing}
+              aria-label={t('map.followStop')}
+              style={{
+                background: followPaused ? 'var(--surface3)' : 'rgba(255,255,255,0.22)',
+                color: followPaused ? 'var(--text2)' : '#fff',
+                border: 'none', borderRadius: '50%', width: 24, height: 24,
+                fontSize: 14, lineHeight: '24px', fontFamily: 'inherit',
+                cursor: 'pointer', flexShrink: 0, padding: 0,
+              }}>x</button>
+          </div>
+        )}
       </div>
 
       {/* Find Fam popup */}
@@ -543,6 +682,7 @@ export default function MapAllPage() {
                     key={uid}
                     onClick={() => {
                       setFlyTarget({ lat: loc.lat, lng: loc.lng })
+                      startFollowing(uid)
                       setShowFindFam(false)
                     }}
                     style={{
@@ -589,7 +729,7 @@ export default function MapAllPage() {
                         })()}
                       </div>
                       <div style={{ fontSize: 11, color: stale ? '#D97706' : '#9C6B7A' }}>
-                        {stale ? '⚠️ ' : ''}Last Loc Time · {new Date(loc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {stale ? '⚠️ ' : ''}Last Loc Time · {formatLocationTime(t, loc.updatedAt)}
                       </div>
                     </div>
                     {/* Arrow */}
