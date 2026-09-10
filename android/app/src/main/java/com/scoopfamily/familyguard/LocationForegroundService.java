@@ -115,6 +115,20 @@ public class LocationForegroundService extends Service {
 
     // Last successfully pushed location — for distance gate
     private Location lastPushedLocation = null;
+
+    // The same fix, reachable without a handle on the service instance, so the
+    // power-button gesture can attach a position to an SOS raised while the app
+    // is closed. Kept deliberately separate from lastPushedLocation rather than
+    // made static: that field is instance state the push logic mutates, and an
+    // SOS only ever reads.
+    private static volatile Location lastKnownForSos = null;
+
+    /** Most recent accepted fix, or null before the first one. */
+    static Location getLastKnownLocation() { return lastKnownForSos; }
+
+    // Watches for three power presses; see PowerButtonSosReceiver. Not the same
+    // thing as powerReceiver below, which is about the charger.
+    private PowerButtonSosReceiver sosGestureReceiver;
     // Timestamp of the last push — used for the stationary heartbeat
     private long lastPushTime = 0L;
     // An implausibly-fast fix awaiting a second fix to confirm it isn't a GPS jump
@@ -130,6 +144,7 @@ public class LocationForegroundService extends Service {
         ensureChannel(this);
         registerLocationToggleReceiver();
         registerPowerReceiver();
+        registerSosGestureReceiver();
     }
 
     // ── Location services on/off reporting ───────────────────────────────────
@@ -172,6 +187,29 @@ public class LocationForegroundService extends Service {
             registerReceiver(powerReceiver, f);
         } catch (Exception e) {
             Log.w(TAG, "Could not register power receiver: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Three power presses raise an SOS with the app closed.
+     *
+     * ACTION_SCREEN_ON / _OFF are the only trace of the power button an app can
+     * see — Android never delivers KEYCODE_POWER — and they are among the
+     * broadcasts that must be registered from running code rather than the
+     * manifest. This service is the only thing guaranteed to be alive while the
+     * app is closed, which is why the gesture lives here and why it stops
+     * working if location sharing is switched off.
+     */
+    private void registerSosGestureReceiver() {
+        try {
+            sosGestureReceiver = new PowerButtonSosReceiver();
+            android.content.IntentFilter f = new android.content.IntentFilter();
+            f.addAction(Intent.ACTION_SCREEN_ON);
+            f.addAction(Intent.ACTION_SCREEN_OFF);
+            registerReceiver(sosGestureReceiver, f);
+            Log.i(TAG, "Power-button SOS gesture armed");
+        } catch (Exception e) {
+            Log.w(TAG, "Could not register SOS gesture receiver: " + e.getMessage());
         }
     }
 
@@ -366,6 +404,12 @@ public class LocationForegroundService extends Service {
                 powerReceiver = null;
             }
         } catch (Exception e) { /* ignore */ }
+        try {
+            if (sosGestureReceiver != null) {
+                unregisterReceiver(sosGestureReceiver);
+                sosGestureReceiver = null;
+            }
+        } catch (Exception e) { /* ignore */ }
         if (executor != null) executor.shutdownNow();
         Log.i(TAG, "Location foreground service stopped");
     }
@@ -558,6 +602,7 @@ public class LocationForegroundService extends Service {
             (lastPushedLocation != null ? lastPushedLocation.distanceTo(loc) + "m" : "first fix"));
 
         lastPushedLocation = loc;
+        lastKnownForSos    = loc;
         lastPushTime = System.currentTimeMillis();
         executor.submit(() -> pushLocation(loc));
     }

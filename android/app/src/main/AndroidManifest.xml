@@ -90,6 +90,19 @@
         <!-- ── Boot receiver — restarts location service after device reboot ──
              Without this, background tracking stops permanently on reboot until
              the user manually reopens the app. -->
+        <!--
+            Handles the Cancel action on the "SOS sent" notification. Declared
+            rather than registered at runtime because it must still be reachable
+            when nothing of ours is running — the notification outlives the
+            thread that posted it.
+
+            exported="false": only our own PendingIntent may fire this. Nothing
+            else on the device should be able to withdraw a member's SOS.
+        -->
+        <receiver
+            android:name=".SosCancelReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".BootReceiver"
             android:exported="true"
