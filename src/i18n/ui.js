@@ -302,6 +302,9 @@ export const UI = {
       videoCall: 'Video Call',
       phoneCall: 'Phone Call',
       noNumberSaved: 'No number saved',
+      usingApp: 'Using the app',
+      notSignedIn: 'Not signed in yet',
+      signedOut: 'Signed out',
     },
 
     messages: {
@@ -827,6 +830,9 @@ export const UI = {
       videoCall: 'வீடியோ அழைப்பு',
       phoneCall: 'தொலைபேசி அழைப்பு',
       noNumberSaved: 'எண் சேமிக்கப்படவில்லை',
+      usingApp: 'ஆப்பைப் பயன்படுத்துகிறார்',
+      notSignedIn: 'இன்னும் உள்நுழையவில்லை',
+      signedOut: 'வெளியேறினார்',
     },
 
     messages: {
@@ -1354,6 +1360,9 @@ export const UI = {
       videoCall: 'वीडियो कॉल',
       phoneCall: 'फ़ोन कॉल',
       noNumberSaved: 'कोई नंबर सहेजा नहीं गया',
+      usingApp: 'ऐप का उपयोग कर रहे हैं',
+      notSignedIn: 'अभी साइन इन नहीं किया',
+      signedOut: 'साइन आउट किया',
     },
 
     messages: {
@@ -1881,6 +1890,9 @@ export const UI = {
       videoCall: 'వీడియో కాల్',
       phoneCall: 'ఫోన్ కాల్',
       noNumberSaved: 'నంబర్ సేవ్ కాలేదు',
+      usingApp: 'యాప్‌ను ఉపయోగిస్తున్నారు',
+      notSignedIn: 'ఇంకా సైన్ ఇన్ చేయలేదు',
+      signedOut: 'సైన్ అవుట్ చేసారు',
     },
 
     messages: {
@@ -2408,6 +2420,9 @@ export const UI = {
       videoCall: 'ವೀಡಿಯೊ ಕರೆ',
       phoneCall: 'ಫೋನ್ ಕರೆ',
       noNumberSaved: 'ಯಾವುದೇ ಸಂಖ್ಯೆ ಉಳಿಸಿಲ್ಲ',
+      usingApp: 'ಆಪ್ ಬಳಸುತ್ತಿದ್ದಾರೆ',
+      notSignedIn: 'ಇನ್ನೂ ಸೈನ್ ಇನ್ ಆಗಿಲ್ಲ',
+      signedOut: 'ಸೈನ್ ಔట್ ಆಗಿದ್ದಾರೆ',
     },
 
     messages: {
@@ -2935,6 +2950,9 @@ export const UI = {
       videoCall: 'വീഡിയോ കോൾ',
       phoneCall: 'ഫോൺ കോൾ',
       noNumberSaved: 'നമ്പർ സേവ് ചെയ്തിട്ടില്ല',
+      usingApp: 'ആപ്പ് ഉപയോഗിക്കുന്നു',
+      notSignedIn: 'ഇതുവരെ സൈന് ഇന് ചെയ്തിട്ടില്ല',
+      signedOut: 'സൈന് ഓട്ട് ചെയ്തു',
     },
 
     messages: {
