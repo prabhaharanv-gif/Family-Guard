@@ -415,6 +415,10 @@ export const UI = {
       noMembersFound: 'No members found',
       todayAt: 'Today {time}',
       yesterdayAt: 'Yesterday {time}',
+      following: 'Following {name}',
+      followPaused: 'Paused - {name}',
+      followResume: 'Resume',
+      followStop: 'Stop following',
     },
 
     alerts: {
@@ -944,6 +948,10 @@ export const UI = {
       noMembersFound: 'உறுப்பினர்கள் யாரும் இல்லை',
       todayAt: 'இன்று {time}',
       yesterdayAt: 'நேற்று {time}',
+      following: '{name} பின்துடர்கிறது',
+      followPaused: 'நிறுத்தப்பட்டது - {name}',
+      followResume: 'தொடர்',
+      followStop: 'பின்தொடர்வதை நிறுத்து',
     },
 
     alerts: {
@@ -1473,6 +1481,10 @@ export const UI = {
       noMembersFound: 'कोई सदस्य नहीं मिला',
       todayAt: 'आज {time}',
       yesterdayAt: 'कल {time}',
+      following: '{name} को फ़ॉलो कर रहे हैं',
+      followPaused: 'रुका हुआ - {name}',
+      followResume: 'फिर से शुरू',
+      followStop: 'फ़ॉलो रोकें',
     },
 
     alerts: {
@@ -2003,6 +2015,10 @@ export const UI = {
       noMembersFound: 'సభ్యులు కనబడలేదు',
       todayAt: 'ఈరోజు {time}',
       yesterdayAt: 'నిన్న {time}',
+      following: '{name}ని అనుసరిస్తున్నారు',
+      followPaused: 'ఆగింది - {name}',
+      followResume: 'కొనసాగించు',
+      followStop: 'అనుసరించడం ఆపు',
     },
 
     alerts: {
@@ -2533,6 +2549,10 @@ export const UI = {
       noMembersFound: 'ಯಾವುದೇ ಸದಸ್ಯರು ಸಿಗಲಿಲ್ಲ',
       todayAt: 'ಇಂದು {time}',
       yesterdayAt: 'ನಿನ್ನೆ {time}',
+      following: '{name} ಅವರನ್ನು ಅನುಸರಿಸಲಾಗುತ್ತಿದೆ',
+      followPaused: 'ವಿರಾಮಗೊಂಡಿದೆ - {name}',
+      followResume: 'ಮುಂದುವರಿಸಿ',
+      followStop: 'ಅನುಸರಿಸುವುದನ್ನು ನಿಲ್ಲಿಸಿ',
     },
 
     alerts: {
@@ -3063,6 +3083,10 @@ export const UI = {
       noMembersFound: 'അംഗങ്ങളെ കണ്ടെത്തിയില്ല',
       todayAt: 'ഇന്ന് {time}',
       yesterdayAt: 'ഇന്നലെ {time}',
+      following: '{name} എന്നയാളെ പിന്തുടരുന്നു',
+      followPaused: 'നിര്ത്തി - {name}',
+      followResume: 'തുടരുക',
+      followStop: 'പിന്തുടരൽ നിർത്തുക',
     },
 
     alerts: {

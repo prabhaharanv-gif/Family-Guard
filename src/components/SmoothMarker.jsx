@@ -22,8 +22,19 @@ function easeInOutQuad(t) {
  *                          sliding across the whole map (default 3000)
  *   children             — React content rendered inside the popup
  */
+/**
+ * How long a marker takes to glide from its old position to a new one.
+ *
+ * Exported because the map has to move at exactly this speed when it is
+ * following someone. It used to pan in 800ms against this 2000ms glide, so the
+ * map arrived first and the marker spent the remaining 1.2s catching up. On a
+ * straight road that reads as a small lag; on a corner the lag turns sideways
+ * and, zoomed in, the marker leaves the screen entirely.
+ */
+export const GLIDE_MS = 2000
+
 export default function SmoothMarker({
-  position, icon, duration = 2000, snapAbove = 3000, children,
+  position, icon, duration = GLIDE_MS, snapAbove = 3000, children,
 }) {
   const map = useMap()
   const markerRef    = useRef(null)
