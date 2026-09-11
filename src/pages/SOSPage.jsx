@@ -430,7 +430,18 @@ export default function SOSPage() {
   // ── Step 3: "I'm Safe" → resolve latest alert + dismiss sent screen
   const handleSafe = async () => {
     const myLatest = alerts.find(a => a.user_id === user?.id && !a.is_resolved)
-    if (myLatest) await supabase.rpc('resolve_sos', { p_sos_id: myLatest.id })
+    if (myLatest) {
+      const { error } = await supabase.rpc('resolve_sos', { p_sos_id: myLatest.id })
+      // Do not dismiss on failure. The alert is still standing on every other
+      // phone in the family, and telling this user they are safe while their
+      // family is still being called is the one wrong answer this screen can
+      // give. Leaving the sent screen up keeps "I'm Safe" in reach to retry.
+      if (error) {
+        console.error('Resolve SOS error:', error.code || 'unknown')
+        setDialog({ type: 'error', title: t('common.error'), message: t('common.retry') })
+        return
+      }
+    }
     setSentMsg(null)
   }
 

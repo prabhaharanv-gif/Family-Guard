@@ -79,29 +79,12 @@ public class LocationForegroundService extends Service {
     private static final int MAX_DEFERRED_AUTH_RETRIES = 2;
     private static int deferredAuthRetries = 0;
 
-    // Quality thresholds — must match JS-side filters in useLocationBroadcast.js
-    // Loosened to 100m: Fused indoor fixes (WiFi/cell) are often 20-80m, which
-    // the old 50m gate rejected — leaving the pin frozen indoors.
-    private static final float MAX_ACCURACY_M = 100f;  // discard fixes worse than this
-    // Until this device has pushed anything for this family there is no row in
-    // `locations` at all, and the Family list draws the member as if they were
-    // not sharing. Indoors the first fix is routinely worse than 100m, so the
-    // strict gate could keep somebody who had just joined invisible for as long
-    // as they stayed inside. A rough first position beats none; the normal gate
-    // applies from the second push on. Mirrors useLocationBroadcast.js.
-    private static final float FIRST_FIX_ACCURACY_M = 2000f;
-    private static final float MIN_MOVE_M     = 15f;   // only push if moved this far
-
-    // A single bad fix (stale WiFi AP entry, cell-tower fallback, GPS multipath) can
-    // report a "plausible" accuracy while being far off, making the pin teleport and
-    // then snap back on the next good fix. Anything implying faster than this is held
-    // back until a second fix roughly confirms it — real fast travel confirms itself
-    // within one interval; a one-off jump never gets a second matching fix.
-    private static final float MAX_PLAUSIBLE_SPEED_MPS = 55f;  // ~200 km/h
-    private static final float JUMP_CONFIRM_RADIUS_M    = 50f;
-
-    // Push at least this often even when stationary, so the pin stays "live"
-    private static final long HEARTBEAT_MS       = 90_000L;   // 90 seconds
+    // The quality thresholds and the rules that use them now live in
+    // LocationFilter, which is plain Java and unit tested (LocationFilterTest).
+    // They must still match the JS-side filters in useLocationBroadcast.js.
+    // The geometry stays here: distances are measured with Location#distanceTo
+    // and handed to the filter, so nothing about how far apart two fixes are
+    // has changed.
     // How often to request a fresh fix from FusedLocationProvider. Lowered from 15s/5s
     // to update a moving user's pin as fast as reasonably possible; the distance/
     // heartbeat gate below still controls how often a push actually happens.
@@ -126,9 +109,11 @@ public class LocationForegroundService extends Service {
     /** Most recent accepted fix, or null before the first one. */
     static Location getLastKnownLocation() { return lastKnownForSos; }
 
-    // Watches for three power presses; see PowerButtonSosReceiver. Not the same
-    // thing as powerReceiver below, which is about the charger.
-    private PowerButtonSosReceiver sosGestureReceiver;
+    // Two volume presses one way then two the other; see VolumeSosGesture.
+    // Re-enabled 2026-09-11 to test whether a silent audio keepalive makes MIUI
+    // deliver volume keys with the screen off. (powerReceiver further down is
+    // unrelated: it is about the charger.)
+    private VolumeSosGesture sosGesture;
     // Timestamp of the last push — used for the stationary heartbeat
     private long lastPushTime = 0L;
     // An implausibly-fast fix awaiting a second fix to confirm it isn't a GPS jump
@@ -191,25 +176,24 @@ public class LocationForegroundService extends Service {
     }
 
     /**
-     * Three power presses raise an SOS with the app closed.
+     * Two volume presses one way then two the other raise an SOS with the app
+     * closed — see VolumeSosGesture, which also carries the history of what was
+     * tried before and why.
      *
-     * ACTION_SCREEN_ON / _OFF are the only trace of the power button an app can
-     * see — Android never delivers KEYCODE_POWER — and they are among the
-     * broadcasts that must be registered from running code rather than the
-     * manifest. This service is the only thing guaranteed to be alive while the
-     * app is closed, which is why the gesture lives here and why it stops
-     * working if location sharing is switched off.
+     * It lives here because this service is the only thing guaranteed to be
+     * alive while the app is closed, which is also why the gesture stops working
+     * if location sharing is switched off.
+     *
+     * Note that starting this also starts a silent audio keepalive and takes
+     * ownership of the phone's volume keys. If the gesture is withdrawn again,
+     * stop registering it here rather than leaving that running.
      */
     private void registerSosGestureReceiver() {
         try {
-            sosGestureReceiver = new PowerButtonSosReceiver();
-            android.content.IntentFilter f = new android.content.IntentFilter();
-            f.addAction(Intent.ACTION_SCREEN_ON);
-            f.addAction(Intent.ACTION_SCREEN_OFF);
-            registerReceiver(sosGestureReceiver, f);
-            Log.i(TAG, "Power-button SOS gesture armed");
+            sosGesture = new VolumeSosGesture(this);
+            sosGesture.start();
         } catch (Exception e) {
-            Log.w(TAG, "Could not register SOS gesture receiver: " + e.getMessage());
+            Log.w(TAG, "Could not start the SOS volume gesture: " + e.getMessage());
         }
     }
 
@@ -249,7 +233,16 @@ public class LocationForegroundService extends Service {
         }
     }
 
-    /** POSTs the flag only when it has actually changed, off the main thread. */
+    /**
+     * POSTs the flag only when it has actually changed, off the main thread.
+     *
+     * The memo below is why this has to check what came back. Setting
+     * lastReportedLocEnabled before the request means a failure that goes
+     * unnoticed is never retried: the flag looks reported, and the family keeps
+     * seeing the old sharing state indefinitely. Showing someone as sharing
+     * when they are not is false assurance, which is worse than showing
+     * nothing, so any outcome that is not a success clears the memo again.
+     */
     private void reportLocationEnabled(boolean enabled) {
         if (lastReportedLocEnabled != null && lastReportedLocEnabled == enabled) return;
         lastReportedLocEnabled = enabled;
@@ -261,34 +254,77 @@ public class LocationForegroundService extends Service {
         final String session     = prefs.getString(KEY_SESSION,   null);
         if (supabaseUrl == null || supabaseKey == null || familyId == null) return;
 
-        new Thread(() -> {
-            try {
-                JSONObject body = new JSONObject();
-                body.put("p_family_id", familyId);
-                body.put("p_enabled",   enabled);
+        if (session == null) {
+            // set_location_status is SECURITY DEFINER and starts with
+            // `if auth.uid() is null then return`, so the anon key cannot carry
+            // this: it is either refused outright or accepted and ignored.
+            // Clearing the memo leaves it to be sent once there is a session.
+            Log.w(TAG, "set_location_status skipped — no session token yet");
+            lastReportedLocEnabled = null;
+            return;
+        }
 
-                URL url = new URL(supabaseUrl + "/rest/v1/rpc/set_location_status");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json");
-                conn.setRequestProperty("apikey",        supabaseKey);
-                conn.setRequestProperty("Authorization",
-                    "Bearer " + (session != null ? session : supabaseKey));
-                conn.setDoOutput(true);
-                conn.setConnectTimeout(8_000);
-                conn.setReadTimeout(8_000);
-                try (OutputStream os = conn.getOutputStream()) {
-                    os.write(body.toString().getBytes("UTF-8"));
+        new Thread(() -> {
+            boolean delivered = false;
+            try {
+                int code = postLocationStatus(supabaseUrl, supabaseKey, familyId, session, enabled);
+
+                // Same stale-token story as the SOS path: the WebView cannot
+                // refresh while the app is closed, so a background report can
+                // be rejected through no fault of its own.
+                if (SosResponse.isAuthFailure(code)) {
+                    Log.w(TAG, "set_location_status rejected (HTTP " + code
+                             + ") — renewing the session and retrying once");
+                    if (refreshAccessToken(prefs, supabaseUrl, supabaseKey)) {
+                        String renewed = prefs.getString(KEY_SESSION, null);
+                        code = postLocationStatus(supabaseUrl, supabaseKey, familyId, renewed, enabled);
+                    }
                 }
-                Log.i(TAG, "location_enabled=" + enabled + " -> HTTP " + conn.getResponseCode());
-                conn.disconnect();
+
+                delivered = SosResponse.isOk(code);
+                Log.i(TAG, "location_enabled=" + enabled + " -> HTTP " + code);
             } catch (Exception e) {
+                Log.w(TAG, "set_location_status failed — " + e.getMessage());
+            }
+
+            if (!delivered) {
                 // Reset so the next broadcast or restart retries rather than
                 // assuming the server already knows.
                 lastReportedLocEnabled = null;
-                Log.w(TAG, "set_location_status failed — " + e.getMessage());
             }
         }, "loc-status").start();
+    }
+
+    /** One attempt at set_location_status. Returns the status, or 0 if it never landed. */
+    private int postLocationStatus(String supabaseUrl, String supabaseKey, String familyId,
+                                   String session, boolean enabled) {
+        if (session == null) return SosResponse.NO_RESPONSE;
+
+        HttpURLConnection conn = null;
+        try {
+            JSONObject body = new JSONObject();
+            body.put("p_family_id", familyId);
+            body.put("p_enabled",   enabled);
+
+            URL url = new URL(supabaseUrl + "/rest/v1/rpc/set_location_status");
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("apikey",        supabaseKey);
+            conn.setRequestProperty("Authorization", "Bearer " + session);
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(8_000);
+            conn.setReadTimeout(8_000);
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body.toString().getBytes("UTF-8"));
+            }
+            return conn.getResponseCode();
+        } catch (Exception e) {
+            Log.w(TAG, "set_location_status failed — " + e.getMessage());
+            return SosResponse.NO_RESPONSE;
+        } finally {
+            if (conn != null) conn.disconnect();
+        }
     }
 
     @Override
@@ -405,9 +441,9 @@ public class LocationForegroundService extends Service {
             }
         } catch (Exception e) { /* ignore */ }
         try {
-            if (sosGestureReceiver != null) {
-                unregisterReceiver(sosGestureReceiver);
-                sosGestureReceiver = null;
+            if (sosGesture != null) {
+                sosGesture.stop();
+                sosGesture = null;
             }
         } catch (Exception e) { /* ignore */ }
         if (executor != null) executor.shutdownNow();
@@ -537,69 +573,42 @@ public class LocationForegroundService extends Service {
     }
 
     // ── Quality gate + push ───────────────────────────────────────────────────
+    //
+    // The decision itself is LocationFilter's; this method measures the
+    // distances, applies what comes back, and logs it. Splitting it that way is
+    // what makes the gates testable without a handset — see LocationFilterTest.
     private void handleLocation(Location loc, String source) {
         if (loc == null) return;
 
-        float accuracy = loc.getAccuracy();
+        boolean hasLastPush = lastPushedLocation != null;
+        boolean hasPending  = pendingJumpLocation != null;
 
-        // Accuracy gate — discard poor fixes, but let the very first one
-        // through so the member stops looking like they are not sharing.
-        float accuracyLimit = lastPushedLocation != null ? MAX_ACCURACY_M : FIRST_FIX_ACCURACY_M;
-        if (accuracy > accuracyLimit) {
-            Log.d(TAG, source + " fix discarded — accuracy " + accuracy + "m > " + accuracyLimit + "m");
+        // Measured here, with Android's own WGS84 distance, exactly as before.
+        float movedM      = hasLastPush ? lastPushedLocation.distanceTo(loc) : LocationFilter.NO_DISTANCE;
+        float fromPending = hasPending  ? pendingJumpLocation.distanceTo(loc) : LocationFilter.NO_DISTANCE;
+        long  sinceLastPush = hasLastPush ? System.currentTimeMillis() - lastPushTime : 0L;
+
+        LocationFilter.Result verdict = LocationFilter.evaluate(
+            loc.getAccuracy(), hasLastPush, movedM, sinceLastPush, hasPending, fromPending);
+
+        if (verdict.note != null) Log.i(TAG, source + " " + verdict.note);
+
+        if (verdict.holdAsPendingJump)     pendingJumpLocation = loc;
+        else if (verdict.clearPendingJump) pendingJumpLocation = null;
+
+        if (!verdict.shouldPush()) {
+            if (verdict.outcome == LocationFilter.Outcome.REJECTED_JUMP) {
+                Log.w(TAG, source + " " + verdict.detail);
+            } else {
+                Log.d(TAG, source + " " + verdict.detail);
+            }
             return;
         }
 
-        // Jump gate — reject a fix that implies unrealistic speed from the last
-        // pushed position unless a second fix roughly confirms it. This catches
-        // the "pin teleports far away then snaps back" pattern without ever
-        // pushing the bad fix in the first place.
-        if (lastPushedLocation != null) {
-            float jumpDist  = lastPushedLocation.distanceTo(loc);
-            long  elapsedMs = System.currentTimeMillis() - lastPushTime;
-            // Clamp the elapsed time used for the speed check. Without this, a stale
-            // baseline (e.g. a 90s stationary heartbeat gap) makes a multi-km jump look
-            // like a "plausible" low speed — 5km in 90s is only ~200km/h — even though
-            // the person hasn't actually moved. Real movement pushes far more often than
-            // once per heartbeat (see the distance gate below), so clamping to a short
-            // window doesn't affect genuine fast travel, only stale-baseline jumps.
-            long  speedElapsedMs = Math.min(elapsedMs, 20_000L);
-            float impliedMps = speedElapsedMs > 0 ? jumpDist / (speedElapsedMs / 1000f) : 0f;
-
-            if (impliedMps > MAX_PLAUSIBLE_SPEED_MPS) {
-                if (pendingJumpLocation != null && pendingJumpLocation.distanceTo(loc) <= JUMP_CONFIRM_RADIUS_M) {
-                    Log.i(TAG, source + " jump confirmed by second fix (" + jumpDist + "m, "
-                        + (impliedMps * 3.6f) + " km/h implied) — accepting");
-                    pendingJumpLocation = null;
-                } else {
-                    Log.w(TAG, source + " fix rejected as GPS jump — " + jumpDist + "m in " + elapsedMs
-                        + "ms (" + (impliedMps * 3.6f) + " km/h implied) — awaiting confirmation");
-                    pendingJumpLocation = loc;
-                    return;
-                }
-            } else {
-                pendingJumpLocation = null;
-            }
+        if (verdict.outcome == LocationFilter.Outcome.ACCEPTED_HEARTBEAT) {
+            Log.i(TAG, source + " heartbeat push — stationary, refreshing timestamp");
         }
-
-        // Distance gate — only push if moved MIN_MOVE_M from last push, OR if
-        // HEARTBEAT_MS elapsed (so a stationary user's timestamp still refreshes
-        // and their pin stays "live" instead of going stale).
-        if (lastPushedLocation != null) {
-            float moved = lastPushedLocation.distanceTo(loc);
-            long sinceLastPush = System.currentTimeMillis() - lastPushTime;
-            if (moved < MIN_MOVE_M && sinceLastPush < HEARTBEAT_MS) {
-                Log.d(TAG, source + " fix skipped — moved " + moved + "m, heartbeat in "
-                    + ((HEARTBEAT_MS - sinceLastPush) / 1000) + "s");
-                return;
-            }
-            if (moved < MIN_MOVE_M) {
-                Log.i(TAG, source + " heartbeat push — stationary, refreshing timestamp");
-            }
-        }
-
-        Log.i(TAG, "✅ " + source + " fix accepted — accuracy=" + accuracy + "m | moved=" +
-            (lastPushedLocation != null ? lastPushedLocation.distanceTo(loc) + "m" : "first fix"));
+        Log.i(TAG, "✅ " + source + " " + verdict.detail);
 
         lastPushedLocation = loc;
         lastKnownForSos    = loc;
@@ -854,7 +863,11 @@ public class LocationForegroundService extends Service {
     // Uses the stored Supabase refresh token to mint a fresh access token, entirely
     // natively — no JS/WebView involved, so this works even with the app fully closed.
     // Supabase rotates the refresh token on each use, so the new one must be persisted too.
-    private boolean refreshAccessToken(SharedPreferences prefs, String supabaseUrl, String supabaseKey) {
+    //
+    // Static and package-private so SosSender can reach it: an SOS rejected for a stale
+    // token has to be able to renew and retry on its own, without a handle on the
+    // service. It touches no instance state — only prefs and the two passed-in values.
+    static boolean refreshAccessToken(SharedPreferences prefs, String supabaseUrl, String supabaseKey) {
         String refreshToken = prefs.getString(KEY_REFRESH, null);
         if (refreshToken == null) {
             Log.w(TAG, "No refresh token stored — cannot renew session natively");

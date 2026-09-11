@@ -14,14 +14,78 @@
  * Extracted from App.jsx.
  */
 
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
+import { stopNativePing, isNativePingRinging } from '../lib/nativePing'
+
+/**
+ * Tracks whether the native ring is sounding, so the app can offer a way to
+ * silence it.
+ *
+ * The ring is started by FCM, not by JS, so the app cannot know it is happening
+ * by having caused it. It finds out two ways: by asking the service when it
+ * opens (the phone was found and unlocked mid-ring), and by watching the same
+ * device_pings insert the push came from (the app was already open). Polling
+ * afterwards is what takes the control away again — the service gives up after
+ * 30 seconds whether or not anyone silenced it, and a Stop button left behind
+ * on a silent phone is its own small bug.
+ */
+function useNativePingRinging(user) {
+  const [ringing, setRinging] = useState(false)
+  const pollRef = useRef(null)
+
+  const stop = useCallback(async () => {
+    await stopNativePing()
+    setRinging(false)
+  }, [])
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || !user) return
+
+    let cancelled = false
+
+    const check = async () => {
+      const isRinging = await isNativePingRinging()
+      if (!cancelled) setRinging(isRinging)
+      return isRinging
+    }
+
+    // The app may have been opened while it was already ringing.
+    check()
+
+    // The insert that produced the push also reaches us over the websocket
+    // when the app is open. Do NOT ring here — PingRingService owns the sound,
+    // and a second one would be out of sync with it. This only reveals the
+    // control.
+    const channel = supabase
+      .channel(`device-ping-native:${user.id}`)
+      .on('postgres_changes', {
+        event:  'INSERT',
+        schema: 'public',
+        table:  'device_pings',
+        filter: `target_user_id=eq.${user.id}`,
+      }, () => { check() })
+      .subscribe()
+
+    pollRef.current = setInterval(check, 2000)
+
+    return () => {
+      cancelled = true
+      if (pollRef.current) clearInterval(pollRef.current)
+      supabase.removeChannel(channel)
+    }
+  }, [user])
+
+  return { ringing, stop }
+}
 
 export function useDevicePing(user, familyId) {
+  const native = useNativePingRinging(user)
+
   useEffect(() => {
     if (!user || !familyId) return
-    if (Capacitor.isNativePlatform()) return   // PingRingService owns this
+    if (Capacitor.isNativePlatform()) return   // PingRingService owns the sound
 
     const channel = supabase
       .channel(`device-ping:${user.id}`)
@@ -76,4 +140,6 @@ export function useDevicePing(user, familyId) {
 
     return () => supabase.removeChannel(channel)
   }, [user, familyId])
+
+  return { pingRinging: native.ringing, stopPing: native.stop }
 }
