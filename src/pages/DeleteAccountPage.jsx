@@ -6,14 +6,46 @@
  * sits outside PrivateRoute, and ConsentGate already lets signed-out visitors
  * through. Someone who has uninstalled Famora can still land here and act.
  *
- * It deliberately holds no delete button of its own. The in-app path already
- * runs delete_my_account() behind a typed confirmation; duplicating that here,
- * on a page a signed-out stranger can open, would be a worse design. This page
- * explains the in-app route and what deletion removes.
+ * It offers two routes: the in-app Profile → Delete My Account, and deleting
+ * right here. The web route proves ownership the only way this app can — an SMS
+ * code to the registered number — then asks for DELETE to be typed, the same
+ * confirmation the in-app path uses, before calling delete_my_account().
  */
 
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { createClient } from '@supabase/supabase-js'
 import { useT } from '../i18n'
+
+/**
+ * A throwaway client for the web deletion flow only.
+ *
+ * Signing in through the app's shared client would hand the session to the
+ * whole app: ConsentGate would put its policy screen over this page, and
+ * useSingleDevice would claim the account for this browser. This one keeps its
+ * session in memory under its own storage key, so none of that ever sees it and
+ * nothing survives closing the tab.
+ */
+let deleteClient = null
+function getDeleteClient() {
+  if (!deleteClient) {
+    deleteClient = createClient(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_ANON_KEY,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+          storageKey: 'famora-web-delete',
+        },
+      },
+    )
+  }
+  return deleteClient
+}
+
+const toE164 = (mobile) => `+91${mobile.replace(/[^0-9]/g, '')}`
 
 function Card({ title, children }) {
   return (
@@ -32,6 +64,174 @@ function Card({ title, children }) {
         {children}
       </div>
     </div>
+  )
+}
+
+const primaryBtn = (enabled) => ({
+  flex: 2, padding: 13, borderRadius: 14,
+  background: enabled ? 'linear-gradient(135deg,#8B0D3D,#6E0A30)' : '#D9C7CF',
+  border: 'none', color: '#fff', fontWeight: 800,
+  cursor: enabled ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 14,
+})
+
+const secondaryBtn = {
+  flex: 1, padding: 13, borderRadius: 14, background: '#F8F0F3',
+  border: '1px solid #ECE0E5', color: '#7D5A67', fontWeight: 700,
+  cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
+}
+
+function WebDeleteFlow() {
+  const t = useT()
+  const [step, setStep] = useState(1)          // 1 number, 2 code, 3 confirm, 4 done
+  const [mobile, setMobile] = useState('')
+  const [otp, setOtp] = useState('')
+  const [confirmText, setConfirmText] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [resendIn, setResendIn] = useState(0)
+  const timer = useRef(null)
+
+  useEffect(() => {
+    if (resendIn <= 0) return
+    timer.current = setTimeout(() => setResendIn(n => n - 1), 1000)
+    return () => clearTimeout(timer.current)
+  }, [resendIn])
+
+  const digits = mobile.replace(/[^0-9]/g, '')
+
+  const sendCode = async () => {
+    setError('')
+    if (digits.length !== 10) { setError(t('auth.enterValidMobile')); return }
+    setLoading(true)
+    // shouldCreateUser: false — without it, asking for a code for a number that
+    // has no account would quietly create one, the way registration relies on.
+    const { error: otpErr } = await getDeleteClient().auth.signInWithOtp({
+      phone: toE164(mobile),
+      options: { shouldCreateUser: false },
+    })
+    setLoading(false)
+    if (otpErr) { setError(t('deletePage.couldNotSend')); return }
+    setOtp('')
+    setStep(2)
+    setResendIn(30)
+  }
+
+  const verifyCode = async () => {
+    setError('')
+    if (otp.length !== 6) { setError(t('reset.enterSixDigit')); return }
+    setLoading(true)
+    const { data, error: verifyErr } = await getDeleteClient().auth.verifyOtp({
+      phone: toE164(mobile), token: otp, type: 'sms',
+    })
+    setLoading(false)
+    if (verifyErr || !data?.session) { setError(t('reset.incorrectCode')); return }
+    setConfirmText('')
+    setStep(3)
+  }
+
+  const deleteAccount = async () => {
+    setError('')
+    setLoading(true)
+    const client = getDeleteClient()
+    const { error: rpcErr } = await client.rpc('delete_my_account')
+    if (rpcErr) {
+      setLoading(false)
+      setError(t('deletePage.deleteFailed'))
+      return
+    }
+    // The account no longer exists, so this may be refused; it only clears the
+    // in-memory session either way.
+    try { await client.auth.signOut() } catch {}
+    setLoading(false)
+    setStep(4)
+  }
+
+  const cancel = async () => {
+    try { await getDeleteClient().auth.signOut() } catch {}
+    setStep(1); setOtp(''); setConfirmText(''); setError('')
+  }
+
+  if (step === 4) {
+    return (
+      <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
+        <div style={{ fontSize: 40, marginBottom: 8 }}>✅</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: '#16A34A', marginBottom: 6 }}>
+          {t('deletePage.deletedTitle')}
+        </div>
+        <div style={{ fontSize: 13, color: '#7D5A67' }}>{t('deletePage.deletedBody')}</div>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div style={{ marginBottom: 12 }}>
+        {step === 1 && t('deletePage.optionWebBody')}
+        {step === 2 && t('reset.step2Sub', { mobile: digits })}
+        {step === 3 && t('deletePage.confirmBody')}
+      </div>
+
+      {error && <div className="error-msg">{error}</div>}
+
+      {step === 1 && (
+        <>
+          <input className="input" type="tel" inputMode="numeric" value={mobile}
+            onChange={e => setMobile(e.target.value)}
+            placeholder={t('auth.mobileNumber')}
+            style={{ marginBottom: 12 }} />
+          <div style={{ display: 'flex' }}>
+            <button onClick={sendCode} disabled={loading} style={primaryBtn(!loading)}>
+              {loading ? t('profile.sending') : t('profile.sendCode')}
+            </button>
+          </div>
+        </>
+      )}
+
+      {step === 2 && (
+        <>
+          <input className="input" type="text" inputMode="numeric" value={otp} autoFocus
+            onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+            placeholder={t('reset.sixDigitCode')}
+            style={{ marginBottom: 12, textAlign: 'center', fontSize: 22, fontWeight: 800, letterSpacing: 6 }} />
+          <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+            <button onClick={cancel} style={secondaryBtn}>← {t('common.back')}</button>
+            <button onClick={verifyCode} disabled={loading || otp.length !== 6}
+              style={primaryBtn(!loading && otp.length === 6)}>
+              {loading ? t('reset.verifying') : t('reset.verify') + ' →'}
+            </button>
+          </div>
+          <button onClick={sendCode} disabled={resendIn > 0 || loading} style={{
+            display: 'block', margin: '0 auto', background: 'none', border: 'none',
+            fontWeight: 700, fontSize: 13, padding: 0, fontFamily: 'inherit',
+            color: resendIn > 0 ? '#C7B3BC' : '#8B0D3D',
+            cursor: resendIn > 0 ? 'default' : 'pointer',
+          }}>{resendIn > 0 ? t('reset.resendIn', { n: resendIn }) : t('reset.resendCode')}</button>
+        </>
+      )}
+
+      {step === 3 && (
+        <>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#7F1D1D', marginBottom: 6 }}>
+            {t('profile.typeToConfirm', { word: 'DELETE' })}
+          </div>
+          <input className="input" value={confirmText} autoFocus
+            onChange={e => setConfirmText(e.target.value)}
+            placeholder={t('profile.typeDeleteHere')}
+            style={{ marginBottom: 12 }} />
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={cancel} style={secondaryBtn}>{t('common.cancel')}</button>
+            <button onClick={deleteAccount}
+              disabled={loading || confirmText.trim() !== 'DELETE'}
+              style={{
+                ...primaryBtn(!loading && confirmText.trim() === 'DELETE'),
+                background: !loading && confirmText.trim() === 'DELETE' ? '#DC2626' : '#E5C9C9',
+              }}>
+              {loading ? t('profile.deleting') : t('profile.deleteForever')}
+            </button>
+          </div>
+        </>
+      )}
+    </>
   )
 }
 
@@ -94,6 +294,10 @@ export default function DeleteAccountPage() {
 
         <Card title={t('deletePage.optionInApp')}>
           {t('deletePage.optionInAppBody')}
+        </Card>
+
+        <Card title={t('deletePage.optionWeb')}>
+          <WebDeleteFlow />
         </Card>
 
         <Card title={t('deletePage.whatGoes')}>
