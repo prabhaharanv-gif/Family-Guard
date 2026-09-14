@@ -91,7 +91,9 @@
              Without this, background tracking stops permanently on reboot until
              the user manually reopens the app. -->
         <!--
-            Handles the Cancel action on the "SOS sent" notification. Declared
+            Handles both Cancel actions: the one on the countdown shown while a
+            power-button SOS is armed (which stops it before anything is sent)
+            and the one on the "SOS sent" receipt (which withdraws it). Declared
             rather than registered at runtime because it must still be reachable
             when nothing of ours is running — the notification outlives the
             thread that posted it.

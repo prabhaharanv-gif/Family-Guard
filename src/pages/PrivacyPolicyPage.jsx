@@ -105,22 +105,6 @@ export default function PrivacyPolicyPage() {
           </div>
         ))}
 
-        {/* Contact */}
-        <div style={{
-          background: '#fff', borderRadius: 18,
-          padding: '18px 20px', textAlign: 'center',
-          border: '1px solid #ECE0E5',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-        }}>
-          <div style={{ fontSize: 20, marginBottom: 8 }}>📩</div>
-          <div style={{ fontSize: 13, color: '#7D5A67', lineHeight: 1.6 }}>
-            {p.contactPrompt}<br />
-            <a href={`mailto:${p.contactEmail}`} style={{ color: '#8B0D3D', fontWeight: 700, textDecoration: 'none' }}>
-              {p.contactEmail}
-            </a>
-          </div>
-        </div>
-
       </div>
     </div>
   )

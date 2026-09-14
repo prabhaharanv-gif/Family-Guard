@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, lazy, Suspense } from 'react'
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 
 // Store
@@ -30,24 +30,38 @@ import SosReliabilitySetup from './components/SosReliabilitySetup'
 import BackgroundLocationDisclosure from './components/BackgroundLocationDisclosure'
 import Layout              from './components/Layout'
 
-// Pages
-import LoginPage        from './pages/LoginPage'
-import RegisterPage     from './pages/RegisterPage'
-import OnboardingPage   from './pages/OnboardingPage'
-import JoinFamilyPage   from './pages/JoinFamilyPage'
-import CreateFamilyPage from './pages/CreateFamilyPage'
-import FamilyPage       from './pages/FamilyPage'
-import MessagesPage     from './pages/MessagesPage'
-import SOSPage          from './pages/SOSPage'
-import MapAllPage       from './pages/MapAllPage'
-import MapPage          from './pages/MapPage'
-import CallPage         from './pages/CallPage'
-import AddMemberPage    from './pages/AddMemberPage'
-import SettingsPage     from './pages/SettingsPage'
-import ProfilePage      from './pages/ProfilePage'
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
-import DeleteAccountPage  from './pages/DeleteAccountPage'
-import UserManualPage    from './pages/UserManualPage'
+// ── Pages ────────────────────────────────────────────────────────────────────
+//
+// Split by how urgently the screen is needed, not by size.
+//
+// Eager, on purpose:
+//   SOSPage     — a panic screen must never wait on a chunk to load. This is
+//                 the one route where a spinner is an unacceptable answer, so
+//                 it stays in the first bundle whatever it costs.
+//   LoginPage   — the first paint for anyone signed out.
+//   FamilyPage  — the first paint for everyone else.
+//
+// Everything else loads on demand. The big wins are CallPage, which is the only
+// importer of lib/agora and therefore of the whole Agora RTC SDK, and the two
+// map screens, which are the only importers of leaflet.
+import LoginPage  from './pages/LoginPage'
+import FamilyPage from './pages/FamilyPage'
+import SOSPage    from './pages/SOSPage'
+
+const RegisterPage      = lazy(() => import('./pages/RegisterPage'))
+const OnboardingPage    = lazy(() => import('./pages/OnboardingPage'))
+const JoinFamilyPage    = lazy(() => import('./pages/JoinFamilyPage'))
+const CreateFamilyPage  = lazy(() => import('./pages/CreateFamilyPage'))
+const MessagesPage      = lazy(() => import('./pages/MessagesPage'))
+const MapAllPage        = lazy(() => import('./pages/MapAllPage'))
+const MapPage           = lazy(() => import('./pages/MapPage'))
+const CallPage          = lazy(() => import('./pages/CallPage'))
+const AddMemberPage     = lazy(() => import('./pages/AddMemberPage'))
+const SettingsPage      = lazy(() => import('./pages/SettingsPage'))
+const ProfilePage       = lazy(() => import('./pages/ProfilePage'))
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
+const DeleteAccountPage = lazy(() => import('./pages/DeleteAccountPage'))
+const UserManualPage    = lazy(() => import('./pages/UserManualPage'))
 
 export default function App() {
   const { initialize, user, familyId, loading, signOut } = useAuthStore()
@@ -70,7 +84,7 @@ export default function App() {
   usePushNotifications(user?.id, familyId)
   const { disclosureOpen, acceptDisclosure, declineDisclosure } = useLocationService()
   useLocationBroadcast(user?.id, familyId)
-  useDevicePing(user, familyId)
+  const { pingRinging, stopPing } = useDevicePing(user, familyId)
 
   // ── One account, one device ──────────────────────────────────────────────
   // The newest sign-in owns the session; this device signs itself out when it
@@ -125,6 +139,15 @@ export default function App() {
   return (
     <ConsentGate>
       <NativeAlarmBanner visible={nativeAlarmOn} onStop={stopAllAlarms} />
+      {/* Find My Phone. Someone hunting a ringing phone picks it up and opens
+          the app; until this existed the only way to stop the noise was the
+          action on its notification. */}
+      <NativeAlarmBanner
+        visible={pingRinging}
+        onStop={stopPing}
+        text="📡 Find My Phone is ringing"
+        label="🔕 Silence"
+      />
       {/* Web only. On Android SOSAlertActivity is the SOS screen in all three
           states — app open, app closed, screen locked — because it is the only
           one that can appear over a lock screen. Rendering this as well put two
@@ -176,6 +199,11 @@ export default function App() {
         onDecline={declineDisclosure}
       />
 
+      {/* Chunks are packaged inside the APK, so on device this resolves in
+          milliseconds; the fallback is really for the web build. Deliberately
+          blank rather than a spinner — a flash of spinner on every navigation
+          reads as slower than a brief nothing. */}
+      <Suspense fallback={null}>
       <Routes>
         <Route path="/login"   element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -201,6 +229,7 @@ export default function App() {
           <Route path="profile"  element={<ProfilePage />} />
         </Route>
       </Routes>
+      </Suspense>
     </ConsentGate>
   )
 }

@@ -24,6 +24,29 @@ import java.nio.charset.StandardCharsets;
  * Everything needed is already stored — url, anon key, family id, access token
  * — because LocationForegroundService has been posting locations with it for
  * months. This adds no new state and no new permissions.
+ *
+ * Stale tokens, and why this refreshes where the push path waits
+ * --------------------------------------------------------------
+ * The access token expires about an hour after login, so both RPCs here can be
+ * rejected with a 401 through no fault of the caller. This was observed for
+ * real: a gesture that counted correctly and armed correctly still ended in
+ * "SOS could not be sent", because the stored token had gone stale.
+ *
+ * Both calls therefore renew the session and retry once. That deliberately
+ * departs from the location push in LocationForegroundService, which defers to
+ * the WebView while the app is in the foreground: a Supabase refresh token is
+ * single-use, so redeeming one natively while JS holds the same token produces
+ * "Invalid Refresh Token: Already Used" and drops the user on the login screen.
+ *
+ * A push can afford to wait ~95s for the next heartbeat. An SOS cannot. The
+ * worst case of refreshing here is that someone has to sign in again; the worst
+ * case of waiting is that the alert never goes out. Note that the gesture only
+ * fires with the app closed, which is precisely when the WebView is not holding
+ * the token anyway, so the collision is unlikely in the first place.
+ *
+ * Which rejections earn a retry, and the rule that a retry happens at most
+ * once, live in SosResponse — extracted so they can be unit tested, because
+ * exercising them here would mean sending real alerts to a real family.
  */
 final class SosSender {
 
@@ -63,6 +86,48 @@ final class SosSender {
             return null;
         }
 
+        Attempt a = postSos(supabaseUrl, supabaseKey, familyId, session, loc, source);
+        switch (SosResponse.next(a.code, a.id != null, false)) {
+            case DELIVERED:
+                return a.id;
+
+            case REFRESH_AND_RETRY:
+                Log.w(TAG, "SOS rejected (" + source + ") — HTTP " + a.code
+                         + ", renewing the session and retrying once");
+                if (!LocationForegroundService.refreshAccessToken(prefs, supabaseUrl, supabaseKey)) {
+                    Log.w(TAG, "Could not renew the session — refresh token missing or expired, "
+                             + "the user must reopen the app to sign in again");
+                    return null;
+                }
+                String renewed = prefs.getString(LocationForegroundService.KEY_SESSION, null);
+                a = postSos(supabaseUrl, supabaseKey, familyId, renewed, loc, source);
+                if (SosResponse.next(a.code, a.id != null, true) == SosResponse.Step.DELIVERED) {
+                    Log.i(TAG, "SOS delivered after a native session refresh");
+                    return a.id;
+                }
+                Log.w(TAG, "SOS still rejected after the refresh — HTTP " + a.code);
+                return null;
+
+            default:
+                // Not an auth problem, so no retry — but it still has to be said.
+                // NO_RESPONSE means the request threw and postSos already logged why.
+                if (a.code != SosResponse.NO_RESPONSE) {
+                    Log.w(TAG, "SOS rejected (" + source + ") — HTTP " + a.code);
+                }
+                return null;
+        }
+    }
+
+    /**
+     * One attempt at send_sos.
+     *
+     * @param session the bearer token to try; the caller supplies a renewed one
+     *                on the second attempt.
+     */
+    private static Attempt postSos(String supabaseUrl, String supabaseKey, String familyId,
+                                   String session, Location loc, String source) {
+        if (session == null) return new Attempt(SosResponse.NO_RESPONSE, null);
+
         HttpURLConnection conn = null;
         try {
             JSONObject body = new JSONObject();
@@ -92,24 +157,27 @@ final class SosSender {
             }
 
             int code = conn.getResponseCode();
-            if (code == 200 || code == 201 || code == 204) {
-                // send_sos RETURNS uuid, which PostgREST hands back as a bare
-                // JSON scalar — a quoted string, not an object.
-                String id = readBody(conn).trim();
-                if (id.startsWith("\"") && id.endsWith("\"") && id.length() > 2) {
-                    id = id.substring(1, id.length() - 1);
-                }
+            if (SosResponse.isOk(code)) {
+                String id = SosResponse.parseId(readBody(conn));
                 Log.i(TAG, "SOS sent (" + source + ") id=" + id);
-                return id.isEmpty() ? null : id;
+                return new Attempt(code, id);
             }
-            Log.w(TAG, "SOS rejected (" + source + ") — HTTP " + code);
-            return null;
+            return new Attempt(code, null);
         } catch (Exception e) {
             Log.e(TAG, "SOS send failed (" + source + "): " + e.getMessage());
-            return null;
+            // 0, not an auth code: a timeout or a dead network must not spend
+            // the single-use refresh token on a problem it cannot fix.
+            return new Attempt(SosResponse.NO_RESPONSE, null);
         } finally {
             if (conn != null) conn.disconnect();
         }
+    }
+
+    /** The outcome of one RPC attempt; id is non-null only on a successful send. */
+    private static final class Attempt {
+        final int    code;
+        final String id;
+        Attempt(int code, String id) { this.code = code; this.id = id; }
     }
 
     /**
@@ -131,6 +199,35 @@ final class SosSender {
             return false;
         }
 
+        int code = postResolve(supabaseUrl, supabaseKey, session, sosId);
+        if (SosResponse.next(code, SosResponse.isOk(code), false) == SosResponse.Step.DELIVERED) {
+            Log.i(TAG, "SOS cancelled id=" + sosId);
+            return true;
+        }
+
+        // The token expires on the same clock as the one used to send, so an
+        // alert raised just before expiry would leave the user holding a Cancel
+        // button that could never work.
+        if (SosResponse.next(code, false, false) == SosResponse.Step.REFRESH_AND_RETRY) {
+            Log.w(TAG, "Cancel rejected — HTTP " + code + ", renewing the session and retrying once");
+            if (LocationForegroundService.refreshAccessToken(prefs, supabaseUrl, supabaseKey)) {
+                String renewed = prefs.getString(LocationForegroundService.KEY_SESSION, null);
+                code = postResolve(supabaseUrl, supabaseKey, renewed, sosId);
+                if (SosResponse.next(code, SosResponse.isOk(code), true) == SosResponse.Step.DELIVERED) {
+                    Log.i(TAG, "SOS cancelled after a native session refresh, id=" + sosId);
+                    return true;
+                }
+            }
+        }
+        Log.w(TAG, "Cancel rejected — HTTP " + code);
+        return false;
+    }
+
+    /** One attempt at resolve_sos. Returns the HTTP status, or 0 if it never landed. */
+    private static int postResolve(String supabaseUrl, String supabaseKey,
+                                   String session, String sosId) {
+        if (session == null) return SosResponse.NO_RESPONSE;
+
         HttpURLConnection conn = null;
         try {
             JSONObject body = new JSONObject();
@@ -148,13 +245,10 @@ final class SosSender {
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(body.toString().getBytes(StandardCharsets.UTF_8));
             }
-            int code = conn.getResponseCode();
-            boolean ok = code == 200 || code == 201 || code == 204;
-            Log.i(TAG, ok ? "SOS cancelled id=" + sosId : "Cancel rejected — HTTP " + code);
-            return ok;
+            return conn.getResponseCode();
         } catch (Exception e) {
             Log.e(TAG, "Cancel failed: " + e.getMessage());
-            return false;
+            return 0;
         } finally {
             if (conn != null) conn.disconnect();
         }

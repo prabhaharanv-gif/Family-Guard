@@ -3,59 +3,52 @@ package com.scoopfamily.familyguard;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.location.Location;
-import android.os.Build;
-import android.os.VibrationEffect;
-import android.os.Vibrator;
 import android.util.Log;
 
 /**
- * Raises an SOS when the power button is pressed three times in quick
- * succession, with the app closed.
+ * Raises an SOS on three power presses. NOT CURRENTLY REGISTERED — the live
+ * gesture is VolumeSosGesture. Kept because the reasoning below was expensive
+ * to learn and would otherwise be rediscovered the hard way.
  *
- * Why it watches the screen rather than the button
- * ------------------------------------------------
- * Android never delivers KEYCODE_POWER to an app. The system consumes it, and
- * no permission or foreground state changes that. What an app can see is the
- * consequence: every press toggles the screen, so three presses arrive here as
- * three ACTION_SCREEN_ON / ACTION_SCREEN_OFF broadcasts.
+ * Why it was retired
+ * ------------------
+ * Four separate problems, all confirmed on the Redmi (Android 12, MIUI):
  *
- * Those two actions cannot be declared in the manifest — Android ignores them
- * there — so this must be registered at runtime by something already running.
- * LocationForegroundService is that something. The practical consequence is
- * that the gesture only works while location sharing is on; with the service
- * stopped there is nothing alive to hear the screen change.
+ *   · Easy to trigger by accident in a pocket.
+ *   · Hard to land when actually needed. An app cannot see KEYCODE_POWER —
+ *     Android never delivers it — so this watches the side effect instead:
+ *     every press toggles the screen. Those broadcasts arrived 631–1042ms
+ *     apart when pressing as fast as a hand can go, and runs died constantly
+ *     on gaps of 2119ms and 3303ms.
+ *   · Visible. Three screen flashes are obvious to anyone watching, which is
+ *     wrong for an alert meant to be discreet.
+ *   · One press away from dialling the emergency services. Five rapid presses
+ *     is MIUI's own Emergency SOS and, with emergency_affordance_needed=1 as
+ *     it is in India, calls 112. Raising the count to five was tried and the
+ *     phone called 112 instead: the fifth press stops toggling the screen and
+ *     starts the emergency dialer, so this class never even sees it. Logs
+ *     reached 4/5 twice, then sat through a 4457ms hole.
  *
- * Guarding against a false alarm
- * ------------------------------
- * A wrongly-sent SOS wakes a family, possibly at night, so the count is
- * deliberately hard to reach by accident:
+ * Do not raise the count to five. See VolumeSosGesture for what replaced it and
+ * why a direction reversal solves all four problems at once.
  *
- *   · all three transitions must land inside WINDOW_MS
- *   · two transitions closer together than MIN_GAP_MS are treated as one
- *     physical press, since a single press can produce a doubled broadcast
- *   · the screen going off on its own timeout looks identical to a press, so
- *     the window is short enough that a timeout followed by an unlock cannot
- *     reach three on its own
- *   · after firing, COOLDOWN_MS must pass before another can be raised, so a
- *     phone loose in a pocket cannot send a stream of them
+ * To re-enable, register it for ACTION_SCREEN_ON / ACTION_SCREEN_OFF from
+ * something already running — those two cannot be declared in the manifest.
+ * LocationForegroundService is the only thing alive while the app is closed.
  */
 public class PowerButtonSosReceiver extends BroadcastReceiver {
 
     private static final String TAG = "SOS_PowerGesture";
 
-    /** Screen transitions needed. Three presses, as asked for. */
+    /** Screen transitions needed. Three; never five, for the reason above. */
     private static final int  PRESSES_TO_TRIGGER = 3;
-    /** All of them must land inside this. */
-    private static final long WINDOW_MS   = 3000;
+    /** All of them must land inside this, and no single gap may exceed it. */
+    private static final long WINDOW_MS  = 3000;
     /** Closer than this and it is one press reported twice, not two presses. */
-    private static final long MIN_GAP_MS  = 180;
-    /** Silence after a send, so one gesture cannot raise several alerts. */
-    private static final long COOLDOWN_MS = 60_000;
+    private static final long MIN_GAP_MS = 180;
 
     private final long[] presses = new long[PRESSES_TO_TRIGGER];
-    private int  count       = 0;
-    private long lastFiredAt = 0;
+    private int count = 0;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -72,8 +65,9 @@ public class PowerButtonSosReceiver extends BroadcastReceiver {
         // reason it was or was not counted. Without this a gesture that failed
         // left no trace at all, and the three ways it can be dropped —
         // cooldown, too fast, too slow — are indistinguishable from the outside.
-        if (now - lastFiredAt < COOLDOWN_MS) {
-            Log.d(TAG, what + " ignored — cooldown, " + ((COOLDOWN_MS - (now - lastFiredAt)) / 1000) + "s left");
+        if (SosArming.inCooldown(now)) {
+            Log.d(TAG, what + " ignored — cooldown, "
+                     + (SosArming.cooldownRemaining(now) / 1000) + "s left");
             return;
         }
 
@@ -103,45 +97,11 @@ public class PowerButtonSosReceiver extends BroadcastReceiver {
         boolean inWindow = span <= WINDOW_MS;
         count = 0;
         if (!inWindow) {
-            Log.d(TAG, "3 reached but spanned " + span + "ms, over the " + WINDOW_MS + "ms window");
+            Log.d(TAG, PRESSES_TO_TRIGGER + " reached but spanned " + span
+                     + "ms, over the " + WINDOW_MS + "ms window");
             return;
         }
 
-        lastFiredAt = now;
-        Log.w(TAG, "Power pressed " + PRESSES_TO_TRIGGER + "x — raising SOS");
-        fire(context.getApplicationContext());
-    }
-
-    private void fire(final Context ctx) {
-        // Confirm in the hand before anything else. The phone is likely in a
-        // pocket with the screen off, and someone who has just triggered this
-        // deliberately needs to know it worked without looking; someone who
-        // triggered it by accident needs to know it happened at all.
-        buzz(ctx);
-
-        new Thread(() -> {
-            Location loc = LocationForegroundService.getLastKnownLocation();
-            String sosId = SosSender.send(ctx, loc, "power-button-x" + PRESSES_TO_TRIGGER);
-            Log.i(TAG, sosId != null ? "SOS delivered" : "SOS could not be delivered");
-            // Posted either way. On success it carries Cancel; on failure it
-            // says so, because a gesture that silently did nothing in an
-            // emergency is the worst outcome available.
-            SosCancelReceiver.showSent(ctx, sosId);
-        }, "sos-power-gesture").start();
-    }
-
-    private void buzz(Context ctx) {
-        try {
-            Vibrator v = (Vibrator) ctx.getSystemService(Context.VIBRATOR_SERVICE);
-            if (v == null || !v.hasVibrator()) return;
-            long[] pattern = { 0, 400, 200, 400 };
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                v.vibrate(VibrationEffect.createWaveform(pattern, -1));
-            } else {
-                v.vibrate(pattern, -1);
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "Could not vibrate: " + e.getMessage());
-        }
+        SosArming.arm(context.getApplicationContext(), "power-button-x" + PRESSES_TO_TRIGGER);
     }
 }

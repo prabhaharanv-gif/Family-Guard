@@ -295,17 +295,27 @@ export default function CallPage() {
   }, [])
 
   const handleAccept = useCallback(async () => {
-    await supabase.rpc('respond_to_call', { p_call_id: callId, p_action: 'accept' })
+    const { error } = await supabase.rpc('respond_to_call', { p_call_id: callId, p_action: 'accept' })
+    if (error) console.error('Accept call error:', error.code || 'unknown')
   }, [callId])
 
   const handleDecline = useCallback(async () => {
-    await supabase.rpc('respond_to_call', { p_call_id: callId, p_action: 'decline' })
+    const { error } = await supabase.rpc('respond_to_call', { p_call_id: callId, p_action: 'decline' })
+    if (error) console.error('Decline call error:', error.code || 'unknown')
   }, [callId])
 
   const handleEnd = useCallback(async () => {
     if (ending) return
     setEnding(true)
-    await supabase.rpc('end_call', { p_call_id: callId })
+    const { error } = await supabase.rpc('end_call', { p_call_id: callId })
+    // Let the guard go again on failure. `ending` was the only thing standing
+    // between the user and a second attempt, so leaving it set after a failed
+    // call left them with a dead End button — and useBackButton routes the
+    // back gesture here too, so there was no way out of the screen at all.
+    if (error) {
+      console.error('End call error:', error.code || 'unknown')
+      setEnding(false)
+    }
   }, [callId, ending])
 
   useBackButton(true, handleEnd)

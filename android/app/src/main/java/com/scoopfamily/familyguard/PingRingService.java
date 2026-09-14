@@ -46,6 +46,19 @@ public class PingRingService extends Service {
     // play over the chirp and be cut short when the service stops.
     public  static final String PING_CHANNEL_ID   = "find_my_device_v1";
 
+    // A SECOND notification, deliberately not the foreground-service one.
+    //
+    // Android will not reliably pop a foreground-service notification as a
+    // heads-up banner; it goes to the shade collapsed, where the Stop action
+    // has to be expanded to reach. Someone hunting a ringing phone should not
+    // have to learn that. An ordinary high-importance notification does pop, so
+    // the Silence button arrives on screen by itself.
+    //
+    // Silent on purpose: the chirp and the vibration both come from this
+    // service, and a channel sound here would play over them.
+    private static final String ALERT_CHANNEL_ID = "find_my_device_alert_v1";
+    private static final int    ALERT_NOTIF_ID   = 9312;
+
     private static final long RING_DURATION_MS = 30_000L;
 
     // Read by PingAlarmPlugin so the web layer can silence a ring in progress.
@@ -67,6 +80,7 @@ public class PingRingService extends Service {
             releaseWakeLock();
             stopChirp();
             cancelVibration();
+            cancelSilenceBanner(this);
             stopSelf();
             return START_NOT_STICKY;
         }
@@ -96,6 +110,9 @@ public class PingRingService extends Service {
         startChirp();
         startVibration();
 
+        // Puts the Silence control on screen rather than in the shade.
+        showSilenceBanner(senderName);
+
         // Wake the display so the phone is visible as well as audible — the
         // whole point is finding it in a dark room or under a cushion.
         forceScreenOn();
@@ -116,6 +133,7 @@ public class PingRingService extends Service {
         releaseWakeLock();
         stopChirp();
         cancelVibration();
+        cancelSilenceBanner(this);
         isRunning = false;
         super.onDestroy();
     }
@@ -203,6 +221,86 @@ public class PingRingService extends Service {
             .setContentIntent(contentPi)
             .addAction(0, getString(R.string.notif_action_stop), stopPi)
             .build();
+    }
+
+    /**
+     * Posts the heads-up banner carrying Silence.
+     *
+     * Separate from the foreground-service notification because that one will
+     * not pop: Android sends FGS notifications straight to the shade, collapsed,
+     * so its Stop action is two interactions away at the moment the phone is
+     * making a noise somebody wants stopped. This one is an ordinary
+     * high-importance notification, which does appear on screen.
+     *
+     * The service notification is left exactly as it was — it is what keeps the
+     * service alive, and removing it would kill the ring it is announcing.
+     */
+    private void showSilenceBanner(String senderName) {
+        NotificationManager nm =
+            (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null) return;
+
+        ensureAlertChannel(this);
+
+        Intent stopIntent = new Intent(this, PingRingService.class);
+        stopIntent.setAction(ACTION_STOP);
+        PendingIntent stopPi = PendingIntent.getService(
+            this, 4, stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        Notification n = new NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_find_phone)
+            .setColor(android.graphics.Color.parseColor("#951345"))
+            .setContentTitle(getString(R.string.notif_ping_title))
+            .setContentText(getString(R.string.notif_ping_body, senderName))
+            .setStyle(new NotificationCompat.BigTextStyle()
+                .bigText(getString(R.string.notif_ping_big, senderName)))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            // Not ongoing: swiping it away is a reasonable way to dismiss the
+            // banner, and the ring still stops on its own or from the service
+            // notification, which stays put.
+            .setAutoCancel(false)
+            // A real icon rather than 0. Some OEM shades decline to draw an
+            // action without one, which would leave the button invisible on the
+            // very devices this is meant to rescue.
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel,
+                       getString(R.string.notif_action_stop), stopPi)
+            .build();
+
+        try {
+            nm.notify(ALERT_NOTIF_ID, n);
+        } catch (SecurityException e) {
+            // POST_NOTIFICATIONS refused on Android 13+. The ring still sounds
+            // and the service notification still carries Stop.
+            android.util.Log.w("PingRing", "Could not post the silence banner: " + e.getMessage());
+        }
+    }
+
+    /** Takes the banner away. Safe to call when none is showing. */
+    private static void cancelSilenceBanner(Context ctx) {
+        try {
+            NotificationManager nm =
+                (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.cancel(ALERT_NOTIF_ID);
+        } catch (Exception e) { /* nothing useful to do */ }
+    }
+
+    private static void ensureAlertChannel(Context ctx) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        NotificationManager nm =
+            (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null || nm.getNotificationChannel(ALERT_CHANNEL_ID) != null) return;
+
+        NotificationChannel ch = new NotificationChannel(
+            ALERT_CHANNEL_ID, ctx.getString(R.string.ch_ping_name),
+            NotificationManager.IMPORTANCE_HIGH);
+        ch.setDescription(ctx.getString(R.string.ch_ping_desc));
+        ch.setSound(null, null);
+        ch.enableVibration(false);
+        ch.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+        nm.createNotificationChannel(ch);
     }
 
     public static void ensurePingChannelStatic(Context ctx) {

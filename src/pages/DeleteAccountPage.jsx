@@ -9,11 +9,10 @@
  * It deliberately holds no delete button of its own. The in-app path already
  * runs delete_my_account() behind a typed confirmation; duplicating that here,
  * on a page a signed-out stranger can open, would be a worse design. This page
- * explains the two routes and hands the second one to a human.
+ * explains the in-app route and what deletion removes.
  */
 
 import { useNavigate } from 'react-router-dom'
-import { CONTACT_EMAIL } from '../lib/policy'
 import { useT } from '../i18n'
 
 function Card({ title, children }) {
@@ -95,20 +94,6 @@ export default function DeleteAccountPage() {
 
         <Card title={t('deletePage.optionInApp')}>
           {t('deletePage.optionInAppBody')}
-        </Card>
-
-        <Card title={t('deletePage.optionEmail')}>
-          {t('deletePage.optionEmailBody', { email: CONTACT_EMAIL })}
-          <div style={{ marginTop: 10 }}>
-            <a href={`mailto:${CONTACT_EMAIL}?subject=Delete my Famora account`} style={{
-              display: 'inline-block', background: 'var(--blue-light, #FAE8EF)',
-              border: '1.5px solid #DCC9D2', borderRadius: 10,
-              padding: '8px 14px', color: '#8B0D3D', fontWeight: 700,
-              fontSize: 13, textDecoration: 'none',
-            }}>
-              ✉️ {CONTACT_EMAIL}
-            </a>
-          </div>
         </Card>
 
         <Card title={t('deletePage.whatGoes')}>

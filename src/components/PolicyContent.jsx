@@ -56,12 +56,6 @@ export default function PolicyContent() {
         <div style={{ fontSize: 13, color: '#4A1226', lineHeight: 1.55 }}>
           {p.consentNote}
         </div>
-        <div style={{ fontSize: 13, color: '#7D5A67', marginTop: 10 }}>
-          {p.contactPromptConsent}{' '}
-          <a href={`mailto:${p.contactEmail}`} style={{ color: '#8B0D3D', fontWeight: 700 }}>
-            {p.contactEmail}
-          </a>
-        </div>
       </div>
     </div>
   )
