@@ -54,8 +54,6 @@ export const SECTION_META = [
   { key: 'choices',   icon: '✅',  color: '#16A34A' },
 ]
 
-export const CONTACT_EMAIL = 'info@scoopinnovations.in'
-
 const CONTENT = {
   // ──────────────────────────────────────────────────────────────── English ──
   en: {
@@ -764,7 +762,6 @@ export function getPolicy(lang) {
     consentNote: field('consentNote'),
     contactPrompt: field('contactPrompt'),
     contactPromptConsent: field('contactPromptConsent'),
-    contactEmail: CONTACT_EMAIL,
     sections,
   }
 }
