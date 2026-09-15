@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useT } from '../i18n'
+import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
+import { useT } from '../i18n'
 import AuthLanguagePicker from '../components/AuthLanguagePicker'
 
 function EyeIcon({ open }) {
@@ -92,7 +93,7 @@ function ForgotPasswordModal({ onClose }) {
   // this session's server-verified JWT claim, not from any client-supplied parameter.
   const handleReset = async () => {
     setError('')
-    if (!newPassword || newPassword.length < 6) { setError(t('reset.passwordMin6')); return }
+    if (!newPassword || newPassword.length < PASSWORD_MIN_LENGTH) { setError(t('reset.passwordMin6')); return }
     if (newPassword !== confirmPw) { setError(t('reset.passwordsNoMatch')); return }
     setLoading(true)
     const { error: rpcErr } = await supabase.rpc('reset_password_verified', {

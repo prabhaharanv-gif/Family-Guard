@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { useAuthStore } from '../store/authStore'
-import { useT } from '../i18n'
+import { useT } from '../i18n'
 import AuthLanguagePicker from '../components/AuthLanguagePicker'
 
 // Clean open/closed eye icon — no emoji. `open` = password visible.
@@ -46,7 +47,7 @@ export default function RegisterPage() {
     if (mobile.replace(/[^0-9]/g, '').length !== 10) {
       setError(t('auth.enterValidMobile')); return
     }
-    if (password.length < 6) { setError(t('reset.passwordMin6')); return }
+    if (password.length < PASSWORD_MIN_LENGTH) { setError(t('reset.passwordMin6')); return }
     if (password !== confirm) { setError(t('reset.passwordsNoMatch')); return }
     if (!agreed) { setError(t('register.acceptTerms')); return }
 

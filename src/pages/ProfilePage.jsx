@@ -3,6 +3,7 @@ import { registerPlugin, Capacitor } from '@capacitor/core'
 const LocationService = registerPlugin('LocationService')
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { avatarColor } from '../lib/avatarColor'
 import { useAuthStore } from '../store/authStore'
 import PullToRefresh from '../components/PullToRefresh'
@@ -50,7 +51,7 @@ const EyeIcon = ({ off }) => off
 // same OTP reset the sign-in screen offers, with the mobile-entry step dropped
 // — we already know whose account this is, and letting a signed-in person type
 // *someone else's* number here would hand them a session on that account.
-function ChangePasswordModal({ onClose, userEmail, userPhone }) {
+function ChangePasswordModal({ onClose, userPhone }) {
   const t = useT()
   const [oldPw, setOldPw]       = useState('')
   const [pw, setPw]             = useState('')
@@ -83,12 +84,27 @@ function ChangePasswordModal({ onClose, userEmail, userPhone }) {
   const handleSave = async () => {
     setErr('')
     if (!oldPw) { setErr(t('profile.enterCurrentPassword')); return }
-    if (pw.length < 6) { setErr(t('profile.newPasswordMin6')); return }
+    if (pw.length < PASSWORD_MIN_LENGTH) { setErr(t('profile.newPasswordMin6')); return }
     if (pw !== confirm) { setErr(t('profile.newPasswordsNoMatch')); return }
     if (pw === oldPw) { setErr(t('profile.newPasswordSame')); return }
     setBusy(true)
-    // Verify old password by re-signing in
-    const { error: signInErr } = await supabase.auth.signInWithPassword({ email: userEmail, password: oldPw })
+    // Verify the current password by signing in again — as the account that is
+    // signed in right now, read from the session, not from the profile fields.
+    //
+    // This only ever used the email, and accounts registered through the OTP
+    // flow have none (the number is their identity), so for them it signed in
+    // with an empty address and reported "current password is wrong" no matter
+    // what was typed. The phone comes from auth.users too, never from the
+    // editable profile number: signing in with somebody else's number and a
+    // password that happens to match would swap this session onto their account.
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    const credentials = authUser?.email
+      ? { email: authUser.email, password: oldPw }
+      : authUser?.phone
+        ? { phone: authUser.phone, password: oldPw }
+        : null
+    if (!credentials) { setBusy(false); setErr(t('profile.currentPasswordWrong')); return }
+    const { error: signInErr } = await supabase.auth.signInWithPassword(credentials)
     if (signInErr) { setBusy(false); setErr(t('profile.currentPasswordWrong')); return }
     // Update to new password
     const { error } = await supabase.auth.updateUser({ password: pw })
@@ -139,7 +155,7 @@ function ChangePasswordModal({ onClose, userEmail, userPhone }) {
 
   const handleSmsReset = async () => {
     setErr('')
-    if (pw.length < 6) { setErr(t('reset.passwordMin6')); return }
+    if (pw.length < PASSWORD_MIN_LENGTH) { setErr(t('reset.passwordMin6')); return }
     if (pw !== confirm) { setErr(t('reset.passwordsNoMatch')); return }
     setBusy(true)
     const { error: rpcErr } = await supabase.rpc('reset_password_verified', {
