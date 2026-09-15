@@ -1,4 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
+import { Capacitor } from '@capacitor/core'
+import { LocationService } from './locationPlugin'
+import { createBrokeredFetch } from './refreshBroker'
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 /**
  * Session storage that cannot silently lose the session.
@@ -47,9 +53,23 @@ const resilientStorage = {
 }
 
 export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  SUPABASE_URL,
+  SUPABASE_KEY,
   {
+    // On Android every token refresh goes through the native TokenBroker, the
+    // same lock the location service and SOS sender use. Without it both sides
+    // spent the single-use refresh token and Supabase revoked the session — the
+    // "logged out by itself" bug. See lib/refreshBroker.js.
+    global: {
+      fetch: createBrokeredFetch({
+        isNative: () => Capacitor.isNativePlatform(),
+        redeem: (refreshToken) => LocationService.redeemRefreshToken({
+          refreshToken,
+          supabaseUrl: SUPABASE_URL,
+          supabaseKey: SUPABASE_KEY,
+        }),
+      }),
+    },
     auth: {
       // Keep the session across app restarts and refresh the access token
       // before it expires. These are the library defaults, but they are load

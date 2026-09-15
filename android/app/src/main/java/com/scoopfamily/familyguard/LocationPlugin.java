@@ -272,9 +272,9 @@ public class LocationPlugin extends Plugin {
             .putString(LocationForegroundService.KEY_KEY,       supabaseKey)
             .putString(LocationForegroundService.KEY_USER_ID,   userId)
             .putString(LocationForegroundService.KEY_FAMILY_ID, familyId)
-            .putString(LocationForegroundService.KEY_SESSION,   sessionToken)
-            .putString(LocationForegroundService.KEY_REFRESH,   refreshToken)
-            .apply();
+            .commit();
+        // Through the broker, which refuses a refresh token already spent here.
+        TokenBroker.store(prefs, sessionToken, refreshToken);
 
         LocationForegroundService.startService(ctx);
         call.resolve();
@@ -329,12 +329,40 @@ public class LocationPlugin extends Plugin {
         String token = call.getString("sessionToken");
         if (token == null) { call.reject("sessionToken required"); return; }
         String refreshToken = call.getString("refreshToken");
-        SharedPreferences.Editor editor = getContext()
-            .getSharedPreferences(LocationForegroundService.PREF_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putString(LocationForegroundService.KEY_SESSION, token);
-        if (refreshToken != null) editor.putString(LocationForegroundService.KEY_REFRESH, refreshToken);
-        editor.apply();
+        // Through the broker: a push can arrive after the service has already
+        // rotated past it, and storing that spent token would revoke the session
+        // on the next renewal.
+        TokenBroker.store(getContext()
+            .getSharedPreferences(LocationForegroundService.PREF_NAME, Context.MODE_PRIVATE),
+            token, refreshToken);
         call.resolve();
+    }
+
+    /**
+     * Renews the session on behalf of supabase-js (src/lib/refreshBroker.js).
+     *
+     * Every refresh in the app — WebView and native — goes through TokenBroker's
+     * lock, so the single-use refresh token is never spent twice. Resolves with
+     * the server's status and body; status 0 means the server was not reached.
+     */
+    @PluginMethod
+    public void redeemRefreshToken(PluginCall call) {
+        String refreshToken = call.getString("refreshToken");
+        String supabaseUrl  = call.getString("supabaseUrl");
+        String supabaseKey  = call.getString("supabaseKey");
+        if (refreshToken == null || supabaseUrl == null || supabaseKey == null) {
+            call.reject("refreshToken, supabaseUrl and supabaseKey are required");
+            return;
+        }
+        SharedPreferences prefs = getContext()
+            .getSharedPreferences(LocationForegroundService.PREF_NAME, Context.MODE_PRIVATE);
+        // Network work, and the lock may be held by a service refresh in flight.
+        new Thread(() -> {
+            TokenBroker.Result r = TokenBroker.redeem(prefs, supabaseUrl, supabaseKey, refreshToken);
+            JSObject ret = new JSObject();
+            ret.put("status", r.status);
+            ret.put("body", r.body);
+            call.resolve(ret);
+        }, "token-broker").start();
     }
 }

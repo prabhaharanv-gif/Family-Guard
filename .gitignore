@@ -33,3 +33,5 @@ supabase/.temp/
 android/keystore.properties
 *.jks
 *.keystore
+.vercel
+.env*

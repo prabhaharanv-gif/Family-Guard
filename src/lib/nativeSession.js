@@ -1,11 +1,10 @@
-import { registerPlugin, Capacitor } from '@capacitor/core'
+import { Capacitor } from '@capacitor/core'
 import { supabase } from './supabase'
 import { authLog } from './authDebug'
+import { LocationService } from './locationPlugin'
 
-// Registered here and shared, rather than in each consumer: Capacitor warns
-// on a second registerPlugin for the same name (it returns the same proxy, so
-// it works either way, but the warning is noise on every launch).
-export const LocationService = registerPlugin('LocationService')
+// Re-exported for existing consumers; registered once in locationPlugin.
+export { LocationService }
 
 /**
  * Adopt the session the native background service renewed while the app slept.

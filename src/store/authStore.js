@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import { adoptNativeSession } from '../lib/nativeSession'
+import { authLog } from '../lib/authDebug'
 
 export const useAuthStore = create((set, get) => ({
   user:        null,
@@ -49,6 +50,8 @@ export const useAuthStore = create((set, get) => ({
         if (event === 'TOKEN_REFRESHED' && get().user?.id === session.user.id) return
         set({ user: session.user })
       } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        // Recorded so the next unexplained logout can be traced (__authLog()).
+        authLog(`auth-${event}`, { appVisible: typeof document !== 'undefined' ? document.visibilityState : null })
         // Only a real sign-out clears state. This previously cleared on any
         // session-less event, so a transient gap during token renewal could
         // drop the user on the login screen with a usable session in storage.

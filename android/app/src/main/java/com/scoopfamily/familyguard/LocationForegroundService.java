@@ -867,64 +867,13 @@ public class LocationForegroundService extends Service {
     // Static and package-private so SosSender can reach it: an SOS rejected for a stale
     // token has to be able to renew and retry on its own, without a handle on the
     // service. It touches no instance state — only prefs and the two passed-in values.
+    //
+    // Goes through TokenBroker, the single lock that the WebView's refreshes also
+    // pass through. Redeeming here independently is what signed users out: the
+    // WebView and this service spent the same single-use token, and Supabase
+    // revoked the whole session.
     static boolean refreshAccessToken(SharedPreferences prefs, String supabaseUrl, String supabaseKey) {
-        String refreshToken = prefs.getString(KEY_REFRESH, null);
-        if (refreshToken == null) {
-            Log.w(TAG, "No refresh token stored — cannot renew session natively");
-            return false;
-        }
-
-        try {
-            JSONObject body = new JSONObject();
-            body.put("refresh_token", refreshToken);
-
-            URL url = new URL(supabaseUrl + "/auth/v1/token?grant_type=refresh_token");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("apikey", supabaseKey);
-            conn.setDoOutput(true);
-            conn.setConnectTimeout(10_000);
-            conn.setReadTimeout(10_000);
-
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(body.toString().getBytes("UTF-8"));
-            }
-
-            int code = conn.getResponseCode();
-            if (code != 200) {
-                Log.w(TAG, "Token refresh failed HTTP " + code + " — refresh token likely expired, needs re-login");
-                conn.disconnect();
-                return false;
-            }
-
-            StringBuilder sb = new StringBuilder();
-            try (java.io.BufferedReader br = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(conn.getInputStream()))) {
-                String line;
-                while ((line = br.readLine()) != null) sb.append(line);
-            }
-            conn.disconnect();
-
-            JSONObject json = new JSONObject(sb.toString());
-            String newAccessToken  = json.optString("access_token", null);
-            String newRefreshToken = json.optString("refresh_token", null);
-            if (newAccessToken == null) {
-                Log.w(TAG, "Token refresh response missing access_token");
-                return false;
-            }
-
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putString(KEY_SESSION, newAccessToken);
-            if (newRefreshToken != null) editor.putString(KEY_REFRESH, newRefreshToken);
-            editor.apply();
-
-            Log.i(TAG, "✅ Session refreshed natively — background tracking keeps flowing");
-            return true;
-        } catch (Exception e) {
-            Log.e(TAG, "Token refresh error: " + e.getMessage());
-            return false;
-        }
+        return TokenBroker.redeem(prefs, supabaseUrl, supabaseKey, null).ok();
     }
 
     // ── Notification ──────────────────────────────────────────────────────────
