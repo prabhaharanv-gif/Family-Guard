@@ -14,15 +14,19 @@
  * nulls currentTarget once the handler returns, so a rect read inside a
  * long-press timeout is always null.
  *
- * Items: { label, sub?, icon?, color?, danger?, disabled?, onClick }
+ * Items: { label, sub?, icon?, color?, danger?, disabled?, checked?, onClick }
+ *
+ * `title` adds a small heading row, for a menu that is a choice rather than a
+ * list of actions (the Messages mute menu); `checked` marks the current choice.
  */
-export default function AnchoredMenu({ anchor, items = [], onClose, width = 210, align = 'auto' }) {
+export default function AnchoredMenu({ anchor, items = [], onClose, width = 210, align = 'auto', title }) {
   const rows = items.filter(Boolean)
   if (rows.length === 0) return null
 
-  const ROW_H = rows.some(r => r.sub) ? 52 : 40
-  const PAD    = 12
-  const height = rows.length * ROW_H + PAD
+  const ROW_H   = rows.some(r => r.sub) ? 52 : 40
+  const PAD     = 12
+  const TITLE_H = title ? 30 : 0
+  const height  = rows.length * ROW_H + PAD + TITLE_H
 
   const vw = typeof window === 'undefined' ? 360 : window.innerWidth
   const vh = typeof window === 'undefined' ? 640 : window.innerHeight
@@ -53,11 +57,21 @@ export default function AnchoredMenu({ anchor, items = [], onClose, width = 210,
         style={{
           position: 'fixed', top, left, width,
           background: '#fff', borderRadius: 14,
-          border: '1px solid #ECE0E5',
+          border: '1px solid var(--border)',
           boxShadow: '0 14px 36px rgba(20,4,10,0.24)',
           padding: 6, overflow: 'hidden',
         }}
       >
+        {title && (
+          <div style={{
+            height: TITLE_H, padding: '0 8px', display: 'flex', alignItems: 'center',
+            fontSize: 11, fontWeight: 800, letterSpacing: 0.3, color: 'var(--muted-soft)',
+            borderBottom: '1px solid var(--border)', marginBottom: 2,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {title}
+          </div>
+        )}
         {rows.map((a, i) => (
           <div key={a.label}>
             {i > 0 && <div style={{ height: 1, background: '#F7EFF3', margin: '0 6px' }} />}
@@ -74,26 +88,31 @@ export default function AnchoredMenu({ anchor, items = [], onClose, width = 210,
               }}
             >
               {a.icon && (
-                <span style={{ color: a.color || '#8B0D3D', display: 'flex', flexShrink: 0 }}>
+                <span style={{ color: a.color || 'var(--maroon)', display: 'flex', flexShrink: 0 }}>
                   {a.icon}
                 </span>
               )}
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{
                   display: 'block', fontSize: 13.5, fontWeight: 700,
-                  color: a.danger ? (a.color || '#E11D48') : '#2A0A18',
+                  color: a.danger ? (a.color || '#E11D48') : 'var(--text)',
                 }}>
                   {a.label}
                 </span>
                 {a.sub && (
                   <span style={{
-                    display: 'block', fontSize: 11, color: '#9C6B7A', marginTop: 1,
+                    display: 'block', fontSize: 11, color: 'var(--muted-soft)', marginTop: 1,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {a.sub}
                   </span>
                 )}
               </span>
+              {a.checked && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              )}
             </button>
           </div>
         ))}

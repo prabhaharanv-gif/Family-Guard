@@ -175,6 +175,45 @@ public class LocationPlugin extends Plugin {
         call.resolve(res);
     }
 
+    /**
+     * Everything that decides whether this phone is CAPABLE of reporting in the
+     * background, in one call.
+     *
+     * These are the questions that actually explain a member who has gone dark.
+     * Every one of them was previously invisible from anywhere but the phone
+     * itself: a member could say — truthfully, as far as they knew — that they
+     * had given the app everything it asked for, while background location sat
+     * denied or the OEM's battery optimisation was free to kill the service.
+     * Diagnosing that meant inferring it from gaps between timestamps.
+     *
+     * Reported while the phone is still working, which is the point: by the time
+     * it goes silent it can no longer tell anyone anything, so the useful record
+     * is the one taken beforehand.
+     */
+    @PluginMethod
+    public void getDeviceHealth(PluginCall call) {
+        JSObject res = new JSObject();
+        res.put("bgLocation",       hasBackgroundPermission());
+        res.put("batteryOptIgnored", isBatteryOptimizationIgnored());
+        res.put("serviceRunning",   LocationForegroundService.isRunning);
+        res.put("sharingEnabled",   LocationForegroundService.isSharingEnabled(getContext()));
+        res.put("appVersion",       appVersion());
+        res.put("androidSdk",       Build.VERSION.SDK_INT);
+        call.resolve(res);
+    }
+
+    private String appVersion() {
+        try {
+            android.content.pm.PackageInfo pi = getContext().getPackageManager()
+                .getPackageInfo(getContext().getPackageName(), 0);
+            long code = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                ? pi.getLongVersionCode() : pi.versionCode;
+            return pi.versionName + " (" + code + ")";
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @PluginMethod
     public void hasBackgroundPermission(PluginCall call) {
         JSObject res = new JSObject();
@@ -198,15 +237,14 @@ public class LocationPlugin extends Plugin {
     @PluginMethod
     public void isBatteryOptimizationIgnored(PluginCall call) {
         JSObject res = new JSObject();
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            res.put("ignored", true);  // no Doze before Android 6
-            call.resolve(res);
-            return;
-        }
-        PowerManager pm = (PowerManager) getContext().getSystemService(Context.POWER_SERVICE);
-        boolean ignored = pm != null && pm.isIgnoringBatteryOptimizations(getContext().getPackageName());
-        res.put("ignored", ignored);
+        res.put("ignored", isBatteryOptimizationIgnored());
         call.resolve(res);
+    }
+
+    private boolean isBatteryOptimizationIgnored() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true;  // no Doze before Android 6
+        PowerManager pm = (PowerManager) getContext().getSystemService(Context.POWER_SERVICE);
+        return pm != null && pm.isIgnoringBatteryOptimizations(getContext().getPackageName());
     }
 
     /**
@@ -277,6 +315,36 @@ public class LocationPlugin extends Plugin {
         TokenBroker.store(prefs, sessionToken, refreshToken);
 
         LocationForegroundService.startService(ctx);
+        call.resolve();
+    }
+
+    /**
+     * Mirrors the member's show_location preference down to the native side and
+     * applies it immediately — off stops tracking, on resumes it.
+     *
+     * The web layer knows this value; the native start paths did not, which is
+     * why opting out used to last only until the next launch. Call it whenever
+     * the preference is saved, and whenever the app observes it changing (it can
+     * change on another device).
+     */
+    @PluginMethod
+    public void setSharing(PluginCall call) {
+        Boolean sharing = call.getBoolean("sharing");
+        if (sharing == null) {
+            call.reject("Missing required parameter: sharing");
+            return;
+        }
+        LocationForegroundService.setSharingEnabled(getContext(), sharing);
+        call.resolve();
+    }
+
+    /**
+     * Stops tracking and forgets the stored session. Call on sign-out, before
+     * the web layer tears the Supabase session down.
+     */
+    @PluginMethod
+    public void clearSession(PluginCall call) {
+        LocationForegroundService.clearSession(getContext());
         call.resolve();
     }
 

@@ -1,15 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { Geolocation } from '@capacitor/geolocation'
 import { useAuthStore } from '../store/authStore'
 import { useT } from '../i18n'
 import { useLocations } from '../hooks/useLocations'
+import { useNicknames } from '../hooks/useNicknames'
 import { supabase } from '../lib/supabase'
 import { startBatteryReporting } from '../hooks/useBattery'
 import { formatLocationTime } from '../lib/locationTime'
 import SmoothMarker, { GLIDE_MS } from '../components/SmoothMarker'
 import MapCompass from '../components/MapCompass'
+import Icon from '../components/Icon'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -142,11 +144,6 @@ function FlyToMember({ target }) {
  * fix would fight the user: a phone standing still wanders a few metres and the
  * map would twitch continuously. panTo also keeps whatever zoom was chosen,
  * where flyTo would snap it back.
- *
- * Deliberately close to FollowTarget in MapPage, which does the same job for the
- * single-member screen. Not shared with it: that one also owns the first-fix
- * centring and its own zoom, and the two differ enough that one component
- * taking both sets of options would be harder to follow than the repetition.
  */
 function FollowMember({ loc, following, onUserPanned }) {
   const map = useMap()
@@ -275,7 +272,7 @@ function SpeedBadge({ loc, size = 34 }) {
       // quadrant and buried the face.
       position: 'absolute', right: -14, bottom: -8,
       width: size, height: size, borderRadius: '50%',
-      background: '#8B0D3D', border: '2px solid #fff',
+      background: 'var(--maroon)', border: '2px solid #fff',
       boxSizing: 'border-box',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
@@ -300,7 +297,19 @@ function SpeedBadge({ loc, size = 34 }) {
 export default function MapAllPage() {
   const t = useT()
   const { user, familyId } = useAuthStore()
-  const { locations } = useLocations(familyId)
+  const { locations: rawLocations } = useLocations(familyId)
+  // My nicknames applied once, here, so every name on this page — the markers
+  // and their letters, the Find Fam list, the Following chip — matches the
+  // Family cards and chat. They read the registered name before.
+  const { nicknames } = useNicknames()
+  const locations = useMemo(() => {
+    if (!Object.keys(nicknames).length) return rawLocations
+    const out = {}
+    for (const [uid, loc] of Object.entries(rawLocations)) {
+      out[uid] = nicknames[uid] ? { ...loc, displayName: nicknames[uid] } : loc
+    }
+    return out
+  }, [rawLocations, nicknames])
   const batteryRef = useRef({ level: null, charging: false })
 
   useEffect(() => {
@@ -437,52 +446,54 @@ export default function MapAllPage() {
       {/* Top Bar */}
       <div className="top-bar" style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
         <div style={{ flex: 1 }}>
-          <div className="top-bar-title">🗺️ {t('map.title')}</div>
+          <div className="top-bar-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+              <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+            </svg>
+            {t('map.title')}
+          </div>
         </div>
-        {/* Find Fam button */}
+        {/* Find Fam button — styled exactly like Messages' "Clear Chat": the
+            solid white pill is the header's primary action on both pages. */}
         <button
           onClick={() => setShowFindFam(s => !s)}
           aria-label={t('map.findMember')}
           style={{
-            background: showFindFam ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)',
-            border: '1.5px solid rgba(255,255,255,0.4)',
-            color: showFindFam ? '#8B0D3D' : '#fff',
-            borderRadius: 10, padding: '8px 14px',
-            fontWeight: 800, fontSize: 13,
-            fontFamily: 'inherit', cursor: 'pointer',
-            whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6,
+            background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
+            color: 'var(--maroon)', borderRadius: 10, padding: '7px 12px',
+            fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
+            whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
             marginRight: 6,
           }}
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
             <circle cx="9" cy="7" r="4"/>
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
-          Find Fam
+          {t('map.findFam')}
         </button>
 
         <button
           onClick={handleRefresh}
           disabled={refreshing}
           aria-label={t('map.refresh')}
+          // Same translucent square and icon as the Messages refresh button.
           style={{
-            background: 'rgba(255,255,255,0.92)',
-            border: '1.5px solid #fff',
-            color: '#8B0D3D', borderRadius: 10,
-            width: 36, height: 36,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: refreshing ? 'wait' : 'pointer', flexShrink: 0,
+            background: 'rgba(255,255,255,0.15)',
+            border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10,
+            padding: '7px 10px', cursor: refreshing ? 'wait' : 'pointer',
+            flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
           <svg
             width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
             style={{ animation: refreshing ? 'famguard-spin 0.7s linear infinite' : 'none' }}
           >
-            <polyline points="23 4 23 10 17 10"/>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            <path d="M21 12a9 9 0 1 1-2.64-6.36" /><polyline points="21 3 21 9 15 9" />
           </svg>
         </button>
       </div>
@@ -497,7 +508,7 @@ export default function MapAllPage() {
           padding: '9px 16px', fontSize: 12.5, fontWeight: 600,
           flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8,
         }}>
-          ⚠️ Location permission is required. Allow it in Android Settings → Apps → Famora → Permissions.
+          <Icon name="alert" /> {t('map.permissionRequired')}
         </div>
       )}
 
@@ -509,7 +520,7 @@ export default function MapAllPage() {
           padding: '9px 16px', fontSize: 12.5, fontWeight: 600,
           flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8,
         }}>
-          ⚠️ Couldn't get location — check GPS is on and tap Refresh.
+          <Icon name="alert" /> {t('map.locationFailed')}
         </div>
       )}
 
@@ -538,56 +549,46 @@ export default function MapAllPage() {
               key={uid}
               position={[loc.lat, loc.lng]}
               icon={createIcon(
-                loc.avatarColor || '#8B0D3D',
+                loc.avatarColor || 'var(--maroon)',
                 loc.displayName?.[0]?.toUpperCase() || '?',
                 loc.avatarUrl || null
               )}
             >
-              <div style={{ minWidth: 160, fontFamily: 'Inter, sans-serif', padding: '2px 0' }}>
+              {/* Compact on purpose: who this is, and the way out to Google Maps.
+                  The last-location time and speed live in the Find Fam list — repeated
+                  here it doubled the popup's height and covered the map. */}
+              <div style={{ fontFamily: 'Inter, sans-serif' }}>
                   {/* Avatar + name row */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                    <div style={{ position: 'relative', flexShrink: 0, marginRight: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <div style={{ flexShrink: 0 }}>
                       {loc.avatarUrl ? (
-                        <img src={loc.avatarUrl} alt={loc.displayName} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid #8B0D3D' }} />
+                        <img src={loc.avatarUrl} alt={loc.displayName} style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid var(--maroon)' }} />
                       ) : (
                         <div style={{
-                          width: 40, height: 40, borderRadius: '50%',
-                          background: loc.avatarColor || '#8B0D3D',
+                          width: 30, height: 30, borderRadius: '50%',
+                          background: loc.avatarColor || 'var(--maroon)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: '#fff', fontWeight: 800, fontSize: 15,
-                          border: '2px solid #8B0D3D', boxSizing: 'border-box',
+                          color: '#fff', fontWeight: 800, fontSize: 13,
+                          border: '2px solid var(--maroon)', boxSizing: 'border-box',
                         }}>
                           {loc.displayName?.[0]?.toUpperCase()}
                         </div>
                       )}
-                      <SpeedBadge loc={loc} />
                     </div>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: 14, color: '#2A0A18' }}>{loc.displayName}</div>
-                      <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
-                        Last Loc Time · {formatLocationTime(t, loc.updatedAt)}
-                      </div>
-                      {/* Stale warning — if location is older than 15 minutes */}
-                      {(Date.now() - new Date(loc.updatedAt)) > 15 * 60 * 1000 && (
-                        <div style={{ fontSize: 10, color: '#D97706', fontWeight: 700, marginTop: 3 }}>
-                          ⚠️ Location may be outdated
-                        </div>
-                      )}
-                    </div>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--text)', whiteSpace: 'nowrap' }}>{loc.displayName}</div>
                   </div>
                   {/* Google Maps button */}
                   <a
                     href={`https://www.google.com/maps?q=${loc.lat},${loc.lng}`}
                     target="_blank" rel="noopener noreferrer"
                     style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                      background: 'linear-gradient(135deg, #8B0D3D, #6E0A30)',
-                      color: '#fff', padding: '8px 14px', borderRadius: 10,
-                      fontWeight: 700, fontSize: 12, textDecoration: 'none',
-                      boxShadow: '0 3px 10px rgba(139,13,61,0.3)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                      background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
+                      color: '#fff', padding: '6px 12px', borderRadius: 8,
+                      fontWeight: 700, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap',
                     }}
                   >
-                    🗺️ Open in Google Maps
+                    <Icon name="map" /> {t('map.openInGoogleMaps')}
                   </a>
                 </div>
             </SmoothMarker>
@@ -653,13 +654,13 @@ export default function MapAllPage() {
             position: 'absolute', top: 70, right: 12, zIndex: 400,
             background: '#fff', borderRadius: 16,
             boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-            border: '1px solid #ECE0E5',
+            border: '1px solid var(--border)',
             minWidth: 200, maxWidth: 260,
             overflow: 'hidden',
           }}>
             {/* Header */}
             <div style={{
-              background: 'linear-gradient(135deg, #8B0D3D, #6E0A30)',
+              background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
               padding: '10px 14px',
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
@@ -674,7 +675,7 @@ export default function MapAllPage() {
 
             {/* Member list */}
             {Object.entries(locations).length === 0 ? (
-              <div style={{ padding: '16px', fontSize: 13, color: '#9C6B7A', textAlign: 'center' }}>
+              <div style={{ padding: '16px', fontSize: 13, color: 'var(--muted-soft)', textAlign: 'center' }}>
                 No members sharing location
               </div>
             ) : (
@@ -704,14 +705,14 @@ export default function MapAllPage() {
                     <div style={{ position: 'relative', flexShrink: 0, marginRight: 14 }}>
                       {loc.avatarUrl ? (
                         <img src={loc.avatarUrl} alt={loc.displayName}
-                          style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid #8B0D3D' }} />
+                          style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid var(--maroon)' }} />
                       ) : (
                         <div style={{
                           width: 40, height: 40, borderRadius: '50%',
-                          background: loc.avatarColor || '#8B0D3D',
+                          background: loc.avatarColor || 'var(--maroon)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           color: '#fff', fontWeight: 800, fontSize: 15,
-                          border: '2px solid #8B0D3D', boxSizing: 'border-box',
+                          border: '2px solid var(--maroon)', boxSizing: 'border-box',
                         }}>
                           {loc.displayName?.[0]?.toUpperCase()}
                         </div>
@@ -720,23 +721,23 @@ export default function MapAllPage() {
                     </div>
                     {/* Name + distance + last loc time */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#2A0A18', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
                         {loc.displayName}
                         {myLoc && uid !== user?.id && (() => {
                           const dist = formatDistance(myLoc.lat, myLoc.lng, loc.lat, loc.lng)
                           return dist ? (
-                            <span style={{ fontSize: 11, fontWeight: 600, color: '#8B0D3D' }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--maroon)' }}>
                               ({dist})
                             </span>
                           ) : null
                         })()}
                       </div>
-                      <div style={{ fontSize: 11, color: stale ? '#D97706' : '#9C6B7A' }}>
-                        {stale ? '⚠️ ' : ''}Last Loc Time · {formatLocationTime(t, loc.updatedAt)}
+                      <div style={{ fontSize: 12, fontWeight: 600, color: stale ? '#D97706' : 'var(--muted)' }}>
+                        {stale ? <><Icon name="alert" />{' '}</> : ''}{t('map.lastLocTime')} · {formatLocationTime(t, loc.updatedAt)}
                       </div>
                     </div>
                     {/* Arrow */}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 18 15 12 9 6"/>
                     </svg>
                   </button>

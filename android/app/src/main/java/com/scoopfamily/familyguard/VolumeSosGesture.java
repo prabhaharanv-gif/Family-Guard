@@ -18,6 +18,21 @@ import android.util.Log;
  * Raises an SOS on two volume presses one way followed by two the other —
  * up, up, down, down (or down, down, up, up), with the app closed.
  *
+ * NOT CURRENTLY REGISTERED. Withdrawn 2026-09-16 because testers found it
+ * disturbing, and the complaints were about the machinery below rather than the
+ * pattern: to see presses at all this had to take ownership of the phone's
+ * volume keys, so every ordinary volume adjustment went through onAdjustVolume
+ * and came back out as a mirrored write with FLAG_SHOW_UI, and a silent
+ * AudioTrack looped for as long as location sharing was on. Together that meant
+ * the volume slider behaving oddly, and the phone permanently holding an audio
+ * session, for a trigger almost nobody used.
+ *
+ * Kept, like PowerButtonSosReceiver, because the findings below cost a lot to
+ * learn. To bring it back, construct and start() it from something alive while
+ * the app is closed — LocationForegroundService is the only candidate — and
+ * stop() it in that component's onDestroy. Do not re-register it without a way
+ * to keep the volume keys behaving normally.
+ *
  * How the presses are received, and why it is done this way
  * ---------------------------------------------------------
  * The first version of this watched the volume *value* through a
@@ -103,9 +118,10 @@ final class VolumeSosGesture {
     }
 
     /**
-     * Starts listening. Registered by LocationForegroundService, which is the
-     * only thing guaranteed to be alive while the app is closed — so, like every
-     * native gesture here, this stops working if location sharing is off.
+     * Starts listening. Nothing calls this now; it was called by
+     * LocationForegroundService, the only thing guaranteed to be alive while the
+     * app is closed — so, like every native gesture here, it stopped working if
+     * location sharing was off.
      */
     void start() {
         if (audio == null) {

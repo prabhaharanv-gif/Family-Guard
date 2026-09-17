@@ -358,7 +358,7 @@ export default function CallPage() {
   if (loading || !call) {
     return (
       <div style={styles.page}>
-        <div style={styles.center}><div style={styles.name}>Loading…</div></div>
+        <div style={styles.center}><div style={styles.name}>{t('common.loading')}</div></div>
       </div>
     )
   }
@@ -461,7 +461,7 @@ export default function CallPage() {
 
 const styles = {
   page: {
-    position: 'fixed', inset: 0, background: 'linear-gradient(160deg, #6E0A30 0%, #2A0414 100%)',
+    position: 'fixed', inset: 0, background: 'linear-gradient(160deg, var(--maroon-deep) 0%, #2A0414 100%)',
     display: 'flex', flexDirection: 'column', zIndex: 800, color: '#fff', fontFamily: 'inherit',
   },
   center: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' },
@@ -520,7 +520,7 @@ const styles = {
     transition: 'background 0.18s, border-color 0.18s',
   },
   smallBtnActive: {
-    background: '#8B0D3D',
+    background: 'var(--maroon)',
     borderColor: 'rgba(255,255,255,0.75)',
     boxShadow: '0 4px 14px rgba(139,13,61,0.55)',
   },

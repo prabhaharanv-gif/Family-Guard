@@ -24,6 +24,10 @@
 
     <string name="ch_messages_silent_name">पारिवारिक संदेश (मौन)</string>
     <string name="ch_messages_silent_desc">पारिवारिक संदेश — मौन मोड</string>
+    <string name="ch_messages_popup_silent_name">पारिवारिक संदेश (पॉप-अप, बिना आवाज़)</string>
+    <string name="ch_messages_popup_silent_desc">पारिवारिक संदेश — आवाज़ म्यूट, पॉप-अप दिखेगा</string>
+    <string name="ch_messages_quiet_name">पारिवारिक संदेश (आवाज़, बिना पॉप-अप)</string>
+    <string name="ch_messages_quiet_desc">पारिवारिक संदेश — पॉप-अप म्यूट, आवाज़ बजेगी</string>
 
     <string name="ch_location_name">लोकेशन ट्रैकिंग</string>
     <string name="ch_location_desc">जब Famora आपकी लोकेशन ट्रैक कर रहा हो तब दिखता है</string>
@@ -61,4 +65,8 @@
     <string name="notif_ping_big">%1$s इस फ़ोन को ढूँढ़ रहे हैं।\n\nआवाज़ बंद करने के लिए रोकें बटन दबाएँ।</string>
     <string name="notif_location_body">आपके परिवार की सुरक्षा · लोकेशन चालू</string>
     <string name="notif_tap_to_open">खोलने के लिए टैप करें</string>
+    <string name="ch_reauth_name">फिर से कनेक्ट करना है</string>
+    <string name="ch_reauth_desc">लोकेशन शेयरिंग जारी रखने के लिए Famora दोबारा खोलना ज़रूरी हो तब सूचित करता है</string>
+    <string name="notif_reauth_title">लोकेशन शेयरिंग रुक गई</string>
+    <string name="notif_reauth_body">फिर से कनेक्ट करने के लिए Famora खोलें. तब तक आपका परिवार आपकी लोकेशन नहीं देख सकता.</string>
 </resources>

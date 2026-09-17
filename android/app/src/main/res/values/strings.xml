@@ -34,6 +34,10 @@
 
     <string name="ch_messages_silent_name">Family Messages (Silent)</string>
     <string name="ch_messages_silent_desc">Family messages — silent mode</string>
+    <string name="ch_messages_popup_silent_name">Family Messages (Pop-up, no sound)</string>
+    <string name="ch_messages_popup_silent_desc">Family messages — sound muted, pop-up still shows</string>
+    <string name="ch_messages_quiet_name">Family Messages (Sound, no pop-up)</string>
+    <string name="ch_messages_quiet_desc">Family messages — pop-up muted, sound still plays</string>
 
     <string name="ch_location_name">Location Tracking</string>
     <string name="ch_location_desc">Shows while Famora is tracking your location</string>
@@ -87,4 +91,8 @@
     <string name="notif_ping_big">%1$s is looking for this phone.\n\nTap Stop to silence it.</string>
     <string name="notif_location_body">Protecting your family · location active</string>
     <string name="notif_tap_to_open">Tap to open</string>
+    <string name="ch_reauth_name">Reconnection needed</string>
+    <string name="ch_reauth_desc">Alerts you when Famora must be reopened to keep sharing your location</string>
+    <string name="notif_reauth_title">Location sharing paused</string>
+    <string name="notif_reauth_body">Open Famora to reconnect. Your family cannot see your location until you do.</string>
 </resources>

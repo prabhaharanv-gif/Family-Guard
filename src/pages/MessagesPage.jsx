@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { registerPlugin, Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
@@ -9,13 +9,14 @@ import Dialog from '../components/Dialog'
 import { useT } from '../i18n'
 import CallsPanel from '../components/CallsPanel'
 import { useHiddenMessages } from '../hooks/useHiddenMessages'
-import { readMuteLevel, writeMuteLevel, MUTE_LEVELS } from '../lib/muteLevel'
+import { readMuteLevel, writeMuteLevel, MUTE } from '../lib/muteLevel'
+import AnchoredMenu from '../components/AnchoredMenu'
 import PersonalChatPanel from '../components/PersonalChatPanel'
 import {
   SingleTick, DoubleTick, ReplyBar, ReplyQuote, MessageActionSheet, EditModal,
-  ReactionChips,
+  ReactionChips, SwipeToReply,
 } from '../components/MessageActions'
-import { AttachButton, MediaBubble, PendingMediaBar, VoiceRecorder } from '../components/ChatMedia'
+import { AttachButton, MediaBubble, PendingMediaBar, VoiceRecorder, isBareMedia } from '../components/ChatMedia'
 import { useNicknames } from '../hooks/useNicknames'
 import { useReactions } from '../hooks/useReactions'
 import { familyMediaFolder, uploadChatMedia } from '../lib/chatMedia'
@@ -52,11 +53,13 @@ export default function MessagesPage() {
   const [text, setText]           = useState('')
   const [pendingMedia, setPendingMedia] = useState(null)  // { file, kind, durationMs, previewUrl }
   const [sending, setSending]     = useState(false)
+  const [recording, setRecording] = useState(false)
   const [clearing, setClearing]   = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [muteLevel, setMuteLevel] = useState(readMuteLevel)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showSearch, setShowSearch]   = useState(false)
+  // The bell's rect while its mute menu is open, captured in the click handler
+  // (see AnchoredMenu for why it cannot be read later); null when closed.
+  const [muteMenuAnchor, setMuteMenuAnchor] = useState(null)
   const [dialog, setDialog]           = useState(null) // { type, title, message, onConfirm }
   // 'chat' = family-wide room, 'personal' = one-to-one threads, 'calls' = history
   const [activeTab, setActiveTab]     = useState('chat')
@@ -68,6 +71,28 @@ export default function MessagesPage() {
   const [personalControls, setPersonalControls] = useState(null) // reported by PersonalChatPanel
   const [typingUsers, setTypingUsers] = useState({})
   const bottomRef      = useRef(null)
+  const titleRef       = useRef(null)
+  // The Clear button drops its words and keeps only the trash icon when the
+  // header runs out of room. In Tamil, Kannada and Malayalam "Clear Chat" is
+  // long enough to push the header buttons past the screen edge, or to squeeze
+  // the title side into extra lines; English, Hindi and Telugu fit and keep the
+  // full button. Measured rather than decided per language, so a new language
+  // or a narrow phone gets the same treatment without a list to maintain.
+  const [compactClear, setCompactClear] = useState(false)
+  useLayoutEffect(() => { setCompactClear(false) }, [t.lang])
+  useLayoutEffect(() => {
+    const title = titleRef.current
+    if (!title || compactClear) return
+    const bar = title.closest('.top-bar')
+    const buttons = bar.querySelectorAll('button')
+    const last = buttons[buttons.length - 1]
+    const barRight = bar.getBoundingClientRect().right - parseFloat(getComputedStyle(bar).paddingRight)
+    const overflows = last && last.getBoundingClientRect().right > barRight + 1
+    // Title line plus one status line (13px + 3px gap); anything taller wrapped.
+    const fontSize = parseFloat(getComputedStyle(title).fontSize) || 18
+    const tooTall = title.parentElement.getBoundingClientRect().height > fontSize * 1.8 + 16
+    if (overflows || tooTall) setCompactClear(true)
+  })
   const longPressRef   = useRef(null)
   const didLongPress   = useRef(false)
   const typingTimerRef = useRef(null)
@@ -283,6 +308,7 @@ export default function MessagesPage() {
       }))
     }
     if (error) {
+      console.error('[send_message] failed', JSON.stringify(error), media ? JSON.stringify(media) : 'no media')
       setDialog({ type: 'error', message: t('messages.sendFailed') })
     } else {
       setText('')
@@ -370,19 +396,26 @@ export default function MessagesPage() {
   }
 
   // ── Mute ────────────────────────────────────────────────────────────────────
-  const handleMuteToggle = () => {
-    const next = writeMuteLevel((muteLevel + 1) % MUTE_LEVELS)
+  // The bell opens a menu — mute Sound, Pop-up, or both — rather than cycling
+  // through levels on each tap.
+  const selectMuteLevel = (level) => {
+    const next = writeMuteLevel(level)
     setMuteLevel(next)
     setNativeMuteLevel(next)
   }
-  const MUTE_STATES = [
-    { tip: t('messages.notificationsOn') },
-    { tip: t('messages.soundMuted') },
-    { tip: t('messages.allMuted') },
-  ]
+  // `status` is the line under the title and the bell's accessible name.
+  const MUTE_STATES = {
+    [MUTE.NONE]:            { status: '' },
+    [MUTE.SOUND]:           { status: t('messages.statusSoundOff') },
+    [MUTE.POPUP]:           { status: t('messages.statusPopupOff') },
+    [MUTE.SOUND_AND_POPUP]: { status: t('messages.soundOff') },
+  }
   // Never index blind — an unexpected stored level must not take the page down
-  const muteState = MUTE_STATES[muteLevel] || MUTE_STATES[0]
-  const MUTE_COLOR = muteLevel === 1 ? 'var(--gold)' : muteLevel === 2 ? 'var(--rose)' : '#fff'
+  const muteState = MUTE_STATES[muteLevel] || MUTE_STATES[MUTE.NONE]
+  const muted = muteLevel !== MUTE.NONE
+  // No gold: on the maroon header it read as a stray accent. Muted is shown the
+  // way the header already marks an "on" control — a solid white button with a
+  // maroon icon, as on Clear Chat and the Map page's Find Fam.
 
   // ── Long press ──────────────────────────────────────────────────────────────
   const startLongPress = (msg, e) => {
@@ -421,95 +454,96 @@ export default function MessagesPage() {
 
       {/* Top Bar */}
       <div className="top-bar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div>
-            <div className="top-bar-title">💬 {t('messages.title')}</div>
-            <button onClick={handleMuteToggle} title={muteState.tip} style={{
-              marginTop: 3, background: 'none', border: 'none',
-              cursor: 'pointer', padding: 0,
-              display: 'flex', alignItems: 'center', gap: 5,
-            }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke={MUTE_COLOR} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6.5 2.5 7.5a1 1 0 0 1-.7 1.7H4.2a1 1 0 0 1-.7-1.7C4.5 14.5 6 12.5 6 8z"/>
-                <path d="M10 20.5a2 2 0 0 0 4 0"/>
-                {muteLevel > 0 && <line x1="4" y1="4" x2="20" y2="20"/>}
+        {/* minWidth 0 lets the title side give way to the buttons, so a long
+            translation wraps here instead of pushing a button off screen. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <div style={{ minWidth: 0 }}>
+            <div ref={titleRef} className="top-bar-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
-              {muteLevel > 0 && (
-                <span style={{ fontSize: 10, fontWeight: 700, color: MUTE_COLOR }}>
-                  {muteLevel === 1 ? t('messages.soundOff') : t('messages.muted')}
-                </span>
-              )}
-            </button>
+              {t('messages.title')}
+            </div>
+            {/* Mute state, in words. The control itself is the bell button on
+                the right; an icon alone cannot say what is muted.
+                The line keeps its height when empty so the header does not
+                jump as the level changes. The labels name "message" outright
+                (the button never touches SOS or calls), which makes them long
+                enough to wrap onto a second line on a narrow phone. */}
+            <div style={{ marginTop: 3, minHeight: 13, fontSize: 10, fontWeight: 700, lineHeight: '13px', color: 'rgba(255,255,255,0.8)' }}>
+              {activeTab !== 'calls' && muteState.status}
+            </div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
           {activeTab === 'calls' && callControls?.selectMode && (
             <>
-              <button onClick={callControls.cancelSelection} style={{
-                background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)',
-                color: '#fff', borderRadius: 10, padding: '7px 12px',
-                fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}>Cancel</button>
+              {/* No Cancel button: tapping the last selected call unselects it
+                  and ends selection, and a Cancel beside Delete overflowed the
+                  header into the title on a phone-width screen. */}
               <button onClick={callControls.deleteSelected}
                 disabled={callControls.busy || callControls.selectedCount === 0} style={{
                 background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
-                color: '#8B0D3D', borderRadius: 10, padding: '7px 12px',
+                color: 'var(--maroon)', borderRadius: 10, padding: '7px 12px',
                 fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
                 whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
               }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
                 </svg>
-                Delete ({callControls.selectedCount})
+                {t('messages.deleteCount', { n: callControls.selectedCount })}
               </button>
             </>
           )}
           {activeTab === 'calls' && !callControls?.selectMode && callControls?.clearableCount > 0 && (
-            <button onClick={callControls.clearAll} disabled={callControls.busy} style={{
+            <button onClick={callControls.clearAll} disabled={callControls.busy}
+              aria-label={t('messages.clearCount', { n: callControls.clearableCount })} style={{
               background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
-              color: '#8B0D3D', borderRadius: 10, padding: '7px 12px',
+              color: 'var(--maroon)', borderRadius: 10, padding: compactClear ? '7px 10px' : '7px 12px',
               fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
               whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
-              {callControls.busy ? t('messages.clearing') : t('messages.clearCount', { n: callControls.clearableCount })}
+              {!compactClear && (callControls.busy ? t('messages.clearing') : t('messages.clearCount', { n: callControls.clearableCount }))}
             </button>
           )}
           {activeTab === 'chat' && visibleMessages.length > 0 && (
-            <button onClick={handleClearMessages} disabled={clearing} style={{
+            <button onClick={handleClearMessages} disabled={clearing}
+              aria-label={t('messages.clearChat')} style={{
               background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
-              color: '#8B0D3D', borderRadius: 10, padding: '7px 12px',
+              color: 'var(--maroon)', borderRadius: 10, padding: compactClear ? '7px 10px' : '7px 12px',
               fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
               whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
-              {clearing ? t('messages.clearing') : t('messages.clearChat')}
+              {!compactClear && (clearing ? t('messages.clearing') : t('messages.clearChat'))}
             </button>
           )}
           {/* Same button for an open personal thread. The panel reports the
               action up rather than drawing its own, so the two tabs cannot
               drift apart in style the way they had. */}
           {activeTab === 'personal' && personalControls?.canClear && (
-            <button onClick={personalControls.clearThread} disabled={personalControls.clearing} style={{
+            <button onClick={personalControls.clearThread} disabled={personalControls.clearing}
+              aria-label={t('messages.clearChat')} style={{
               background: 'rgba(255,255,255,0.92)', border: '1.5px solid #fff',
-              color: '#8B0D3D', borderRadius: 10, padding: '7px 12px',
+              color: 'var(--maroon)', borderRadius: 10, padding: compactClear ? '7px 10px' : '7px 12px',
               fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
               cursor: personalControls.clearing ? 'wait' : 'pointer',
               whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
-              {personalControls.clearing ? t('messages.clearing') : t('messages.clearChat')}
+              {!compactClear && (personalControls.clearing ? t('messages.clearing') : t('messages.clearChat'))}
             </button>
           )}
-          <button
+          {/* Calls tab: only Clear. Refresh is pull-to-refresh there, and the
+              mute menu is about message notifications, not calls. */}
+          {activeTab !== 'calls' && <button
             onClick={handleRefresh}
             disabled={refreshing}
             title={t('common.retry')}
@@ -526,33 +560,41 @@ export default function MessagesPage() {
               style={refreshing ? { animation: 'msgspin 0.8s linear infinite' } : undefined}>
               <path d="M21 12a9 9 0 1 1-2.64-6.36" /><polyline points="21 3 21 9 15 9" />
             </svg>
-          </button>
-          {activeTab === 'chat' && (
-          <button onClick={() => setShowSearch(s => !s)} style={{
-            background: showSearch ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)',
-            border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10,
-            padding: '7px 10px', cursor: 'pointer', flexShrink: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
+          </button>}
+          {/* Mute menu. Took the place of message search, which only filtered
+              the loaded Family chat. Shown on every tab because the level
+              applies to all message notifications, family and personal. */}
+          {activeTab !== 'calls' && <button
+            onClick={e => setMuteMenuAnchor(e.currentTarget.getBoundingClientRect())}
+            title={muted ? muteState.status : t('messages.notificationsOn')}
+            aria-label={muted ? muteState.status : t('messages.notificationsOn')}
+            aria-haspopup="menu"
+            style={{
+              background: muted ? 'rgba(255,255,255,0.92)' : muteMenuAnchor ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.15)',
+              border: muted ? '1.5px solid #fff' : '1.5px solid rgba(255,255,255,0.3)',
+              borderRadius: 10, padding: '7px 10px', cursor: 'pointer', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke={showSearch ? '#8B0D3D' : '#fff'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              stroke={muted ? 'var(--maroon)' : '#fff'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6.5 2.5 7.5a1 1 0 0 1-.7 1.7H4.2a1 1 0 0 1-.7-1.7C4.5 14.5 6 12.5 6 8z"/>
+              <path d="M10 20.5a2 2 0 0 0 4 0"/>
+              {muted && <line x1="3" y1="3" x2="21" y2="21"/>}
             </svg>
-          </button>
-          )}
+          </button>}
         </div>
       </div>
 
       {/* Chat / Personal / Calls tabs */}
-      <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid #ECE0E5', flexShrink: 0 }}>
+      <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid var(--border)', flexShrink: 0 }}>
         {[{ key: 'chat', label: t('messages.tabFamily') }, { key: 'personal', label: t('messages.tabPersonal') }, { key: 'calls', label: t('messages.tabCalls') }].map(tab => (
           <button key={tab.key} onClick={() => {
             if (tab.key === 'personal' && activeTab === 'personal') setPersonalReset(n => n + 1)
             setActiveTab(tab.key)
           }} style={{
             flex: 1, padding: '12px 0', background: 'none', border: 'none',
-            borderBottom: activeTab === tab.key ? '2.5px solid #8B0D3D' : '2.5px solid transparent',
-            color: activeTab === tab.key ? '#8B0D3D' : '#9C6B7A',
+            borderBottom: activeTab === tab.key ? '2.5px solid var(--maroon)' : '2.5px solid transparent',
+            color: activeTab === tab.key ? 'var(--maroon)' : 'var(--muted-soft)',
             fontWeight: activeTab === tab.key ? 800 : 600,
             fontSize: 14, fontFamily: 'inherit', cursor: 'pointer',
           }}>{tab.label}</button>
@@ -568,27 +610,6 @@ export default function MessagesPage() {
       )}
 
       {activeTab === 'personal' && <PersonalChatPanel onDialog={setDialog} resetSignal={personalReset} onControls={setPersonalControls} />}
-
-      {activeTab === 'chat' && showSearch && (
-        <div style={{ padding: '8px 16px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ position: 'relative' }}>
-            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search messages..." autoFocus
-              style={{
-                width: '100%', padding: '10px 36px 10px 14px',
-                borderRadius: 12, border: '1.5px solid var(--border)',
-                fontSize: 14, fontFamily: 'inherit', outline: 'none',
-                background: '#fff', boxSizing: 'border-box',
-              }} />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} style={{
-                position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#836370',
-              }}>✕</button>
-            )}
-          </div>
-        </div>
-      )}
 
       {activeTab === 'chat' && Object.keys(typingUsers).length > 0 && (
         <div style={{ padding: '6px 20px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)',
@@ -632,40 +653,27 @@ export default function MessagesPage() {
 
         {msgsLoaded && visibleMessages.length === 0 && (
           <div className="empty-state">
-            <svg className="empty-art" width="76" height="76" viewBox="0 0 72 72"
+            {/* Same silhouette as the header icon and the bottom-nav Messages
+                icon (square bubble, tail bottom-left), with the nav icon's three
+                dots — so the empty state reads as the same icon, just larger and
+                softer. It used to be a round bubble, the only Messages icon in
+                the app with a different shape. */}
+            <svg className="empty-art" width="76" height="76" viewBox="0 0 24 24"
               fill="none" aria-hidden="true" focusable="false">
-              <path d="M12 30c0-9.4 10.7-17 24-17s24 7.6 24 17-10.7 17-24 17c-2.7 0-5.3-.3-7.7-.9l-11.1 6.2a1 1 0 0 1-1.5-1l1.6-8.5C14.1 39.7 12 35.1 12 30Z"
-                stroke="#E79BBB" strokeWidth="2.4" strokeLinejoin="round" />
-              <circle cx="26" cy="30" r="2.6" fill="#E79BBB" />
-              <circle cx="36" cy="30" r="2.6" fill="#E79BBB" />
-              <circle cx="46" cy="30" r="2.6" fill="#E79BBB" />
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                stroke="#E79BBB" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="8"  cy="10" r="0.9" fill="#E79BBB" />
+              <circle cx="12" cy="10" r="0.9" fill="#E79BBB" />
+              <circle cx="16" cy="10" r="0.9" fill="#E79BBB" />
             </svg>
             <div className="empty-text">{t('messages.noMessages')}</div>
             <div className="empty-sub">{t('messages.sendFirst')}</div>
           </div>
         )}
 
-        {msgsLoaded && searchQuery && visibleMessages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
-          <div className="empty-state">
-            <svg className="empty-art" width="76" height="76" viewBox="0 0 72 72"
-              fill="none" aria-hidden="true" focusable="false">
-              <circle cx="32" cy="31" r="17" stroke="#E79BBB" strokeWidth="2.4" />
-              <path d="M44.5 43.5 L57 56" stroke="#E79BBB" strokeWidth="2.4" strokeLinecap="round" />
-              <path d="M24 26a11 11 0 0 1 8-4" stroke="#E79BBB" strokeWidth="2" strokeLinecap="round" opacity="0.55" />
-            </svg>
-            <div className="empty-text">{t('messages.noResults')}</div>
-            <div className="empty-sub">{t('messages.noMatch', { query: searchQuery })}</div>
-          </div>
-        )}
-
         {msgsLoaded && (() => {
           let lastDateLabel = null
-          // Hidden-for-me messages drop out before search, so a hidden message
-          // cannot resurface by matching a query.
-          const visible = visibleMessages
-          const filtered = searchQuery
-            ? visible.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
-            : visible
+          const filtered = visibleMessages
           return filtered.map((msg, idx) => {
             const isOwn  = msg.user_id === user?.id
             const member = members[msg.user_id]
@@ -757,10 +765,12 @@ export default function MessagesPage() {
                     Wrapped so the reaction chip can hang off its bottom edge;
                     the extra margin below is the room that overhang needs, so
                     it never lands on the timestamp. */}
-                <div style={{
-                  position: 'relative',
-                  marginBottom: (reactions[msg.id] || []).length ? 13 : 0,
-                }}>
+                <SwipeToReply
+                  onReply={() => { setReplyTo(msg); setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100) }}
+                  style={{
+                    position: 'relative',
+                    marginBottom: (reactions[msg.id] || []).length ? 13 : 0,
+                  }}>
                 <div
                   onMouseDown={e => startLongPress(msg, e)}
                   onMouseUp={cancelLongPress}
@@ -769,9 +779,11 @@ export default function MessagesPage() {
                   onTouchEnd={cancelLongPress}
                   onTouchMove={cancelLongPress}
                   onClick={() => { if (didLongPress.current) { didLongPress.current = false; return } }}
-                  style={{
-                    background: isOwn ? 'linear-gradient(135deg, #8B0D3D 0%, #A5124A 100%)' : '#fff',
-                    color: isOwn ? '#fff' : '#2A0A18',
+                  style={isBareMedia(msg) ? {
+                    cursor: 'default', userSelect: 'none',
+                  } : {
+                    background: isOwn ? 'linear-gradient(135deg, var(--maroon) 0%, var(--maroon-bright) 100%)' : '#fff',
+                    color: isOwn ? '#fff' : 'var(--text)',
                     padding: '10px 14px',
                     borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     fontSize: 14,
@@ -803,7 +815,7 @@ export default function MessagesPage() {
                     onReact={(emoji) => react(msg.id, emoji)}
                     align={isOwn ? 'right' : 'left'}
                   />
-                </div>
+                </SwipeToReply>
 
                 {/* Timestamp + edited + ticks */}
                 <div style={{
@@ -847,12 +859,12 @@ export default function MessagesPage() {
         borderTop: '1px solid var(--border)',
         display: 'flex', gap: 10, alignItems: 'flex-end',
       }}>
-        <AttachButton
+        {!recording && <AttachButton
           onPick={setPendingMedia}
           onError={(message) => setDialog({ type: 'error', message })}
           disabled={sending}
-        />
-        <textarea
+        />}
+        {!recording && <textarea className="composer-field"
           value={text}
           onChange={handleTextChange}
           placeholder={pendingMedia ? t('messages.addCaption') : replyTo ? t('messages.writeReply') : t('messages.typeMessage')}
@@ -866,28 +878,29 @@ export default function MessagesPage() {
             // fill .input uses everywhere else, including the Personal tab.
             background: 'var(--surface3)', maxHeight: 100,
           }}
-        />
+        />}
         {/* The microphone stands down while there is something to send, so
             the row never offers two ways to act on the same draft. */}
         {!canSend && !pendingMedia && (
           <VoiceRecorder
             onRecorded={setPendingMedia}
             onError={(message) => setDialog({ type: 'error', message })}
+            onRecordingChange={setRecording}
             disabled={sending}
           />
         )}
-        <button
+        {!recording && <button
           onClick={sendMessage}
           disabled={!canSend || sending}
           style={{
             width: 44, height: 44, borderRadius: '50%',
-            background: canSend ? 'linear-gradient(135deg, #8B0D3D 0%, #A5124A 100%)' : '#DDB8C4',
-            border: 'none', color: canSend ? '#fff' : '#8B0D3D',
+            background: canSend ? 'linear-gradient(135deg, var(--maroon) 0%, var(--maroon-bright) 100%)' : '#DDB8C4',
+            border: 'none', color: canSend ? '#fff' : 'var(--maroon)',
             fontSize: 18, cursor: canSend ? 'pointer' : 'default',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'background 0.2s', flexShrink: 0,
           }}
-        >➤</button>
+        >➤</button>}
       </div>
       </>
       )}
@@ -921,6 +934,60 @@ export default function MessagesPage() {
         />
       )}
 
+      {muteMenuAnchor && (
+        <AnchoredMenu
+          anchor={muteMenuAnchor}
+          align="right"
+          width={230}
+          title={t('messages.muteTitle')}
+          onClose={() => setMuteMenuAnchor(null)}
+          items={[
+            {
+              label: t('messages.muteSound'), checked: muteLevel === MUTE.SOUND,
+              onClick: () => selectMuteLevel(MUTE.SOUND),
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+                </svg>
+              ),
+            },
+            {
+              label: t('messages.mutePopup'), checked: muteLevel === MUTE.POPUP,
+              onClick: () => selectMuteLevel(MUTE.POPUP),
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="12" rx="2"/>
+                  <line x1="7" y1="20" x2="17" y2="20"/><line x1="3" y1="3" x2="21" y2="21"/>
+                </svg>
+              ),
+            },
+            {
+              label: t('messages.muteBoth'), checked: muteLevel === MUTE.SOUND_AND_POPUP,
+              onClick: () => selectMuteLevel(MUTE.SOUND_AND_POPUP),
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6.5 2.5 7.5a1 1 0 0 1-.7 1.7H4.2a1 1 0 0 1-.7-1.7C4.5 14.5 6 12.5 6 8z"/>
+                  <path d="M10 20.5a2 2 0 0 0 4 0"/><line x1="3" y1="3" x2="21" y2="21"/>
+                </svg>
+              ),
+            },
+            // Only offered while something is muted — with nothing muted there
+            // is nothing to undo.
+            muted && {
+              label: t('messages.unmute'),
+              onClick: () => selectMuteLevel(MUTE.NONE),
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.5 6.5 2.5 7.5a1 1 0 0 1-.7 1.7H4.2a1 1 0 0 1-.7-1.7C4.5 14.5 6 12.5 6 8z"/>
+                  <path d="M10 20.5a2 2 0 0 0 4 0"/>
+                </svg>
+              ),
+            },
+          ]}
+        />
+      )}
+
       {/* ── Edit modal ── */}
       {editMsg && (
         <EditModal msg={editMsg} onClose={() => setEditMsg(null)} onSave={handleEdit} />
@@ -931,7 +998,7 @@ export default function MessagesPage() {
         <div className="overlay" onClick={() => setDetailMsg(null)}>
           <div className="popup" onClick={e => e.stopPropagation()}>
             <div className="popup-handle" />
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#8B0D3D', letterSpacing: 0.2, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 4 }}>
               {t('messages.messageInfo')}
             </div>
             <div style={{ background: 'var(--surface3)', borderRadius: 12, padding: '10px 14px', fontSize: 14, color: 'var(--text)', marginBottom: 16 }}>
@@ -942,7 +1009,7 @@ export default function MessagesPage() {
               {t('messages.readBy', { n: (reads[detailMsg.id] || []).length })}
             </div>
             {(reads[detailMsg.id] || []).length === 0 ? (
-              <div style={{ fontSize: 13, color: '#836370', marginBottom: 14 }}>{t('messages.noneRead')}</div>
+              <div style={{ fontSize: 13, color: 'var(--muted2)', marginBottom: 14 }}>{t('messages.noneRead')}</div>
             ) : (
               <div style={{ marginBottom: 14 }}>
                 {(reads[detailMsg.id] || []).map(r => {
@@ -953,8 +1020,8 @@ export default function MessagesPage() {
                         {memberName(r.user_id, t('messages.member'))?.[0]?.toUpperCase() || '?'}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#2A0A18' }}>{memberName(r.user_id, t('messages.member'))}</div>
-                        <div style={{ fontSize: 11, color: '#836370' }}>{new Date(r.read_at).toLocaleString()}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{memberName(r.user_id, t('messages.member'))}</div>
+                        <div style={{ fontSize: 12, color: 'var(--muted)' }}>{new Date(r.read_at).toLocaleString()}</div>
                       </div>
                     </div>
                   )
@@ -967,7 +1034,7 @@ export default function MessagesPage() {
               if (pending.length === 0) return null
               return (
                 <>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#836370', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', letterSpacing: 0.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ display: 'inline-flex' }}><SingleTick /></span>
                     {t('messages.deliveredNotRead', { n: pending.length })}
                   </div>
@@ -977,7 +1044,7 @@ export default function MessagesPage() {
                         <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: avatarColor(m.avatar_color), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>
                           {memberName(m.user_id, t('messages.member'))?.[0]?.toUpperCase() || '?'}
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#2A0A18' }}>{memberName(m.user_id, t('messages.member'))}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{memberName(m.user_id, t('messages.member'))}</div>
                       </div>
                     ))}
                   </div>

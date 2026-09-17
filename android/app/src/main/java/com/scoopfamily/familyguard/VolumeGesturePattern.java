@@ -4,6 +4,9 @@ package com.scoopfamily.familyguard;
  * Decides whether a run of volume presses is the SOS gesture: two presses one
  * way, then two the other.
  *
+ * Only reachable from VolumeSosGesture, which is retired and no longer
+ * registered — so nothing in the running app calls this. The tests still run.
+ *
  * Deliberately free of every Android type — no Context, no Log, no clock. Time
  * arrives as a parameter and the answer comes back as a value, so the whole
  * state machine runs on a plain JVM and can be tested without a device.

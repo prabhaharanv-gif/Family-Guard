@@ -16,6 +16,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
 import { useT } from '../i18n'
+import Dialog from '../components/Dialog'
+import Icon from '../components/Icon'
 
 /**
  * A throwaway client for the web deletion flow only.
@@ -51,11 +53,11 @@ function Card({ title, children }) {
   return (
     <div style={{
       background: '#fff', borderRadius: 16, padding: '16px 18px',
-      marginBottom: 12, border: '1.5px solid #ECE0E5',
+      marginBottom: 12, border: '1.5px solid var(--border)',
       boxShadow: '0 2px 12px rgba(139,13,61,0.06)',
     }}>
       <div style={{
-        fontSize: 14, fontWeight: 800, color: '#8B0D3D',
+        fontSize: 14, fontWeight: 800, color: 'var(--maroon)',
         fontFamily: 'Sora, sans-serif', marginBottom: 6, lineHeight: 1.4,
       }}>
         {title}
@@ -69,14 +71,14 @@ function Card({ title, children }) {
 
 const primaryBtn = (enabled) => ({
   flex: 2, padding: 13, borderRadius: 14,
-  background: enabled ? 'linear-gradient(135deg,#8B0D3D,#6E0A30)' : '#D9C7CF',
+  background: enabled ? 'linear-gradient(135deg,var(--maroon),var(--maroon-deep))' : '#D9C7CF',
   border: 'none', color: '#fff', fontWeight: 800,
   cursor: enabled ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 14,
 })
 
 const secondaryBtn = {
-  flex: 1, padding: 13, borderRadius: 14, background: '#F8F0F3',
-  border: '1px solid #ECE0E5', color: '#7D5A67', fontWeight: 700,
+  flex: 1, padding: 13, borderRadius: 14, background: 'var(--bg2)',
+  border: '1px solid var(--border)', color: 'var(--muted)', fontWeight: 700,
   cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
 }
 
@@ -154,11 +156,11 @@ function WebDeleteFlow() {
   if (step === 4) {
     return (
       <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
-        <div style={{ fontSize: 40, marginBottom: 8 }}>✅</div>
+        <div style={{ marginBottom: 8 }}><Icon name="checkCircle" size={40} color="#16A34A" /></div>
         <div style={{ fontSize: 15, fontWeight: 800, color: '#16A34A', marginBottom: 6 }}>
           {t('deletePage.deletedTitle')}
         </div>
-        <div style={{ fontSize: 13, color: '#7D5A67' }}>{t('deletePage.deletedBody')}</div>
+        <div style={{ fontSize: 13, color: 'var(--muted)' }}>{t('deletePage.deletedBody')}</div>
       </div>
     )
   }
@@ -171,7 +173,7 @@ function WebDeleteFlow() {
         {step === 3 && t('deletePage.confirmBody')}
       </div>
 
-      {error && <div className="error-msg">{error}</div>}
+      {error && <Dialog type="info" message={error} onClose={() => setError('')} />}
 
       {step === 1 && (
         <>
@@ -203,7 +205,7 @@ function WebDeleteFlow() {
           <button onClick={sendCode} disabled={resendIn > 0 || loading} style={{
             display: 'block', margin: '0 auto', background: 'none', border: 'none',
             fontWeight: 700, fontSize: 13, padding: 0, fontFamily: 'inherit',
-            color: resendIn > 0 ? '#C7B3BC' : '#8B0D3D',
+            color: resendIn > 0 ? 'var(--muted3)' : 'var(--maroon)',
             cursor: resendIn > 0 ? 'default' : 'pointer',
           }}>{resendIn > 0 ? t('reset.resendIn', { n: resendIn }) : t('reset.resendCode')}</button>
         </>
@@ -248,7 +250,7 @@ export default function DeleteAccountPage() {
     }}>
       {/* Header — same shape as PrivacyPolicyPage so the two public pages match */}
       <div style={{
-        background: 'linear-gradient(135deg, #8B0D3D 0%, #6E0A30 100%)',
+        background: 'linear-gradient(135deg, var(--maroon) 0%, var(--maroon-deep) 100%)',
         padding: '16px 16px 20px',
         flexShrink: 0,
         boxShadow: '0 2px 12px rgba(139,13,61,0.25)',
@@ -286,7 +288,7 @@ export default function DeleteAccountPage() {
           borderRadius: 16, padding: '14px 16px', marginBottom: 14,
           display: 'flex', gap: 12, alignItems: 'flex-start',
         }}>
-          <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1.2 }}>⚠️</span>
+          <span style={{ flexShrink: 0, display: 'flex', paddingTop: 2 }}><Icon name="alert" size={22} color="#DC2626" /></span>
           <div style={{ fontSize: 13.5, color: '#7F1D1D', lineHeight: 1.6, fontWeight: 600 }}>
             {t('deletePage.cannotUndo')}
           </div>
@@ -310,7 +312,7 @@ export default function DeleteAccountPage() {
 
         <button onClick={() => navigate('/')} style={{
           width: '100%', padding: 14, borderRadius: 14, marginTop: 4,
-          background: 'linear-gradient(135deg,#8B0D3D,#6E0A30)', border: 'none',
+          background: 'linear-gradient(135deg,var(--maroon),var(--maroon-deep))', border: 'none',
           color: '#fff', fontWeight: 700, fontSize: 14.5,
           fontFamily: 'inherit', cursor: 'pointer',
         }}>

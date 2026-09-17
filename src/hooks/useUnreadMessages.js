@@ -38,10 +38,10 @@ export function useUnreadMessages(user, familyId) {
           payload.new.user_id !== user.id &&
           window.location.pathname !== '/messages'
         ) {
-          const muteLevel = parseInt(localStorage.getItem('msg_mute_level') || '0', 10)
-          if (muteLevel < 2) {
-            setUnreadMessages(prev => prev + 1)
-          }
+          // Counted whatever the mute setting. Muting silences the sound and
+          // pop-up only; the badge was hidden solely by the retired
+          // "all notifications off" level.
+          setUnreadMessages(prev => prev + 1)
         }
       })
       .subscribe()

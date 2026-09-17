@@ -24,6 +24,10 @@
 
     <string name="ch_messages_silent_name">കുടുംബ സന്ദേശങ്ങൾ (നിശ്ശബ്ദം)</string>
     <string name="ch_messages_silent_desc">കുടുംബ സന്ദേശങ്ങൾ — നിശ്ശബ്ദ മോഡ്</string>
+    <string name="ch_messages_popup_silent_name">കുടുംബ സന്ദേശങ്ങൾ (പോപ്പ്-അപ്പ്, ശബ്ദമില്ലാതെ)</string>
+    <string name="ch_messages_popup_silent_desc">കുടുംബ സന്ദേശങ്ങൾ — ശബ്ദം മ്യൂട്ട്, പോപ്പ്-അപ്പ് കാണിക്കും</string>
+    <string name="ch_messages_quiet_name">കുടുംബ സന്ദേശങ്ങൾ (ശബ്ദം, പോപ്പ്-അപ്പില്ലാതെ)</string>
+    <string name="ch_messages_quiet_desc">കുടുംബ സന്ദേശങ്ങൾ — പോപ്പ്-അപ്പ് മ്യൂട്ട്, ശബ്ദം കേൾക്കും</string>
 
     <string name="ch_location_name">ലൊക്കേഷൻ ട്രാക്കിംഗ്</string>
     <string name="ch_location_desc">Famora നിങ്ങളുടെ ലൊക്കേഷൻ ട്രാക്ക് ചെയ്യുമ്പോൾ കാണിക്കുന്നു</string>
@@ -61,4 +65,8 @@
     <string name="notif_ping_big">%1$s ഈ ഫോൺ തിരയുന്നു.\n\nശബ്ദം നിർത്താൻ നിർത്തുക ബട്ടൺ അമർത്തുക.</string>
     <string name="notif_location_body">നിങ്ങളുടെ കുടുംബത്തെ സംരക്ഷിക്കുന്നു · ലൊക്കേഷൻ സജീവം</string>
     <string name="notif_tap_to_open">തുറക്കാൻ ടാപ്പ് ചെയ്യുക</string>
+    <string name="ch_reauth_name">വീണ്ടും കണക്ട് ചെയ്യണം</string>
+    <string name="ch_reauth_desc">ലൊക്കേഷൻ പങ്കിടൽ തുടരാൻ Famora വീണ്ടും തുറക്കേണ്ടി വരുമ്പോൾ അറിയിക്കുന്നു</string>
+    <string name="notif_reauth_title">ലൊക്കേഷൻ പങ്കിടൽ നിർത്തി</string>
+    <string name="notif_reauth_body">വീണ്ടും കണക്ട് ചെയ്യാൻ Famora തുറക്കുക. അതുവരെ നിങ്ങളുടെ കുടുംബത്തിന് നിങ്ങളുടെ ലൊക്കേഷൻ കാണാൻ കഴിയില്ല.</string>
 </resources>

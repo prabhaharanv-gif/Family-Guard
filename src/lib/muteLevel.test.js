@@ -4,19 +4,22 @@ import {
   readMuteLevel,
   writeMuteLevel,
   MUTE_LEVEL_KEY,
-  MUTE_LEVELS,
+  MUTE,
 } from './muteLevel'
 
 /**
- * Covers the mute level: 0 = on, 1 = sound off, 2 = fully muted.
+ * Covers the mute level: 0 = on, 1 = sound & pop-up muted, 3 = sound muted,
+ * 4 = pop-up muted, and 2 = the retired "all off", read back as 1.
  *
  * This module exists because a corrupt or out-of-range stored value used to
  * reach `MUTE_STATES[muteLevel]` on the Messages page and crash the entire app
- * with "Cannot read properties of undefined". Every test below is really the
- * same assertion: whatever is in storage, the value handed back is a usable
- * index. Nothing here may ever return undefined, NaN, or a number outside the
- * range.
+ * with "Cannot read properties of undefined". Most tests below are really the
+ * same assertion: whatever is in storage, the value handed back is one of the
+ * levels the page has a state for. Nothing here may ever return undefined,
+ * NaN, or a number outside that set.
  */
+
+const LEVELS = Object.values(MUTE)
 
 /** localStorage is not present in the default vitest environment. */
 function installStorage(initial = {}) {
@@ -41,21 +44,34 @@ function installBrokenStorage() {
   return storage
 }
 
+describe('MUTE', () => {
+  /** The native side reads these same integers out of SharedPreferences. */
+  it('keeps the numbers the native side expects', () => {
+    expect(MUTE).toEqual({ NONE: 0, SOUND_AND_POPUP: 1, SOUND: 3, POPUP: 4 })
+  })
+})
+
 describe('clampMuteLevel', () => {
   it('keeps every valid level', () => {
-    for (let i = 0; i < MUTE_LEVELS; i++) {
-      expect(clampMuteLevel(i)).toBe(i)
+    for (const level of LEVELS) {
+      expect(clampMuteLevel(level)).toBe(level)
     }
   })
 
   it('reads the numeric strings localStorage actually returns', () => {
-    expect(clampMuteLevel('0')).toBe(0)
-    expect(clampMuteLevel('1')).toBe(1)
-    expect(clampMuteLevel('2')).toBe(2)
+    expect(clampMuteLevel('0')).toBe(MUTE.NONE)
+    expect(clampMuteLevel('1')).toBe(MUTE.SOUND_AND_POPUP)
+    expect(clampMuteLevel('3')).toBe(MUTE.SOUND)
+    expect(clampMuteLevel('4')).toBe(MUTE.POPUP)
+  })
+
+  it('moves the retired "all off" level to sound & pop-up muted', () => {
+    expect(clampMuteLevel(2)).toBe(MUTE.SOUND_AND_POPUP)
+    expect(clampMuteLevel('2')).toBe(MUTE.SOUND_AND_POPUP)
   })
 
   it('falls back to 0 for values past the end of the range', () => {
-    expect(clampMuteLevel(MUTE_LEVELS)).toBe(0)
+    expect(clampMuteLevel(5)).toBe(0)
     expect(clampMuteLevel(99)).toBe(0)
   })
 
@@ -78,22 +94,19 @@ describe('clampMuteLevel', () => {
     expect(clampMuteLevel(-Infinity)).toBe(0)
   })
 
-  it('truncates a fractional level to a usable index', () => {
+  it('truncates a fractional level to a usable one', () => {
     expect(clampMuteLevel(1.7)).toBe(1)
-    expect(clampMuteLevel('1.2')).toBe(1)
+    expect(clampMuteLevel('3.2')).toBe(3)
   })
 
   /** The actual crash condition, stated directly. */
-  it('never returns something that cannot index a 3-element array', () => {
+  it('never returns something outside the known levels', () => {
     const hostile = [
-      -5, 3, 4, 1000, NaN, Infinity, -Infinity, 1.9, '2.9',
+      -5, 2, 5, 1000, NaN, Infinity, -Infinity, 1.9, '2.9', '4.5',
       null, undefined, '', 'x', {}, [], true, false,
     ]
     for (const value of hostile) {
-      const level = clampMuteLevel(value)
-      expect(Number.isInteger(level)).toBe(true)
-      expect(level).toBeGreaterThanOrEqual(0)
-      expect(level).toBeLessThan(MUTE_LEVELS)
+      expect(LEVELS).toContain(clampMuteLevel(value))
     }
   })
 })
@@ -109,8 +122,8 @@ describe('readMuteLevel', () => {
   })
 
   it('returns a stored level', () => {
-    installStorage({ [MUTE_LEVEL_KEY]: '2' })
-    expect(readMuteLevel()).toBe(2)
+    installStorage({ [MUTE_LEVEL_KEY]: '4' })
+    expect(readMuteLevel()).toBe(MUTE.POPUP)
   })
 
   it('repairs a corrupt entry so garbage is not re-parsed on every read', () => {
@@ -128,10 +141,17 @@ describe('readMuteLevel', () => {
     expect(storage._store[MUTE_LEVEL_KEY]).toBe('0')
   })
 
-  it('leaves a valid entry alone', () => {
-    const storage = installStorage({ [MUTE_LEVEL_KEY]: '1' })
+  it('rewrites the retired "all off" entry as sound & pop-up muted', () => {
+    const storage = installStorage({ [MUTE_LEVEL_KEY]: '2' })
 
-    expect(readMuteLevel()).toBe(1)
+    expect(readMuteLevel()).toBe(MUTE.SOUND_AND_POPUP)
+    expect(storage._store[MUTE_LEVEL_KEY]).toBe('1')
+  })
+
+  it('leaves a valid entry alone', () => {
+    const storage = installStorage({ [MUTE_LEVEL_KEY]: '3' })
+
+    expect(readMuteLevel()).toBe(MUTE.SOUND)
     expect(storage.setItem).not.toHaveBeenCalled()
   })
 
@@ -149,8 +169,8 @@ describe('writeMuteLevel', () => {
   it('stores a valid level and returns it', () => {
     const storage = installStorage()
 
-    expect(writeMuteLevel(2)).toBe(2)
-    expect(storage._store[MUTE_LEVEL_KEY]).toBe('2')
+    expect(writeMuteLevel(MUTE.POPUP)).toBe(MUTE.POPUP)
+    expect(storage._store[MUTE_LEVEL_KEY]).toBe('4')
   })
 
   it('never stores an invalid level', () => {
@@ -160,16 +180,23 @@ describe('writeMuteLevel', () => {
     expect(storage._store[MUTE_LEVEL_KEY]).toBe('0')
   })
 
+  it('never stores the retired level', () => {
+    const storage = installStorage()
+
+    expect(writeMuteLevel(2)).toBe(MUTE.SOUND_AND_POPUP)
+    expect(storage._store[MUTE_LEVEL_KEY]).toBe('1')
+  })
+
   it('returns the clamped level even when storage throws', () => {
     installBrokenStorage()
-    expect(writeMuteLevel(1)).toBe(1)
+    expect(writeMuteLevel(3)).toBe(3)
   })
 
   it('round-trips through storage', () => {
     installStorage()
-    for (let i = 0; i < MUTE_LEVELS; i++) {
-      writeMuteLevel(i)
-      expect(readMuteLevel()).toBe(i)
+    for (const level of LEVELS) {
+      writeMuteLevel(level)
+      expect(readMuteLevel()).toBe(level)
     }
   })
 })

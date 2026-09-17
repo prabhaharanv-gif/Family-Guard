@@ -3,6 +3,9 @@ import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
 import Dialog from '../components/Dialog'
 import { useT } from '../i18n'
+import { KeyIcon } from '../components/AuthIcons'
+import famoraLogo from '../assets/famora-logo.jpg'
+import Icon from '../components/Icon'
 
 export default function OnboardingPage() {
   const t = useT()
@@ -67,11 +70,11 @@ export default function OnboardingPage() {
             cursor: 'pointer', marginBottom: 16, color: 'var(--muted)'
           }}>← {t('common.back')}</button>
 
-          <div className="auth-logo">🔑</div>
+          <div className="auth-logo"><KeyIcon /></div>
           <h1 className="auth-title">{t('onboarding.joinTitle')}</h1>
           <p className="auth-subtitle">{t('onboarding.joinSub')}</p>
 
-          {error && <div className="error-msg">{error}</div>}
+          {error && <Dialog type="info" message={error} onClose={() => setError('')} />}
 
           <form onSubmit={handleJoinRequest} noValidate>
             <div className="form-group">
@@ -95,7 +98,10 @@ export default function OnboardingPage() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="auth-logo">🛡️</div>
+        <div className="auth-logo auth-logo-brand">
+          <img src={famoraLogo} alt="famora" width={110} height={110}
+            style={{ display: 'block', margin: '0 auto', borderRadius: 22 }} />
+        </div>
         <h1 className="auth-title">{t('onboarding.welcome')}</h1>
         <p className="auth-subtitle">{t('onboarding.howStart')}</p>
 
@@ -115,19 +121,18 @@ export default function OnboardingPage() {
           </div>
           <button onClick={() => { navigator.clipboard.writeText(inviteCode); setDialog({ type: 'alert', title: t('settings.codeCopied'), message: t('settings.codeCopiedMsg') }) }}
             style={{
-              marginTop: 12, background: 'linear-gradient(135deg, #8B0D3D, #A5124A)', color: '#fff',
+              marginTop: 12, background: 'linear-gradient(135deg, var(--maroon), var(--maroon-bright))', color: '#fff',
               border: 'none', borderRadius: 10, padding: '10px 24px',
               fontWeight: 700, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit',
-              boxShadow: '0 4px 14px rgba(139,13,61,0.35)',
-            }}>📋 {t('onboarding.copyCode')}</button>
+            }}><Icon name="copy" /> {t('onboarding.copyCode')}</button>
         </div>
 
         <button className="btn btn-primary" onClick={() => window.location.href = '/'} style={{ marginBottom: 12 }}>
-          👨‍👩‍👧‍👦 {t('onboarding.goToMyFamily')}
+          <Icon name="users" /> {t('onboarding.goToMyFamily')}
         </button>
 
         <button className="btn btn-outline" onClick={() => setStep('join')}>
-          🔑 {t('onboarding.joinAnother')}
+          <Icon name="key" /> {t('onboarding.joinAnother')}
         </button>
       </div>
 

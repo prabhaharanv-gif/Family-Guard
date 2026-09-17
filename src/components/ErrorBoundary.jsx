@@ -1,6 +1,7 @@
 import { Component } from 'react'
 import { recordError } from '../lib/crashReporting'
 import { APP_NAME } from '../lib/brand'
+import Icon from './Icon'
 
 // Stamped in by vite.config.js, so the screen can say which build it is —
 // the fastest way to tell a real bug from a stale APK on a device.
@@ -53,18 +54,18 @@ export default class ErrorBoundary extends Component {
           background: 'linear-gradient(135deg, #FEE2E2, #FEF2F2)',
           border: '1.5px solid #FCA5A5',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 36, marginBottom: 20,
+          marginBottom: 20,
         }}>
-          ⚠️
+          <Icon name="alert" size={36} color="#DC2626" />
         </div>
         <div style={{
-          fontSize: 20, fontWeight: 800, color: '#2A0A18',
+          fontSize: 20, fontWeight: 800, color: 'var(--text)',
           fontFamily: 'Sora, sans-serif', marginBottom: 10,
         }}>
           Something went wrong
         </div>
         <div style={{
-          fontSize: 14, color: '#7D5A67', lineHeight: 1.6,
+          fontSize: 14, color: 'var(--muted)', lineHeight: 1.6,
           marginBottom: 28, maxWidth: 300,
         }}>
           {APP_NAME} ran into a problem on this page. Your data is safe.
@@ -73,7 +74,7 @@ export default class ErrorBoundary extends Component {
           onClick={() => this.setState({ hasError: false, error: null, info: null, showDetails: false })}
           style={{
             padding: '13px 28px', borderRadius: 14,
-            background: 'linear-gradient(135deg, #8B0D3D, #6E0A30)',
+            background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
             border: 'none', color: '#fff', fontWeight: 700, fontSize: 15,
             fontFamily: 'inherit', cursor: 'pointer',
             boxShadow: '0 4px 14px rgba(139,13,61,0.35)',
@@ -86,7 +87,7 @@ export default class ErrorBoundary extends Component {
           onClick={() => window.location.href = '/'}
           style={{
             background: 'none', border: 'none',
-            color: '#9C6B7A', fontSize: 13, fontWeight: 600,
+            color: 'var(--muted-soft)', fontSize: 13, fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
           }}
         >
@@ -106,7 +107,7 @@ export default class ErrorBoundary extends Component {
             <pre style={{
               marginTop: 10, maxWidth: '100%', maxHeight: 220, overflow: 'auto',
               background: '#fff', border: '1px solid #F3D4DD', borderRadius: 12,
-              padding: 12, fontSize: 11, lineHeight: 1.5, color: '#7D5A67',
+              padding: 12, fontSize: 11, lineHeight: 1.5, color: 'var(--muted)',
               textAlign: 'left', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             }}>{detail}</pre>
             <button

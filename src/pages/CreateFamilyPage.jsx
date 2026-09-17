@@ -1,11 +1,17 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useT } from '../i18n'
+import Dialog from '../components/Dialog'
+import { FamilyIcon } from '../components/AuthIcons'
 
 export default function CreateFamilyPage() {
   const t = useT()
+  const navigate = useNavigate()
+  // Back to wherever this was opened from (Profile, usually). A cold start
+  // straight onto this route has no history entry to return to, so Profile.
+  const goBack = () => (window.history.state?.idx > 0 ? navigate(-1) : navigate('/profile', { replace: true }))
   const [familyName, setFamilyName] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(false)
@@ -49,11 +55,16 @@ export default function CreateFamilyPage() {
   return (
     <div className="onboard-page">
       <div className="onboard-card">
-        <div className="auth-logo">👨‍👩‍👧‍👦</div>
+        <button type="button" onClick={goBack} style={{
+          background: 'none', border: 'none', padding: 0, marginBottom: 12,
+          color: 'var(--muted)', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+          fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
+        }}>← {t('common.back')}</button>
+        <div className="auth-logo"><FamilyIcon /></div>
         <h1 className="auth-title">{t('createFamily.title')}</h1>
         <p className="auth-subtitle">{t('createFamily.sub')}</p>
 
-        {error && <div className="error-msg">{error}</div>}
+        {error && <Dialog type="info" message={error} onClose={() => setError('')} />}
 
         <form onSubmit={handleCreate} noValidate>
           <div className="form-group">
@@ -85,7 +96,7 @@ export default function CreateFamilyPage() {
         </form>
 
         <p className="auth-link">
-          {t('createFamily.haveCode')} <Link to="/join-family">{t('createFamily.joinFamily')}</Link>
+          {t('createFamily.haveCode')} <Link to="/join-family" replace>{t('createFamily.joinFamily')}</Link>
         </p>
       </div>
     </div>

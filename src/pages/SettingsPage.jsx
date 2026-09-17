@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 import Dialog from '../components/Dialog'
 import { useT, useLangStore, UI_LANGUAGES } from '../i18n'
+import Icon from '../components/Icon'
 
 export default function SettingsPage() {
   const { user, familyName, inviteCode, signOut } = useAuthStore()
@@ -28,7 +29,13 @@ export default function SettingsPage() {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div className="top-bar">
         <div>
-          <div className="top-bar-title">⚙️ {t('settings.title')}</div>
+          <div className="top-bar-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            {t('settings.title')}
+          </div>
           <div className="top-bar-sub">{t('settings.sub')}</div>
         </div>
       </div>
@@ -36,7 +43,7 @@ export default function SettingsPage() {
       <div className="page-content">
         {/* Profile Card */}
         <div style={{
-          background: 'linear-gradient(135deg, #6E0A30 0%, #48061F 100%)',
+          background: 'linear-gradient(135deg, var(--maroon-deep) 0%, var(--maroon-darkest) 100%)',
           borderRadius: 20, padding: 20, marginBottom: 16,
           display: 'flex', alignItems: 'center', gap: 16,
           boxShadow: '0 8px 32px rgba(139,13,61,0.25)',
@@ -71,7 +78,7 @@ export default function SettingsPage() {
           <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
             {t('settings.language')}
           </div>
-          <div style={{ fontSize: 11, color: '#9C6B7A', marginBottom: 10, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 11, color: 'var(--muted-soft)', marginBottom: 10, lineHeight: 1.5 }}>
             {t('settings.languageSub')}
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -84,8 +91,8 @@ export default function SettingsPage() {
                   aria-pressed={active}
                   style={{
                     padding: '9px 16px', borderRadius: 999,
-                    background: active ? 'linear-gradient(135deg,#8B0D3D,#6E0A30)' : '#F8F0F3',
-                    border: `1.5px solid ${active ? 'transparent' : '#ECE0E5'}`,
+                    background: active ? 'linear-gradient(135deg,var(--maroon),var(--maroon-deep))' : 'var(--bg2)',
+                    border: `1.5px solid ${active ? 'transparent' : 'var(--border)'}`,
                     color: active ? '#fff' : '#5B4652',
                     fontWeight: active ? 800 : 600,
                     fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit',
@@ -115,7 +122,7 @@ export default function SettingsPage() {
                 fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
                 flexShrink: 0,
               }}>
-              📋 {t('settings.copy')}
+              <Icon name="copy" /> {t('settings.copy')}
             </button>
           </div>
         </div>
@@ -144,13 +151,13 @@ export default function SettingsPage() {
         <div className="settings-card" style={{ cursor: 'pointer' }} onClick={() => window.location.href = '/manual'}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-              <span style={{ fontSize: 20, flexShrink: 0 }}>📖</span>
+              <span style={{ flexShrink: 0, display: 'flex', color: 'var(--maroon)' }}><Icon name="book" size={20} /></span>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#000', lineHeight: 1.45 }}>{t('settings.userGuide')}</div>
-                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1, lineHeight: 1.5 }}>{t('settings.userGuideSub')}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted-soft)', marginTop: 1, lineHeight: 1.5 }}>{t('settings.userGuideSub')}</div>
               </div>
             </div>
-            <span style={{ color: '#9C6B7A', fontSize: 16, flexShrink: 0 }}>›</span>
+            <span style={{ color: 'var(--muted-soft)', fontSize: 16, flexShrink: 0 }}>›</span>
           </div>
         </div>
 
@@ -158,10 +165,10 @@ export default function SettingsPage() {
         <div className="settings-card" style={{ cursor: 'pointer' }} onClick={() => window.location.href = '/privacy'}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-              <span style={{ fontSize: 20, flexShrink: 0 }}>🔒</span>
+              <span style={{ flexShrink: 0, display: 'flex', color: 'var(--maroon)' }}><Icon name="lock" size={20} /></span>
               <span style={{ fontSize: 14, fontWeight: 700, color: '#000', lineHeight: 1.45 }}>{t('settings.privacyPolicy')}</span>
             </div>
-            <span style={{ color: '#9C6B7A', fontSize: 16, flexShrink: 0 }}>›</span>
+            <span style={{ color: 'var(--muted-soft)', fontSize: 16, flexShrink: 0 }}>›</span>
           </div>
         </div>
 

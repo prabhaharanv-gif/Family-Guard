@@ -12,6 +12,7 @@ import Dialog from '../components/Dialog'
 import { ALERT_TYPES, getRingtones, resetRingtone } from '../lib/ringtones'
 import SoundPickerSheet from '../components/SoundPickerSheet'
 import { useT, useLangStore, UI_LANGUAGES } from '../i18n'
+import Icon from '../components/Icon'
 
 function Toggle({ on, onToggle }) {
   return (
@@ -19,10 +20,10 @@ function Toggle({ on, onToggle }) {
       onClick={onToggle}
       style={{
         width: 46, height: 26, borderRadius: 13,
-        background: on ? '#8B0D3D' : '#C7B3BC',
+        background: on ? 'var(--maroon)' : 'var(--muted3)',
         border: 'none', cursor: 'pointer', position: 'relative',
         transition: 'all 0.25s', flexShrink: 0,
-        boxShadow: on ? '0 2px 8px rgba(139,13,61,0.35)' : 'none',
+        boxShadow: 'none',
       }}
     >
       <div style={{
@@ -41,8 +42,8 @@ function Toggle({ on, onToggle }) {
 // it each time — meaning every keystroke in a password field destroyed and
 // rebuilt this icon's DOM.
 const EyeIcon = ({ off }) => off
-  ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#836370" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
-  : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#836370" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+  ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
+  : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
 
 // ── Change password modal ──
 //
@@ -51,6 +52,13 @@ const EyeIcon = ({ off }) => off
 // same OTP reset the sign-in screen offers, with the mobile-entry step dropped
 // — we already know whose account this is, and letting a signed-in person type
 // *someone else's* number here would hand them a session on that account.
+// First letter of a family's name for its avatar circle. Array.from walks code
+// points, so a name starting with an emoji or a Tamil letter is not split in half.
+function familyInitial(name) {
+  const first = Array.from(String(name || '').trim())[0]
+  return first ? first.toUpperCase() : '?'
+}
+
 function ChangePasswordModal({ onClose, userPhone }) {
   const t = useT()
   const [oldPw, setOldPw]       = useState('')
@@ -62,6 +70,7 @@ function ChangePasswordModal({ onClose, userPhone }) {
   const [busy, setBusy]         = useState(false)
   const [err, setErr]           = useState('')
   const [ok, setOk]             = useState(false)
+  const [popup, setPopup]       = useState(false)   // soft too-short-password nudge
 
   // 'password' → the usual flow. 'confirm' | 'otp' | 'newPassword' → the SMS one.
   const [mode, setMode]         = useState('password')
@@ -84,7 +93,7 @@ function ChangePasswordModal({ onClose, userPhone }) {
   const handleSave = async () => {
     setErr('')
     if (!oldPw) { setErr(t('profile.enterCurrentPassword')); return }
-    if (pw.length < PASSWORD_MIN_LENGTH) { setErr(t('profile.newPasswordMin6')); return }
+    if (pw.length < PASSWORD_MIN_LENGTH) { setPopup(true); return }
     if (pw !== confirm) { setErr(t('profile.newPasswordsNoMatch')); return }
     if (pw === oldPw) { setErr(t('profile.newPasswordSame')); return }
     setBusy(true)
@@ -155,7 +164,7 @@ function ChangePasswordModal({ onClose, userPhone }) {
 
   const handleSmsReset = async () => {
     setErr('')
-    if (pw.length < PASSWORD_MIN_LENGTH) { setErr(t('reset.passwordMin6')); return }
+    if (pw.length < PASSWORD_MIN_LENGTH) { setPopup(true); return }
     if (pw !== confirm) { setErr(t('reset.passwordsNoMatch')); return }
     setBusy(true)
     const { error: rpcErr } = await supabase.rpc('reset_password_verified', {
@@ -169,12 +178,12 @@ function ChangePasswordModal({ onClose, userPhone }) {
 
   const cancelBtn = {
     flex: 1, padding: 14, borderRadius: 14,
-    background: '#F8F0F3', border: '1px solid #ECE0E5',
+    background: 'var(--bg2)', border: '1px solid var(--border)',
     color: '#3A1020', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
   }
   const primaryBtn = (disabled) => ({
     flex: 1, padding: 14, borderRadius: 14,
-    background: disabled ? '#D8AFC0' : '#8B0D3D', border: 'none',
+    background: disabled ? '#D8AFC0' : 'var(--maroon)', border: 'none',
     color: '#fff', fontWeight: 700, cursor: disabled ? 'wait' : 'pointer', fontFamily: 'inherit', fontSize: 14,
   })
   const eyeBtn = {
@@ -183,20 +192,21 @@ function ChangePasswordModal({ onClose, userPhone }) {
   }
 
   return (
+    <>
     <div className="overlay" onClick={onClose}>
       <div className="popup" onClick={e => e.stopPropagation()}>
         <div className="popup-handle" />
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#8B0D3D', letterSpacing: 0.2, marginBottom: 14 }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 14 }}>
           {mode === 'password' ? t('profile.changePassword') : t('reset.title')}
         </div>
 
         {ok ? (
           <div style={{ padding: '20px 0', textAlign: 'center', color: '#059669', fontWeight: 700 }}>
-            ✓ {t('profile.passwordUpdated')}
+            <Icon name="checkCircle" /> {t('profile.passwordUpdated')}
           </div>
         ) : (
           <>
-            {err && <div className="error-msg" style={{ marginBottom: 12 }}>{err}</div>}
+            {err && <Dialog type="info" message={err} onClose={() => setErr('')} />}
 
             {mode === 'password' ? (
               <>
@@ -217,19 +227,19 @@ function ChangePasswordModal({ onClose, userPhone }) {
                 <button type="button" onClick={openSmsReset} style={{
                   display: 'block', marginLeft: 'auto', marginBottom: 8,
                   background: 'none', border: 'none', padding: '2px 0',
-                  color: '#8B0D3D', fontWeight: 700, fontSize: 12.5,
+                  color: 'var(--maroon)', fontWeight: 700, fontSize: 12.5,
                   fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'underline',
                 }}>{t('auth.forgotPassword')}</button>
 
                 {/* Divider */}
-                <div style={{ height: 1, background: '#ECE0E5', margin: '4px 0 12px' }} />
+                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0 12px' }} />
 
                 {/* New password */}
                 <div style={{ position: 'relative', marginBottom: 12 }}>
                   <input
                     className="input" type={showNew ? 'text' : 'password'} value={pw}
                     onChange={e => setPw(e.target.value)}
-                    placeholder={t('profile.newPassword')}
+                    placeholder={t('reset.newPasswordPh')}
                     style={{ paddingRight: 44 }}
                   />
                   <button type="button" onClick={() => setShowNew(s => !s)} style={eyeBtn}>
@@ -260,7 +270,7 @@ function ChangePasswordModal({ onClose, userPhone }) {
               </>
             ) : mode === 'confirm' ? (
               <>
-                <div style={{ fontSize: 13, color: '#4A1226', lineHeight: 1.5, marginBottom: 16 }}>
+                <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 16 }}>
                   {t('profile.forgotPasswordIntro', { mobile: digits })}
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
@@ -272,7 +282,7 @@ function ChangePasswordModal({ onClose, userPhone }) {
               </>
             ) : mode === 'otp' ? (
               <>
-                <div style={{ fontSize: 13, color: '#4A1226', lineHeight: 1.5, marginBottom: 12 }}>
+                <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 12 }}>
                   {t('reset.step2Sub', { mobile: digits })}
                 </div>
                 <input
@@ -292,7 +302,7 @@ function ChangePasswordModal({ onClose, userPhone }) {
                 <button onClick={() => sendOtp(true)} disabled={resendIn > 0 || busy} style={{
                   display: 'block', margin: '0 auto', background: 'none', border: 'none',
                   fontWeight: 700, fontSize: 13, padding: 0, fontFamily: 'inherit',
-                  color: resendIn > 0 ? '#C7B3BC' : '#8B0D3D',
+                  color: resendIn > 0 ? 'var(--muted3)' : 'var(--maroon)',
                   cursor: resendIn > 0 ? 'default' : 'pointer',
                 }}>{resendIn > 0 ? t('reset.resendIn', { n: resendIn }) : t('reset.resendCode')}</button>
               </>
@@ -333,6 +343,14 @@ function ChangePasswordModal({ onClose, userPhone }) {
         )}
       </div>
     </div>
+
+    {/* Outside the overlay, so tapping the dialog backdrop does not bubble
+        up and close the Change Password sheet too. */}
+    {popup && (
+      <Dialog type="info" title={t('register.passwordShortTitle')}
+        message={t('register.passwordShortBody')} onClose={() => setPopup(false)} />
+    )}
+    </>
   )
 }
 
@@ -359,23 +377,23 @@ function DeleteAccountModal({ onClose, onConfirm }) {
 
         {/* Warning notification banner */}
         <div style={{
-          background: '#FEF2F2', border: '1.5px solid #FCA5A5',
+          background: 'var(--maroon-wash)', border: '1.5px solid var(--maroon)',
           borderRadius: 14, padding: '14px 16px', marginBottom: 20,
           display: 'flex', gap: 12, alignItems: 'flex-start',
         }}>
-          <span style={{ fontSize: 24, flexShrink: 0 }}>⚠️</span>
+          <span style={{ flexShrink: 0, display: 'flex', color: 'var(--maroon)' }}><Icon name="alert" size={24} /></span>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#DC2626', marginBottom: 4 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--maroon)', marginBottom: 4 }}>
               {t('profile.deleteAccount')}
             </div>
-            <div style={{ fontSize: 13, color: '#7F1D1D', lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>
               {t('profile.deleteAccountWarn')}
             </div>
           </div>
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, color: '#4A1226', fontWeight: 600, marginBottom: 6 }}>
+          <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600, marginBottom: 6 }}>
             {t('profile.typeToConfirm', { word: CONFIRM_WORD })}
           </div>
           <input
@@ -391,7 +409,7 @@ function DeleteAccountModal({ onClose, onConfirm }) {
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#F8F0F3', border: '1px solid #ECE0E5',
+            background: 'var(--bg2)', border: '1px solid var(--border)',
             color: '#3A1020', fontWeight: 700, cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 14,
           }}>{t('common.cancel')}</button>
@@ -400,7 +418,7 @@ function DeleteAccountModal({ onClose, onConfirm }) {
             disabled={confirmText !== CONFIRM_WORD || deleting}
             style={{
               flex: 1, padding: 14, borderRadius: 14,
-              background: confirmText === CONFIRM_WORD ? '#DC2626' : '#FCA5A5',
+              background: confirmText === CONFIRM_WORD ? 'var(--grad-maroon)' : 'var(--muted3)',
               border: 'none', color: '#fff', fontWeight: 800,
               cursor: confirmText === CONFIRM_WORD ? 'pointer' : 'not-allowed',
               fontFamily: 'inherit', fontSize: 14,
@@ -459,12 +477,23 @@ export default function ProfilePage() {
   const openViewFamily = async (fam) => {
     setSelectedFam(null)
     setViewFam({ fam, members: [], loading: true })
-    const { data, error: err } = await supabase
-      .from('family_members')
-      .select('*')
-      .eq('family_id', fam.family_id)
-      .order('role', { ascending: true })
-    setViewFam({ fam, members: err ? [] : (data || []), loading: false })
+    // Nicknames are per family, so they are read for the family being viewed,
+    // not taken from the active family's cached map.
+    const [{ data, error: err }, { data: nickRows }] = await Promise.all([
+      supabase
+        .from('family_members')
+        .select('*')
+        .eq('family_id', fam.family_id)
+        .order('role', { ascending: true }),
+      supabase
+        .from('member_nicknames')
+        .select('target_user_id, nickname')
+        .eq('family_id', fam.family_id)
+        .eq('owner_user_id', user?.id),
+    ])
+    const nicknames = {}
+    ;(nickRows || []).forEach((n) => { if (n.nickname) nicknames[n.target_user_id] = n.nickname })
+    setViewFam({ fam, members: err ? [] : (data || []), nicknames, loading: false })
     if (err) setError(err.message)
   }
 
@@ -584,6 +613,12 @@ export default function ProfilePage() {
     loadProfile()
   }, [user, familyId])
 
+  // Re-read my memberships whenever Profile opens, so My Families never lists
+  // a family I have left or been removed from.
+  useEffect(() => {
+    if (user?.id) useAuthStore.getState().loadFamily(user.id)
+  }, [user?.id])
+
   const handlePhotoChange = async (e) => {
     const file = e.target.files && e.target.files[0]
     if (!file) return
@@ -677,9 +712,14 @@ export default function ProfilePage() {
       const { error: locErr } = await supabase.rpc('sync_location_sharing_all_families', {
         p_is_sharing: showLocation,
       })
-      // Stop background location service when user disables location sharing
-      if (!showLocation && Capacitor.isNativePlatform()) {
-        try { await LocationService.stop() } catch (e) {}
+      // Mirror the preference down to the native side, which applies it at once
+      // — off stops the service, on starts it again without waiting for a
+      // relaunch. It is stored there too, so the start paths that the web layer
+      // does not control (the launch call, its retry chain, BootReceiver) can
+      // honour it. Stopping the service alone used to last only until the next
+      // launch, which silently resumed tracking for a member who had opted out.
+      if (Capacitor.isNativePlatform()) {
+        try { await LocationService.setSharing({ sharing: showLocation }) } catch (e) {}
       }
 
       if (locErr) {
@@ -804,7 +844,7 @@ export default function ProfilePage() {
           <div style={{
             position: 'absolute', bottom: -1, right: -1,
             width: 20, height: 20, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #8B0D3D, #6E0A30)',
+            background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
             border: '2px solid #fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 2px 6px rgba(139,13,61,0.4)',
@@ -837,7 +877,7 @@ export default function ProfilePage() {
           <button onClick={() => setDialog({ type: 'confirm', title: t('profile.signOut'), message: t('profile.signOutConfirm'), confirmLabel: t('profile.signOut'), onConfirm: signOut })} style={{
             background: 'rgba(255,255,255,0.92)',
             border: '1.5px solid #fff',
-            color: '#8B0D3D', borderRadius: 10,
+            color: 'var(--maroon)', borderRadius: 10,
             padding: '7px 14px', fontWeight: 800, fontSize: 12,
             fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap',
             display: 'flex', alignItems: 'center', gap: 6,
@@ -856,13 +896,13 @@ export default function ProfilePage() {
       <PullToRefresh onRefresh={loadProfile}>
       <div style={{ padding: '12px 14px 20px' }}>
 
-        {error && <div className="error-msg">{error}</div>}
+        {error && <Dialog type="info" message={error} onClose={() => setError('')} />}
         {saved && (
           <div style={{
             background: '#D1FAE5', border: '1px solid #10B981',
             color: '#059669', padding: '8px 14px', borderRadius: 12,
             fontSize: 13, fontWeight: 700, marginBottom: 10, textAlign: 'center',
-          }}>✅ {t('profile.profileSaved')}</div>
+          }}><Icon name="checkCircle" /> {t('profile.profileSaved')}</div>
         )}
 
         {/* ── LANGUAGE ──
@@ -873,7 +913,7 @@ export default function ProfilePage() {
             to be able to find it — which is also why the options are written
             in their own script. */}
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#8B0D3D', letterSpacing: 0.2, marginBottom: 10 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 10 }}>
             {t('settings.language')}
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -886,8 +926,8 @@ export default function ProfilePage() {
                   aria-pressed={active}
                   style={{
                     padding: '9px 16px', borderRadius: 999,
-                    background: active ? 'linear-gradient(135deg,#8B0D3D,#6E0A30)' : '#F8F0F3',
-                    border: `1.5px solid ${active ? 'transparent' : '#ECE0E5'}`,
+                    background: active ? 'linear-gradient(135deg,var(--maroon),var(--maroon-deep))' : 'var(--bg2)',
+                    border: `1.5px solid ${active ? 'transparent' : 'var(--border)'}`,
                     color: active ? '#fff' : '#5B4652',
                     fontWeight: active ? 800 : 600,
                     fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit',
@@ -903,18 +943,18 @@ export default function ProfilePage() {
 
         {/* ── EDIT INFO ── */}
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#8B0D3D', letterSpacing: 0.2, marginBottom: 10 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 10 }}>
             {t('profile.editInfo')}
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#7D5A67', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.displayName')}</label>
-            <input className="input" style={{ padding: '11px 14px', fontSize: 14 }}
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.displayName')}</label>
+            <input className="input" style={{ padding: '11px 14px', fontSize: 15, fontWeight: 600 }}
               value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={t('profile.yourName')} />
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#7D5A67', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.mobileNumber')}</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.mobileNumber')}</label>
             <div style={{ display: 'flex', gap: 7 }}>
               {/* Plain "+91" — the 🇮🇳 flag emoji used to sit here, but MIUI
                   and several other Android ROMs ship no regional-indicator
@@ -924,13 +964,13 @@ export default function ProfilePage() {
                   field. */}
               <span style={{
                 display: 'flex', alignItems: 'center',
-                padding: '11px 14px', background: '#F8F0F3',
-                border: '1.5px solid #ECE0E5', borderRadius: 14,
-                fontSize: 14, fontWeight: 700, color: '#5B4652',
+                padding: '11px 14px', background: 'var(--bg2)',
+                border: '1.5px solid var(--border)', borderRadius: 14,
+                fontSize: 15, fontWeight: 700, color: 'var(--text)',
                 whiteSpace: 'nowrap', flexShrink: 0,
               }}>+91</span>
-              <input className="input" type="tel" style={{ padding: '11px 14px', fontSize: 14, flex: 1 }}
-                value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))} placeholder="9876543210" maxLength={10} />
+              <input className="input" type="tel" style={{ padding: '11px 14px', fontSize: 15, fontWeight: 600, flex: 1 }}
+                value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))} placeholder={t('auth.mobileNumber')} maxLength={10} />
             </div>
           </div>
         </div>
@@ -939,11 +979,11 @@ export default function ProfilePage() {
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
           {myInviteCode && (
             <>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#8B0D3D', letterSpacing: 0.2, marginBottom: 8 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 8 }}>
                 {t('profile.myCode')}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 3, color: '#2A0A18', fontFamily: 'Sora, sans-serif' }}>
+                <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: 2, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
                   {myInviteCode}
                 </div>
                 <button
@@ -955,9 +995,9 @@ export default function ProfilePage() {
                     setTimeout(() => setCodeCopied(false), 1400)
                   }}
                   style={{
-                    background: codeCopied ? '#D1FAE5' : '#FDF0F5',
+                    background: codeCopied ? '#D1FAE5' : 'var(--maroon-wash)',
                     border: `1.5px solid ${codeCopied ? '#10B981' : '#F0D8E3'}`,
-                    color: codeCopied ? '#059669' : '#8B0D3D',
+                    color: codeCopied ? '#059669' : 'var(--maroon)',
                     borderRadius: 10, padding: '7px 12px',
                     fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
                     cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
@@ -965,7 +1005,7 @@ export default function ProfilePage() {
                     transition: 'all 0.2s',
                   }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : '#8B0D3D'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : 'var(--maroon)'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                   </svg>
                   {codeCopied ? t('profile.copied') : t('profile.copy')}
@@ -978,23 +1018,23 @@ export default function ProfilePage() {
         {/* ── MY FAMILIES ── */}
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#8B0D3D', letterSpacing: 0.2 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2 }}>
               {t('profile.myFamilies')}
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               <button onClick={() => navigate('/join-family')} style={{
-                background: '#F5E6EC', border: '1px solid #8B0D3D', borderRadius: 8,
-                padding: '5px 10px', color: '#8B0D3D', fontWeight: 700,
+                background: '#F5E6EC', border: '1px solid var(--maroon)', borderRadius: 8,
+                padding: '5px 10px', color: 'var(--maroon)', fontWeight: 700,
                 fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
                 display: 'flex', alignItems: 'center', gap: 4,
               }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
                 </svg>
                 Join
               </button>
               <button onClick={() => navigate('/create-family')} style={{
-                background: '#8B0D3D', border: 'none', borderRadius: 8,
+                background: 'var(--maroon)', border: 'none', borderRadius: 8,
                 padding: '5px 10px', color: '#fff', fontWeight: 700,
                 fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
                 display: 'flex', alignItems: 'center', gap: 4,
@@ -1009,8 +1049,8 @@ export default function ProfilePage() {
 
           {/* Family list */}
           {allFamilies.length === 0 ? (
-            <div style={{ fontSize: 13, color: '#9C6B7A', textAlign: 'center', padding: '8px 0' }}>
-              No families yet
+            <div style={{ fontSize: 13, color: 'var(--muted-soft)', textAlign: 'center', padding: '8px 0' }}>
+              {t('profile.noFamilies')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1021,34 +1061,33 @@ export default function ProfilePage() {
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '10px 12px', borderRadius: 12,
-                      background: isActive ? '#FDF0F5' : '#F8F0F3',
-                      border: `1.5px solid ${isActive ? '#8B0D3D' : '#ECE0E5'}`,
+                      background: isActive ? 'var(--maroon-wash)' : 'var(--bg2)',
+                      border: `1.5px solid ${isActive ? 'var(--maroon)' : 'var(--border)'}`,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                     }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{
                         width: 36, height: 36, borderRadius: '50%',
-                        background: isActive ? '#8B0D3D' : '#ECE0E5',
+                        background: isActive ? 'var(--maroon)' : 'var(--border)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 16, flexShrink: 0, overflow: 'hidden',
-                        border: `2px solid ${isActive ? '#8B0D3D' : '#DCC9D2'}`,
+                        border: `2px solid ${isActive ? 'var(--maroon)' : 'var(--border2)'}`,
                       }}>
-                        {avatarUrl
-                          ? <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : <span style={{ fontSize: 16 }}>{(displayName || 'U').charAt(0).toUpperCase()}</span>
-                        }
+                        {/* The family's initial, not mine: every row showed my own
+                            photo or letter, so all families looked the same. */}
+                        <span style={{ fontSize: 16, fontWeight: 800, color: isActive ? '#fff' : 'var(--maroon)' }}>{familyInitial(fam.name)}</span>
                       </div>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 800, color: '#000' }}>{fam.name}</div>
-                        <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
-                          {fam.role === 'admin' ? '👑 ' + t('profile.admin') : '👤 ' + t('profile.member')}
+                        <div style={{ fontSize: 11, color: 'var(--muted-soft)', marginTop: 1 }}>
+                          {fam.role === 'admin' ? <><Icon name="crown" /> {t('profile.admin')}</> : <><Icon name="user" /> {t('profile.member')}</>}
                         </div>
                       </div>
                     </div>
                     {isActive && (
                       <div style={{
-                        background: '#8B0D3D', color: '#fff',
+                        background: 'var(--maroon)', color: '#fff',
                         fontSize: 10, fontWeight: 800, padding: '3px 8px',
                         borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5,
                       }}>{t('profile.active')}</div>
@@ -1075,10 +1114,10 @@ export default function ProfilePage() {
               }}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#8B0D3D', letterSpacing: 0.2 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2 }}>
                   {t('profile.alertSounds')}
                 </div>
-                <div style={{ fontSize: 12.5, color: '#9C6B7A', marginTop: 3, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginTop: 3, lineHeight: 1.5 }}>
                   {t('profile.alertSoundsSub')}
                 </div>
               </div>
@@ -1102,9 +1141,9 @@ export default function ProfilePage() {
                 borderTop: i === 0 ? 'none' : '1px solid #F7EFF3',
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#2A0A18' }}>{t('profile.sound.' + at.key)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{t('profile.sound.' + at.key)}</div>
                   <div style={{
-                    fontSize: 11.5, color: '#9C6B7A', marginTop: 2,
+                    fontSize: 11.5, color: 'var(--muted-soft)', marginTop: 2,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {ringtones[at.key] || t('profile.default')}
@@ -1116,7 +1155,7 @@ export default function ProfilePage() {
                     title={`Use the default sound for ${t('profile.sound.' + at.key)}`}
                     style={{
                       background: 'none', border: 'none', cursor: 'pointer',
-                      color: '#9C6B7A', fontSize: 11.5, fontWeight: 700,
+                      color: 'var(--muted-soft)', fontSize: 11.5, fontWeight: 700,
                       fontFamily: 'inherit', padding: '6px 2px', flexShrink: 0,
                     }}
                   >
@@ -1126,8 +1165,8 @@ export default function ProfilePage() {
                 <button
                   onClick={() => handlePickTone(at.key)}
                   style={{
-                    background: '#FDF0F5', border: '1.5px solid #F0D8E3',
-                    color: '#8B0D3D', borderRadius: 10, padding: '7px 13px',
+                    background: 'var(--maroon-wash)', border: '1.5px solid #F0D8E3',
+                    color: 'var(--maroon)', borderRadius: 10, padding: '7px 13px',
                     fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
                     cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
                   }}
@@ -1150,13 +1189,13 @@ export default function ProfilePage() {
 
         {/* ── PRIVACY ── */}
         <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#8B0D3D', letterSpacing: 0.2, marginBottom: 12 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 12 }}>
             {t('profile.privacy')}
           </div>
           {[
             {
               icon: (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/>
                   <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/>
                 </svg>
@@ -1165,7 +1204,7 @@ export default function ProfilePage() {
             },
             {
               icon: (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                   <circle cx="12" cy="10" r="3"/>
                 </svg>
@@ -1174,7 +1213,7 @@ export default function ProfilePage() {
             },
             {
               icon: (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
@@ -1187,12 +1226,12 @@ export default function ProfilePage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{
                     width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-                    background: '#FDF0F5', border: '1px solid #EDD0DA',
+                    background: 'var(--maroon-wash)', border: '1px solid #EDD0DA',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {item.icon}
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#2A0A18' }}>{item.label}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{item.label}</div>
                 </div>
                 <Toggle on={item.value} onToggle={item.handler} />
               </div>
@@ -1210,13 +1249,13 @@ export default function ProfilePage() {
           </button>
           <button onClick={() => setShowPwModal(true)} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#fff', border: '1.5px solid #8B0D3D',
-            color: '#8B0D3D', fontWeight: 800, fontSize: 13,
+            background: '#fff', border: '1.5px solid var(--maroon)',
+            color: 'var(--maroon)', fontWeight: 800, fontSize: 13,
             fontFamily: 'inherit', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             lineHeight: 1.5, textAlign: 'center',
           }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
@@ -1237,17 +1276,17 @@ export default function ProfilePage() {
                 background: '#F5E8EF', border: '1px solid #EDD0DA',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                 </svg>
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#2A0A18' }}>{t('profile.userGuide')}</div>
-                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>{t('profile.userGuideSub')}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{t('profile.userGuide')}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginTop: 1 }}>{t('profile.userGuideSub')}</div>
               </div>
             </div>
-            <span style={{ color: '#9C6B7A', fontSize: 16 }}>›</span>
+            <span style={{ color: 'var(--muted-soft)', fontSize: 16 }}>›</span>
           </div>
         </div>
 
@@ -1264,29 +1303,32 @@ export default function ProfilePage() {
                 background: '#F5E8EF', border: '1px solid #EDD0DA',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" fill="none"/>
                   <polyline points="9 12 11 14 15 10" fill="none"/>
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>{t('profile.privacyPolicy')}</div>
-                <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>{t('profile.privacyPolicySub')}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{t('profile.privacyPolicy')}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginTop: 1 }}>{t('profile.privacyPolicySub')}</div>
               </div>
             </div>
-            <span style={{ color: '#9C6B7A', fontSize: 18, fontWeight: 300 }}>›</span>
+            <span style={{ color: 'var(--muted-soft)', fontSize: 18, fontWeight: 300 }}>›</span>
           </div>
         </div>
 
-        {/* ── DELETE ACCOUNT ── */}
+        {/* ── DELETE ACCOUNT ──
+            Maroon, not the bright #DC2626 it used to be: that red was the only
+            one of its kind on the page and read as orange beside the maroon.
+            The trash icon and the type-DELETE confirmation carry the warning. */}
         <button onClick={() => setShowDeleteModal(true)} style={{
           width: '100%', marginTop: 10, padding: '14px 16px', borderRadius: 16,
-          background: '#FFF0F0', border: '1.5px solid #EF4444',
-          color: '#DC2626', fontWeight: 800, fontSize: 14,
+          background: 'var(--maroon-wash)', border: '1.5px solid var(--maroon)',
+          color: 'var(--maroon)', fontWeight: 800, fontSize: 14,
           fontFamily: 'inherit', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
             <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
           </svg>
@@ -1326,21 +1368,18 @@ export default function ProfilePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{
                 width: 48, height: 48, borderRadius: '50%',
-                background: selectedFam.family_id === familyId ? '#8B0D3D' : '#ECE0E5',
+                background: selectedFam.family_id === familyId ? 'var(--maroon)' : 'var(--border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 22, flexShrink: 0, overflow: 'hidden',
-                border: `2px solid ${selectedFam.family_id === familyId ? '#8B0D3D' : '#DCC9D2'}`,
+                border: `2px solid ${selectedFam.family_id === familyId ? 'var(--maroon)' : 'var(--border2)'}`,
               }}>
-                {avatarUrl
-                  ? <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <span style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>{(displayName || 'U').charAt(0).toUpperCase()}</span>
-                }
+                <span style={{ fontSize: 20, fontWeight: 800, color: selectedFam.family_id === familyId ? '#fff' : 'var(--maroon)' }}>{familyInitial(selectedFam.name)}</span>
               </div>
               <div>
                 <div style={{ fontSize: 18, fontWeight: 900, color: '#000' }}>{selectedFam.name}</div>
-                <div style={{ fontSize: 12, color: '#9C6B7A', marginTop: 2 }}>
-                  {selectedFam.role === 'admin' ? '👑 ' + t('profile.admin') : '👤 ' + t('profile.member')}
-                  {selectedFam.family_id === familyId && <span style={{ marginLeft: 8, background: '#8B0D3D', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5 }}>ACTIVE</span>}
+                <div style={{ fontSize: 12, color: 'var(--muted-soft)', marginTop: 2 }}>
+                  {selectedFam.role === 'admin' ? <><Icon name="crown" /> {t('profile.admin')}</> : <><Icon name="user" /> {t('profile.member')}</>}
+                  {selectedFam.family_id === familyId && <span style={{ marginLeft: 8, background: 'var(--maroon)', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5, textTransform: 'uppercase' }}>{t('profile.active')}</span>}
                 </div>
               </div>
             </div>
@@ -1348,7 +1387,7 @@ export default function ProfilePage() {
             {/* View Family — read-only member list, does not switch active family */}
             <button onClick={() => openViewFamily(selectedFam)} style={{
               width: '100%', padding: '14px 16px', borderRadius: 14,
-              background: '#8B0D3D', border: 'none',
+              background: 'var(--maroon)', border: 'none',
               color: '#fff', fontWeight: 800, fontSize: 15,
               fontFamily: 'inherit', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10,
@@ -1375,15 +1414,15 @@ export default function ProfilePage() {
               })
             }} style={{
               width: '100%', padding: '14px 16px', borderRadius: 14,
-              background: '#FFF0F0', border: '1.5px solid #EF4444',
-              color: '#DC2626', fontWeight: 800, fontSize: 15,
+              background: 'var(--maroon-wash)', border: '1.5px solid var(--maroon)',
+              color: 'var(--maroon)', fontWeight: 800, fontSize: 15,
               fontFamily: 'inherit', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 12,
             }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
               </svg>
-              Leave Family
+              {t('profile.leaveFamily')}
             </button>
 
           </div>
@@ -1403,7 +1442,7 @@ export default function ProfilePage() {
                 width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer',
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
               </button>
@@ -1411,16 +1450,16 @@ export default function ProfilePage() {
 
             <div style={{ overflowY: 'auto', flex: 1 }}>
               {viewFam.loading ? (
-                <div style={{ textAlign: 'center', padding: '24px 0', color: '#9C6B7A', fontSize: 13 }}>{t('profile.loadingMembers')}</div>
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--muted-soft)', fontSize: 13 }}>{t('profile.loadingMembers')}</div>
               ) : viewFam.members.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '24px 0', color: '#9C6B7A', fontSize: 13 }}>{t('profile.noMembersFound')}</div>
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--muted-soft)', fontSize: 13 }}>{t('profile.noMembersFound')}</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {viewFam.members.map((m) => (
                     <div key={m.user_id || m.id} style={{
                       display: 'flex', alignItems: 'center', gap: 12,
                       padding: '10px 12px', borderRadius: 12,
-                      background: '#F8F0F3', border: '1.5px solid #ECE0E5',
+                      background: 'var(--bg2)', border: '1.5px solid var(--border)',
                     }}>
                       {m.avatar_url ? (
                         <img src={m.avatar_url} alt={m.display_name} style={{
@@ -1433,15 +1472,15 @@ export default function ProfilePage() {
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           color: '#fff', fontWeight: 800, fontSize: 16,
                         }}>
-                          {m.display_name?.[0]?.toUpperCase() || '?'}
+                          {(viewFam.nicknames?.[m.user_id] || m.display_name)?.[0]?.toUpperCase() || '?'}
                         </div>
                       )}
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {m.display_name || t('profile.unknown')}
+                          {viewFam.nicknames?.[m.user_id] || m.display_name || t('profile.unknown')}
                         </div>
-                        <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 1 }}>
-                          {m.role === 'admin' ? '👑 ' + t('profile.admin') : '👤 ' + t('profile.member')}
+                        <div style={{ fontSize: 11, color: 'var(--muted-soft)', marginTop: 1 }}>
+                          {m.role === 'admin' ? <><Icon name="crown" /> {t('profile.admin')}</> : <><Icon name="user" /> {t('profile.member')}</>}
                         </div>
                       </div>
                     </div>

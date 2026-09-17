@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useT } from '../i18n'
+import Dialog from '../components/Dialog'
+import { KeyIcon } from '../components/AuthIcons'
 
 // ── SECURE JoinFamilyPage ────────────────────────────────────────────────────
 // The old version did a direct family_members INSERT — bypassing admin approval.
@@ -12,6 +14,10 @@ import { useT } from '../i18n'
 
 export default function JoinFamilyPage() {
   const t = useT()
+  const navigate = useNavigate()
+  // Back to wherever this was opened from (Profile, usually). A cold start
+  // straight onto this route has no history entry to return to, so Profile.
+  const goBack = () => (window.history.state?.idx > 0 ? navigate(-1) : navigate('/profile', { replace: true }))
   const [code, setCode]           = useState('')
   const [displayName, setDisplayName] = useState('')
   const [loading, setLoading]     = useState(false)
@@ -94,11 +100,16 @@ export default function JoinFamilyPage() {
   return (
     <div className="onboard-page">
       <div className="onboard-card">
-        <div className="auth-logo">🔑</div>
+        <button type="button" onClick={goBack} style={{
+          background: 'none', border: 'none', padding: 0, marginBottom: 12,
+          color: 'var(--muted)', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+          fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
+        }}>← {t('common.back')}</button>
+        <div className="auth-logo"><KeyIcon /></div>
         <h1 className="auth-title">{t('join.title')}</h1>
         <p className="auth-subtitle">{t('join.sub')}</p>
 
-        {error && <div className="error-msg">{error}</div>}
+        {error && <Dialog type="info" message={error} onClose={() => setError('')} />}
 
         <form onSubmit={handleJoinRequest} noValidate>
           <div className="form-group">
@@ -131,7 +142,7 @@ export default function JoinFamilyPage() {
         </form>
 
         <p className="auth-link">
-          {t('join.wantCreate')} <Link to="/create-family">{t('join.goBack')}</Link>
+          {t('join.wantCreate')} <Link to="/create-family" replace>{t('createFamily.title')}</Link>
         </p>
       </div>
     </div>

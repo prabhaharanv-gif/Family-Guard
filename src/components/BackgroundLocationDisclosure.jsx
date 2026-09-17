@@ -1,3 +1,4 @@
+import Icon from './Icon'
 /**
  * BackgroundLocationDisclosure
  *
@@ -32,30 +33,30 @@ export default function BackgroundLocationDisclosure({ open, onAccept, onDecline
           background: 'linear-gradient(135deg, #FCE7F0, #FFF5F7)',
           border: '1.5px solid #F4B6CE',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 32,
+          color: 'var(--maroon)',
         }}>
-          📍
+          <Icon name="pin" size={32} />
         </div>
 
         <div style={{
-          fontSize: 19, fontWeight: 800, color: '#2A0A18',
+          fontSize: 19, fontWeight: 800, color: 'var(--text)',
           fontFamily: 'Sora, sans-serif', textAlign: 'center', marginBottom: 14,
         }}>
           Share location with your family
         </div>
 
-        <div style={{ fontSize: 14, color: '#4A1226', lineHeight: 1.65, marginBottom: 16 }}>
+        <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.65, marginBottom: 16 }}>
           Famora collects location data to show your position to your family
           group on a shared map, and to include it in SOS alerts —{' '}
-          <strong style={{ color: '#2A0A18' }}>
+          <strong style={{ color: 'var(--text)' }}>
             even when the app is closed or not in use
           </strong>.
         </div>
 
         <div style={{
-          background: '#F8F0F3', border: '1px solid #ECE0E5', borderRadius: 14,
+          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 14,
           padding: '13px 15px', marginBottom: 20,
-          fontSize: 13, color: '#4A1226', lineHeight: 1.7,
+          fontSize: 13, color: 'var(--text2)', lineHeight: 1.7,
         }}>
           <div>• Only members of your own family group can see it</div>
           <div>• It is never sold or used for advertising</div>
@@ -66,7 +67,7 @@ export default function BackgroundLocationDisclosure({ open, onAccept, onDecline
           onClick={onAccept}
           style={{
             width: '100%', padding: '14px 0', borderRadius: 14, border: 'none',
-            background: 'linear-gradient(135deg, #8B0D3D, #6E0A30)',
+            background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
             color: '#fff', fontWeight: 700, fontSize: 15,
             fontFamily: 'inherit', cursor: 'pointer',
             boxShadow: '0 4px 14px rgba(139,13,61,0.35)', marginBottom: 10,
@@ -80,7 +81,7 @@ export default function BackgroundLocationDisclosure({ open, onAccept, onDecline
           style={{
             width: '100%', padding: '11px 0', borderRadius: 14,
             background: 'none', border: 'none',
-            color: '#9C6B7A', fontWeight: 600, fontSize: 14,
+            color: 'var(--muted-soft)', fontWeight: 600, fontSize: 14,
             fontFamily: 'inherit', cursor: 'pointer',
           }}
         >

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Geolocation } from '@capacitor/geolocation'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
+import { LocationService } from '../lib/locationPlugin'
 import { startBatteryReporting } from './useBattery'
 
 /**
@@ -35,6 +36,14 @@ const FIRST_FIX_ACCURACY_M = 2000
 const MIN_MOVE_M     = 15        // metres
 // Write at least this often even when stationary, so the pin stays "live"
 const HEARTBEAT_MS   = 90_000    // 90 seconds
+// How often the heartbeat timer fires. Native has no watchPosition of its own
+// any more and reads a cached fix instead, so it can tick slowly; web still
+// pays for its own watch and keeps the original cadence.
+const TICK_MS = Capacitor.isNativePlatform() ? 60_000 : 20_000
+// How old a native fix may be before a fresh one is worth requesting. The
+// foreground service refreshes far more often than this, so the read is
+// normally a cache hit that costs no additional GPS.
+const CACHED_FIX_MAX_AGE_MS = 60_000
 // A single bad fix (stale WiFi AP entry, cell-tower fallback, GPS multipath) can
 // report a "plausible" accuracy while being far off, making the pin teleport and
 // snap back on the next good fix. Anything implying faster than this is held back
@@ -60,6 +69,9 @@ export function useLocationBroadcast(userId, familyId) {
   const lastWriteTimeRef = useRef(0)    // timestamp of last write — for heartbeat
   const pendingJumpRef = useRef(null)   // an implausibly-fast fix awaiting confirmation
   const sharingRef     = useRef(true)
+  // What was last mirrored to the native side. null = nothing sent yet, so the
+  // first check always mirrors, whatever the native flag happens to hold.
+  const lastSentSharingRef = useRef(null)
   const batteryRef     = useRef({ level: null, charging: false })
 
   useEffect(() => {
@@ -81,8 +93,30 @@ export function useLocationBroadcast(userId, familyId) {
         .eq('user_id', userId)
         .eq('family_id', familyId)
         .single()
-      sharingRef.current = !(data && data.show_location === false)
-      return sharingRef.current
+      const sharing = !(data && data.show_location === false)
+
+      // This hook is the only thing that reads the live value regularly, so it
+      // is also what tells the native side about a change made somewhere else —
+      // the toggle on another device, or a value that was already off when this
+      // one signed in. Compared against what was last SENT rather than against
+      // sharingRef, which starts out optimistically true: if the member opted
+      // out here and back in elsewhere, the native flag would still be false
+      // while sharingRef already agreed with the database, and nothing would
+      // ever correct it — tracking would stay blocked on this phone.
+      //
+      // Only on a change: the native call stops or starts the foreground
+      // service, so firing it every tick would churn it.
+      if (sharing !== lastSentSharingRef.current && Capacitor.isNativePlatform()) {
+        try {
+          await LocationService.setSharing({ sharing })
+          lastSentSharingRef.current = sharing
+        } catch (e) {
+          console.warn('[LocationBroadcast] Could not mirror the sharing flag:', e?.message)
+        }
+      }
+
+      sharingRef.current = sharing
+      return sharing
     }
 
     // Write current coords to the DB (or mark as not-sharing).
@@ -233,18 +267,21 @@ export function useLocationBroadcast(userId, familyId) {
         console.warn('[LocationBroadcast] Initial fix failed:', e?.message)
       }
 
-      // 2) Continuous watch — fires as the user moves
+      // 2) Continuous watch — WEB ONLY.
+      //
+      // On native this used to open a second high-accuracy watch on top of the
+      // one LocationForegroundService already holds, so the phone ran two
+      // independent continuous GPS clients for the same data. Passing no
+      // interval made it worse than it looks: @capacitor/geolocation defaults
+      // `interval` to `timeout` (10s) and `minimumUpdateInterval` to 5s, so it
+      // sampled at nearly the service's rate. Battery stats showed 9h50m of GPS
+      // against 4m of foreground use.
+      //
+      // The service stays the continuous source on native; the heartbeat below
+      // keeps writing, because the service only covers ONE family and this path
+      // writes every family the member belongs to.
       try {
-        if (Capacitor.isNativePlatform()) {
-          watchRef.current = await Geolocation.watchPosition(
-            { enableHighAccuracy: true },
-            (p, err) => {
-              if (err || !p || cancelled) return
-              lastCoordsRef.current = p.coords
-              write(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.coords.speed)
-            }
-          )
-        } else if (navigator.geolocation) {
+        if (!Capacitor.isNativePlatform() && navigator.geolocation) {
           watchRef.current = navigator.geolocation.watchPosition(
             (p) => {
               if (cancelled) return
@@ -259,14 +296,39 @@ export function useLocationBroadcast(userId, familyId) {
         console.warn('[LocationBroadcast] Watch setup failed:', e?.message)
       }
 
-      // 3) Heartbeat write every 20s — keeps the timestamp fresh even when
-      //    stationary, so other members see the pin as "live" not stale.
-      //    While moving, watchPosition (above) fires far more often, giving
-      //    the receiving side frequent small steps to animate smoothly.
+      // 3) Heartbeat write — keeps the timestamp fresh even when stationary,
+      //    so other members see the pin as "live" not stale.
+      //
+      //    On web, watchPosition above fires far more often while moving and
+      //    this is only the stationary backstop, so it stays at 20s.
+      //
+      //    On native there is no watch here any more, so this IS the writer for
+      //    the member's other families — and it runs at 60s, because the fix it
+      //    writes comes from the cache the foreground service is already
+      //    filling. The service keeps its own family fresh on its own 90s
+      //    heartbeat regardless of this timer.
       intervalId = setInterval(async () => {
         if (cancelled) return
-        // Re-check privacy periodically in case the user toggled it
+        // Re-check privacy every tick, as before: this hook must stop writing
+        // is_sharing:true promptly after the member turns sharing off.
         await checkSharing()
+
+        // Without a watch, lastCoordsRef would go stale after the first fix, so
+        // refresh it. maximumAge means the fused provider answers from the fix
+        // the service just took rather than powering the GPS a second time —
+        // and enableHighAccuracy:false keeps a cache miss cheap instead of
+        // forcing a fresh satellite fix.
+        if (Capacitor.isNativePlatform()) {
+          try {
+            const pos = await Geolocation.getCurrentPosition({
+              enableHighAccuracy: false, timeout: 15000, maximumAge: CACHED_FIX_MAX_AGE_MS,
+            })
+            lastCoordsRef.current = pos.coords
+          } catch (e) {
+            console.warn('[LocationBroadcast] Cached fix unavailable:', e?.message)
+          }
+        }
+
         const c = lastCoordsRef.current
         if (c) {
           await write(c.latitude, c.longitude, c.accuracy, c.speed)
@@ -278,7 +340,7 @@ export function useLocationBroadcast(userId, familyId) {
             await write(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, pos.coords.speed)
           } catch {}
         }
-      }, 20_000)
+      }, TICK_MS)
     }
 
     start()

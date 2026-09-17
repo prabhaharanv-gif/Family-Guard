@@ -24,6 +24,10 @@
 
     <string name="ch_messages_silent_name">కుటుంబ సందేశాలు (నిశ్శబ్దం)</string>
     <string name="ch_messages_silent_desc">కుటుంబ సందేశాలు — నిశ్శబ్ద మోడ్</string>
+    <string name="ch_messages_popup_silent_name">కుటుంబ సందేశాలు (పాప్-అప్, శబ్దం లేకుండా)</string>
+    <string name="ch_messages_popup_silent_desc">కుటుంబ సందేశాలు — శబ్దం మ్యూట్, పాప్-అప్ కనిపిస్తుంది</string>
+    <string name="ch_messages_quiet_name">కుటుంబ సందేశాలు (శబ్దం, పాప్-అప్ లేకుండా)</string>
+    <string name="ch_messages_quiet_desc">కుటుంబ సందేశాలు — పాప్-అప్ మ్యూట్, శబ్దం వినిపిస్తుంది</string>
 
     <string name="ch_location_name">లొకేషన్ ట్రాకింగ్</string>
     <string name="ch_location_desc">Famora మీ లొకేషన్‌ను ట్రాక్ చేస్తున్నప్పుడు కనిపిస్తుంది</string>
@@ -61,4 +65,8 @@
     <string name="notif_ping_big">%1$s ఈ ఫోన్ కోసం వెతుకుతున్నారు.\n\nశబ్దం ఆపడానికి ఆపు బటన్ నొక్కండి.</string>
     <string name="notif_location_body">మీ కుటుంబాన్ని కాపాడుతోంది · లొకేషన్ ఆన్</string>
     <string name="notif_tap_to_open">తెరవడానికి ట్యాప్ చేయండి</string>
+    <string name="ch_reauth_name">మళ్లీ కనెక్ట్ కావాలి</string>
+    <string name="ch_reauth_desc">లొకేషన్ షేరింగ్ కొనసాగించడానికి Famora మళ్లీ తెరవాల్సి వచ్చినప్పుడు తెలియజేస్తుంది</string>
+    <string name="notif_reauth_title">లొకేషన్ షేరింగ్ ఆగిపోయింది</string>
+    <string name="notif_reauth_body">మళ్లీ కనెక్ట్ కావడానికి Famora తెరవండి. అప్పటి వరకు మీ కుటుంబం మీ లొకేషన్‌ను చూడలేరు.</string>
 </resources>

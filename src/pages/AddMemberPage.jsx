@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useT } from '../i18n'
+import Dialog from '../components/Dialog'
 
 const RELATIONSHIPS = ['Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Spouse', 'Grandfather', 'Grandmother', 'Other']
 const AVATAR_COLORS = ['#4F8EF7','#FF6B6B','#34C759','#FF9500','#AF52DE','#FF2D55','#5AC8FA','#FFCC00']
@@ -53,7 +54,7 @@ export default function AddMemberPage() {
           <h2 style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.4 }}>{t('addMember.title')}</h2>
         </div>
 
-        {error && <div className="error-msg">{error}</div>}
+        {error && <Dialog type="info" message={error} onClose={() => setError('')} />}
 
         <form onSubmit={handleAdd}>
           {/* Avatar color picker */}
@@ -64,7 +65,7 @@ export default function AddMemberPage() {
                 <div key={c} onClick={() => setSelectedColor(c)} style={{
                   width: 32, height: 32, borderRadius: '50%', background: c,
                   cursor: 'pointer',
-                  border: selectedColor === c ? '3px solid #2A0A18' : '3px solid transparent',
+                  border: selectedColor === c ? '3px solid var(--text)' : '3px solid transparent',
                   transition: 'border 0.15s',
                 }} />
               ))}
@@ -88,7 +89,7 @@ export default function AddMemberPage() {
               }}>+91</span>
               <input className="input" type="tel" value={phone}
                 onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                placeholder="9876543210" maxLength={10} style={{ flex: 1 }} />
+                placeholder={t('auth.mobileNumber')} maxLength={10} style={{ flex: 1 }} />
             </div>
           </div>
 

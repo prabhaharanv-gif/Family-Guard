@@ -152,7 +152,7 @@ public class SOSAlertActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER);
-        root.setBackgroundColor(Color.parseColor("#951345"));
+        root.setBackgroundColor(Color.parseColor("#C8102E"));
         root.setPadding(dp(32), dp(48), dp(32), dp(48));
 
         // 🆘 Big icon
@@ -178,7 +178,7 @@ public class SOSAlertActivity extends Activity {
         // Message
         TextView msg = new TextView(this);
         msg.setText(message);
-        msg.setTextColor(Color.parseColor("#FFD9E6"));
+        msg.setTextColor(Color.parseColor("#FFDDE4"));
         msg.setTextSize(18);
         msg.setGravity(Gravity.CENTER);
         msg.setPadding(0, 0, 0, dp(40));
@@ -188,7 +188,7 @@ public class SOSAlertActivity extends Activity {
         if (lat != null && !lat.isEmpty() && !"0".equals(lat) && lng != null && !lng.isEmpty()) {
             Button locBtn = new Button(this);
             locBtn.setText(R.string.sos_view_location);
-            locBtn.setTextColor(Color.parseColor("#951345"));
+            locBtn.setTextColor(Color.parseColor("#A30E2B"));
             locBtn.setBackgroundColor(Color.WHITE);
             locBtn.setTextSize(16);
             locBtn.setAllCaps(false);
@@ -209,7 +209,7 @@ public class SOSAlertActivity extends Activity {
         Button openBtn = new Button(this);
         openBtn.setText(R.string.sos_open_app);
         openBtn.setTextColor(Color.WHITE);
-        openBtn.setBackgroundColor(Color.parseColor("#720D35"));
+        openBtn.setBackgroundColor(Color.parseColor("#A30E2B"));
         openBtn.setTextSize(16);
         openBtn.setAllCaps(false);
         LinearLayout.LayoutParams obp = new LinearLayout.LayoutParams(
@@ -229,7 +229,7 @@ public class SOSAlertActivity extends Activity {
         Button stopBtn = new Button(this);
         stopBtn.setText(R.string.sos_stop_alarm);
         stopBtn.setTextColor(Color.WHITE);
-        stopBtn.setBackgroundColor(Color.parseColor("#4A0820"));
+        stopBtn.setBackgroundColor(Color.parseColor("#5C0818"));
         stopBtn.setTextSize(16);
         stopBtn.setAllCaps(false);
         LinearLayout.LayoutParams sbp = new LinearLayout.LayoutParams(
