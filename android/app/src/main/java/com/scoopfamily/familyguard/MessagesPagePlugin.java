@@ -19,8 +19,10 @@ public class MessagesPagePlugin extends Plugin {
     }
 
     /**
-     * Called whenever the user changes the mute toggle.
-     * level: 0 = all on, 1 = sound muted, 2 = sound + banner muted
+     * Called whenever the user picks from the mute menu.
+     * level: 0 = not muted, 1 = sound & pop-up muted, 3 = sound muted,
+     * 4 = pop-up muted (2, the retired "all off", is treated as 1). The values
+     * are defined in src/lib/muteLevel.js and MyFirebaseMessagingService.
      * Stored in SharedPreferences so MyFirebaseMessagingService reads it
      * even when this page is not mounted (e.g. app backgrounded, killed).
      */

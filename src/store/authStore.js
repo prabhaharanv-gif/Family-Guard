@@ -1,6 +1,8 @@
 import { create } from 'zustand'
+import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { adoptNativeSession } from '../lib/nativeSession'
+import { LocationService } from '../lib/locationPlugin'
 import { authLog } from '../lib/authDebug'
 
 export const useAuthStore = create((set, get) => ({
@@ -121,7 +123,10 @@ export const useAuthStore = create((set, get) => ({
         localStorage.setItem('activeFamilyId', membership.family_id)
       }
     } else {
-      set({ allFamilies: [] })
+      // In no family any more: nothing may stay active, or pages keep querying
+      // a family this user was just removed from.
+      set({ allFamilies: [], familyId: null, familyName: null, inviteCode: null })
+      try { localStorage.removeItem('activeFamilyId') } catch { /* storage unavailable */ }
     }
   },
 
@@ -174,7 +179,21 @@ export const useAuthStore = create((set, get) => ({
     const { error } = await supabase.rpc('leave_family', { p_family_id: familyId })
     if (error) throw error
 
-    // Reload all families and switch to another one
+    // Drop it locally first. Relying on the reload alone left the family in
+    // "My Families" and still active when that reload did not land — and a
+    // stale activeFamilyId then pointed every page at a family whose members
+    // this user can no longer read ("No members yet").
+    try {
+      if (localStorage.getItem('activeFamilyId') === familyId) localStorage.removeItem('activeFamilyId')
+    } catch { /* storage unavailable */ }
+    const remaining = get().allFamilies.filter(f => f.family_id !== familyId)
+    set({ allFamilies: remaining })
+    if (get().familyId === familyId) {
+      const next = remaining[0]
+      set({ familyId: next?.family_id || null, familyName: next?.name || null, inviteCode: next?.invite_code || null })
+    }
+
+    // Then reload from the server, which also picks the right active family.
     await get().loadFamily(userId)
   },
 
@@ -186,6 +205,25 @@ export const useAuthStore = create((set, get) => ({
     try {
       await supabase.rpc('mark_member_signed_out')
     } catch { /* offline, or the migration has not been applied yet */ }
+
+    // Before auth.signOut() as well, and for a harder reason than the RPC: the
+    // background service keeps its own copy of the session in SharedPreferences
+    // so it can post locations with the app closed. Signing out of the WebView
+    // never touched it, so the service carried on holding GPS with a dead token,
+    // and BootReceiver — which keys off those stored credentials — restarted it
+    // after every reboot. Tracking continued for an account nobody was signed
+    // into, and the only way to stop it was to force-stop the app: the privacy
+    // toggle that would have stopped it is behind the login.
+    //
+    // Deliberately not blocking on failure. A native call that throws must not
+    // strand somebody in a half-signed-out state.
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await LocationService.clearSession()
+      } catch (e) {
+        console.warn('[auth] Could not clear the native session:', e?.message)
+      }
+    }
 
     await supabase.auth.signOut()
     set({ user: null, familyId: null, familyName: null, inviteCode: null, allFamilies: [] })

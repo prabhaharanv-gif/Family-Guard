@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { getPolicy } from '../lib/policy'
 import { useT } from '../i18n'
+import Icon from '../components/Icon'
 
 export default function PrivacyPolicyPage() {
   const navigate = useNavigate()
@@ -16,7 +17,7 @@ export default function PrivacyPolicyPage() {
     }}>
       {/* Header */}
       <div style={{
-        background: 'linear-gradient(135deg, #8B0D3D 0%, #6E0A30 100%)',
+        background: 'linear-gradient(135deg, var(--maroon) 0%, var(--maroon-deep) 100%)',
         padding: '16px 16px 20px',
         flexShrink: 0,
         boxShadow: '0 2px 12px rgba(139,13,61,0.25)',
@@ -46,15 +47,15 @@ export default function PrivacyPolicyPage() {
 
         {/* Intro card */}
         <div style={{
-          background: 'linear-gradient(135deg, #FDF0F5, #FAE8EF)',
+          background: 'linear-gradient(135deg, var(--maroon-wash), var(--maroon-tint))',
           borderRadius: 18, padding: '18px 20px', marginBottom: 14,
-          border: '1.5px solid #DCC9D2',
+          border: '1.5px solid var(--border2)',
           boxShadow: '0 2px 12px rgba(139,13,61,0.08)',
         }}>
-          <div style={{ fontSize: 22, marginBottom: 8 }}>🛡️</div>
+          <div style={{ marginBottom: 8, color: 'var(--maroon)' }}><Icon name="shield" size={24} /></div>
           <div style={{ fontSize: 14, color: '#3A1020', lineHeight: 1.6, fontWeight: 500 }}>
             {p.promiseLead}{' '}
-            <strong style={{ color: '#8B0D3D' }}>{p.promiseStrong}</strong>
+            <strong style={{ color: 'var(--maroon)' }}>{p.promiseStrong}</strong>
             {' '}{p.promiseTail}
           </div>
         </div>
@@ -64,7 +65,7 @@ export default function PrivacyPolicyPage() {
             background: '#fff',
             borderRadius: 18, padding: '16px 18px',
             marginBottom: 12,
-            border: '1px solid #ECE0E5',
+            border: '1px solid var(--border)',
             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           }}>
             {/* Section header */}
@@ -78,7 +79,7 @@ export default function PrivacyPolicyPage() {
               }}>
                 {section.icon}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#2A0A18' }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
                 {section.title}
               </div>
             </div>
@@ -96,7 +97,7 @@ export default function PrivacyPolicyPage() {
                   }}>
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: section.color }} />
                   </div>
-                  <div style={{ fontSize: 13, color: '#4A1226', lineHeight: 1.55 }}>
+                  <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.55 }}>
                     {item}
                   </div>
                 </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MANUAL, LANGUAGES, SECTION_META } from '../i18n/manual'
 import { useLangStore } from '../i18n'
+import Icon from '../components/Icon'
 
 /**
  * UserManualPage
@@ -24,7 +25,7 @@ function Section({ meta, content, topicsLabel, open, onToggle }) {
       background: '#fff',
       borderRadius: 18,
       marginBottom: 12,
-      border: '1px solid #ECE0E5',
+      border: '1px solid var(--border)',
       boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
       overflow: 'hidden',
     }}>
@@ -48,12 +49,12 @@ function Section({ meta, content, topicsLabel, open, onToggle }) {
           {/* line-height 1.4 rather than 1: Indic scripts stack marks above and
               below the base character and get clipped at tighter leading. */}
           <div style={{
-            fontSize: 15, fontWeight: 800, color: '#2A0A18',
+            fontSize: 15, fontWeight: 800, color: 'var(--text)',
             fontFamily: 'Sora, sans-serif', lineHeight: 1.4,
           }}>
             {content.title}
           </div>
-          <div style={{ fontSize: 11, color: '#9C6B7A', marginTop: 2, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 11, color: 'var(--muted-soft)', marginTop: 2, lineHeight: 1.5 }}>
             {topicsLabel}
           </div>
         </div>
@@ -81,7 +82,7 @@ function Section({ meta, content, topicsLabel, open, onToggle }) {
                 fontSize: 10, fontWeight: 900,
               }}>{i + 1}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 800, color: '#2A0A18', marginBottom: 3, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)', marginBottom: 3, lineHeight: 1.5 }}>
                   {label}
                 </div>
                 <div style={{ fontSize: 12.5, color: '#5B4652', lineHeight: 1.75 }}>
@@ -131,7 +132,7 @@ export default function UserManualPage() {
     }}>
       {/* Header */}
       <div style={{
-        background: 'linear-gradient(135deg, #8B0D3D 0%, #6E0A30 100%)',
+        background: 'linear-gradient(135deg, var(--maroon) 0%, var(--maroon-deep) 100%)',
         padding: '16px 16px 14px',
         flexShrink: 0,
         boxShadow: '0 2px 12px rgba(139,13,61,0.25)',
@@ -173,7 +174,7 @@ export default function UserManualPage() {
                   padding: '7px 13px', borderRadius: 999,
                   background: active ? '#fff' : 'rgba(255,255,255,0.14)',
                   border: `1px solid ${active ? '#fff' : 'rgba(255,255,255,0.28)'}`,
-                  color: active ? '#8B0D3D' : 'rgba(255,255,255,0.92)',
+                  color: active ? 'var(--maroon)' : 'rgba(255,255,255,0.92)',
                   fontWeight: active ? 800 : 600,
                   fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit',
                   whiteSpace: 'nowrap', lineHeight: 1.6,
@@ -190,15 +191,15 @@ export default function UserManualPage() {
       <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 16px 40px' }}>
 
         <div style={{
-          background: 'linear-gradient(135deg, #FDF0F5, #FAE8EF)',
+          background: 'linear-gradient(135deg, var(--maroon-wash), var(--maroon-tint))',
           borderRadius: 18, padding: '18px 20px', marginBottom: 14,
-          border: '1.5px solid #DCC9D2',
+          border: '1.5px solid var(--border2)',
           boxShadow: '0 2px 12px rgba(139,13,61,0.08)',
         }}>
-          <div style={{ fontSize: 22, marginBottom: 8 }}>📖</div>
+          <div style={{ marginBottom: 8, color: 'var(--maroon)' }}><Icon name="book" size={24} /></div>
           <div style={{ fontSize: 14, color: '#3A1020', lineHeight: 1.75, fontWeight: 500 }}>
             {t.introLead}{' '}
-            <strong style={{ color: '#8B0D3D' }}>{t.introStrong}</strong>
+            <strong style={{ color: 'var(--maroon)' }}>{t.introStrong}</strong>
             {' '}{t.introTail}
           </div>
         </div>
@@ -219,7 +220,7 @@ export default function UserManualPage() {
         })}
 
         <div style={{
-          textAlign: 'center', fontSize: 11, color: '#9C6B7A',
+          textAlign: 'center', fontSize: 11, color: 'var(--muted-soft)',
           padding: '18px 10px 0', lineHeight: 1.8,
         }}>
           {t.footer}

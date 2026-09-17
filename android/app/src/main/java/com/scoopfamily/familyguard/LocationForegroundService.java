@@ -53,7 +53,11 @@ import java.util.concurrent.Executors;
  *
  * Strategy:
  *   - Priority HIGH_ACCURACY — Fused uses GPS + WiFi + cell as needed
- *   - 15s update interval, accepts down to 5s if a fresh fix is ready
+ *   - Adaptive interval: 5s while moving (accepting down to 3s), 30s once the
+ *     phone has been still for two minutes (accepting down to 15s). Moving is
+ *     the old always-on rate, so live tracking is unchanged; stillness is where
+ *     the battery was going. See adaptCadence() and the constants for the
+ *     measurements behind it.
  *   - Accuracy gate: discard fixes worse than 100m (loosened from 50m so
  *     normal indoor WiFi/cell fixes are accepted instead of rejected)
  *   - Distance gate: only push if moved > 15m, EXCEPT a 90s heartbeat keeps
@@ -73,6 +77,21 @@ public class LocationForegroundService extends Service {
     public static final String KEY_FAMILY_ID   = "family_id";
     public static final String KEY_SESSION     = "session_token";
     public static final String KEY_REFRESH     = "refresh_token";
+    /**
+     * The member's show_location preference, mirrored down from the web layer.
+     *
+     * It lives here because the start paths are native and none of them could
+     * previously see it: useLocationService started the service on every launch
+     * and BootReceiver restarted it after every reboot, both keyed only on
+     * stored credentials. Turning sharing off stopped the service exactly once,
+     * and the next launch or reboot silently resumed full-rate tracking for
+     * somebody who had opted out — a privacy bug before it is a battery one.
+     *
+     * Absent means sharing is ON. Only an explicit false blocks a start: a
+     * missing or unreadable preference must never silently stop a safety app
+     * from tracking, so this fails open in the same spirit as useSingleDevice.
+     */
+    public static final String KEY_SHARING     = "show_location";
 
     // How many consecutive 401s to leave to the WebView before renewing anyway.
     // At a ~95s heartbeat this is a little over three minutes of deferring.
@@ -85,11 +104,41 @@ public class LocationForegroundService extends Service {
     // The geometry stays here: distances are measured with Location#distanceTo
     // and handed to the filter, so nothing about how far apart two fixes are
     // has changed.
-    // How often to request a fresh fix from FusedLocationProvider. Lowered from 15s/5s
-    // to update a moving user's pin as fast as reasonably possible; the distance/
-    // heartbeat gate below still controls how often a push actually happens.
-    private static final long UPDATE_INTERVAL_MS = 5_000L;
-    private static final long UPDATE_FASTEST_MS  = 3_000L;
+    // How often to ask FusedLocationProvider for a fresh fix.
+    //
+    // This used to be a single 5s/3s pair applied around the clock, which meant
+    // a phone lying still on a table ran the GNSS engine at essentially a 100%
+    // duty cycle to produce fixes that LocationFilter then threw away: at rest
+    // nothing is pushed until 15m of movement or the 90s heartbeat, so 17 of
+    // every 18 fixes were computed and discarded. Measured on the Redmi
+    // (2026-09-16): 9h50m of GPS and 5h46m of keep-awake against 4m of
+    // foreground use, 23.5% of the battery.
+    //
+    // So the cadence now follows what the phone is actually doing. Moving keeps
+    // the old rate exactly — live tracking must not regress — and stillness
+    // costs a sixth of it.
+    private static final long MOVING_INTERVAL_MS = 5_000L;
+    private static final long MOVING_FASTEST_MS  = 3_000L;
+    private static final long STILL_INTERVAL_MS  = 30_000L;
+    private static final long STILL_FASTEST_MS   = 15_000L;
+
+    // How long without real movement before dropping back to the slow cadence.
+    // Long enough to ride through a traffic light rather than flapping at every
+    // junction.
+    private static final long STILL_AFTER_MS = 120_000L;
+
+    // Speed that counts as moving on its own, without waiting to accumulate
+    // MIN_MOVE_M of displacement — about 5.4 km/h, i.e. walking pace. This is
+    // what keeps the start of a journey responsive: the first fix that reports
+    // real speed switches to the fast cadence immediately.
+    private static final float MOVING_SPEED_MPS = 1.5f;
+
+    /**
+     * Which cadence applies, and the only place that is decided. Plain Java,
+     * no Android types, unit tested in CadencePlanTest. Main thread only —
+     * fixes are delivered on the main looper.
+     */
+    private final CadencePlan cadence = new CadencePlan(STILL_AFTER_MS);
 
     private FusedLocationProviderClient fusedClient;
     private LocationCallback            locationCallback;
@@ -109,11 +158,10 @@ public class LocationForegroundService extends Service {
     /** Most recent accepted fix, or null before the first one. */
     static Location getLastKnownLocation() { return lastKnownForSos; }
 
-    // Two volume presses one way then two the other; see VolumeSosGesture.
-    // Re-enabled 2026-09-11 to test whether a silent audio keepalive makes MIUI
-    // deliver volume keys with the screen off. (powerReceiver further down is
-    // unrelated: it is about the charger.)
-    private VolumeSosGesture sosGesture;
+    // The volume-button SOS gesture used to be started from here. Withdrawn
+    // 2026-09-16 — see VolumeSosGesture for what it did to the phone and why
+    // that was not worth the trigger. (powerReceiver further down is unrelated:
+    // it is about the charger.)
     // Timestamp of the last push — used for the stationary heartbeat
     private long lastPushTime = 0L;
     // An implausibly-fast fix awaiting a second fix to confirm it isn't a GPS jump
@@ -129,7 +177,6 @@ public class LocationForegroundService extends Service {
         ensureChannel(this);
         registerLocationToggleReceiver();
         registerPowerReceiver();
-        registerSosGestureReceiver();
     }
 
     // ── Location services on/off reporting ───────────────────────────────────
@@ -172,28 +219,6 @@ public class LocationForegroundService extends Service {
             registerReceiver(powerReceiver, f);
         } catch (Exception e) {
             Log.w(TAG, "Could not register power receiver: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Two volume presses one way then two the other raise an SOS with the app
-     * closed — see VolumeSosGesture, which also carries the history of what was
-     * tried before and why.
-     *
-     * It lives here because this service is the only thing guaranteed to be
-     * alive while the app is closed, which is also why the gesture stops working
-     * if location sharing is switched off.
-     *
-     * Note that starting this also starts a silent audio keepalive and takes
-     * ownership of the phone's volume keys. If the gesture is withdrawn again,
-     * stop registering it here rather than leaving that running.
-     */
-    private void registerSosGestureReceiver() {
-        try {
-            sosGesture = new VolumeSosGesture(this);
-            sosGesture.start();
-        } catch (Exception e) {
-            Log.w(TAG, "Could not start the SOS volume gesture: " + e.getMessage());
         }
     }
 
@@ -440,12 +465,6 @@ public class LocationForegroundService extends Service {
                 powerReceiver = null;
             }
         } catch (Exception e) { /* ignore */ }
-        try {
-            if (sosGesture != null) {
-                sosGesture.stop();
-                sosGesture = null;
-            }
-        } catch (Exception e) { /* ignore */ }
         if (executor != null) executor.shutdownNow();
         Log.i(TAG, "Location foreground service stopped");
     }
@@ -475,10 +494,20 @@ public class LocationForegroundService extends Service {
         Intent restartIntent = new Intent(getApplicationContext(), LocationForegroundService.class);
         restartIntent.setPackage(getPackageName());
 
-        PendingIntent restartPending = PendingIntent.getService(
-            getApplicationContext(), 1, restartIntent,
-            PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE
-        );
+        // getForegroundService, NOT getService, on O+. A PendingIntent built
+        // with getService performs a plain startService when it fires, and from
+        // Android 8 a background startService throws IllegalStateException —
+        // which lands inside AlarmManager's dispatch, where nothing here can
+        // catch or report it. So the swipe-away restart this method exists to
+        // perform has been failing silently on every modern Android: the member
+        // swiped the app away and their location simply stopped, for good.
+        PendingIntent restartPending = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+            ? PendingIntent.getForegroundService(
+                getApplicationContext(), 1, restartIntent,
+                PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE)
+            : PendingIntent.getService(
+                getApplicationContext(), 1, restartIntent,
+                PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
 
         android.app.AlarmManager alarm =
             (android.app.AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -540,14 +569,44 @@ public class LocationForegroundService extends Service {
 
     // ── Location setup ────────────────────────────────────────────────────────
     private void startLocationUpdates() {
+        // onStartCommand runs again on every startService() — app launch, the
+        // sign-in retry chain in useLocationService (every 5s until a token
+        // arrives), a failed-start retry, a START_STICKY restart, BootReceiver.
+        // Each pass used to build a NEW LocationCallback and register it while
+        // the field still pointed at the old one, so the previous callback
+        // stayed registered with Play Services and became unreachable: nothing
+        // could remove it, onDestroy included. The requests stacked, and every
+        // fix was delivered once per leaked callback — each one re-running the
+        // distance maths and its own 90s heartbeat push.
+        //
+        // Unregister before re-registering. Safe when it was never registered.
+        if (locationCallback != null) {
+            try {
+                fusedClient.removeLocationUpdates(locationCallback);
+            } catch (Exception e) {
+                Log.w(TAG, "Could not remove the previous location callback: " + e.getMessage());
+            }
+            locationCallback = null;
+        }
+
+        long interval = cadence.isMoving() ? MOVING_INTERVAL_MS : STILL_INTERVAL_MS;
+        long fastest  = cadence.isMoving() ? MOVING_FASTEST_MS  : STILL_FASTEST_MS;
+
         LocationRequest request = new LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL_MS)
-            .setMinUpdateIntervalMillis(UPDATE_FASTEST_MS)
-            // minUpdateDistance 0 — deliver updates on the time interval even when
-            // stationary, so the heartbeat can keep the timestamp fresh. We apply
-            // the movement filter ourselves in handleLocation().
+                Priority.PRIORITY_HIGH_ACCURACY, interval)
+            .setMinUpdateIntervalMillis(fastest)
+            // minUpdateDistance stays 0 in BOTH modes, and must. The 90s
+            // heartbeat that keeps a stationary member's pin "live" is evaluated
+            // in handleLocation, which only runs when a fix is delivered — so a
+            // displacement filter would stop deliveries exactly when the phone is
+            // still, the heartbeat would never fire, and the member would go
+            // stale and then show as offline. Slowing the interval saves the
+            // power; a distance filter would break the feature.
             .setMinUpdateDistanceMeters(0f)
             .setWaitForAccurateLocation(false)
+            // Deliberately no setMaxUpdateDelayMillis: batching lets the system
+            // hold fixes back to save more power, but this is a safety app and a
+            // held-back fix is a stale position at the moment it matters.
             .build();
 
         locationCallback = new LocationCallback() {
@@ -591,6 +650,10 @@ public class LocationForegroundService extends Service {
         LocationFilter.Result verdict = LocationFilter.evaluate(
             loc.getAccuracy(), hasLastPush, movedM, sinceLastPush, hasPending, fromPending);
 
+        // Decided from the distances already measured above, before the verdict
+        // is applied: a rejected fix still tells us whether the phone is moving.
+        adaptCadence(loc, movedM);
+
         if (verdict.note != null) Log.i(TAG, source + " " + verdict.note);
 
         if (verdict.holdAsPendingJump)     pendingJumpLocation = loc;
@@ -614,6 +677,32 @@ public class LocationForegroundService extends Service {
         lastKnownForSos    = loc;
         lastPushTime = System.currentTimeMillis();
         executor.submit(() -> pushLocation(loc));
+    }
+
+    /**
+     * Switches between the moving and stationary cadences.
+     *
+     * Movement is either real displacement (the same MIN_MOVE_M the push gate
+     * uses, so the two agree about what "moved" means) or a reported speed at
+     * walking pace or above. Speed is what makes the start of a journey
+     * responsive: waiting to accumulate 15m at the slow cadence could take two
+     * ticks, while the first fix that reports speed switches immediately.
+     *
+     * Dropping back is deliberately slow (STILL_AFTER_MS) so a wait at a
+     * junction or a red light does not churn the request. The switch itself
+     * re-registers the callback, which is safe and cheap only because
+     * startLocationUpdates() removes the previous one first.
+     */
+    private void adaptCadence(Location loc, float movedM) {
+        boolean movedFar   = movedM != LocationFilter.NO_DISTANCE && movedM >= LocationFilter.MIN_MOVE_M;
+        boolean movingFast = loc.hasSpeed() && loc.getSpeed() >= MOVING_SPEED_MPS;
+
+        if (!cadence.update(movedFar, movingFast, System.currentTimeMillis())) return;
+
+        Log.i(TAG, "cadence → " + (cadence.isMoving()
+            ? "moving (" + (MOVING_INTERVAL_MS / 1000) + "s)"
+            : "stationary (" + (STILL_INTERVAL_MS / 1000) + "s)"));
+        startLocationUpdates();
     }
 
     // ── Push to Supabase ──────────────────────────────────────────────────────
@@ -674,6 +763,13 @@ public class LocationForegroundService extends Service {
         // fallback, every push after expiry would 401 forever and the pin would freeze
         // at whatever position was last captured while the app was open. Instead, refresh
         // the session natively using the stored Supabase refresh token and retry once.
+        if (code == 200 || code == 201 || code == 204) {
+            // Reaching the server again retires any standing prompt, so a member
+            // who reopened the app (or whose network simply came back) is not
+            // left looking at a warning that no longer applies.
+            clearReauthNotice();
+        }
+
         if (code == 401 || code == 403) {
             // Refreshing is split by lifecycle, because a Supabase refresh token is
             // single-use: redeeming one revokes it, so two holders cannot both spend
@@ -705,6 +801,13 @@ public class LocationForegroundService extends Service {
                 }
             } else {
                 Log.w(TAG, "❌ Could not refresh session natively — refresh token missing/expired, user must reopen the app to re-authenticate");
+                // Say so where somebody can act on it. This branch is the
+                // silent-death path: the service stays up, holds GPS, and every
+                // push from here on is rejected, so the family sees a position
+                // frozen at wherever the phone was when the token expired while
+                // every indicator claims sharing is on. Opening the app fixes it
+                // in one tap — but nothing ever asked anyone to.
+                notifyReauthNeeded();
             }
         }
 
@@ -876,6 +979,72 @@ public class LocationForegroundService extends Service {
         return TokenBroker.redeem(prefs, supabaseUrl, supabaseKey, null).ok();
     }
 
+    // ── Re-authentication prompt ──────────────────────────────────────────────
+    public static final String REAUTH_CHANNEL_ID = "fg_reauth_v1";
+    private static final int    REAUTH_NOTIF_ID  = 2002;
+    /** Don't repeat the prompt more than this often. */
+    private static final long   REAUTH_NOTIFY_EVERY_MS = 60 * 60 * 1000L;
+    private static long lastReauthNotifiedAt = 0L;
+
+    /**
+     * Tells the member their location has stopped reaching the family and that
+     * opening the app fixes it.
+     *
+     * Its own channel at DEFAULT importance, not the silent one the ongoing
+     * service notification uses: that one is deliberately invisible, and a
+     * prompt nobody notices is the same as the log line this replaces. Throttled
+     * to once an hour, because the failing push repeats on every fix.
+     */
+    private void notifyReauthNeeded() {
+        long now = System.currentTimeMillis();
+        if (now - lastReauthNotifiedAt < REAUTH_NOTIFY_EVERY_MS) return;
+        lastReauthNotifiedAt = now;
+
+        try {
+            NotificationManager nm =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel ch = new NotificationChannel(
+                    REAUTH_CHANNEL_ID, getString(R.string.ch_reauth_name),
+                    NotificationManager.IMPORTANCE_DEFAULT);
+                ch.setDescription(getString(R.string.ch_reauth_desc));
+                nm.createNotificationChannel(ch);
+            }
+
+            Intent tapIntent = new Intent(this, MainActivity.class);
+            tapIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent pi = PendingIntent.getActivity(this, 2, tapIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            nm.notify(REAUTH_NOTIF_ID, new NotificationCompat.Builder(this, REAUTH_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_notify)
+                .setColor(android.graphics.Color.parseColor("#951345"))
+                .setContentTitle(getString(R.string.notif_reauth_title))
+                .setContentText(getString(R.string.notif_reauth_body))
+                .setStyle(new NotificationCompat.BigTextStyle()
+                    .bigText(getString(R.string.notif_reauth_body)))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setCategory(NotificationCompat.CATEGORY_ERROR)
+                .setAutoCancel(true)
+                .setContentIntent(pi)
+                .build());
+        } catch (Exception e) {
+            Log.w(TAG, "Could not post the re-auth prompt: " + e.getMessage());
+        }
+    }
+
+    /** Clears the prompt once pushes are landing again. */
+    private void clearReauthNotice() {
+        lastReauthNotifiedAt = 0L;
+        try {
+            NotificationManager nm =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.cancel(REAUTH_NOTIF_ID);
+        } catch (Exception e) { /* ignore */ }
+    }
+
     // ── Notification ──────────────────────────────────────────────────────────
     private Notification buildNotification() {
         Intent tapIntent = new Intent(this, MainActivity.class);
@@ -928,17 +1097,147 @@ public class LocationForegroundService extends Service {
             return;
         }
 
+        // One check covering every start path — the JS call, its retry chain,
+        // and BootReceiver — so opting out survives a relaunch and a reboot.
+        if (!isSharingEnabled(ctx)) {
+            Log.i(TAG, "startService skipped — member has location sharing off");
+            return;
+        }
+
         ensureChannel(ctx);
         Intent intent = new Intent(ctx, LocationForegroundService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            ctx.startForegroundService(intent);
-        } else {
-            ctx.startService(intent);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                ctx.startForegroundService(intent);
+            } else {
+                ctx.startService(intent);
+            }
+        } catch (Exception e) {
+            // From Android 12 a background foreground-service start can be
+            // refused outright (ForegroundServiceStartNotAllowedException). This
+            // is called from a broadcast receiver and from a boot receiver,
+            // where throwing would take the process down instead of simply
+            // failing to start. The watchdog will try again on its next tick.
+            Log.w(TAG, "startService refused — " + e.getMessage());
+            return;
+        }
+        scheduleWatchdog(ctx);
+    }
+
+    // ── Watchdog ──────────────────────────────────────────────────────────────
+    // Roughly every 15 minutes, check the service is still alive and restart it
+    // if not. See ServiceWatchdogReceiver for why this is necessary at all.
+    private static final long WATCHDOG_INTERVAL_MS = 15 * 60 * 1000L;
+    private static final int  WATCHDOG_REQUEST_CODE = 7301;
+
+    private static PendingIntent watchdogIntent(Context ctx) {
+        Intent i = new Intent(ctx.getApplicationContext(), ServiceWatchdogReceiver.class);
+        i.setPackage(ctx.getPackageName());
+        return PendingIntent.getBroadcast(
+            ctx.getApplicationContext(), WATCHDOG_REQUEST_CODE, i,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    /**
+     * Arms the periodic check. Inexact on purpose — the system may batch it with
+     * other wakeups, which is exactly what a backstop should allow.
+     */
+    static void scheduleWatchdog(Context ctx) {
+        try {
+            android.app.AlarmManager alarm =
+                (android.app.AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+            if (alarm == null) return;
+            alarm.setInexactRepeating(
+                android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                android.os.SystemClock.elapsedRealtime() + WATCHDOG_INTERVAL_MS,
+                WATCHDOG_INTERVAL_MS,
+                watchdogIntent(ctx));
+        } catch (Exception e) {
+            Log.w(TAG, "Could not arm the watchdog: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Disarms it. Called wherever the service is stopped deliberately, so that
+     * "off" means off: a member who turned sharing off, or signed out, must not
+     * have the service quietly restarted 15 minutes later.
+     */
+    static void cancelWatchdog(Context ctx) {
+        try {
+            android.app.AlarmManager alarm =
+                (android.app.AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+            if (alarm != null) alarm.cancel(watchdogIntent(ctx));
+        } catch (Exception e) {
+            Log.w(TAG, "Could not cancel the watchdog: " + e.getMessage());
         }
     }
 
     public static void stopService(Context ctx) {
+        // Disarm first: every caller here is a deliberate stop (sharing turned
+        // off, sign-out, the plugin's stop()), and the watchdog must not undo a
+        // decision the user made.
+        cancelWatchdog(ctx);
         ctx.stopService(new Intent(ctx, LocationForegroundService.class));
         isRunning = false;
+    }
+
+    /**
+     * Whether the member has left location sharing on. Defaults to true — see
+     * KEY_SHARING for why this fails open.
+     */
+    public static boolean isSharingEnabled(Context ctx) {
+        try {
+            return ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                      .getBoolean(KEY_SHARING, true);
+        } catch (Exception e) {
+            Log.w(TAG, "Could not read the sharing preference, assuming on: " + e.getMessage());
+            return true;
+        }
+    }
+
+    /**
+     * Mirrors the member's show_location preference down and applies it at once:
+     * turning sharing off stops tracking now, turning it back on resumes it
+     * without waiting for the next app launch.
+     */
+    public static void setSharingEnabled(Context ctx, boolean enabled) {
+        try {
+            ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+               .edit().putBoolean(KEY_SHARING, enabled).commit();
+        } catch (Exception e) {
+            Log.w(TAG, "Could not store the sharing preference: " + e.getMessage());
+        }
+        if (enabled) startService(ctx);
+        else         stopService(ctx);
+    }
+
+    /**
+     * Forgets the signed-in member: stops tracking and clears everything the
+     * service and BootReceiver key off.
+     *
+     * Without this, signing out left the service running with a dead token and
+     * left userId/familyId/url in place, so a reboot restarted tracking for an
+     * account nobody was signed into — with no way to stop it from the UI,
+     * because reaching the privacy toggle requires being signed in.
+     *
+     * The sharing preference is deliberately NOT cleared here: it belongs to the
+     * person, not the session, and clearing it would silently re-enable tracking
+     * for someone who had opted out and then signed out and back in.
+     */
+    public static void clearSession(Context ctx) {
+        stopService(ctx);
+        try {
+            ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+               .edit()
+               .remove(KEY_USER_ID)
+               .remove(KEY_FAMILY_ID)
+               .remove(KEY_SESSION)
+               .remove(KEY_REFRESH)
+               .remove(TokenBroker.KEY_SESSION_JSON)
+               .commit();
+            Log.i(TAG, "Native session cleared on sign-out");
+        } catch (Exception e) {
+            Log.w(TAG, "Could not clear the native session: " + e.getMessage());
+        }
     }
 }

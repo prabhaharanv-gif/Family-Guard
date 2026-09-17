@@ -69,8 +69,24 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             : Integer.toHexString(chosen.toString().hashCode());
         return MSG_CHANNEL_BASE + "_" + tag;
     }
-    // Silent channel — banner shows but no sound (used for mute level 1)
+    // Sound & pop-up muted: IMPORTANCE_LOW — no sound, no vibration, no pop-up;
+    // the message waits quietly in the notification list (mute level 1).
     private static final String MSG_SILENT_CHANNEL_ID   = "family_messages_silent";
+
+    // Sound muted: IMPORTANCE_HIGH with no sound — the pop-up still appears,
+    // silently (mute level 3). Independent of the chosen tone, so one fixed id.
+    private static final String MSG_POPUP_SILENT_CHANNEL_ID = "family_messages_popup_silent_v1";
+
+    // Pop-up muted: IMPORTANCE_DEFAULT with the chosen tone — the sound plays but
+    // nothing pops up (mute level 4). It carries the tone, so like the main
+    // message channel it needs an id per tone; the last one made is remembered so
+    // rebuildMessageChannel can delete it when the tone changes.
+    private static final String MSG_QUIET_CHANNEL_BASE = "family_messages_quiet_v1";
+    private static final String KEY_MSG_QUIET_CHANNEL  = "msg_quiet_channel_id";
+
+    private static String msgQuietChannelId(Context ctx) {
+        return msgChannelId(ctx).replace(MSG_CHANNEL_BASE, MSG_QUIET_CHANNEL_BASE);
+    }
 
     // Shared preference key written by MainActivity when Messages page is open
     public static final String PREF_NAME          = "fg_prefs";
@@ -94,9 +110,17 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String previous = p.getString(KEY_MSG_CHANNEL, null);
             if (previous != null) nm.deleteNotificationChannel(previous);
             nm.deleteNotificationChannel("family_messages_v3");
+            // The pop-up-muted channel carries the old tone too. It is not
+            // rebuilt here — ensureQuietMessageChannelStatic makes it with the
+            // new tone the next time that mute level is used.
+            String previousQuiet = p.getString(KEY_MSG_QUIET_CHANNEL, null);
+            if (previousQuiet != null) nm.deleteNotificationChannel(previousQuiet);
 
             ensureMessageChannelStatic(ctx);
-            p.edit().putString(KEY_MSG_CHANNEL, msgChannelId(ctx)).apply();
+            p.edit()
+                .putString(KEY_MSG_CHANNEL, msgChannelId(ctx))
+                .remove(KEY_MSG_QUIET_CHANNEL)
+                .apply();
         } catch (Exception e) { e.printStackTrace(); }
     }
     /**
@@ -133,8 +157,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     public static final String KEY_MESSAGES_OPEN  = "messages_page_open";
-    // 0 = all on, 1 = sound muted, 2 = sound + banner fully muted
+    // Same integers as src/lib/muteLevel.js, which explains why they are not in
+    // menu order. 2 is the retired "all notifications off", treated as 1.
     public static final String KEY_MUTE_LEVEL     = "msg_mute_level";
+    public static final int MUTE_NONE             = 0;
+    public static final int MUTE_SOUND_AND_POPUP  = 1;
+    public static final int MUTE_LEGACY_ALL_OFF   = 2;
+    public static final int MUTE_SOUND            = 3;
+    public static final int MUTE_POPUP            = 4;
 
     // ─────────────────────────────────────────────────────────────────────────
     @Override
@@ -245,10 +275,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             boolean messagesPageOpen = prefs.getBoolean(KEY_MESSAGES_OPEN, false);
             if (messagesPageOpen) return;
 
-            // Respect mute level set by the user in the app
-            // 0 = all on, 1 = sound muted, 2 = fully muted (no banner, no sound)
-            int muteLevel = prefs.getInt(KEY_MUTE_LEVEL, 0);
-            if (muteLevel >= 2) return; // fully muted — drop notification entirely
+            // Respect the mute level chosen on the Messages page. Every level
+            // still posts a notification; it only decides sound and pop-up.
+            int muteLevel = prefs.getInt(KEY_MUTE_LEVEL, MUTE_NONE);
 
             String sender  = data.containsKey("sender")  ? data.get("sender")  : "Family";
             String content = data.containsKey("content") ? data.get("content") : "New message";
@@ -277,8 +306,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
 
-            // Maroon accent color (#951345)
-            int maroon = android.graphics.Color.parseColor("#951345");
+            // SOS crimson (#C8102E) — the same --sos the web app uses: maroon family,
+            // but brighter than the brand maroon so an SOS never looks routine
+            int sosRed = android.graphics.Color.parseColor("#C8102E");
 
             NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, SOS_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_notify)
@@ -286,12 +316,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setContentText(message)
                 .setStyle(new NotificationCompat.BigTextStyle()
                     .bigText("🆘 " + message))
-                // Maroon accent — colors the app icon, title line, and
+                // SOS crimson — colors the app icon, title line, and
                 // notification background tint on supported launchers/ROMs
-                .setColor(maroon)
+                .setColor(sosRed)
                 .setColorized(true)
-                // Blinking LED — maroon, 300ms on / 300ms off
-                .setLights(maroon, 300, 300)
+                // Blinking LED — red, 300ms on / 300ms off
+                .setLights(sosRed, 300, 300)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -425,26 +455,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             channelId, ctx.getString(R.string.ch_messages_name), NotificationManager.IMPORTANCE_HIGH
         );
         ch.setDescription(ctx.getString(R.string.ch_messages_desc));
-
-        // The user's choice if they made one, otherwise the bundled tone.
-        //
-        // Referenced by NAME, not by R.raw's numeric id. A channel stores this
-        // URI permanently, and raw resource ids are renumbered whenever a file
-        // is added to res/raw — adding emergency_alert.mp3 shifted message_tone
-        // from 0x7f0d0001 to 0x7f0d0003, leaving the live channel pointing at
-        // firebase_common_keep and playing nothing at all. The named form
-        // survives that.
-        android.net.Uri notifUri = RingtonePlugin.getUri(ctx, RingtonePlugin.KEY_MESSAGE);
-        if (notifUri == null) {
-            notifUri = android.net.Uri.parse(
-                "android.resource://" + ctx.getPackageName() + "/raw/message_tone"
-            );
-        }
-        android.media.AudioAttributes attrs = new android.media.AudioAttributes.Builder()
-            .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
-            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build();
-        ch.setSound(notifUri, attrs);
+        ch.setSound(messageToneUri(ctx), notificationAudioAttributes());
         ch.enableVibration(true);
         ch.setVibrationPattern(new long[]{0, 120, 60, 120});
         ch.setShowBadge(true);
@@ -470,23 +481,123 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        // muteLevel 1 = sound off but banner still shows → use PRIORITY_LOW + silent channel
-        // muteLevel 0 = normal
-        NotificationCompat.Builder b = new NotificationCompat.Builder(
-                appCtx, muteLevel >= 1 ? MSG_SILENT_CHANNEL_ID : msgChannelId(appCtx))
+        // On Android 8+ the channel decides sound and pop-up; the priority only
+        // matters below that, and is kept in step with the channel for it.
+        String channelId;
+        int priority;
+        switch (muteLevel) {
+            case MUTE_SOUND:            // pop-up, no sound
+                ensurePopupSilentChannelStatic(appCtx);
+                channelId = MSG_POPUP_SILENT_CHANNEL_ID;
+                priority  = NotificationCompat.PRIORITY_HIGH;
+                break;
+            case MUTE_POPUP:            // sound, no pop-up
+                channelId = ensureQuietMessageChannelStatic(appCtx);
+                priority  = NotificationCompat.PRIORITY_DEFAULT;
+                break;
+            case MUTE_SOUND_AND_POPUP:  // neither — waits in the notification list
+            case MUTE_LEGACY_ALL_OFF:
+                ensureSilentChannelStatic(appCtx);
+                channelId = MSG_SILENT_CHANNEL_ID;
+                priority  = NotificationCompat.PRIORITY_LOW;
+                break;
+            default:                    // not muted
+                channelId = msgChannelId(appCtx);
+                priority  = NotificationCompat.PRIORITY_DEFAULT;
+        }
+
+        NotificationCompat.Builder b = new NotificationCompat.Builder(appCtx, channelId)
             .setSmallIcon(R.drawable.ic_stat_notify)
             .setColor(android.graphics.Color.parseColor("#951345"))
             .setContentTitle("💬 " + senderName)
             .setContentText(content)
             .setStyle(new NotificationCompat.BigTextStyle().bigText(content))
-            .setPriority(muteLevel >= 1 ? NotificationCompat.PRIORITY_LOW : NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(priority)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setAutoCancel(true)
             .setContentIntent(pi);
 
         nm.notify((int) System.currentTimeMillis(), b.build());
-        // Sound is handled by channel — silent channel has no sound set
+    }
+
+    /**
+     * The message tone: the user's choice if they made one, otherwise the
+     * bundled tone.
+     *
+     * Referenced by NAME, not by R.raw's numeric id. A channel stores this URI
+     * permanently, and raw resource ids are renumbered whenever a file is added
+     * to res/raw — adding emergency_alert.mp3 shifted message_tone from
+     * 0x7f0d0001 to 0x7f0d0003, leaving the live channel pointing at
+     * firebase_common_keep and playing nothing at all. The named form survives
+     * that.
+     */
+    private static android.net.Uri messageToneUri(Context ctx) {
+        android.net.Uri chosen = RingtonePlugin.getUri(ctx, RingtonePlugin.KEY_MESSAGE);
+        if (chosen != null) return chosen;
+        return android.net.Uri.parse("android.resource://" + ctx.getPackageName() + "/raw/message_tone");
+    }
+
+    private static android.media.AudioAttributes notificationAudioAttributes() {
+        return new android.media.AudioAttributes.Builder()
+            .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build();
+    }
+
+    /** Sound muted: the pop-up still appears, with no sound or vibration. */
+    public static void ensurePopupSilentChannelStatic(Context ctx) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        NotificationManager nm =
+            (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null) return;
+        if (nm.getNotificationChannel(MSG_POPUP_SILENT_CHANNEL_ID) != null) {
+            NotificationChannels.refreshText(ctx, nm, MSG_POPUP_SILENT_CHANNEL_ID,
+                R.string.ch_messages_popup_silent_name, R.string.ch_messages_popup_silent_desc);
+            return;
+        }
+
+        NotificationChannel ch = new NotificationChannel(
+            MSG_POPUP_SILENT_CHANNEL_ID, ctx.getString(R.string.ch_messages_popup_silent_name),
+            NotificationManager.IMPORTANCE_HIGH   // HIGH = pops up; no sound set below
+        );
+        ch.setDescription(ctx.getString(R.string.ch_messages_popup_silent_desc));
+        ch.setSound(null, null);
+        ch.enableVibration(false);
+        ch.setShowBadge(true);
+        nm.createNotificationChannel(ch);
+    }
+
+    /**
+     * Pop-up muted: the tone plays but nothing pops up. Returns the channel id,
+     * which follows the chosen tone — see MSG_QUIET_CHANNEL_BASE.
+     */
+    public static String ensureQuietMessageChannelStatic(Context ctx) {
+        String channelId = msgQuietChannelId(ctx);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return channelId;
+        NotificationManager nm =
+            (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null) return channelId;
+        if (nm.getNotificationChannel(channelId) != null) {
+            NotificationChannels.refreshText(ctx, nm, channelId,
+                R.string.ch_messages_quiet_name, R.string.ch_messages_quiet_desc);
+            return channelId;
+        }
+
+        NotificationChannel ch = new NotificationChannel(
+            channelId, ctx.getString(R.string.ch_messages_quiet_name),
+            NotificationManager.IMPORTANCE_DEFAULT   // DEFAULT = sound, no pop-up
+        );
+        ch.setDescription(ctx.getString(R.string.ch_messages_quiet_desc));
+        ch.setSound(messageToneUri(ctx), notificationAudioAttributes());
+        ch.enableVibration(true);
+        ch.setVibrationPattern(new long[]{0, 120, 60, 120});
+        ch.setShowBadge(true);
+        nm.createNotificationChannel(ch);
+
+        ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            .edit().putString(KEY_MSG_QUIET_CHANNEL, channelId).apply();
+        return channelId;
     }
 
     public static boolean isSirenRunning() {
@@ -497,7 +608,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         SOSSirenService.cutAudio();
     }
 
-    /** Silent notification channel — banner visible but no sound or vibration. */
+    /** Sound & pop-up muted: no sound, no vibration, no pop-up — list entry only. */
     public static void ensureSilentChannelStatic(Context ctx) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager nm =

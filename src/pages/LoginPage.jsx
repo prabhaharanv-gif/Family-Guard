@@ -4,15 +4,18 @@ import { supabase } from '../lib/supabase'
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { useT } from '../i18n'
 import AuthLanguagePicker from '../components/AuthLanguagePicker'
+import Dialog from '../components/Dialog'
+import famoraLogo from '../assets/famora-logo.jpg'
+import Icon from '../components/Icon'
 
 function EyeIcon({ open }) {
   return open ? (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#836370" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   ) : (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#836370" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M9.88 9.88a3 3 0 0 0 4.24 4.24" />
       <line x1="2" y1="2" x2="22" y2="22" />
     </svg>
@@ -29,6 +32,7 @@ function ForgotPasswordModal({ onClose }) {
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState('')
   const [success, setSuccess]           = useState(false)
+  const [popup, setPopup]               = useState(false)
   const [resendIn, setResendIn]         = useState(0)
 
   useEffect(() => {
@@ -93,7 +97,7 @@ function ForgotPasswordModal({ onClose }) {
   // this session's server-verified JWT claim, not from any client-supplied parameter.
   const handleReset = async () => {
     setError('')
-    if (!newPassword || newPassword.length < PASSWORD_MIN_LENGTH) { setError(t('reset.passwordMin6')); return }
+    if (!newPassword || newPassword.length < PASSWORD_MIN_LENGTH) { setPopup(true); return }
     if (newPassword !== confirmPw) { setError(t('reset.passwordsNoMatch')); return }
     setLoading(true)
     const { error: rpcErr } = await supabase.rpc('reset_password_verified', {
@@ -105,18 +109,19 @@ function ForgotPasswordModal({ onClose }) {
   }
 
   return (
+    <>
     <div className="overlay" onClick={onClose}>
       <div className="popup" onClick={e => e.stopPropagation()} style={{ padding: '24px 20px 28px' }}>
         <div className="popup-handle" />
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
           <div style={{
             width: 44, height: 44, borderRadius: 14,
-            background: '#FDF0F5', border: '1.5px solid #F9C6D8',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-          }}>🔑</div>
+            background: 'var(--maroon-wash)', border: '1.5px solid #F9C6D8',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--maroon)',
+          }}><Icon name="key" size={22} /></div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#2A0A18' }}>{t('reset.title')}</div>
-            <div style={{ fontSize: 11, color: '#836370', marginTop: 2 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>{t('reset.title')}</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
               {step === 1 ? t('reset.step1Sub')
                 : step === 2 ? t('reset.step2Sub', { mobile })
                 : t('reset.step3Sub')}
@@ -126,16 +131,16 @@ function ForgotPasswordModal({ onClose }) {
 
         {success ? (
           <div style={{ textAlign: 'center', padding: '16px 0' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+            <div style={{ marginBottom: 12 }}><Icon name="checkCircle" size={48} color="#16A34A" strokeWidth={1.8} /></div>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#16A34A', marginBottom: 8 }}>{t('reset.successTitle')}</div>
-            <div style={{ fontSize: 13, color: '#7D5A67', marginBottom: 20 }}>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
               {t('reset.successBody')}
             </div>
             <button onClick={onClose} className="btn btn-primary">{t('reset.backToSignIn')}</button>
           </div>
         ) : (
           <>
-            {error && <div className="error-msg">{error}</div>}
+            {error && <Dialog type="info" message={error} onClose={() => setError('')} />}
             {step === 1 ? (
               <>
                 <input className="input" value={mobile}
@@ -144,13 +149,13 @@ function ForgotPasswordModal({ onClose }) {
                   autoFocus style={{ marginBottom: 16 }} />
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={onClose} style={{
-                    flex: 1, padding: 14, borderRadius: 14, background: '#F8F0F3',
-                    border: '1px solid #ECE0E5', color: '#7D5A67', fontWeight: 700,
+                    flex: 1, padding: 14, borderRadius: 14, background: 'var(--bg2)',
+                    border: '1px solid var(--border)', color: 'var(--muted)', fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>{t('common.cancel')}</button>
                   <button onClick={handleContinue} disabled={loading} style={{
                     flex: 2, padding: 14, borderRadius: 14,
-                    background: 'linear-gradient(135deg,#8B0D3D,#6E0A30)',
+                    background: 'linear-gradient(135deg,var(--maroon),var(--maroon-deep))',
                     border: 'none', color: '#fff', fontWeight: 800,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>{loading ? t('reset.checking') : t('common.continue') + ' →'}</button>
@@ -164,13 +169,13 @@ function ForgotPasswordModal({ onClose }) {
                   style={{ marginBottom: 16, textAlign: 'center', fontSize: 22, fontWeight: 800, letterSpacing: 6 }} />
                 <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
                   <button onClick={() => setStep(1)} style={{
-                    flex: 1, padding: 14, borderRadius: 14, background: '#F8F0F3',
-                    border: '1px solid #ECE0E5', color: '#7D5A67', fontWeight: 700,
+                    flex: 1, padding: 14, borderRadius: 14, background: 'var(--bg2)',
+                    border: '1px solid var(--border)', color: 'var(--muted)', fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>← {t('common.back')}</button>
                   <button onClick={handleVerifyOtp} disabled={loading || otp.length !== 6} style={{
                     flex: 2, padding: 14, borderRadius: 14,
-                    background: 'linear-gradient(135deg,#8B0D3D,#6E0A30)',
+                    background: 'linear-gradient(135deg,var(--maroon),var(--maroon-deep))',
                     border: 'none', color: '#fff', fontWeight: 800,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>{loading ? t('reset.verifying') : t('reset.verify') + ' →'}</button>
@@ -178,7 +183,7 @@ function ForgotPasswordModal({ onClose }) {
                 <button onClick={handleResendOtp} disabled={resendIn > 0 || loading} style={{
                   display: 'block', margin: '0 auto', background: 'none', border: 'none',
                   fontWeight: 700, fontSize: 13, padding: 0,
-                  color: resendIn > 0 ? '#C7B3BC' : '#8B0D3D',
+                  color: resendIn > 0 ? 'var(--muted3)' : 'var(--maroon)',
                   cursor: resendIn > 0 ? 'default' : 'pointer',
                 }}>{resendIn > 0 ? t('reset.resendIn', { n: resendIn }) : t('reset.resendCode')}</button>
               </>
@@ -194,13 +199,13 @@ function ForgotPasswordModal({ onClose }) {
                   style={{ marginBottom: 16 }} />
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={() => setStep(2)} style={{
-                    flex: 1, padding: 14, borderRadius: 14, background: '#F8F0F3',
-                    border: '1px solid #ECE0E5', color: '#7D5A67', fontWeight: 700,
+                    flex: 1, padding: 14, borderRadius: 14, background: 'var(--bg2)',
+                    border: '1px solid var(--border)', color: 'var(--muted)', fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>← {t('common.back')}</button>
                   <button onClick={handleReset} disabled={loading} style={{
                     flex: 2, padding: 14, borderRadius: 14,
-                    background: 'linear-gradient(135deg,#8B0D3D,#6E0A30)',
+                    background: 'linear-gradient(135deg,var(--maroon),var(--maroon-deep))',
                     border: 'none', color: '#fff', fontWeight: 800,
                     cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
                   }}>{loading ? t('reset.resetting') : t('reset.title')}</button>
@@ -211,6 +216,14 @@ function ForgotPasswordModal({ onClose }) {
         )}
       </div>
     </div>
+
+    {/* Outside the overlay: a tap on the dialog backdrop must not bubble up
+        and close the whole reset sheet. */}
+    {popup && (
+      <Dialog type="info" title={t('register.passwordShortTitle')}
+        message={t('register.passwordShortBody')} onClose={() => setPopup(false)} />
+    )}
+    </>
   )
 }
 
@@ -258,52 +271,25 @@ export default function LoginPage() {
     <div className="auth-page">
       <AuthLanguagePicker />
       <div className="auth-card" style={{ borderRadius: 28, padding: "40px 32px" }}>
-        {/* Brand shield — maroon + gold, no emoji to avoid OS colour override */}
-        <div className="auth-logo" style={{ background: 'none', boxShadow: 'none', width: 'auto', height: 'auto', marginBottom: 20 }}>
-          <div style={{
-            width: 96, height: 96, borderRadius: 28,
-            background: 'linear-gradient(145deg, #8B0D3D 0%, #6E0A30 55%, #48061F 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto',
-            boxShadow:
-              'inset 0 2px 0 rgba(255,255,255,0.22), inset 0 0 0 1.5px rgba(212,175,55,0.45), 0 16px 44px rgba(66,12,36,0.60), 0 0 50px rgba(139,13,61,0.35)',
-          }}>
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-              {/* Shield body */}
-              <path d="M24 4L8 11V24C8 33.6 15.2 42.4 24 44C32.8 42.4 40 33.6 40 24V11L24 4Z"
-                fill="url(#shieldGrad)" />
-              {/* Gold inner rim */}
-              <path d="M24 7L10 13.2V24C10 32.5 16.4 40.4 24 42C31.6 40.4 38 32.5 38 24V13.2L24 7Z"
-                fill="none" stroke="rgba(212,175,55,0.50)" strokeWidth="1.2"/>
-              {/* Checkmark */}
-              <path d="M17 24.5L21.5 29L31 19"
-                stroke="white" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
-              <defs>
-                <linearGradient id="shieldGrad" x1="8" y1="4" x2="40" y2="44" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#B01650"/>
-                  <stop offset="100%" stopColor="#48061F"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
+        {/* Brand icon — same artwork as the launcher icon */}
+        <div className="auth-logo auth-logo-brand" style={{ marginBottom: 28 }}>
+          <img src={famoraLogo} alt="famora" width={140} height={140}
+            style={{ display: 'block', margin: '0 auto', borderRadius: 28 }} />
         </div>
-        <h1 className="auth-title" style={{ marginBottom: 24 }}>famora</h1>
 
-        {error && <div className="error-msg">{error}</div>}
+        {error && <Dialog type="info" message={error} onClose={() => setError('')} />}
 
         <form onSubmit={handleLogin}>
           <div className="input-group">
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7D5A67", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.mobileNumber')}</label>
             <input className="input" type="tel" value={mobile}
               onChange={e => setMobile(e.target.value)}
-              placeholder="9876543210" autoComplete="tel" />
+              placeholder={t('auth.mobileNumber')} aria-label={t('auth.mobileNumber')} autoComplete="tel" />
           </div>
           <div className="input-group">
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#7D5A67", marginBottom: 6, letterSpacing: 0.2 }}>{t('auth.password')}</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type={showPassword ? 'text' : 'password'}
                 value={password} onChange={e => setPassword(e.target.value)}
-                placeholder={t('auth.yourPassword')} style={{ paddingRight: 44 }} />
+                placeholder={t('auth.password')} aria-label={t('auth.password')} style={{ paddingRight: 44 }} />
               <button type="button" onClick={() => setShowPassword(v => !v)} style={{
                 position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
                 background: 'none', border: 'none', cursor: 'pointer',
@@ -320,7 +306,7 @@ export default function LoginPage() {
 
           <button type="button" onClick={() => setShowForgot(true)} style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            color: '#8B0D3D', fontWeight: 700, fontSize: 13,
+            color: 'var(--maroon)', fontWeight: 700, fontSize: 13,
             fontFamily: 'inherit', marginTop: 12, width: '100%',
             display: 'block', textAlign: 'center',
           }}>

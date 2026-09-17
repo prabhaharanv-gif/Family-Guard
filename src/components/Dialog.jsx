@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useT } from '../i18n'
+import Icon from './Icon'
 
 /**
  * In-app replacement for alert() and window.confirm().
@@ -9,6 +11,9 @@ import { useT } from '../i18n'
  *
  * Usage — confirm:
  *   <Dialog type="confirm" message="Delete this?" onConfirm={doIt} onClose={() => setDialog(null)} />
+ *
+ * Usage — info (a soft nudge, not a failure; pass a title):
+ *   <Dialog type="info" title="Almost there" message="..." onClose={() => setDialog(null)} />
  *
  * Usage — error:
  *   <Dialog type="error" message="Something went wrong." onClose={() => setDialog(null)} />
@@ -24,16 +29,27 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
 
   const isConfirm = type === 'confirm'
   const isError   = type === 'error'
+  // A gentle nudge — the user just needs to adjust something, nothing failed.
+  // No warning sign and no red, which read as "you did something wrong".
+  const isInfo    = type === 'info'
 
-  const accent = isError ? '#DC2626' : '#8B0D3D'
-  const iconBg  = isError ? '#FEF2F2' : isConfirm ? '#FFF7ED' : '#F0FDF4'
-  const iconBorder = isError ? '#FCA5A5' : isConfirm ? '#FCD34D' : '#6EE7B7'
-  const icon = isError ? '⚠️' : isConfirm ? '❓' : '✓'
+  const accent = isError ? '#DC2626' : 'var(--maroon)'
+  const iconBg  = isError ? '#FEF2F2' : isConfirm ? '#FFF7ED' : isInfo ? 'var(--maroon-wash)' : '#F0FDF4'
+  const iconBorder = isError ? '#FCA5A5' : isConfirm ? '#FCD34D' : isInfo ? '#F0D8E2' : '#6EE7B7'
+  const icon = isError ? <Icon name="alert" size={20} color="#DC2626" /> : isConfirm ? <Icon name="help" size={20} color="#D97706" /> : isInfo ? (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)"
+      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="11" /><line x1="12" y1="8" x2="12.01" y2="8" />
+    </svg>
+  ) : <Icon name="checkCircle" size={20} color="#059669" />
 
-  const resolvedTitle = title || (isError ? t('dialog.error') : isConfirm ? t('dialog.areYouSure') : t('dialog.done'))
+  const resolvedTitle = title || (isError ? t('dialog.error') : isConfirm ? t('dialog.areYouSure') : isInfo ? t('dialog.pleaseCheck') : t('dialog.done'))
   const resolvedConfirmLabel = confirmLabel || (isConfirm ? t('dialog.confirm') : t('common.ok'))
 
-  return (
+  // Portalled to <body>: a parent with a transform or backdrop-filter (the
+  // auth cards have one) turns position:fixed into "fixed to that parent",
+  // which trapped the dialog inside the card.
+  return createPortal(
     <div
       onClick={onClose}
       style={{
@@ -75,7 +91,7 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
         {/* Title */}
         <div style={{
           textAlign: 'center', fontSize: 15.5, fontWeight: 800,
-          color: '#2A0A18', marginBottom: 6, fontFamily: 'Sora, sans-serif',
+          color: 'var(--text)', marginBottom: 6, fontFamily: 'Sora, sans-serif',
         }}>
           {resolvedTitle}
         </div>
@@ -83,7 +99,7 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
         {/* Message */}
         {message && (
           <div style={{
-            textAlign: 'center', fontSize: 13, color: '#7D5A67',
+            textAlign: 'center', fontSize: 13, color: 'var(--muted)',
             lineHeight: 1.5, marginBottom: 16,
           }}>
             {message}
@@ -95,8 +111,8 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
           {isConfirm && (
             <button onClick={onClose} style={{
               flex: 1, padding: '11px 0', borderRadius: 12,
-              background: '#F8F0F3', border: '1px solid #ECE0E5',
-              color: '#7D5A67', fontWeight: 700, fontSize: 13.5,
+              background: 'var(--bg2)', border: '1px solid var(--border)',
+              color: 'var(--muted)', fontWeight: 700, fontSize: 13.5,
               fontFamily: 'inherit', cursor: 'pointer',
             }}>
               {t('common.cancel')}
@@ -107,10 +123,10 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
             onClick={() => { onConfirm?.(); onClose() }}
             style={{
               flex: 1, padding: '11px 0', borderRadius: 12,
-              background: `linear-gradient(135deg, ${accent}, ${isError ? '#B91C1C' : '#6E0A30'})`,
+              background: `linear-gradient(135deg, ${accent}, ${isError ? '#B91C1C' : 'var(--maroon-deep)'})`,
               border: 'none', color: '#fff', fontWeight: 700, fontSize: 13.5,
               fontFamily: 'inherit', cursor: 'pointer',
-              boxShadow: `0 4px 14px ${accent}40`,
+              // No coloured glow under the button, matching .btn-primary.
             }}
           >
             {resolvedConfirmLabel}
@@ -118,5 +134,5 @@ export default function Dialog({ type = 'alert', title, message, confirmLabel, o
         </div>
       </div>
     </div>
-  )
+  , document.body)
 }

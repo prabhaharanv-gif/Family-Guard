@@ -6,20 +6,23 @@
  *
  * Extracted from App.jsx.
  */
+import { useT } from '../i18n'
+import Icon from './Icon'
 
 export default function GlobalSOSAlert({ alert, onDismiss }) {
+  const t = useT()
   if (!alert) return null
-  const memberName = alert._senderName || 'A family member'
+  const memberName = alert._senderName || t('family.aFamilyMember')
 
   return (
     <div className="sos-blink-overlay" onClick={onDismiss}>
       <div className="sos-alert-banner" onClick={e => e.stopPropagation()}>
-        <div className="sos-alert-icon">🆘</div>
+        <div className="sos-alert-icon"><Icon name="siren" /></div>
         <div className="sos-alert-title">
-          🚨 {memberName} Is In Trouble!
+          <Icon name="siren" /> {t('family.inTrouble', { name: memberName })}
         </div>
         <div className="sos-alert-sub">
-          {alert.message || 'SOS Alert'}
+          {alert.message || t('family.sosAlert')}
           {alert.lat !== 0 && alert.lat && (
             <>
               <br />
@@ -28,13 +31,13 @@ export default function GlobalSOSAlert({ alert, onDismiss }) {
                 target="_blank" rel="noopener noreferrer"
                 style={{ color: '#fff', fontWeight: 700, textDecoration: 'underline' }}
               >
-                📍 View Location on Map
+                <Icon name="pin" /> {t('family.viewLocation')}
               </a>
             </>
           )}
         </div>
         <button className="sos-alert-dismiss" onClick={onDismiss}>
-          ✋ I Understand — Stop Alarm
+          <Icon name="hand" /> {t('family.understandStopAlarm')}
         </button>
       </div>
     </div>

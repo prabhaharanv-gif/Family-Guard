@@ -24,6 +24,10 @@
 
     <string name="ch_messages_silent_name">குடும்பச் செய்திகள் (ஒலியின்றி)</string>
     <string name="ch_messages_silent_desc">குடும்பச் செய்திகள் — ஒலியில்லா பயன்முறை</string>
+    <string name="ch_messages_popup_silent_name">குடும்பச் செய்திகள் (பாப்-அப், ஒலியின்றி)</string>
+    <string name="ch_messages_popup_silent_desc">குடும்பச் செய்திகள் — ஒலி முடக்கம், பாப்-அப் தெரியும்</string>
+    <string name="ch_messages_quiet_name">குடும்பச் செய்திகள் (ஒலி, பாப்-அப் இல்லை)</string>
+    <string name="ch_messages_quiet_desc">குடும்பச் செய்திகள் — பாப்-அப் முடக்கம், ஒலி ஒலிக்கும்</string>
 
     <string name="ch_location_name">இருப்பிடக் கண்காணிப்பு</string>
     <string name="ch_location_desc">Famora உங்கள் இருப்பிடத்தைக் கண்காணிக்கும் போது காட்டப்படும்</string>
@@ -61,4 +65,8 @@
     <string name="notif_ping_big">%1$s இந்தத் தொலைபேசியைத் தேடுகிறார்.\n\nஒலியை நிறுத்த நிறுத்து என்பதைத் தட்டவும்.</string>
     <string name="notif_location_body">உங்கள் குடும்பத்தைப் பாதுகாக்கிறது · இருப்பிடம் இயக்கத்தில்</string>
     <string name="notif_tap_to_open">திறக்க தட்டவும்</string>
+    <string name="ch_reauth_name">மீண்டும் இணைய வேண்டும்</string>
+    <string name="ch_reauth_desc">இருப்பிடப் பகிர்வைத் தொடர Famora-வை மீண்டும் திறக்க வேண்டியிருக்கும் போது அறிவிக்கும்</string>
+    <string name="notif_reauth_title">இருப்பிடப் பகிர்வு நிறுத்தப்பட்டது</string>
+    <string name="notif_reauth_body">மீண்டும் இணைக்க Famora-வைத் திறக்கவும். அதுவரை உங்கள் குடும்பத்தால் உங்கள் இருப்பிடத்தைப் பார்க்க முடியாது.</string>
 </resources>

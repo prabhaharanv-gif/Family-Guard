@@ -16,18 +16,29 @@
  * component; the defaults are the original SOS wording.
  */
 
+import Icon from './Icon'
+import { useT } from '../i18n'
+
 export default function NativeAlarmBanner({
   visible,
   onStop,
-  text  = '🚨 SOS alarm is sounding',
-  label = '🔕 Stop Alarm',
+  // Translation keys, not text: the banner shows in the chosen language.
+  textKey  = 'alarm.sosSounding',
+  labelKey = 'alarm.stopAlarm',
+  // Line icons, not emoji — see components/Icon.jsx.
+  icon  = 'siren',
+  labelIcon = 'bellOff',
+  // 'sos' is the SOS red; 'ping' keeps Find My Phone in the brand maroon so
+  // the red is never shown for anything but an emergency.
+  tone  = 'sos',
 }) {
+  const t = useT()
   if (!visible) return null
   return (
-    <div className="native-alarm-bar">
-      <span className="native-alarm-text">{text}</span>
+    <div className={tone === 'ping' ? 'native-alarm-bar ping' : 'native-alarm-bar'}>
+      <span className="native-alarm-text"><Icon name={icon} /> {t(textKey)}</span>
       <button className="native-alarm-btn" onClick={onStop}>
-        {label}
+        <Icon name={labelIcon} /> {t(labelKey)}
       </button>
     </div>
   )

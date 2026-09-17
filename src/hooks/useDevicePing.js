@@ -16,6 +16,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Capacitor } from '@capacitor/core'
+import { App as CapApp } from '@capacitor/app'
 import { supabase } from '../lib/supabase'
 import { stopNativePing, isNativePingRinging } from '../lib/nativePing'
 
@@ -24,16 +25,34 @@ import { stopNativePing, isNativePingRinging } from '../lib/nativePing'
  * silence it.
  *
  * The ring is started by FCM, not by JS, so the app cannot know it is happening
- * by having caused it. It finds out two ways: by asking the service when it
- * opens (the phone was found and unlocked mid-ring), and by watching the same
- * device_pings insert the push came from (the app was already open). Polling
- * afterwards is what takes the control away again — the service gives up after
- * 30 seconds whether or not anyone silenced it, and a Stop button left behind
- * on a silent phone is its own small bug.
+ * by having caused it. It finds out three ways: by asking the service when it
+ * opens (the phone was found and unlocked mid-ring), by watching the same
+ * device_pings insert the push came from (the app was already open), and by
+ * asking again whenever the app comes back to the front — which is the case the
+ * websocket misses, because a backgrounded WebView receives no realtime.
+ *
+ * Taking the control away again is the one job with no event behind it: the
+ * service gives up after 30 seconds whether or not anyone silenced it, and a
+ * Stop button left behind on a silent phone is its own small bug. That is what
+ * the poll below is for — and why it runs ONLY while the phone is actually
+ * ringing. It used to run every 2s for the entire life of the process, roughly
+ * 43,000 bridge crossings a day to answer "no" every time, which showed up in
+ * the CPU figures of the 2026-09-16 battery audit. Ringing is rare and bounded
+ * to about 30 seconds, so this now costs essentially nothing while keeping the
+ * control just as prompt to disappear.
  */
 function useNativePingRinging(user) {
   const [ringing, setRinging] = useState(false)
   const pollRef = useRef(null)
+  // Guards setState after teardown. A ref rather than a local, because `check`
+  // is shared by the subscription effect and the poll effect below.
+  const cancelledRef = useRef(false)
+
+  const check = useCallback(async () => {
+    const isRinging = await isNativePingRinging()
+    if (!cancelledRef.current) setRinging(isRinging)
+    return isRinging
+  }, [])
 
   const stop = useCallback(async () => {
     await stopNativePing()
@@ -43,13 +62,7 @@ function useNativePingRinging(user) {
   useEffect(() => {
     if (!Capacitor.isNativePlatform() || !user) return
 
-    let cancelled = false
-
-    const check = async () => {
-      const isRinging = await isNativePingRinging()
-      if (!cancelled) setRinging(isRinging)
-      return isRinging
-    }
+    cancelledRef.current = false
 
     // The app may have been opened while it was already ringing.
     check()
@@ -68,14 +81,37 @@ function useNativePingRinging(user) {
       }, () => { check() })
       .subscribe()
 
-    pollRef.current = setInterval(check, 2000)
+    // The usual case for this feature is a phone that was lost, so it was
+    // almost certainly not in the foreground when the ring began: no realtime
+    // arrived, and the check above ran long before the push did. Asking again
+    // on resume is what reveals the control to someone who has just picked the
+    // phone up.
+    let resumeHandle = null
+    CapApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) check()
+    }).then((h) => {
+      if (cancelledRef.current) h.remove()
+      else resumeHandle = h
+    }).catch(() => {})
 
     return () => {
-      cancelled = true
-      if (pollRef.current) clearInterval(pollRef.current)
+      cancelledRef.current = true
       supabase.removeChannel(channel)
+      resumeHandle?.remove()
     }
-  }, [user])
+  }, [user, check])
+
+  // Only while it is actually ringing: this exists to notice the ring ENDING,
+  // which nothing else reports, and there is nothing to notice otherwise.
+  useEffect(() => {
+    if (!ringing) return
+
+    pollRef.current = setInterval(check, 2000)
+    return () => {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+  }, [ringing, check])
 
   return { ringing, stop }
 }

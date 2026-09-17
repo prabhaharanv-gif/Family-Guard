@@ -18,7 +18,9 @@ import { supabase } from '../lib/supabase'
 import PullToRefresh from '../components/PullToRefresh'
 import { useAuthStore } from '../store/authStore'
 import { useT } from '../i18n'
+import { useBackButton } from '../hooks/useBackButton'
 import { useNicknames } from '../hooks/useNicknames'
+import Icon from './Icon'
 
 const FINISHED = ['ended', 'declined', 'missed']
 
@@ -89,6 +91,8 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
     setSelectMode(false)
     setSelected(new Set())
   }, [])
+  // Hardware back leaves selection — the header no longer has a Cancel button.
+  useBackButton(selectMode, exitSelection)
 
   const handleClearAll = useCallback(() => {
     onDialog?.({
@@ -167,20 +171,20 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff' }}>
       {selectMode && (
         <div style={{
-          padding: '8px 16px', background: '#FDF0F5', borderBottom: '1px solid #ECE0E5',
-          fontSize: 12, color: '#8B0D3D', fontWeight: 700,
+          padding: '8px 16px', background: 'var(--maroon-wash)', borderBottom: '1px solid var(--border)',
+          fontSize: 12, color: 'var(--maroon)', fontWeight: 700,
         }}>
-          {selected.size} selected · tap to select more
+          {t('calls.selectedHint', { n: selected.size })}
         </div>
       )}
 
       <PullToRefresh onRefresh={load}>
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 30, color: '#9C6B7A', fontSize: 13 }}>Loading…</div>
+          <div style={{ textAlign: 'center', padding: 30, color: 'var(--muted-soft)', fontSize: 13 }}>{t('common.loading')}</div>
         ) : calls.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9C6B7A' }}>
-            <div style={{ fontSize: 42, marginBottom: 10 }}>📞</div>
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--muted-soft)' }}>
+            <div style={{ marginBottom: 10, color: 'var(--maroon)' }}><Icon name="phone" size={42} strokeWidth={1.6} /></div>
             <div style={{ fontWeight: 800, color: '#3A1020', marginBottom: 4 }}>{t('calls.noCalls')}</div>
             <div style={{ fontSize: 13 }}>{t('calls.willAppear')}</div>
           </div>
@@ -211,7 +215,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
               style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '12px 16px', borderBottom: '1px solid #F7F2F5',
-                background: isSel ? '#FDF0F5' : 'transparent',
+                background: isSel ? 'var(--maroon-wash)' : 'transparent',
                 cursor: selectMode ? 'pointer' : 'default',
                 userSelect: 'none',
               }}
@@ -219,8 +223,8 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
               {selectMode && (
                 <div style={{
                   width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                  border: `2px solid ${isSel ? '#8B0D3D' : '#D4C4CC'}`,
-                  background: isSel ? '#8B0D3D' : 'transparent',
+                  border: `2px solid ${isSel ? 'var(--maroon)' : '#D4C4CC'}`,
+                  background: isSel ? 'var(--maroon)' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#fff', fontSize: 12, fontWeight: 900,
                 }}>{isSel ? '✓' : ''}</div>
@@ -228,7 +232,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
 
               <div style={{
                 width: 42, height: 42, borderRadius: '50%', flexShrink: 0, overflow: 'hidden',
-                background: '#8B0D3D', display: 'flex', alignItems: 'center',
+                background: 'var(--maroon)', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 16,
               }}>
                 {other?.avatar_url
@@ -239,7 +243,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontWeight: 700, fontSize: 14,
-                  color: missed ? '#DC2626' : '#2A0A18',
+                  color: missed ? '#DC2626' : 'var(--text)',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>{name}</div>
                 {/* Plain inline text, not a flex row. As flex children each
@@ -248,10 +252,10 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
                     and made those rows taller than the rest. nowrap plus an
                     ellipsis keeps every row exactly one line. */}
                 <div style={{
-                  fontSize: 12, color: '#836370', marginTop: 2,
+                  fontSize: 12, color: 'var(--muted2)', marginTop: 2,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>
-                  {isVideo ? '📹' : '📞'}{' '}
+                  <Icon name={isVideo ? 'video' : 'phone'} />{' '}
                   {outgoing ? '↗ ' + t('calls.outgoing') : '↙ ' + t('calls.incoming')}
                   {c.status === 'missed'   && <span style={{ color: '#DC2626' }}> · {t('calls.missed')}</span>}
                   {c.status === 'declined' && <span style={{ color: '#DC2626' }}> · {t('calls.declined')}</span>}
@@ -260,7 +264,7 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
                 </div>
               </div>
 
-              <div style={{ fontSize: 11, color: '#9C6B7A', flexShrink: 0, whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: 11, color: 'var(--muted-soft)', flexShrink: 0, whiteSpace: 'nowrap' }}>
                 {formatWhen(t, c.started_at)}
               </div>
 
@@ -275,17 +279,17 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
                   aria-label={isVideo ? `Video call ${name}` : `Call ${name}`}
                   style={{
                     width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-                    background: '#FDF0F5', border: '1.5px solid #F0D8E3',
+                    background: 'var(--maroon-wash)', border: '1.5px solid #F0D8E3',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: 'pointer', padding: 0, marginLeft: 4,
                   }}
                 >
                   {isVideo ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
                     </svg>
                   ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
                     </svg>
                   )}

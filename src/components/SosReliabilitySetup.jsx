@@ -91,7 +91,7 @@ function RowIcon({ shape, done }) {
     )
   }
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B0D3D"
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)"
          strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
       {shape}
     </svg>
@@ -263,12 +263,12 @@ export default function SosReliabilitySetup() {
         <style>{`@keyframes sosSetupUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
 
         <div style={{
-          width: 38, height: 4, borderRadius: 2, background: '#ECE0E5',
+          width: 38, height: 4, borderRadius: 2, background: 'var(--border)',
           margin: '0 auto 18px',
         }} />
 
         {/* Lead with what it buys, not with the word "permission". */}
-        <div style={{ fontSize: 20, fontWeight: 800, color: '#2A0A18', marginBottom: 8, letterSpacing: -0.3 }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 8, letterSpacing: -0.3 }}>
           {t('reliability.title')}
         </div>
         <p style={{ fontSize: 14, color: '#6B4152', lineHeight: 1.5, marginBottom: alertBlocked ? 14 : 18 }}>
@@ -286,7 +286,7 @@ export default function SosReliabilitySetup() {
           <div style={{
             background: '#FEF0F5', border: '1px solid #F5D6E1', borderRadius: 12,
             padding: '10px 13px', marginBottom: 16, fontSize: 13,
-            color: '#8B0D3D', lineHeight: 1.5, fontWeight: 600,
+            color: 'var(--maroon)', lineHeight: 1.5, fontWeight: 600,
           }}>
             {t('reliability.blocked')}
           </div>
@@ -300,7 +300,7 @@ export default function SosReliabilitySetup() {
             turned back off while hunting for another. The list says what to
             switch on; the single button opens the page holding them. */}
         <div style={{
-          border: '1px solid #ECE0E5', borderRadius: 16, overflow: 'hidden', marginBottom: 16,
+          border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', marginBottom: 16,
         }}>
           {rows.map((row, i) => (
             <div key={row.key} style={{
@@ -313,7 +313,7 @@ export default function SosReliabilitySetup() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontSize: 14, fontWeight: 700,
-                  color: row.done ? '#3F7460' : '#2A0A18', marginBottom: 2,
+                  color: row.done ? '#3F7460' : 'var(--text)', marginBottom: 2,
                 }}>
                   {row.label}
                 </div>
@@ -327,7 +327,7 @@ export default function SosReliabilitySetup() {
 
         <button onClick={() => openAppDetails()} style={{
           width: '100%', padding: 14, borderRadius: 14,
-          background: 'var(--grad-maroon, linear-gradient(135deg,#8B0D3D,#A5124A))',
+          background: 'var(--grad-maroon, linear-gradient(135deg,var(--maroon),var(--maroon-bright)))',
           border: 'none', color: '#fff', fontWeight: 800, fontSize: 15,
           fontFamily: 'inherit', cursor: 'pointer',
           boxShadow: '0 6px 18px rgba(139,13,61,0.28)',
@@ -341,7 +341,7 @@ export default function SosReliabilitySetup() {
         {rows.some(r => r.key === 'autostart' && !r.done) && (
           <button onClick={() => openAutostart()} style={{
             width: '100%', marginTop: 10, padding: 9, background: 'none',
-            border: 'none', color: '#8B0D3D', fontSize: 13.5, fontWeight: 700,
+            border: 'none', color: 'var(--maroon)', fontSize: 13.5, fontWeight: 700,
             fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'underline',
           }}>
             {t('reliability.openAutostart')}
@@ -352,7 +352,7 @@ export default function SosReliabilitySetup() {
             only the way out for someone who does not want to do it now. */}
         <button onClick={dismiss} style={{
           width: '100%', padding: 10, background: 'none', border: 'none',
-          color: '#836370', fontSize: 13.5, fontFamily: 'inherit',
+          color: 'var(--muted2)', fontSize: 13.5, fontFamily: 'inherit',
           cursor: 'pointer', textDecoration: 'underline',
         }}>
           {t('reliability.notNow')}

@@ -24,6 +24,10 @@
 
     <string name="ch_messages_silent_name">ಕುಟುಂಬ ಸಂದೇಶಗಳು (ಮೌನ)</string>
     <string name="ch_messages_silent_desc">ಕುಟುಂಬ ಸಂದೇಶಗಳು — ಮೌನ ಮೋಡ್</string>
+    <string name="ch_messages_popup_silent_name">ಕುಟುಂಬ ಸಂದೇಶಗಳು (ಪಾಪ್-ಅಪ್, ಧ್ವನಿ ಇಲ್ಲದೆ)</string>
+    <string name="ch_messages_popup_silent_desc">ಕುಟುಂಬ ಸಂದೇಶಗಳು — ಧ್ವನಿ ಮ್ಯೂಟ್, ಪಾಪ್-ಅಪ್ ಕಾಣಿಸುತ್ತದೆ</string>
+    <string name="ch_messages_quiet_name">ಕುಟುಂಬ ಸಂದೇಶಗಳು (ಧ್ವನಿ, ಪಾಪ್-ಅಪ್ ಇಲ್ಲದೆ)</string>
+    <string name="ch_messages_quiet_desc">ಕುಟುಂಬ ಸಂದೇಶಗಳು — ಪಾಪ್-ಅಪ್ ಮ್ಯೂಟ್, ಧ್ವನಿ ಕೇಳಿಸುತ್ತದೆ</string>
 
     <string name="ch_location_name">ಸ್ಥಳ ಟ್ರ್ಯಾಕಿಂಗ್</string>
     <string name="ch_location_desc">Famora ನಿಮ್ಮ ಸ್ಥಳವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡುತ್ತಿರುವಾಗ ಕಾಣಿಸುತ್ತದೆ</string>
@@ -61,4 +65,8 @@
     <string name="notif_ping_big">%1$s ಈ ಫೋನ್ ಹುಡುಕುತ್ತಿದ್ದಾರೆ.\n\nಶಬ್ದ ನಿಲ್ಲಿಸಲು ನಿಲ್ಲಿಸು ಬಟನ್ ಒತ್ತಿರಿ.</string>
     <string name="notif_location_body">ನಿಮ್ಮ ಕುಟುಂಬವನ್ನು ರಕ್ಷಿಸುತ್ತಿದೆ · ಸ್ಥಳ ಸಕ್ರಿಯ</string>
     <string name="notif_tap_to_open">ತೆರೆಯಲು ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="ch_reauth_name">ಮತ್ತೆ ಸಂಪರ್ಕ ಬೇಕು</string>
+    <string name="ch_reauth_desc">ಸ್ಥಳ ಹಂಚಿಕೆ ಮುಂದುವರಿಸಲು Famora ಅನ್ನು ಮತ್ತೆ ತೆರೆಯಬೇಕಾದಾಗ ತಿಳಿಸುತ್ತದೆ</string>
+    <string name="notif_reauth_title">ಸ್ಥಳ ಹಂಚಿಕೆ ನಿಂತಿದೆ</string>
+    <string name="notif_reauth_body">ಮತ್ತೆ ಸಂಪರ್ಕಿಸಲು Famora ತೆರೆಯಿರಿ. ಅಲ್ಲಿಯವರೆಗೆ ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕೆ ನಿಮ್ಮ ಸ್ಥಳ ಕಾಣಿಸುವುದಿಲ್ಲ.</string>
 </resources>

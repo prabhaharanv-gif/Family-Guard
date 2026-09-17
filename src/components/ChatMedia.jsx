@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { useBackButton } from '../hooks/useBackButton'
 import { MEDIA_MAX_BYTES, formatBytes, mediaKindOf, signedMediaUrl } from '../lib/chatMedia'
+import Icon from './Icon'
 
 /**
  * Attachments in chat: choosing one, recording a voice note, and drawing the
@@ -15,7 +16,7 @@ import { MEDIA_MAX_BYTES, formatBytes, mediaKindOf, signedMediaUrl } from '../li
  * sending, so a failed send never leaves an orphaned object in storage.
  */
 
-const MAROON = '#8B0D3D'
+const MAROON = 'var(--maroon)'
 
 // ── A private-bucket file needs a signed URL, and signing is async ──────────
 // Null until it resolves, so every consumer draws a placeholder first.
@@ -52,6 +53,19 @@ function ImageViewer({ url, onClose }) {
       <img src={url} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
     </div>
   )
+}
+
+/**
+ * A photo or video with no caption and no reply quote is drawn on its own,
+ * without the coloured bubble behind it — the bubble padding showed as a thick
+ * maroon frame around every photo I sent. Audio and documents keep the bubble:
+ * the player and the file row need a surface to sit on.
+ */
+export function isBareMedia(msg) {
+  return !!msg?.media_path
+    && (msg.media_type === 'image' || msg.media_type === 'video')
+    && !String(msg.content || '').trim()
+    && !msg.reply_to_id
 }
 
 // ── The attachment inside a bubble ──────────────────────────────────────────
@@ -111,8 +125,8 @@ export function MediaBubble({ msg, isOwn }) {
         display: 'flex', alignItems: 'center', gap: 10,
         width: 220, maxWidth: '100%', boxSizing: 'border-box',
         padding: '8px 10px', borderRadius: 10, textDecoration: 'none',
-        background: isOwn ? 'rgba(255,255,255,0.16)' : '#F8F0F3',
-        border: isOwn ? '1px solid rgba(255,255,255,0.25)' : '1px solid #ECE0E5',
+        background: isOwn ? 'rgba(255,255,255,0.16)' : 'var(--bg2)',
+        border: isOwn ? '1px solid rgba(255,255,255,0.25)' : '1px solid var(--border)',
         color: 'inherit',
       }}
     >
@@ -203,6 +217,8 @@ export function AttachButton({ onPick, onError, disabled }) {
     onPick({ file, kind, previewUrl: kind === 'image' ? URL.createObjectURL(file) : null })
   }
 
+  // Hex, not var(--maroon…): the tile background appends alpha (`${color}1A`),
+  // which a var() cannot take. Same values as --maroon-rose / --maroon-bright.
   const items = [
     {
       kind: 'image', label: t('messages.mediaPhoto'), mime: 'image/*', color: '#B01650',
@@ -248,8 +264,8 @@ export function AttachButton({ onPick, onError, disabled }) {
         aria-label={t('messages.attach')}
         style={{
           width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-          background: anchor ? MAROON : '#F8F0F3',
-          border: `1.5px solid ${anchor ? MAROON : '#ECE0E5'}`,
+          background: anchor ? MAROON : 'var(--bg2)',
+          border: `1.5px solid ${anchor ? MAROON : 'var(--border)'}`,
           color: anchor ? '#fff' : MAROON,
           cursor: disabled ? 'default' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -274,7 +290,7 @@ export function AttachButton({ onPick, onError, disabled }) {
             style={{
               position: 'fixed', top, left, width: MENU_WIDTH,
               background: '#fff', borderRadius: 14,
-              border: '1px solid #ECE0E5',
+              border: '1px solid var(--border)',
               boxShadow: '0 14px 36px rgba(20,4,10,0.24)',
               padding: 6, overflow: 'hidden',
             }}
@@ -289,7 +305,7 @@ export function AttachButton({ onPick, onError, disabled }) {
                     background: 'none', border: 'none', cursor: 'pointer',
                     fontFamily: 'inherit', textAlign: 'left',
                     display: 'flex', alignItems: 'center', gap: 10,
-                    color: '#2A0A18', fontSize: 13.5, fontWeight: 700,
+                    color: 'var(--text)', fontSize: 13.5, fontWeight: 700,
                   }}
                 >
                   <span style={{
@@ -319,10 +335,17 @@ export function AttachButton({ onPick, onError, disabled }) {
 // while the WebView scrolls is unreliable on Android.
 const MAX_RECORDING_MS = 5 * 60 * 1000
 
-export function VoiceRecorder({ onRecorded, onError, disabled }) {
+export function VoiceRecorder({ onRecorded, onError, onRecordingChange, disabled }) {
   const t = useT()
   const [recording, setRecording] = useState(false)
   const [elapsed, setElapsed]     = useState(0)
+  useEffect(() => { onRecordingChange?.(recording) }, [recording])
+  // Stopping hands the clip up, which unmounts this component in the same
+  // render — before the effect above can report false. Say it on the way out,
+  // or the parent keeps its composer hidden.
+  const onRecordingChangeRef = useRef(onRecordingChange)
+  onRecordingChangeRef.current = onRecordingChange
+  useEffect(() => () => onRecordingChangeRef.current?.(false), [])
   const recRef      = useRef(null)
   const chunksRef   = useRef([])
   const startedRef  = useRef(0)
@@ -397,39 +420,53 @@ export function VoiceRecorder({ onRecorded, onError, disabled }) {
     } catch (e) { cleanup() }
   }
 
+  // While recording the bar takes the whole composer row — the parent hides
+  // the attach button, text box and send button (see onRecordingChange).
+  // Squeezed in beside them, the stop button was pushed off the edge.
   if (recording) {
     return (
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 8, flex: 1,
-        background: '#FDF2F6', border: '1.5px solid #F0D8E2',
-        borderRadius: 22, padding: '6px 8px 6px 14px', minWidth: 0,
+        display: 'flex', alignItems: 'center', gap: 10, flex: 1,
+        background: 'var(--maroon-wash)', border: '1.5px solid #F0D8E2',
+        borderRadius: 26, padding: '5px 5px 5px 6px', minWidth: 0,
       }}>
+        <button
+          onClick={() => stop(true)}
+          aria-label={t('common.cancel')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
+            background: '#fff', border: '1.5px solid var(--border)', borderRadius: 20,
+            padding: '8px 12px', cursor: 'pointer',
+            color: 'var(--rose)', fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+          </svg>
+          {t('common.cancel')}
+        </button>
         <span style={{
-          width: 9, height: 9, borderRadius: '50%', background: '#E11D48',
+          width: 10, height: 10, borderRadius: '50%', background: '#E11D48',
           animation: 'recpulse 1s ease-in-out infinite', flexShrink: 0,
         }} />
         <style>{'@keyframes recpulse{0%,100%{opacity:1}50%{opacity:.25}}'}</style>
-        <span style={{ fontSize: 13, fontWeight: 800, color: MAROON, flex: 1 }}>
+        <span style={{
+          fontSize: 16, fontWeight: 800, color: 'var(--text)', flex: 1,
+          fontVariantNumeric: 'tabular-nums',
+        }}>
           {formatDuration(elapsed)}
         </span>
-        <button
-          onClick={() => stop(true)}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#9C6B7A', fontSize: 13, fontWeight: 700,
-            fontFamily: 'inherit', padding: '0 6px',
-          }}
-        >{t('common.cancel')}</button>
         <button
           onClick={() => stop(false)}
           aria-label={t('messages.stopRecording')}
           style={{
-            width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+            width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
             background: MAROON, border: 'none', color: '#fff', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
             <rect x="6" y="6" width="12" height="12" rx="2" />
           </svg>
         </button>
@@ -444,7 +481,7 @@ export function VoiceRecorder({ onRecorded, onError, disabled }) {
       aria-label={t('messages.recordVoice')}
       style={{
         width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-        background: '#F8F0F3', border: '1.5px solid #ECE0E5',
+        background: 'var(--bg2)', border: '1.5px solid var(--border)',
         color: MAROON, cursor: disabled ? 'default' : 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         opacity: disabled ? 0.5 : 1,
@@ -470,7 +507,7 @@ export function PendingMediaBar({ pending, uploading, onCancel }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
-      padding: '8px 16px', background: '#F8F0F3',
+      padding: '8px 16px', background: 'var(--bg2)',
       borderTop: '1px solid #F0D8E2',
     }}>
       {pending.previewUrl ? (
@@ -483,14 +520,14 @@ export function PendingMediaBar({ pending, uploading, onCancel }) {
           background: '#fff', border: '1px solid #F0D8E2',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: MAROON, fontSize: 18,
-        }}>{pending.kind === 'video' ? '🎬' : pending.kind === 'document' ? '📄' : '🎵'}</div>
+        }}><Icon name={pending.kind === 'video' ? 'film' : pending.kind === 'document' ? 'file' : 'music'} size={20} /></div>
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12.5, fontWeight: 800, color: MAROON }}>
           {uploading ? t('messages.mediaUploading') : label}
         </div>
         <div style={{
-          fontSize: 11, color: '#9C6B7A', overflow: 'hidden',
+          fontSize: 11, color: 'var(--muted-soft)', overflow: 'hidden',
           textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {pending.durationMs ? formatDuration(pending.durationMs) : pending.file?.name}
@@ -501,7 +538,7 @@ export function PendingMediaBar({ pending, uploading, onCancel }) {
         style={{
           background: 'none', border: 'none',
           cursor: uploading ? 'default' : 'pointer',
-          fontSize: 18, color: '#836370', padding: '0 4px', flexShrink: 0,
+          fontSize: 18, color: 'var(--muted2)', padding: '0 4px', flexShrink: 0,
         }}
       >✕</button>
     </div>

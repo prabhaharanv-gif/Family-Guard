@@ -17,6 +17,8 @@ import org.junit.Test;
  * roughly 300-700ms apart, and that is what the happy-path tests use.
  */
 public class VolumeGesturePatternTest {
+    // The gesture itself is retired (see VolumeSosGesture); these tests are kept
+    // with it so the pattern is still pinned down if it is ever brought back.
 
     private static final int UP   = 1;
     private static final int DOWN = -1;

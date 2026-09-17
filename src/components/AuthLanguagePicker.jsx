@@ -62,7 +62,7 @@ export default function AuthLanguagePicker() {
           background: '#FFFFFF',
           border: '1.5px solid rgba(139,13,61,0.22)',
           boxShadow: '0 4px 14px rgba(42,10,24,0.30)',
-          color: '#8B0D3D', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 800,
+          color: 'var(--maroon)', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 800,
           cursor: 'pointer', lineHeight: 1.6,
         }}
       >
@@ -86,7 +86,7 @@ export default function AuthLanguagePicker() {
           style={{
             position: 'absolute', top: 'calc(100% + 8px)', right: 0,
             background: '#fff', borderRadius: 14, overflow: 'hidden',
-            border: '1px solid #ECE0E5',
+            border: '1px solid var(--border)',
             boxShadow: '0 12px 34px rgba(42,10,24,0.30)',
             minWidth: 150,
           }}
@@ -103,9 +103,9 @@ export default function AuthLanguagePicker() {
                   display: 'block', width: '100%', textAlign: 'left',
                   padding: '11px 16px',
                   borderTop: i === 0 ? 'none' : '1px solid #F3E9ED',
-                  background: active ? '#F8F0F3' : '#fff',
+                  background: active ? 'var(--bg2)' : '#fff',
                   border: 'none',
-                  color: active ? '#8B0D3D' : '#3B2430',
+                  color: active ? 'var(--maroon)' : '#3B2430',
                   fontWeight: active ? 800 : 600,
                   fontSize: 14.5, fontFamily: 'inherit', cursor: 'pointer',
                   // Indic scripts need the headroom; at a tighter line-height

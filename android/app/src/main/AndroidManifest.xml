@@ -105,6 +105,13 @@
             android:name=".SosCancelReceiver"
             android:exported="false" />
 
+        <!-- Periodic check that the location service is still alive; restarts
+             it if an OEM killed it. exported="false": only our own alarm fires
+             this. See ServiceWatchdogReceiver for why it is needed. -->
+        <receiver
+            android:name=".ServiceWatchdogReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".BootReceiver"
             android:exported="true"

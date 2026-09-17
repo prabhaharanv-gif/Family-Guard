@@ -1,3 +1,4 @@
+import Icon from './Icon'
 /**
  * GlobalIncomingCall
  *
@@ -15,7 +16,7 @@ export default function GlobalIncomingCall({ call, onAccept, onDecline }) {
         <div className="call-ring-avatar">
           {call.callerAvatar
             ? <img src={call.callerAvatar} alt={call.callerName} className="call-ring-avatar-img" />
-            : <span>{call.callerName?.[0]?.toUpperCase() || (isVideo ? '📹' : '📞')}</span>}
+            : <span>{call.callerName?.[0]?.toUpperCase() || <Icon name={isVideo ? 'video' : 'phone'} />}</span>}
         </div>
         <div className="call-ring-title">{call.callerName}</div>
         <div className="call-ring-sub">Incoming {isVideo ? 'video' : 'voice'} call…</div>

@@ -11,6 +11,7 @@ import FamilyIllustration from '../components/FamilyIllustration'
 import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import { setNicknameLocally, useNicknames } from '../hooks/useNicknames'
+import Icon from '../components/Icon'
 
 const AVATAR_COLORS = ['#8B0D3D','#6E0A30','#B01650','#A01040','#A5124A','#8A0F3A','#6B0B2C']
 
@@ -36,6 +37,22 @@ function formatLastSeen(t, ts) {
 // The window is 75s against a 30s heartbeat: two beats may be missed to a
 // flaky connection before a genuinely-present member is shown offline.
 const ONLINE_STALE_MS = 75 * 1000
+
+/**
+ * How long a position may go unrefreshed before the card stops calling it live.
+ *
+ * One definition, used by both the location pin and the battery reading, so the
+ * card cannot contradict itself about the same row.
+ *
+ * Generous against a 90s heartbeat: fifteen minutes absorbs a tunnel, a flaky
+ * connection or an app restart without crying wolf, while making it impossible
+ * for a phone that stopped reporting hours ago to keep showing as Live. That
+ * was a real failure — a member whose app had been killed at 07:23 still read
+ * "Live · 2.8 km away" at midday, when she was 40 km away. Presence had her
+ * correctly Offline at the same moment; only the location half disagreed,
+ * because it was derived from the sharing flags and never from the clock.
+ */
+const LOCATION_STALE_MS = 15 * 60 * 1000
 
 function isOnline(member) {
   if (!member || member.is_online !== true) return false
@@ -97,7 +114,7 @@ function signInState(member) {
 //   in     tick
 //   out    door-and-arrow, the usual sign-out mark
 //   never  open ring with a dash
-const SIGN_IN_ICON_STROKE = { in: '#059669', out: '#B01650', never: '#C7B3BC' }
+const SIGN_IN_ICON_STROKE = { in: '#059669', out: 'var(--maroon-rose)', never: 'var(--muted3)' }
 
 function SignInIcon({ state, label }) {
   return (
@@ -153,7 +170,7 @@ function SOSAlert({ alert, memberName, onDismiss }) {
   return (
     <div className="sos-blink-overlay" onClick={onDismiss}>
       <div className="sos-alert-banner" onClick={e => e.stopPropagation()}>
-        <div className="sos-alert-icon">🆘</div>
+        <div className="sos-alert-icon"><Icon name="siren" /></div>
         <div className="sos-alert-title">{t('family.inTrouble', { name: memberName || t('family.aFamilyMember') })}</div>
         <div className="sos-alert-sub">
           {alert.message || t('family.sosAlert')}
@@ -162,12 +179,12 @@ function SOSAlert({ alert, memberName, onDismiss }) {
               <a href={`https://www.google.com/maps?q=${alert.lat},${alert.lng}`}
                 target="_blank" rel="noopener noreferrer"
                 style={{ color: '#fff', fontWeight: 700, textDecoration: 'underline' }}>
-                📍 {t('family.viewLocation')}
+                <Icon name="pin" /> {t('family.viewLocation')}
               </a>
             </>
           )}
         </div>
-        <button className="sos-alert-dismiss" onClick={onDismiss}>✋ I Understand — Dismiss</button>
+        <button className="sos-alert-dismiss" onClick={onDismiss}><Icon name="hand" /> {t('family.understandDismiss')}</button>
       </div>
     </div>
   )
@@ -191,10 +208,10 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
     <div className="overlay" onClick={onClose}>
       <div className="popup" onClick={e => e.stopPropagation()}>
         <div className="popup-handle" />
-        <div style={{ fontSize: 11, fontWeight: 800, color: '#8B0D3D', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--maroon)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
           {t('family.setNicknameTitle', { name: member.display_name })}
         </div>
-        <div style={{ fontSize: 12, color: '#836370', marginBottom: 14, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 12, color: 'var(--muted2)', marginBottom: 14, lineHeight: 1.4 }}>
           {t('family.nicknamePrivate', { name: member.display_name })}
         </div>
         <input
@@ -207,12 +224,12 @@ function EditNameModal({ member, currentNickname, onClose, onSave }) {
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#F8F0F3', border: '1px solid #ECE0E5',
+            background: 'var(--bg2)', border: '1px solid var(--border)',
             color: '#3A1020', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
           }}>{t('common.cancel')}</button>
           <button onClick={handleSave} disabled={saving} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#8B0D3D', border: 'none',
+            background: 'var(--maroon)', border: 'none',
             color: '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
           }}>{saving ? t('common.saving') : t('common.save')}</button>
         </div>
@@ -228,6 +245,11 @@ export default function FamilyPage() {
   // being state only this page can see. `true` re-reads on mount: this is where
   // they are edited, so it is the one screen that must not show a stale map.
   const { nicknames } = useNicknames(true)
+  // Re-read my memberships when this tab opens: if I left or was removed from
+  // the active family, switch off it instead of showing "No members yet".
+  useEffect(() => {
+    if (user?.id) useAuthStore.getState().loadFamily(user.id)
+  }, [user?.id])
   const [members, setMembers]           = useState([])
   const [membersLoaded, setMembersLoaded] = useState(false)   // false until first fetch returns
   const [locations, setLocations]       = useState({})
@@ -287,7 +309,7 @@ export default function FamilyPage() {
     const [famRes, memRes, locRes, reqRes] = await Promise.all([
       supabase.from('families').select('created_by').eq('id', familyId).single(),
       supabase.from('family_members').select('*').eq('family_id', familyId),
-      supabase.from('locations').select('user_id, lat, lng, updated_at, is_sharing, location_enabled, battery_level, is_charging')
+      supabase.from('locations').select('user_id, lat, lng, updated_at, is_sharing, location_enabled, battery_level, is_charging, bg_location_granted, battery_opt_ignored')
         .eq('family_id', familyId),
       supabase.from('join_requests').select('*')
         .eq('family_id', familyId).eq('status', 'pending'),
@@ -298,7 +320,7 @@ export default function FamilyPage() {
     setMembersLoaded(true)
     if (locRes.data) {
       const map = {}
-      locRes.data.forEach(l => { map[l.user_id] = { lat: l.lat, lng: l.lng, updatedAt: l.updated_at, isSharing: l.is_sharing, locEnabled: l.location_enabled !== false, battery: l.battery_level ?? null, isCharging: l.is_charging ?? false } })
+      locRes.data.forEach(l => { map[l.user_id] = { lat: l.lat, lng: l.lng, updatedAt: l.updated_at, isSharing: l.is_sharing, locEnabled: l.location_enabled !== false, battery: l.battery_level ?? null, isCharging: l.is_charging ?? false, bgLocation: l.bg_location_granted, batteryOptIgnored: l.battery_opt_ignored } })
       setLocations(map)
     }
     if (reqRes.data) setJoinRequests(reqRes.data)
@@ -356,7 +378,10 @@ export default function FamilyPage() {
           if (payload.new) {
             setLocations(prev => ({ ...prev, [payload.new.user_id]: {
               lat: payload.new.lat, lng: payload.new.lng,
-              updatedAt: payload.new.updated_at,
+              // Same fallback reasoning as battery below, and it matters more
+              // here: a missing timestamp would read as "never stale" and put
+              // the pin back to Live.
+              updatedAt: payload.new.updated_at ?? prev[payload.new.user_id]?.updatedAt,
               isSharing: payload.new.is_sharing,
               locEnabled: payload.new.location_enabled !== false,
               // An UPDATE payload can omit columns that did not change, so fall
@@ -617,7 +642,7 @@ export default function FamilyPage() {
             <div className="popup-handle" style={{ margin: '9px auto 13px' }} />
 
             <div style={{
-              fontSize: 10.5, fontWeight: 700, color: '#8B0D3D',
+              fontSize: 10.5, fontWeight: 700, color: 'var(--maroon)',
               letterSpacing: 0.2, marginBottom: 8,
             }}>
               {t('family.inviteTo', { family: familyName })}
@@ -627,7 +652,7 @@ export default function FamilyPage() {
                 the box, so the border just frames it rather than decorating. */}
             <div style={{
               background: 'transparent',
-              border: '2px solid #8B0D3D',
+              border: '2px solid var(--maroon)',
               borderRadius: 16,
               padding: '9px 12px',
               marginBottom: 9,
@@ -635,13 +660,13 @@ export default function FamilyPage() {
             }}>
               <div style={{
                 fontSize: 22, fontWeight: 900, letterSpacing: 4,
-                color: '#8B0D3D', fontFamily: 'Sora, sans-serif', lineHeight: 1.15,
+                color: 'var(--maroon)', fontFamily: 'Sora, sans-serif', lineHeight: 1.15,
               }}>
                 {inviteCode}
               </div>
             </div>
 
-            <div style={{ fontSize: 11, color: '#9C6B7A', marginBottom: 12, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 11, color: 'var(--muted-soft)', marginBottom: 12, lineHeight: 1.4 }}>
               {t('family.joinScreenNote')}
             </div>
 
@@ -672,14 +697,14 @@ export default function FamilyPage() {
               setTimeout(() => { setCodeCopied(false); setShowInviteSheet(false) }, 1200)
             }} style={{
               width: '100%', padding: '10px 14px', borderRadius: 13,
-              background: codeCopied ? '#D1FAE5' : '#F8F0F3',
-              border: codeCopied ? '1.5px solid #10B981' : '1.5px solid #ECE0E5',
+              background: codeCopied ? '#D1FAE5' : 'var(--bg2)',
+              border: codeCopied ? '1.5px solid #10B981' : '1.5px solid var(--border)',
               color: codeCopied ? '#059669' : '#3A1020', fontWeight: 800, fontSize: 13.5,
               fontFamily: 'inherit', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
               transition: 'all 0.2s',
             }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : '#8B0D3D'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : 'var(--maroon)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
               </svg>
               {codeCopied ? t('family.copied') : t('family.copyCode')}
@@ -694,7 +719,7 @@ export default function FamilyPage() {
         <div className="overlay" onClick={() => setShowFamilySwitcher(false)}>
           <div className="popup" onClick={e => e.stopPropagation()}>
             <div className="popup-handle" />
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#8B0D3D', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--maroon)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
               {t('family.switchFamily')}
             </div>
             {/* Same flat list as Find Family Member on the map: rows divided by
@@ -713,7 +738,7 @@ export default function FamilyPage() {
                     onClick={() => { switchFamily(fam.family_id); setShowFamilySwitcher(false) }}
                     style={{
                       width: '100%', padding: '11px 14px',
-                      background: isActive ? '#FDF0F5' : 'none',
+                      background: isActive ? 'var(--maroon-wash)' : 'none',
                       border: 'none',
                       borderTop: i === 0 ? 'none' : '1px solid #F8F0F4',
                       cursor: isActive ? 'default' : 'pointer',
@@ -722,35 +747,35 @@ export default function FamilyPage() {
                     }}>
                     <div style={{
                       width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                      background: isActive ? '#8B0D3D' : '#F8F0F3',
+                      background: isActive ? 'var(--maroon)' : 'var(--bg2)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                        <circle cx="9" cy="7" r="3" fill={isActive ? '#fff' : '#8B0D3D'}/>
-                        <path d="M3 20C3 16.134 5.686 13 9 13C12.314 13 15 16.134 15 20H3Z" fill={isActive ? '#fff' : '#8B0D3D'}/>
-                        <circle cx="17.5" cy="8.5" r="2.2" fill={isActive ? 'rgba(255,255,255,0.7)' : '#B01650'}/>
-                        <path d="M13.5 20C13.5 17.239 15.239 15 17.5 15C19.761 15 21.5 17.239 21.5 20H13.5Z" fill={isActive ? 'rgba(255,255,255,0.7)' : '#B01650'}/>
+                        <circle cx="9" cy="7" r="3" fill={isActive ? '#fff' : 'var(--maroon)'}/>
+                        <path d="M3 20C3 16.134 5.686 13 9 13C12.314 13 15 16.134 15 20H3Z" fill={isActive ? '#fff' : 'var(--maroon)'}/>
+                        <circle cx="17.5" cy="8.5" r="2.2" fill={isActive ? 'rgba(255,255,255,0.7)' : 'var(--maroon-rose)'}/>
+                        <path d="M13.5 20C13.5 17.239 15.239 15 17.5 15C19.761 15 21.5 17.239 21.5 20H13.5Z" fill={isActive ? 'rgba(255,255,255,0.7)' : 'var(--maroon-rose)'}/>
                       </svg>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
-                        fontSize: 13, fontWeight: 700, color: '#2A0A18', marginBottom: 2,
+                        fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 2,
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>
                         {fam.name}
                       </div>
-                      <div style={{ fontSize: 11, color: '#9C6B7A' }}>
-                        {fam.role === 'admin' ? '👑 ' + t('family.admin') : '👤 ' + t('family.member')} · {fam.invite_code}
+                      <div style={{ fontSize: 11, color: 'var(--muted-soft)' }}>
+                        {fam.role === 'admin' ? <><Icon name="crown" /> {t('family.admin')}</> : <><Icon name="user" /> {t('family.member')}</>} · {fam.invite_code}
                       </div>
                     </div>
                     {isActive ? (
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                        stroke="#8B0D3D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        stroke="var(--maroon)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12"/>
                       </svg>
                     ) : (
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        stroke="var(--maroon)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="9 18 15 12 9 6"/>
                       </svg>
                     )}
@@ -873,7 +898,7 @@ export default function FamilyPage() {
             style={{
               background: 'rgba(255,255,255,0.92)',
               border: '1.5px solid #fff',
-              color: '#8B0D3D',
+              color: 'var(--maroon)',
               borderRadius: 10,
               padding: '7px 12px',
               fontWeight: 800,
@@ -887,7 +912,7 @@ export default function FamilyPage() {
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="#8B0D3D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              stroke="var(--maroon)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="17 1 21 5 17 9"/>
               <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
               <polyline points="7 23 3 19 7 15"/>
@@ -917,7 +942,7 @@ export default function FamilyPage() {
         {joinRequests.length > 0 && (
           <div style={{ marginBottom: 20 }}>
             <div className="section-title" style={{ color: 'var(--rose)' }}>
-              🔔 {t('family.joinRequests', { n: joinRequests.length })}
+              <Icon name="bell" /> {t('family.joinRequests', { n: joinRequests.length })}
             </div>
             {joinRequests.map(req => (
               <div key={req.id} style={{
@@ -935,7 +960,7 @@ export default function FamilyPage() {
                   </div>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: '#000' }}>{req.requester_name}</div>
-                    <div style={{ fontSize: 12, color: '#9C6B7A', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: 'var(--muted-soft)', marginTop: 2 }}>
                       {t('family.wantsToJoin')} · {new Date(req.created_at).toLocaleTimeString()}
                     </div>
                   </div>
@@ -944,12 +969,12 @@ export default function FamilyPage() {
                   <button onClick={() => handleAccept(req)} style={{
                     flex: 1, padding: 11, borderRadius: 12, background: '#059669',
                     color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-                  }}>✅ {t('family.accept')}</button>
+                  }}><Icon name="checkCircle" /> {t('family.accept')}</button>
                   <button onClick={() => handleReject(req)} style={{
                     flex: 1, padding: 11, borderRadius: 12, background: '#fff',
                     color: '#E11D48', border: '1.5px solid rgba(225,29,72,0.3)',
                     fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-                  }}>❌ {t('family.reject')}</button>
+                  }}><Icon name="xCircle" /> {t('family.reject')}</button>
                 </div>
               </div>
             ))}
@@ -958,9 +983,10 @@ export default function FamilyPage() {
 
         {/* Members list */}
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', letterSpacing: 0.3, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-          {t('family.familyMembers', { n: members.length })}
-          <span style={{ fontSize: 10, color: 'var(--muted2)', fontWeight: 500, lineHeight: 1.5 }}>
-            · {t('family.holdToEdit')}
+          {/* Just the hint — the "Family members (n)" count above the cards
+              was removed at the owner's request; the cards speak for it. */}
+          <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, lineHeight: 1.5 }}>
+            {t('family.holdToEdit')}
           </span>
         </div>
 
@@ -980,10 +1006,10 @@ export default function FamilyPage() {
           <div className="empty-state">
             <div className="empty-emoji">
               <svg width="52" height="52" viewBox="0 0 24 24" fill="none">
-                <circle cx="7" cy="7.5" r="3" fill="#8B0D3D" />
-                <path d="M2 19c0-3 2.2-5 5-5s5 2 5 5" fill="#B01650" />
+                <circle cx="7" cy="7.5" r="3" fill="var(--maroon)" />
+                <path d="M2 19c0-3 2.2-5 5-5s5 2 5 5" fill="var(--maroon-rose)" />
                 <circle cx="17" cy="7.5" r="3" fill="#F59E0B" />
-                <path d="M12 19c0-3 2.2-5 5-5s5 2 5 5" fill="#B01650" />
+                <path d="M12 19c0-3 2.2-5 5-5s5 2 5 5" fill="var(--maroon-rose)" />
               </svg>
             </div>
             <div className="empty-text">{t('family.noMembers')}</div>
@@ -996,6 +1022,11 @@ export default function FamilyPage() {
             // has been defaulted to {} for the convenience of every reader
             // below it.
             const hasLocationRow = !!locations[m.user_id]
+            // Computed once per card because two places need the same answer:
+            // the pin, which stops saying "Live", and the line below it, which
+            // switches from distance to the reason the phone went quiet.
+            const locStale = !!loc.updatedAt
+              && (Date.now() - new Date(loc.updatedAt)) > LOCATION_STALE_MS
             // No `|| loc.updatedAt` fallback: a location timestamp says the
             // device is still reporting, not that the person has the app open.
             // Using it here is what made a closed app read "Online · Just now".
@@ -1039,7 +1070,7 @@ export default function FamilyPage() {
                   <div style={{
                     position: 'absolute', bottom: 1, right: 1,
                     width: 13, height: 13, borderRadius: '50%',
-                    background: online ? '#10B981' : '#C7B3BC',
+                    background: online ? '#10B981' : 'var(--muted3)',
                     border: '2.5px solid #fff',
                     boxShadow: online ? '0 0 0 2px rgba(16,185,129,0.25), 0 0 8px rgba(16,185,129,0.5)' : 'none',
                     transition: 'all 0.3s',
@@ -1047,7 +1078,7 @@ export default function FamilyPage() {
                 </div>
                 <div className="member-info">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                    <div className="member-name" style={{ color: '#2A0A18', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nameFor(m)}</div>
+                    <div className="member-name" style={{ color: 'var(--text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nameFor(m)}</div>
                     <SignInIcon
                       state={signState}
                       label={t(signState === 'in' ? 'family.usingApp'
@@ -1055,7 +1086,7 @@ export default function FamilyPage() {
                         : 'family.notSignedIn')}
                     />
                   </div>
-                  <div className="member-meta" style={{ color: '#836370' }}>
+                  <div className="member-meta" style={{ color: 'var(--muted2)' }}>
                     {online ? (
                       <span style={{ color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
@@ -1100,14 +1131,14 @@ export default function FamilyPage() {
                   // supporting detail and competed with the member name; grey
                   // would read as disabled. Green is avoided because it sat
                   // beside the green "Live" pin and the two merged.
-                  const color = '#9C6B7A'
+                  const color = 'var(--muted-soft)'
                   // Stale readings were previously faded to 55% opacity, on
                   // the reasoning that a battery only drains so an old value
                   // always reads high. In practice it just looked like two
                   // members had different coloured indicators, so the signal
                   // cost more than it bought. Kept as a tooltip only.
                   const stale = loc?.updatedAt
-                    ? (Date.now() - new Date(loc.updatedAt)) > 15 * 60 * 1000
+                    ? (Date.now() - new Date(loc.updatedAt)) > LOCATION_STALE_MS
                     : true
                   return (
                     <span
@@ -1140,7 +1171,7 @@ export default function FamilyPage() {
                           the muted rose so charging is readable at a glance
                           without competing with the green "Live" pin. */}
                       {charging && (
-                        <svg width="9" height="13" viewBox="0 0 8 12" fill="#6B0B2C" aria-hidden="true">
+                        <svg width="9" height="13" viewBox="0 0 8 12" fill="var(--maroon-ink)" aria-hidden="true">
                           <path d="M4.6 0 0 6.6h2.7L2.2 12 7.4 5.1H4.4L4.6 0z" />
                         </svg>
                       )}
@@ -1185,12 +1216,27 @@ export default function FamilyPage() {
                     const hasFix = hasLocationRow && !!loc.lat && !!loc.lng
                       && !(loc.lat === 0 && loc.lng === 0)
                     const waiting = !sharingOff && !gpsOff && !hasFix
-                    const pinFill = sharingOff || waiting ? '#C7B3BC' : (gpsOff ? '#E11D48' : '#10B981')
+                    // Fifth state: sharing is on, GPS is on, a position exists —
+                    // and none of it has been refreshed for a long time. Every
+                    // flag above says "fine", so without this the card reports a
+                    // hours-old position as Live with a confident distance,
+                    // which is worse than reporting nothing. The age replaces
+                    // the "Live" label, so it sits directly above the distance
+                    // and qualifies it.
+                    const stale = !sharingOff && !gpsOff && hasFix && locStale
+                    const pinFill = sharingOff || waiting ? 'var(--muted3)'
+                      : gpsOff ? 'var(--muted)'
+                      : stale ? '#F59E0B'
+                      : '#10B981'
                     const label   = sharingOff ? t('family.gpsOff')
                       : gpsOff ? t('family.gpsNoFix')
                       : waiting ? t('family.gpsWaiting')
+                      : stale ? formatLastSeen(t, loc.updatedAt)
                       : t('family.gpsLive')
-                    const labelColor = waiting ? '#9C6B7A' : (gpsOff || sharingOff ? '#E11D48' : '#10B981')
+                    const labelColor = waiting ? 'var(--muted-soft)'
+                      : (gpsOff || sharingOff) ? 'var(--muted)'
+                      : stale ? '#B45309'
+                      : '#10B981'
                     return (
                       <>
                         <div style={{ position: 'relative', width: 28, height: 28 }}>
@@ -1207,9 +1253,9 @@ export default function FamilyPage() {
                             <svg width="28" height="28" viewBox="0 0 24 24"
                               style={{ position: 'absolute', top: 0, left: 0 }}>
                               <line x1="4" y1="4" x2="20" y2="20"
-                                stroke="#E11D48" strokeWidth="2.5" strokeLinecap="round" />
+                                stroke="var(--muted)" strokeWidth="2.5" strokeLinecap="round" />
                               <line x1="20" y1="4" x2="4" y2="20"
-                                stroke="#E11D48" strokeWidth="2.5" strokeLinecap="round" />
+                                stroke="var(--muted)" strokeWidth="2.5" strokeLinecap="round" />
                             </svg>
                           )}
                         </div>
@@ -1235,9 +1281,25 @@ export default function FamilyPage() {
                         && loc.lat && loc.lng && !(loc.lat === 0 && loc.lng === 0)) {
                       label = formatDistance(t, distanceKm(myLoc.lat, myLoc.lng, loc.lat, loc.lng))
                     }
+
+                    // When a member has gone quiet, this line stops being about
+                    // distance and starts being about why. Their phone reported
+                    // its own setup while it was still working, so the likely
+                    // reason is already known — showing it here is what turns
+                    // "she is not updating" into something someone can act on.
+                    //
+                    // Only while stale, and only for a reported false: NULL means
+                    // the device has not reported yet (older build, or not opened
+                    // since the update) and must not be read as a fault.
+                    const reason = m.user_id !== user?.id && locStale
+                      ? (loc?.batteryOptIgnored === false ? t('family.healthBatteryOpt')
+                        : loc?.bgLocation === false ? t('family.healthNoBgLocation')
+                        : null)
+                      : null
+                    if (reason) label = reason
                     return (
                       <span style={{
-                        fontSize: 9, fontWeight: 600, color: '#7D5A67',
+                        fontSize: 9, fontWeight: 600, color: 'var(--muted)',
                         marginTop: 1, whiteSpace: 'nowrap',
                       }}>
                         {label || ' '}
@@ -1283,7 +1345,7 @@ export default function FamilyPage() {
                 onClick: () => handleStartCall(selectedMember, 'voice'),
               },
               {
-                label: t('family.videoCall'), color: '#8B0D3D',
+                label: t('family.videoCall'), color: 'var(--maroon)',
                 icon: (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
@@ -1320,7 +1382,7 @@ export default function FamilyPage() {
           style={{
             position: 'absolute', right: 18, bottom: 18, zIndex: 20,
             width: 56, height: 56, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #8B0D3D, #6E0A30)',
+            background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
             border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 6px 20px rgba(139,13,61,0.42)',

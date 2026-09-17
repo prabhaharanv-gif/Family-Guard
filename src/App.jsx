@@ -11,6 +11,7 @@ import { useT } from './i18n'
 import { usePushNotifications }  from './hooks/usePushNotifications'
 import { useLocationService }    from './hooks/useLocationService'
 import { useLocationBroadcast }  from './hooks/useLocationBroadcast'
+import { useDeviceHealth }       from './hooks/useDeviceHealth'
 import { useHeartbeat }          from './hooks/useHeartbeat'
 import { useSosAlarm }           from './hooks/useSosAlarm'
 import { useCallSignaling }      from './hooks/useCallSignaling'
@@ -24,6 +25,7 @@ import ConsentGate         from './components/ConsentGate'
 import PrivateRoute        from './components/PrivateRoute'
 import NativeAlarmBanner   from './components/NativeAlarmBanner'
 import { Capacitor }       from '@capacitor/core'
+import { App as CapApp }   from '@capacitor/app'
 import GlobalSOSAlert      from './components/GlobalSOSAlert'
 import GlobalIncomingCall  from './components/GlobalIncomingCall'
 import SosReliabilitySetup from './components/SosReliabilitySetup'
@@ -42,8 +44,8 @@ import Layout              from './components/Layout'
 //   FamilyPage  — the first paint for everyone else.
 //
 // Everything else loads on demand. The big wins are CallPage, which is the only
-// importer of lib/agora and therefore of the whole Agora RTC SDK, and the two
-// map screens, which are the only importers of leaflet.
+// importer of lib/agora and therefore of the whole Agora RTC SDK, and the family
+// map screen, which is the only importer of leaflet.
 import LoginPage  from './pages/LoginPage'
 import FamilyPage from './pages/FamilyPage'
 import SOSPage    from './pages/SOSPage'
@@ -54,7 +56,6 @@ const JoinFamilyPage    = lazy(() => import('./pages/JoinFamilyPage'))
 const CreateFamilyPage  = lazy(() => import('./pages/CreateFamilyPage'))
 const MessagesPage      = lazy(() => import('./pages/MessagesPage'))
 const MapAllPage        = lazy(() => import('./pages/MapAllPage'))
-const MapPage           = lazy(() => import('./pages/MapPage'))
 const CallPage          = lazy(() => import('./pages/CallPage'))
 const AddMemberPage     = lazy(() => import('./pages/AddMemberPage'))
 const SettingsPage      = lazy(() => import('./pages/SettingsPage'))
@@ -79,11 +80,26 @@ export default function App() {
     initSessionKeepAlive()
   }, [])
 
+  // ── Family list freshness ────────────────────────────────────────────────
+  // The membership list was only read at sign-in and on the hourly token
+  // refresh, so leaving a family (or being removed from one by its admin)
+  // could leave it listed and still active until the app was restarted.
+  // Coming back to the foreground is the natural moment to re-check.
+  useEffect(() => {
+    if (!user?.id || !Capacitor.isNativePlatform()) return
+    let handle, gone = false
+    CapApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) useAuthStore.getState().loadFamily(user.id)
+    }).then((h) => { if (gone) h.remove(); else handle = h })
+    return () => { gone = true; handle?.remove() }
+  }, [user?.id])
+
   // ── Always-on services ───────────────────────────────────────────────────
   useHeartbeat(user?.id, familyId)
   usePushNotifications(user?.id, familyId)
   const { disclosureOpen, acceptDisclosure, declineDisclosure } = useLocationService()
   useLocationBroadcast(user?.id, familyId)
+  useDeviceHealth(user?.id)
   const { pingRinging, stopPing } = useDevicePing(user, familyId)
 
   // ── One account, one device ──────────────────────────────────────────────
@@ -145,8 +161,10 @@ export default function App() {
       <NativeAlarmBanner
         visible={pingRinging}
         onStop={stopPing}
-        text="📡 Find My Phone is ringing"
-        label="🔕 Silence"
+        textKey="alarm.findPhoneRinging"
+        labelKey="alarm.silence"
+        icon="radio"
+        tone="ping"
       />
       {/* Web only. On Android SOSAlertActivity is the SOS screen in all three
           states — app open, app closed, screen locked — because it is the only
@@ -217,7 +235,6 @@ export default function App() {
         <Route path="/add-member" element={<PrivateRoute><AddMemberPage /></PrivateRoute>} />
         <Route path="/join-family"   element={<PrivateRoute><JoinFamilyPage /></PrivateRoute>} />
         <Route path="/create-family" element={<PrivateRoute><CreateFamilyPage /></PrivateRoute>} />
-        <Route path="/map/:userId"   element={<PrivateRoute><MapPage /></PrivateRoute>} />
         <Route path="/call/:callId"  element={<PrivateRoute><CallPage /></PrivateRoute>} />
 
         <Route path="/" element={<PrivateRoute><Layout unreadMessages={unreadMessages} /></PrivateRoute>}>

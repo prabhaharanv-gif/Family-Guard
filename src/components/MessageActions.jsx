@@ -1,5 +1,73 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useT } from '../i18n'
+import Icon from './Icon'
+
+// ── Swipe right to reply ──────────────────────────────────────────────────────
+// Wraps a bubble. A mostly-horizontal drag to the right slides the bubble along
+// with the finger (capped), fades in a reply arrow behind it, and past the
+// threshold replies on release. The direction is decided on the first few
+// pixels of movement, so a vertical scroll that wobbles sideways never slides
+// the bubble, and a sideways swipe never scrolls. The bubble's own long-press
+// handlers still see the touch; their touchmove cancels the long press.
+const SWIPE_MAX = 80
+const SWIPE_REPLY_AT = 56
+
+export function SwipeToReply({ onReply, style, children }) {
+  const [dx, setDx] = useState(0)
+  const start = useRef(null)   // { x, y, horizontal: null | true | false }
+  const dxRef = useRef(0)
+
+  const move = (value) => { dxRef.current = value; setDx(value) }
+
+  const onTouchStart = (e) => {
+    const t = e.touches[0]
+    start.current = { x: t.clientX, y: t.clientY, horizontal: null }
+  }
+  const onTouchMove = (e) => {
+    const s = start.current
+    if (!s) return
+    const t = e.touches[0]
+    const mx = t.clientX - s.x
+    const my = t.clientY - s.y
+    if (s.horizontal === null) {
+      if (Math.abs(mx) < 8 && Math.abs(my) < 8) return
+      s.horizontal = mx > 0 && Math.abs(mx) > Math.abs(my) * 1.5
+    }
+    if (s.horizontal) move(Math.max(0, Math.min(mx, SWIPE_MAX)))
+  }
+  const onTouchEnd = () => {
+    if (start.current?.horizontal && dxRef.current >= SWIPE_REPLY_AT) {
+      try { navigator.vibrate?.(15) } catch (e) { /* not supported */ }
+      onReply?.()
+    }
+    start.current = null
+    move(0)
+  }
+
+  return (
+    <div style={style} onTouchStart={onTouchStart} onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}>
+      <div style={{
+        position: 'absolute', left: -26, top: '50%', transform: 'translateY(-50%)',
+        opacity: Math.min(dx / SWIPE_REPLY_AT, 1), color: 'var(--maroon)',
+        pointerEvents: 'none', display: 'flex',
+      }}>
+        <Icon name="reply" size={20} />
+      </div>
+      {/* position + transform: the reaction chip, positioned inside, slides
+          with the bubble instead of staying behind. */}
+      <div style={{
+        position: 'relative',
+        // Only while dragging: a standing transform would trap the full-screen
+        // photo viewer (position: fixed) inside the bubble.
+        transform: dx ? `translateX(${dx}px)` : 'none',
+        transition: dx === 0 ? 'transform 0.18s ease-out' : 'none',
+      }}>
+        {children}
+      </div>
+    </div>
+  )
+}
 
 /**
  * MessageActions
@@ -61,21 +129,21 @@ export function ReplyBar({ replyTo, senderName, onCancel }) {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 8,
       padding: '8px 16px',
-      background: '#FAE8EF',
-      borderTop: '1px solid #DCC9D2',
-      borderLeft: '3px solid #A5124A',
+      background: 'var(--maroon-tint)',
+      borderTop: '1px solid var(--border2)',
+      borderLeft: '3px solid var(--maroon-bright)',
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: '#A5124A', marginBottom: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--maroon-bright)', marginBottom: 2 }}>
           {t('messages.replyingTo', { name: senderName || t('messages.family') })}
         </div>
-        <div style={{ fontSize: 12, color: '#7D5A67', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 12, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {messagePreviewText(t, replyTo)}
         </div>
       </div>
       <button onClick={onCancel} style={{
         background: 'none', border: 'none', cursor: 'pointer',
-        fontSize: 18, color: '#836370', padding: '0 4px', flexShrink: 0,
+        fontSize: 18, color: 'var(--muted2)', padding: '0 4px', flexShrink: 0,
       }}>✕</button>
     </div>
   )
@@ -118,7 +186,7 @@ export function ReactionChips({ reactions, myUserId, onReact, align }) {
             // Ringed in the page background, not in a border colour: the chip
             // sits ON the bubble, and without the gap it punches for itself the
             // two shapes merge into one blob.
-            border: c.mine ? '1.5px solid #8B0D3D' : '1.5px solid var(--bg)',
+            border: c.mine ? '1.5px solid var(--maroon)' : '1.5px solid var(--bg)',
             boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
             cursor: onReact ? 'pointer' : 'default',
             fontFamily: 'inherit', fontSize: 11.5, lineHeight: 1.55,
@@ -126,7 +194,7 @@ export function ReactionChips({ reactions, myUserId, onReact, align }) {
         >
           <span>{c.emoji}</span>
           {c.count > 1 && (
-            <span style={{ fontSize: 10, fontWeight: 800, color: '#9C6B7A' }}>{c.count}</span>
+            <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted-soft)' }}>{c.count}</span>
           )}
         </button>
       ))}
@@ -165,7 +233,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
   const t = useT()
   const actions = [
     {
-      label: t('messages.reply'), color: '#8B0D3D', fn: onReply, show: true,
+      label: t('messages.reply'), color: 'var(--maroon)', fn: onReply, show: true,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
@@ -178,7 +246,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
       // text is on screen regardless, so a failure is not worth an error.
       // Hidden on an attachment sent without a caption — there is no text to
       // copy, and an action that silently does nothing reads as broken.
-      label: t('messages.copy'), color: '#8B0D3D', show: !!msg?.content,
+      label: t('messages.copy'), color: 'var(--maroon)', show: !!msg?.content,
       fn: () => { try { navigator.clipboard?.writeText(msg?.content || '') } catch { /* on screen anyway */ } },
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -187,7 +255,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
       ),
     },
     {
-      label: t('messages.edit'), color: '#8B0D3D', fn: onEdit, show: isOwn,
+      label: t('messages.edit'), color: 'var(--maroon)', fn: onEdit, show: isOwn,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -196,7 +264,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
       ),
     },
     {
-      label: t('messages.messageInfo'), color: '#8B0D3D', fn: onInfo, show: isOwn,
+      label: t('messages.messageInfo'), color: 'var(--maroon)', fn: onInfo, show: isOwn,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -263,7 +331,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
         style={{
           position: 'fixed', top, left, width: WIDTH,
           background: '#fff', borderRadius: 14,
-          border: '1px solid #ECE0E5',
+          border: '1px solid var(--border)',
           boxShadow: '0 14px 36px rgba(20,4,10,0.24)',
           padding: 6, overflow: 'hidden',
         }}
@@ -284,7 +352,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
                   aria-label={emoji}
                   style={{
                     width: 33, height: 33, borderRadius: '50%',
-                    border: myReaction === emoji ? '2px solid #8B0D3D' : '2px solid transparent',
+                    border: myReaction === emoji ? '2px solid var(--maroon)' : '2px solid transparent',
                     background: myReaction === emoji ? '#FDF2F6' : 'none',
                     cursor: 'pointer', fontSize: 19, lineHeight: 1,
                     padding: 0, fontFamily: 'inherit',
@@ -306,7 +374,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
                 background: 'none', border: 'none', cursor: 'pointer',
                 fontFamily: 'inherit', textAlign: 'left',
                 display: 'flex', alignItems: 'center', gap: 10,
-                color: a.danger ? a.color : '#2A0A18',
+                color: a.danger ? a.color : 'var(--text)',
                 fontSize: 13.5, fontWeight: 700,
               }}
             >
@@ -352,8 +420,8 @@ export function EditModal({ msg, onClose, onSave, subtitle }) {
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#2A0A18' }}>{t('messages.editTitle')}</div>
-            <div style={{ fontSize: 11, color: '#836370', marginTop: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>{t('messages.editTitle')}</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>
               {subtitle || t('messages.editSubtitle')}
             </div>
           </div>
@@ -365,26 +433,26 @@ export function EditModal({ msg, onClose, onSave, subtitle }) {
           autoFocus
           style={{
             width: '100%', padding: '14px 16px', borderRadius: 14,
-            border: '1.5px solid #ECE0E5', fontSize: 14,
+            border: '1.5px solid var(--border)', fontSize: 14,
             fontFamily: 'inherit', resize: 'none', outline: 'none',
             minHeight: 90, boxSizing: 'border-box', marginBottom: 16,
             background: '#FAFAFA', lineHeight: 1.5,
             transition: 'border-color 0.2s',
           }}
           onFocus={e => e.target.style.borderColor = '#059669'}
-          onBlur={e => e.target.style.borderColor = '#ECE0E5'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}
         />
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: '#F8F0F3', border: '1px solid #ECE0E5',
-            color: '#7D5A67', fontWeight: 700, cursor: 'pointer',
+            background: 'var(--bg2)', border: '1px solid var(--border)',
+            color: 'var(--muted)', fontWeight: 700, cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 14,
           }}>Cancel</button>
           <button onClick={handleSave} disabled={saving || !text.trim()} style={{
             flex: 1, padding: 14, borderRadius: 14,
-            background: text.trim() ? 'linear-gradient(135deg, #8B0D3D, #6E0A30)' : '#F5E8EE',
+            background: text.trim() ? 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))' : '#F5E8EE',
             border: 'none', color: '#fff', fontWeight: 700,
             cursor: text.trim() ? 'pointer' : 'not-allowed',
             fontFamily: 'inherit', fontSize: 14,

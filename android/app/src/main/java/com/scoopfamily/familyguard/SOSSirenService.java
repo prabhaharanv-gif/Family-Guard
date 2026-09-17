@@ -335,7 +335,7 @@ public class SOSSirenService extends Service {
 
         return new NotificationCompat.Builder(this, SOS_POPUP_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_notify)
-            .setColor(android.graphics.Color.parseColor("#951345"))
+            .setColor(android.graphics.Color.parseColor("#C8102E"))
             .setContentTitle(getString(R.string.notif_sos_title, senderName))
             .setContentText(message)
             .setStyle(new NotificationCompat.BigTextStyle()

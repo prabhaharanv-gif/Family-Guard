@@ -90,19 +90,19 @@ export default function SoundPickerSheet({ type, title, onClose, onSaved }) {
       >
         <span style={{
           width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-          border: on ? '6px solid #8B0D3D' : '2px solid #DDC6D1',
+          border: on ? '6px solid var(--maroon)' : '2px solid #DDC6D1',
           boxSizing: 'border-box', transition: 'border 0.12s',
         }} />
         <span style={{
           flex: 1, minWidth: 0, fontSize: 14,
           fontWeight: on ? 800 : 600,
-          color: on ? '#8B0D3D' : '#2A0A18',
+          color: on ? 'var(--maroon)' : 'var(--text)',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {label}
         </span>
         {isDefault && (
-          <span style={{ fontSize: 11, color: '#9C6B7A', flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: 'var(--muted-soft)', flexShrink: 0 }}>
             {t('profile.appSound')}
           </span>
         )}
@@ -120,7 +120,7 @@ export default function SoundPickerSheet({ type, title, onClose, onSaved }) {
       style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '13px 6px', background: 'none', border: 'none',
-        cursor: 'pointer', fontFamily: 'inherit', color: '#8B0D3D',
+        cursor: 'pointer', fontFamily: 'inherit', color: 'var(--maroon)',
       }}
     >
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -136,16 +136,16 @@ export default function SoundPickerSheet({ type, title, onClose, onSaved }) {
         <div className="popup-handle" />
 
         <div style={{
-          fontSize: 11, fontWeight: 800, color: '#8B0D3D',
+          fontSize: 11, fontWeight: 800, color: 'var(--maroon)',
           textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2,
         }}>{t('profile.chooseSound')}</div>
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#2A0A18', marginBottom: 10 }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', marginBottom: 10 }}>
           {title}
         </div>
 
         <div ref={listRef} style={{ maxHeight: '46vh', overflowY: 'auto', marginBottom: 14 }}>
           {items === null ? (
-            <div style={{ padding: '24px 0', textAlign: 'center', color: '#9C6B7A', fontSize: 13 }}>
+            <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--muted-soft)', fontSize: 13 }}>
               {t('common.loading')}
             </div>
           ) : (
@@ -162,7 +162,7 @@ export default function SoundPickerSheet({ type, title, onClose, onSaved }) {
             of explanation under a list of 90 sounds was the longest thing on
             the sheet. The label survives as the accessible name. */}
         <div style={{
-          display: 'flex', borderTop: '1px solid #ECE0E5', marginBottom: 12,
+          display: 'flex', borderTop: '1px solid var(--border)', marginBottom: 12,
         }}>
           <SourceButton
             source="music"
@@ -174,7 +174,7 @@ export default function SoundPickerSheet({ type, title, onClose, onSaved }) {
             }
           />
           {/* A hairline between them, so two tap targets do not read as one. */}
-          <div style={{ width: 1, background: '#ECE0E5', margin: '8px 0' }} />
+          <div style={{ width: 1, background: 'var(--border)', margin: '8px 0' }} />
           <SourceButton
             source="files"
             label={t('profile.soundFromFiles')}
@@ -189,7 +189,7 @@ export default function SoundPickerSheet({ type, title, onClose, onSaved }) {
             onClick={() => { stopPreview(); onClose() }}
             style={{
               flex: 1, padding: 14, borderRadius: 14,
-              background: '#F8F0F3', border: '1px solid #ECE0E5',
+              background: 'var(--bg2)', border: '1px solid var(--border)',
               color: '#3A1020', fontWeight: 700, cursor: 'pointer',
               fontFamily: 'inherit', fontSize: 14,
             }}
@@ -199,7 +199,7 @@ export default function SoundPickerSheet({ type, title, onClose, onSaved }) {
             disabled={saving || items === null}
             style={{
               flex: 1, padding: 14, borderRadius: 14,
-              background: '#8B0D3D', border: 'none',
+              background: 'var(--maroon)', border: 'none',
               color: '#fff', fontWeight: 700, cursor: 'pointer',
               fontFamily: 'inherit', fontSize: 14,
             }}
