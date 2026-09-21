@@ -580,6 +580,13 @@ export default function PersonalChatPanel({ onDialog, resetSignal, onControls })
           )}
           {!recording && <button
             onClick={handleSend}
+            // Focus must not leave the field: Android closes the keyboard as
+            // soon as the focused element stops being a text input, so tapping
+            // send used to cost the keyboard and a second tap to get it back
+            // mid-conversation. preventDefault here stops the button taking
+            // focus at all; the click still fires. BACK still closes the
+            // keyboard, because Android hands BACK to the IME first.
+            onMouseDown={e => e.preventDefault()}
             disabled={!canSend || sending}
             aria-label="Send"
             style={{

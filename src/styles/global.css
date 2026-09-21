@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Sora:wght@600;700;800;900&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* Android WebView flashes a translucent blue box over anything tapped. It
+   read as a glitch on every page (the app's own buttons and cards already
+   show their pressed state), so it is switched off everywhere. */
+* { -webkit-tap-highlight-color: transparent; }
 
 /* ══════════════════════════════════════════════════════════════
    NO TEXT SELECTION — this is an app, not a document
@@ -184,6 +188,20 @@ body {
     0 0 80px rgba(139,13,61,0.08);
 }
 
+/* ── Native Google map (Android) ──
+   The native map is drawn BENEATH the whole WebView, so while the Map tab is
+   open every layer between the page root and the map area has to let it show
+   through. NativeFamilyMap adds this class to <html> on mount and removes it on
+   unmount. The top bar, bottom nav and everything floating over the map keep
+   their own backgrounds, so only the map area itself turns see-through. */
+html.native-map-open,
+html.native-map-open body,
+html.native-map-open #root,
+html.native-map-open .app-shell {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 /* ── Splash ── */
 .splash {
   height: 100vh;
@@ -195,24 +213,28 @@ body {
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.3px;
-  color: rgba(255,255,255,0.72);
-  background: var(--grad-hero);
+  /* Cream, not the maroon hero gradient: the logo is itself a maroon square,
+     and on maroon it blended into the page. Cream is also what the Family and
+     other main pages open on, so launch flows straight into them — and the
+     Android splash and the WebView's first paint are cream too (styles.xml,
+     capacitor.config.json) so no stage of launch flashes a different colour. */
+  color: var(--maroon);
+  background: var(--bg);
   position: relative;
   overflow: hidden;
 }
+/* The app icon itself, so the icon that was tapped, the system splash and this
+   screen all show one picture. This was a 🛡️ emoji, which Android draws as a
+   grey metal shield that matched nothing else in the brand. The corner radius
+   is 20% — larger than the artwork's own ~15% — so the white outside its
+   rounded square is always clipped. */
 .splash::before {
-  content: '🛡️';
-  font-size: 44px;
-  width: 96px; height: 96px;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 28px;
-  background: rgba(255,255,255,0.08);
-  border: 1.5px solid rgba(212,175,55,0.4);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.22),
-    0 0 0 1px rgba(212,175,55,0.2),
-    0 16px 48px rgba(20,4,12,0.5),
-    0 0 60px rgba(139,13,61,0.4);
+  content: '';
+  width: 110px; height: 110px;
+  border-radius: 22px;
+  background: url('../assets/famora-logo.jpg') center / cover no-repeat;
+  /* Soft on cream; the heavy dark shadow suited the old maroon page. */
+  box-shadow: 0 12px 32px rgba(74,8,32,0.22);
   animation: seal-breathe 2.6s var(--ease) infinite;
 }
 @keyframes seal-breathe {

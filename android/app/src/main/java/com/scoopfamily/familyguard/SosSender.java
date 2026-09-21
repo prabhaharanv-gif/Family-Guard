@@ -119,6 +119,93 @@ final class SosSender {
     }
 
     /**
+     * Posts an SOS to EVERY family the member belongs to, through
+     * send_sos_all_families. Blocking — call it off the main thread.
+     *
+     * Used by the shake gesture: someone raising an SOS from a pocket has no
+     * way to pick a family, and should not need one. Falls back to {@link #send}
+     * (the active family only) when the function is not deployed yet, so the
+     * alert still goes out before the migration is applied.
+     *
+     * @return the new alert ids, comma-joined, or null if nothing was sent.
+     */
+    static String sendAllFamilies(Context ctx, Location loc, String source) {
+        SharedPreferences prefs =
+            ctx.getSharedPreferences(LocationForegroundService.PREF_NAME, Context.MODE_PRIVATE);
+        String supabaseUrl = prefs.getString(LocationForegroundService.KEY_URL, null);
+        String supabaseKey = prefs.getString(LocationForegroundService.KEY_KEY, null);
+        String session     = prefs.getString(LocationForegroundService.KEY_SESSION, null);
+        if (supabaseUrl == null || supabaseKey == null || session == null) {
+            Log.w(TAG, "Cannot send to all families — no config or session stored");
+            return null;
+        }
+
+        Attempt a = postSosAll(supabaseUrl, supabaseKey, session, loc, source);
+        if (SosResponse.isMissingFunction(a.code)) {
+            Log.w(TAG, "send_sos_all_families is not deployed — sending to the active family only");
+            return send(ctx, loc, source);
+        }
+        switch (SosResponse.next(a.code, a.id != null, false)) {
+            case DELIVERED:
+                return a.id;
+            case REFRESH_AND_RETRY:
+                Log.w(TAG, "SOS (all families) rejected — HTTP " + a.code + ", renewing and retrying once");
+                if (!LocationForegroundService.refreshAccessToken(prefs, supabaseUrl, supabaseKey)) {
+                    Log.w(TAG, "Could not renew the session — the user must reopen the app");
+                    return null;
+                }
+                a = postSosAll(supabaseUrl, supabaseKey,
+                    prefs.getString(LocationForegroundService.KEY_SESSION, null), loc, source);
+                if (SosResponse.next(a.code, a.id != null, true) == SosResponse.Step.DELIVERED) return a.id;
+                Log.w(TAG, "SOS (all families) still rejected after the refresh — HTTP " + a.code);
+                return null;
+            default:
+                if (a.code != SosResponse.NO_RESPONSE) {
+                    Log.w(TAG, "SOS (all families) rejected (" + source + ") — HTTP " + a.code);
+                }
+                return null;
+        }
+    }
+
+    /** One attempt at send_sos_all_families; the id field carries the comma-joined ids. */
+    private static Attempt postSosAll(String supabaseUrl, String supabaseKey, String session,
+                                      Location loc, String source) {
+        if (session == null) return new Attempt(SosResponse.NO_RESPONSE, null);
+        HttpURLConnection conn = null;
+        try {
+            JSONObject body = new JSONObject();
+            body.put("p_lat", loc != null ? loc.getLatitude()  : 0d);
+            body.put("p_lng", loc != null ? loc.getLongitude() : 0d);
+            body.put("p_message", "SOS! I need help!");
+
+            conn = (HttpURLConnection) new URL(supabaseUrl + "/rest/v1/rpc/send_sos_all_families").openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("apikey", supabaseKey);
+            conn.setRequestProperty("Authorization", "Bearer " + session);
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(15000);
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body.toString().getBytes(StandardCharsets.UTF_8));
+            }
+
+            int code = conn.getResponseCode();
+            if (SosResponse.isOk(code)) {
+                String ids = SosResponse.parseIds(readBody(conn));
+                Log.i(TAG, "SOS sent to all families (" + source + ") ids=" + ids);
+                return new Attempt(code, ids);
+            }
+            return new Attempt(code, null);
+        } catch (Exception e) {
+            Log.e(TAG, "SOS (all families) send failed (" + source + "): " + e.getMessage());
+            return new Attempt(SosResponse.NO_RESPONSE, null);
+        } finally {
+            if (conn != null) conn.disconnect();
+        }
+    }
+
+    /**
      * One attempt at send_sos.
      *
      * @param session the bearer token to try; the caller supplies a renewed one
@@ -189,6 +276,16 @@ final class SosSender {
      * Blocking; call it off the main thread.
      */
     static boolean resolve(Context ctx, String sosId) {
+        // A send to all families produces one alert per family, carried
+        // comma-joined. Every one must be withdrawn; report success only if all were.
+        if (sosId != null && sosId.indexOf(',') >= 0) {
+            boolean all = true;
+            for (String id : sosId.split(",")) {
+                if (!id.trim().isEmpty()) all &= resolve(ctx, id.trim());
+            }
+            return all;
+        }
+
         SharedPreferences prefs =
             ctx.getSharedPreferences(LocationForegroundService.PREF_NAME, Context.MODE_PRIVATE);
         String supabaseUrl = prefs.getString(LocationForegroundService.KEY_URL, null);

@@ -40,9 +40,12 @@
 
     <!-- SOSAlertActivity — लॉक स्क्रीन के ऊपर दिखने वाला पूर्ण-स्क्रीन अलर्ट -->
     <string name="sos_needs_help">%1$s को मदद चाहिए!</string>
-    <string name="sos_view_location">📍 लोकेशन देखें</string>
+    <string name="sos_view_location">लोकेशन देखें</string>
     <string name="sos_open_app">Famora खोलें</string>
-    <string name="sos_stop_alarm">✋ समझ गया — अलार्म रोकें</string>
+    <string name="sos_stop_alarm">समझ गया — अलार्म रोकें</string>
+    <string name="sos_calm_hint">शांत रहें। देखें वे कहाँ हैं, फिर उन्हें कॉल करें या उनके पास जाएँ।</string>
+    <string name="sos_call">%1$s को कॉल करें</string>
+    <string name="sos_directions">रास्ता देखें</string>
 
     <!-- CallRingingActivity -->
     <string name="call_incoming_voice">आने वाली वॉइस कॉल</string>
@@ -69,4 +72,23 @@
     <string name="ch_reauth_desc">लोकेशन शेयरिंग जारी रखने के लिए Famora दोबारा खोलना ज़रूरी हो तब सूचित करता है</string>
     <string name="notif_reauth_title">लोकेशन शेयरिंग रुक गई</string>
     <string name="notif_reauth_body">फिर से कनेक्ट करने के लिए Famora खोलें. तब तक आपका परिवार आपकी लोकेशन नहीं देख सकता.</string>
+    <!-- Fake call -->
+    <string name="fake_call_default_name">माँ</string>
+    <string name="fake_call_scheduled_title">रिमाइंडर</string>
+    <string name="fake_call_cancel">रद्द करें</string>
+    <string name="fake_call_incoming">आने वाली कॉल</string>
+    <string name="fake_call_mobile">मोबाइल</string>
+    <string name="fake_call_answer">जवाब दें</string>
+    <string name="fake_call_decline">अस्वीकार</string>
+    <string name="fake_call_end">खत्म करें</string>
+    <string name="fake_call_notification_action">मुझे कॉल करो</string>
+    <string name="ch_fake_call_name">नकली कॉल</string>
+    <string name="ch_fake_call_quiet_name">नकली कॉल (शांत)</string>
+    <string name="ch_fake_call_desc">खुद के लिए तय की गई नकली इनकमिंग कॉल</string>
+    <string name="fake_call_voice_script">हेलो? अभी कहाँ हो?|अच्छा। मैं पास में ही हूँ, तुम्हारे पास आ रही हूँ।|वहीं रुको, दो मिनट में पहुँचती हूँ।|हाँ, रास्ते में हूँ। फ़ोन मत काटना।</string>
+    <!-- SOS countdown screen -->
+    <string name="sos_countdown_title">आपके परिवार को SOS भेजा जा रहा है</string>
+    <string name="sos_countdown_hint">अगर आपने गलती से किया है तो रद्द करें दबाएँ।</string>
+    <string name="sos_countdown_cancel">रद्द करें</string>
+    <string name="fake_call_tile_subtitle">5 सेकंड में नकली कॉल</string>
 </resources>

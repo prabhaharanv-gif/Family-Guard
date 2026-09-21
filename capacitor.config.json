@@ -2,6 +2,9 @@
 	"appId": "com.scoopfamily.familyguard",
 	"appName": "FamilyGuard",
 	"webDir": "dist",
+	"android": {
+		"backgroundColor": "#FFF8F0"
+	},
 	"plugins": {
 		"SplashScreen": {
 			"launchShowDuration": 2000,

@@ -40,9 +40,12 @@
 
     <!-- SOSAlertActivity — ലോക്ക് സ്ക്രീനിന് മുകളിൽ വരുന്ന പൂർണ്ണ-സ്ക്രീൻ മുന്നറിയിപ്പ് -->
     <string name="sos_needs_help">%1$s ന് സഹായം വേണം!</string>
-    <string name="sos_view_location">📍 ലൊക്കേഷൻ കാണുക</string>
+    <string name="sos_view_location">ലൊക്കേഷൻ കാണുക</string>
     <string name="sos_open_app">Famora തുറക്കുക</string>
-    <string name="sos_stop_alarm">✋ മനസ്സിലായി — അലാറം നിർത്തുക</string>
+    <string name="sos_stop_alarm">മനസ്സിലായി — അലാറം നിർത്തുക</string>
+    <string name="sos_calm_hint">ശാന്തരായിരിക്കുക. അവർ എവിടെയാണെന്ന് നോക്കി, വിളിക്കുകയോ അവരുടെ അടുത്തേക്ക് പോകുകയോ ചെയ്യുക.</string>
+    <string name="sos_call">%1$s-നെ വിളിക്കുക</string>
+    <string name="sos_directions">വഴി കാണുക</string>
 
     <!-- CallRingingActivity -->
     <string name="call_incoming_voice">വരുന്ന വോയ്‌സ് കോൾ</string>
@@ -69,4 +72,23 @@
     <string name="ch_reauth_desc">ലൊക്കേഷൻ പങ്കിടൽ തുടരാൻ Famora വീണ്ടും തുറക്കേണ്ടി വരുമ്പോൾ അറിയിക്കുന്നു</string>
     <string name="notif_reauth_title">ലൊക്കേഷൻ പങ്കിടൽ നിർത്തി</string>
     <string name="notif_reauth_body">വീണ്ടും കണക്ട് ചെയ്യാൻ Famora തുറക്കുക. അതുവരെ നിങ്ങളുടെ കുടുംബത്തിന് നിങ്ങളുടെ ലൊക്കേഷൻ കാണാൻ കഴിയില്ല.</string>
+    <!-- Fake call -->
+    <string name="fake_call_default_name">അമ്മ</string>
+    <string name="fake_call_scheduled_title">ഓർമ്മപ്പെടുത്തൽ</string>
+    <string name="fake_call_cancel">റദ്ദാക്കുക</string>
+    <string name="fake_call_incoming">വരുന്ന കോൾ</string>
+    <string name="fake_call_mobile">മൊബൈൽ</string>
+    <string name="fake_call_answer">മറുപടി</string>
+    <string name="fake_call_decline">നിരസിക്കുക</string>
+    <string name="fake_call_end">അവസാനിപ്പിക്കുക</string>
+    <string name="fake_call_notification_action">എന്നെ വിളിക്കൂ</string>
+    <string name="ch_fake_call_name">വ്യാജ കോൾ</string>
+    <string name="ch_fake_call_quiet_name">വ്യാജ കോൾ (നിശബ്ദം)</string>
+    <string name="ch_fake_call_desc">നിങ്ങൾ തന്നെ ഷെഡ്യൂൾ ചെയ്യുന്ന വ്യാജ ഇൻകമിംഗ് കോൾ</string>
+    <string name="fake_call_voice_script">ഹലോ? ഇപ്പോൾ എവിടെയാണ്?|ശരി. ഞാൻ അടുത്തുതന്നെയുണ്ട്, നിന്റെ അടുത്തേക്ക് വരുന്നു.|അവിടെത്തന്നെ നിൽക്ക്, രണ്ട് മിനിറ്റിനുള്ളിൽ എത്തും.|അതെ, വഴിയിലാണ്. ഫോൺ വെക്കരുത്.</string>
+    <!-- SOS countdown screen -->
+    <string name="sos_countdown_title">നിങ്ങളുടെ കുടുംബത്തിന് SOS അയയ്ക്കുന്നു</string>
+    <string name="sos_countdown_hint">അബദ്ധത്തിൽ സംഭവിച്ചതെങ്കിൽ റദ്ദാക്കുക അമർത്തുക.</string>
+    <string name="sos_countdown_cancel">റദ്ദാക്കുക</string>
+    <string name="fake_call_tile_subtitle">5 സെക്കൻഡിൽ വ്യാജ കോൾ</string>
 </resources>

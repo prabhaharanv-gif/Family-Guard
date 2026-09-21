@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { MapContainer, TileLayer, useMap } from 'react-leaflet'
-import L from 'leaflet'
+import { Capacitor } from '@capacitor/core'
 import { Geolocation } from '@capacitor/geolocation'
 import { useAuthStore } from '../store/authStore'
 import { useT } from '../i18n'
@@ -9,35 +8,14 @@ import { useNicknames } from '../hooks/useNicknames'
 import { supabase } from '../lib/supabase'
 import { startBatteryReporting } from '../hooks/useBattery'
 import { formatLocationTime } from '../lib/locationTime'
-import SmoothMarker, { GLIDE_MS } from '../components/SmoothMarker'
-import MapCompass from '../components/MapCompass'
 import Icon from '../components/Icon'
+import LeafletFamilyMap from '../components/map/LeafletFamilyMap'
+import NativeFamilyMap from '../components/map/NativeFamilyMap'
 
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-})
-
-function createIcon(color, initial, avatarUrl) {
-  const content = avatarUrl
-    ? `<img src="${avatarUrl}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 12px rgba(0,0,0,0.25);" />`
-    : `<div style="
-        width:44px;height:44px;border-radius:50%;
-        background:${color};border:3px solid #fff;
-        display:flex;align-items:center;justify-content:center;
-        font-weight:800;font-size:18px;color:#fff;
-        box-shadow:0 2px 12px rgba(0,0,0,0.25);
-        font-family:Inter,sans-serif;
-      ">${initial}</div>`
-  return L.divIcon({
-    className: '',
-    html: content,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
-  })
-}
+// Google's native map in the Android app (free to display); Leaflet +
+// OpenStreetMap in the browser, so the web never uses the billed Google Maps
+// JavaScript API. Everything below is shared — only the drawing differs.
+const FamilyMap = Capacitor.isNativePlatform() ? NativeFamilyMap : LeafletFamilyMap
 
 /**
  * offsetOverlapping
@@ -107,7 +85,6 @@ function offsetOverlapping(locations) {
   return result
 }
 
-// Flies the map to a specific member when flyTarget changes
 // Haversine distance between two lat/lng points — returns human-readable string
 function formatDistance(lat1, lng1, lat2, lng2) {
   if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return null
@@ -121,107 +98,6 @@ function formatDistance(lat1, lng1, lat2, lng2) {
   if (dist < 50)   return 'Nearby'
   if (dist < 1000) return `${Math.round(dist)} m away`
   return `${(dist / 1000).toFixed(1)} km away`
-}
-
-function FlyToMember({ target }) {
-  const map = useMap()
-  useEffect(() => {
-    if (!target) return
-    map.flyTo([target.lat, target.lng], 17, { animate: true, duration: 1.0 })
-  }, [target])
-  return null
-}
-
-/**
- * Keeps a chosen member on screen while they move.
- *
- * FlyToMember above is a one-shot: it takes the coordinates the member had at
- * the moment they were tapped and flies there. That is right for finding
- * someone and wrong for watching them — a member in a car leaves the viewport
- * within a minute and has to be chased by hand.
- *
- * This pans instead, and only once they approach an edge. Re-centring on every
- * fix would fight the user: a phone standing still wanders a few metres and the
- * map would twitch continuously. panTo also keeps whatever zoom was chosen,
- * where flyTo would snap it back.
- */
-function FollowMember({ loc, following, onUserPanned }) {
-  const map = useMap()
-  // Whether following has already framed this member. Following engages in the
-  // same instant FlyToMember starts its zoom, and without this the recovery
-  // branch below fired immediately — the member is off screen at the map's
-  // resting zoom — and hard-set the view at the OLD zoom, cancelling the fly.
-  // Tapping a row then jumped to them without zooming in at all.
-  //
-  // So the first run after engaging is skipped: framing belongs to
-  // FlyToMember, and following only takes over once they actually move.
-  const framedRef = useRef(false)
-
-  // Dragging pauses rather than cancels, and the chip above the map says so —
-  // the first version cancelled silently on any drag, which on a touch map is
-  // constant, so following appeared never to work at all.
-  //
-  // Leaflet's own panTo and flyTo fire movestart, not dragstart, so the map
-  // following a member cannot pause itself.
-  useEffect(() => {
-    const pause = () => onUserPanned()
-    map.on('dragstart', pause)
-    return () => { map.off('dragstart', pause) }
-  }, [map, onUserPanned])
-
-  // Keeps them centred rather than nudging only once they near an edge. Edge
-  // nudging was the first attempt and it reads as broken: the marker drifts
-  // most of the way across the screen before anything happens, and at high zoom
-  // it can leave the viewport between two fixes and never come back.
-  //
-  // Centring is safe here precisely because positions are not continuous: the
-  // service only pushes after 15m of movement or a 90s heartbeat, so there is
-  // no GPS jitter to chase and the map moves in the same deliberate steps the
-  // marker does.
-  useEffect(() => {
-    if (!following) { framedRef.current = false; return }
-    if (!loc?.lat || !loc?.lng) return
-    if (!framedRef.current) { framedRef.current = true; return }
-
-    // If the marker is already off screen the animation cannot rescue it —
-    // panning takes GLIDE_MS, by which time another fix has usually arrived and
-    // restarted the whole thing. Jump straight there instead, then resume
-    // gliding. This is the safety net for a corner taken at speed, where the
-    // marker can leave the viewport between two fixes.
-    const p    = map.latLngToContainerPoint([loc.lat, loc.lng])
-    const size = map.getSize()
-    const offScreen = p.x < 0 || p.y < 0 || p.x > size.x || p.y > size.y
-    if (offScreen) {
-      map.setView([loc.lat, loc.lng], map.getZoom(), { animate: false })
-      return
-    }
-
-    // Matched to the marker's own glide so the two move as one. Any shorter and
-    // the map arrives first, leaving the marker trailing the centre by the
-    // difference — which at speed is tens of metres, and off screen when
-    // zoomed in.
-    map.panTo([loc.lat, loc.lng], { animate: true, duration: GLIDE_MS / 1000 })
-  }, [loc?.lat, loc?.lng, following, map])
-
-  return null
-}
-
-function FitAll({ locations }) {
-  const map = useMap()
-  const hasFit = useRef(false)
-
-  useEffect(() => {
-    // Only auto-fit on the very first load so the map doesn't jump around
-    // while members are moving in real-time.
-    if (hasFit.current) return
-    const coords = Object.values(locations).map(l => [l.lat, l.lng])
-    if (coords.length === 0) return
-    hasFit.current = true
-    if (coords.length === 1) map.setView(coords[0], 15)
-    else map.fitBounds(coords, { padding: [60, 60] })
-  }, [locations])
-
-  return null
 }
 
 // Below this, a reading is GPS noise rather than movement — a phone sitting on
@@ -326,6 +202,10 @@ export default function MapAllPage() {
   // should not silently undo the thing you asked for, and the chip over the map
   // offers it straight back.
   const [followPaused, setFollowPaused] = useState(false)
+  // Map mode — default / satellite / traffic. Always opens on Default (by
+  // request); the choice is not remembered between visits.
+  const [mapMode, setMapMode] = useState('default')
+  const [modeMenuOpen, setModeMenuOpen] = useState(false)
   const pauseFollowing = useCallback(() => setFollowPaused(true), [])
   const stopFollowing  = useCallback(() => { setFollowUid(null); setFollowPaused(false) }, [])
   const startFollowing = useCallback(uid => { setFollowUid(uid); setFollowPaused(false) }, [])
@@ -399,7 +279,16 @@ export default function MapAllPage() {
         return
       }
 
+      // On Android the foreground service is the position writer, behind its
+      // accuracy and jump filters, and useLocationBroadcast copies its filtered
+      // fix to the other families. This page used to write a fix of its own on
+      // every open and Refresh — unfiltered, and via a low-accuracy fallback —
+      // which dropped a Wi-Fi guess ~100m off over the service's GPS position.
+      if (Capacitor.isNativePlatform()) return
+
       const pos = await getPositionRobust()
+      // Web: the same ceiling the other writers use; a worse fix is noise.
+      if (pos.coords.accuracy != null && pos.coords.accuracy > 100) return
       // Got a fix — clear any previous error and write once.
       // NOTE: continuous location writing is handled globally by
       // useLocationBroadcast (in App.jsx), which runs whenever the app is
@@ -430,6 +319,74 @@ export default function MapAllPage() {
     // No watch cleanup needed here anymore — continuous tracking lives in
     // the global useLocationBroadcast hook.
   }, [user, familyId])
+
+  // Pins with members at the same spot fanned out so each can be tapped.
+  const pins = useMemo(() => offsetOverlapping(locations), [locations])
+
+  // What tapping a pin shows: a Leaflet popup on the web, a card on the phone.
+  // Compact on purpose: who this is, and a way to get to them. The
+  // last-location time and speed live in the Find Fam list — repeated here it
+  // doubled the popup's height and covered the map.
+  //
+  // The button asks Google Maps for DIRECTIONS rather than just showing the
+  // spot: the map is already a Google map, so "open in Google Maps" added
+  // nothing, and what someone tapping a family member usually wants is to get
+  // to them. It is a plain link (the Maps app picks it up), so it costs nothing.
+  // The destination is the member's REAL position — pins of members standing
+  // together are fanned out on screen, and directions must not route to the
+  // fanned-out spot. No button on your own pin: directions to yourself are noise.
+  const renderMemberPopup = (uid, loc) => {
+    const real = locations[uid] || loc
+    const isMe = uid === user?.id
+    return (
+    <div style={{ fontFamily: 'Inter, sans-serif' }}>
+      {/* Avatar + name row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: isMe ? 0 : 8 }}>
+        <div style={{ flexShrink: 0 }}>
+          {loc.avatarUrl ? (
+            <img src={loc.avatarUrl} alt={loc.displayName} style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid var(--maroon)' }} />
+          ) : (
+            <div style={{
+              width: 30, height: 30, borderRadius: '50%',
+              background: loc.avatarColor || 'var(--maroon)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', fontWeight: 800, fontSize: 13,
+              border: '2px solid var(--maroon)', boxSizing: 'border-box',
+            }}>
+              {loc.displayName?.[0]?.toUpperCase()}
+            </div>
+          )}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--text)', whiteSpace: 'nowrap' }}>{loc.displayName}</div>
+          {/* How far they are from you — the same figure Find Fam shows,
+              measured to their REAL position, not the fanned-out pin. */}
+          {!isMe && myLoc && (() => {
+            const dist = formatDistance(myLoc.lat, myLoc.lng, real.lat, real.lng)
+            return dist ? (
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--maroon)', whiteSpace: 'nowrap' }}>{dist}</div>
+            ) : null
+          })()}
+        </div>
+      </div>
+      {/* Directions — sized to its label, not stretched across the card */}
+      {!isMe && (
+        <a
+          href={`https://www.google.com/maps/dir/?api=1&destination=${real.lat},${real.lng}`}
+          target="_blank" rel="noopener noreferrer"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
+            color: '#fff', padding: '7px 14px', borderRadius: 999,
+            fontWeight: 700, fontSize: 12.5, textDecoration: 'none', whiteSpace: 'nowrap',
+          }}
+        >
+          <Icon name="navigate" /> {t('map.directionsTo', { name: loc.displayName })}
+        </a>
+      )}
+    </div>
+    )
+  }
 
   const memberCount = Object.keys(locations).length
   // Current user's own location — used to calculate distance to other members
@@ -526,76 +483,94 @@ export default function MapAllPage() {
 
       {/* Map */}
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-        <MapContainer
-          center={[11.0168, 76.9558]}
-          zoom={13}
-          style={{ height: '100%', width: '100%' }}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+        <FamilyMap
+          pins={pins}
+          locations={locations}
+          flyTarget={flyTarget}
+          followLoc={followUid ? locations[followUid] : null}
+          following={!!followUid && !followPaused}
+          onUserPanned={pauseFollowing}
+          renderPopup={renderMemberPopup}
+          mapMode={mapMode}
+        />
 
-          <FitAll locations={locations} />
-          <FlyToMember target={flyTarget} />
-          <FollowMember
-            loc={followUid ? locations[followUid] : null}
-            following={!!followUid && !followPaused}
-            onUserPanned={pauseFollowing}
-          />
-
-          {Object.entries(offsetOverlapping(locations)).map(([uid, loc]) => (
-            <SmoothMarker
-              key={uid}
-              position={[loc.lat, loc.lng]}
-              icon={createIcon(
-                loc.avatarColor || 'var(--maroon)',
-                loc.displayName?.[0]?.toUpperCase() || '?',
-                loc.avatarUrl || null
+        {/* Map mode dropdown, top-right of the map (it sat top-left under the
+            title for a while, where it got in the way).
+            Phone only: satellite imagery and the traffic layer are Google's,
+            which the browser's OpenStreetMap map does not have. The button
+            shows the mode in use; open, the list offers only the two OTHER
+            modes, always in the fixed order Default, Traffic, Satellite so
+            nothing jumps around between visits. Cream with maroon text
+            throughout. Satellite is Google's "hybrid": imagery with street
+            names on top. */}
+        {Capacitor.isNativePlatform() && (() => {
+          const MODES = [
+            { mode: 'default',   label: t('map.defaultView') },
+            { mode: 'traffic',   label: t('map.trafficView') },
+            { mode: 'satellite', label: t('map.satelliteView') },
+          ]
+          const current = MODES.find(o => o.mode === mapMode) || MODES[0]
+          const scheme = { bg: '#FFF8F0', fg: 'var(--maroon)' }
+          const pill = (o, extra) => ({
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            background: o.bg, color: o.fg,
+            border: '1.5px solid var(--maroon)', borderRadius: 999,
+            padding: '7px 13px', minWidth: 104,
+            boxShadow: '0 2px 10px rgba(74,8,32,0.18)',
+            fontSize: 12, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            ...extra,
+          })
+          return (
+            <>
+              {/* Tap anywhere else to close. Transparent, and only there while
+                  open, so the map pans normally the rest of the time. */}
+              {modeMenuOpen && (
+                <div onClick={() => setModeMenuOpen(false)}
+                  style={{ position: 'absolute', inset: 0, zIndex: 399 }} />
               )}
-            >
-              {/* Compact on purpose: who this is, and the way out to Google Maps.
-                  The last-location time and speed live in the Find Fam list — repeated
-                  here it doubled the popup's height and covered the map. */}
-              <div style={{ fontFamily: 'Inter, sans-serif' }}>
-                  {/* Avatar + name row */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <div style={{ flexShrink: 0 }}>
-                      {loc.avatarUrl ? (
-                        <img src={loc.avatarUrl} alt={loc.displayName} style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid var(--maroon)' }} />
-                      ) : (
-                        <div style={{
-                          width: 30, height: 30, borderRadius: '50%',
-                          background: loc.avatarColor || 'var(--maroon)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: '#fff', fontWeight: 800, fontSize: 13,
-                          border: '2px solid var(--maroon)', boxSizing: 'border-box',
-                        }}>
-                          {loc.displayName?.[0]?.toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--text)', whiteSpace: 'nowrap' }}>{loc.displayName}</div>
+              <div style={{
+                position: 'absolute', top: 12, right: 12, zIndex: 400,
+                display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 8,
+              }}>
+                <button
+                  onClick={() => setModeMenuOpen(o => !o)}
+                  aria-haspopup="listbox"
+                  aria-expanded={modeMenuOpen}
+                  style={pill(scheme)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                    <polyline points="2 17 12 22 22 17" />
+                    <polyline points="2 12 12 17 22 12" />
+                  </svg>
+                  {current.label}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+                    style={{ transform: modeMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                {modeMenuOpen && (
+                  <div role="listbox" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {MODES.filter(o => o.mode !== mapMode).map(o => (
+                      <button
+                        key={o.mode}
+                        role="option"
+                        aria-selected={false}
+                        onClick={() => { setMapMode(o.mode); setModeMenuOpen(false) }}
+                        style={pill(scheme)}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
                   </div>
-                  {/* Google Maps button */}
-                  <a
-                    href={`https://www.google.com/maps?q=${loc.lat},${loc.lng}`}
-                    target="_blank" rel="noopener noreferrer"
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                      background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
-                      color: '#fff', padding: '6px 12px', borderRadius: 8,
-                      fontWeight: 700, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Icon name="map" /> {t('map.openInGoogleMaps')}
-                  </a>
-                </div>
-            </SmoothMarker>
-          ))}
-        </MapContainer>
-
-        <MapCompass />
+                )}
+              </div>
+            </>
+          )
+        })()}
 
         {/* Following chip.
             The first version tracked silently, so there was no way to tell

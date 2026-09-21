@@ -41,6 +41,31 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     public  static final String SOS_CHANNEL_ID   = "sos_alerts_v4";
     public  static final int    SOS_NOTIFICATION_ID = 911;
 
+    /**
+     * The SOS channel actually in use, which depends on whether Famora held Do
+     * Not Disturb access when the channel was created.
+     *
+     * setBypassDnd(true) below is not a request the system merely honours or
+     * ignores at post time — NotificationManagerService overwrites the field
+     * with false at CREATION when the app lacks notification policy access, and
+     * a channel's settings are immutable afterwards (calling
+     * createNotificationChannel again on the same id updates only the name and
+     * description). So the bypass has been stored as false on every install:
+     * the permission was never even declared until now, and declaring it is not
+     * enough either, because the channel is created on first run and the user
+     * grants the access later.
+     *
+     * A new id is the only way to re-create a channel with different settings,
+     * so the id carries the state it was created under. The moment access is
+     * granted the app starts posting to "..._dnd", which is created right then,
+     * with access held, and therefore really does bypass Do Not Disturb. This
+     * is the same shape as family_messages_v4_<hash> keying its id to its
+     * sound, and for the same underlying reason. See SosDnd.
+     */
+    public static String sosChannelId(Context ctx) {
+        return SosDnd.hasAccess(ctx) ? SOS_CHANNEL_ID + "_dnd" : SOS_CHANNEL_ID;
+    }
+
     // Audible channel for the FCM `notification` block on an incoming call.
     // When the app is CLOSED, Android displays that block itself and rings
     // using THIS channel's sound — our CallRingingService (which owns the
@@ -183,6 +208,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String message = data.containsKey("message") ? data.get("message") : getString(R.string.sos_alert);
             String lat     = data.containsKey("lat") ? data.get("lat") : "";
             String lng     = data.containsKey("lng") ? data.get("lng") : "";
+            String phone   = data.containsKey("phone") ? data.get("phone") : "";
 
             ensureSosChannelStatic(appCtx);
 
@@ -192,6 +218,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             sirenIntent.putExtra("message", message);
             sirenIntent.putExtra("lat",     lat);
             sirenIntent.putExtra("lng",     lng);
+            sirenIntent.putExtra("phone",   phone);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 appCtx.startForegroundService(sirenIntent);
             } else {
@@ -211,6 +238,22 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             // showSosNotification() itself is left in place; the shade entry
             // from SOSSirenService's own notification remains, so a user who
             // misses the Activity still has something to tap.
+
+        } else if ("sos_resolved".equals(type)) {
+            // The sender tapped "I am safe now". Silence this phone: the siren,
+            // the full-screen alert and the shade entry all belong to an
+            // emergency that is over, and leaving them for each person to
+            // dismiss by hand is what made a resolved SOS keep screaming.
+            Log.i("FamoraCall", "SOS resolved — stopping siren and clearing the alert");
+            SOSSirenService.stopService(appCtx);
+            SOSAlertActivity.finishIfShowing();
+            try {
+                NotificationManager nm =
+                    (NotificationManager) appCtx.getSystemService(Context.NOTIFICATION_SERVICE);
+                if (nm != null) nm.cancel(SOS_NOTIFICATION_ID);
+            } catch (Exception e) {
+                Log.w("FamoraCall", "could not clear the SOS notification: " + e.getMessage());
+            }
 
         } else if ("call".equals(type)) {
             String callId     = data.containsKey("call_id")     ? data.get("call_id")     : "";
@@ -290,7 +333,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     // Uses the sos_alerts_v3 channel (alarm sound + bypass DND + max priority)
     // so MIUI shows it on the lock screen. Tapping opens MainActivity → /sos.
     public static void showSosNotification(Context ctx, String sender, String message,
-                                            String lat, String lng) {
+                                            String lat, String lng, String phone) {
         try {
             NotificationManager nm =
                 (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -306,11 +349,48 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
 
+            // Full-screen intent — the SECOND chance at the full-screen alert,
+            // and the only one that can actually fire.
+            //
+            // SOSSirenService's own ongoing notification also carries one, but
+            // its channel is IMPORTANCE_LOW and SystemUI discards a full-screen
+            // intent below IMPORTANCE_HIGH before it checks anything else. This
+            // notification is on SOS_CHANNEL_ID, which is IMPORTANCE_HIGH, so
+            // here it is honoured. That matters because the direct
+            // startActivity() in SOSSirenService.launchAlertActivity() is
+            // refused outright on MIUI unless "Display pop-up windows while
+            // running in background" is on — and this method is only called
+            // when the alert was seen NOT to appear, which is exactly that
+            // case. Where the direct launch worked, nothing here is posted, so
+            // there is still only ever one announcement per emergency.
+            //
+            // Demotion to a heads-up banner is the intended floor, not a
+            // failure: a banner naming who needs help beats a siren over a
+            // blank screen.
+            Intent fsIntent = new Intent(ctx, SOSAlertActivity.class);
+            fsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            fsIntent.putExtra(SOSAlertActivity.EXTRA_SENDER,  sender);
+            fsIntent.putExtra(SOSAlertActivity.EXTRA_MESSAGE, message);
+            fsIntent.putExtra(SOSAlertActivity.EXTRA_LAT,     lat  == null ? "" : lat);
+            fsIntent.putExtra(SOSAlertActivity.EXTRA_LNG,     lng  == null ? "" : lng);
+            fsIntent.putExtra(SOSAlertActivity.EXTRA_PHONE,   phone == null ? "" : phone);
+            PendingIntent fsPi = PendingIntent.getActivity(
+                ctx, 912, fsIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
             // SOS crimson (#C8102E) — the same --sos the web app uses: maroon family,
             // but brighter than the brand maroon so an SOS never looks routine
             int sosRed = android.graphics.Color.parseColor("#C8102E");
 
-            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, SOS_CHANNEL_ID)
+            // Make sure the channel matching the CURRENT access state exists
+            // before posting to it — access can be granted between app start
+            // and an alert, and posting to an id with no channel is dropped.
+            ensureSosChannelStatic(ctx);
+
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, sosChannelId(ctx))
                 .setSmallIcon(R.drawable.ic_stat_notify)
                 .setContentTitle(ctx.getString(R.string.notif_sos_title, sender))
                 .setContentText(message)
@@ -323,27 +403,38 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 // Blinking LED — red, 300ms on / 300ms off
                 .setLights(sosRed, 300, 300)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                // CATEGORY_CALL, not CATEGORY_ALARM. This is the notification
+                // that has to take over the screen when the direct activity
+                // start was refused, and on MIUI a call-category entry is the
+                // one the ROM insists must float. Same reasoning as
+                // CallRingingService's loud fallback, which this mirrors.
+                .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setAutoCancel(true)
                 .setOngoing(false)
-                // Silent ONLY because SOSSirenService.startSiren() is enabled and
-                // provides the audio. This channel's sound is the device default
-                // alarm ringtone — a melody on MIUI, which doesn't convey an
-                // emergency — so the synthesized wailing siren is used instead.
+                // setSilent(true) was here and it was killing the full-screen
+                // alert. NotificationCompat implements it by ALSO calling
+                // setGroup(GROUP_KEY_SILENT) + setGroupAlertBehavior(
+                // GROUP_ALERT_SUMMARY) on O+. With no summary notification ever
+                // posted, that marks this entry non-alerting, and SystemUI will
+                // not launch the full-screen intent of a notification that does
+                // not alert — so the one mechanism left for taking over the
+                // screen was disabled by the call meant only to stop a sound.
                 //
-                // Verified on-device: Android does NOT auto-display the payload's
-                // `notification` block separately, so this notification is the only
-                // channel-sound source. That means silencing it while the siren is
-                // ALSO disabled produces total silence — the two must always be
-                // changed together. If you ever re-disable startSiren(), remove this
-                // setSilent in the same edit.
-                .setSilent(true)
+                // Dropping it costs nothing audible: the channel itself is
+                // created with setSound(null, null), so there is no channel
+                // sound to suppress, and from O onwards the channel — not the
+                // builder — owns vibration, so the pattern is unchanged either
+                // way. The siren remains the only audio source.
+                //
+                // If startSiren() is ever disabled again, give the CHANNEL a
+                // sound rather than restoring setSilent here.
                 // Guards against the alarm repeating: this is posted more than once
                 // per SOS on the same SOS_NOTIFICATION_ID, and each notify() on an
                 // existing id re-alerts.
                 .setOnlyAlertOnce(true)
-                .setContentIntent(tapPi);
+                .setContentIntent(tapPi)
+                .setFullScreenIntent(fsPi, true);
 
             nm.notify(SOS_NOTIFICATION_ID, b.build());
         } catch (Exception e) {
@@ -358,14 +449,19 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         NotificationManager nm =
             (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
-        if (nm.getNotificationChannel(SOS_CHANNEL_ID) != null) {
-            NotificationChannels.refreshText(ctx, nm, SOS_CHANNEL_ID,
+
+        // Which of the two ids this install should be on right now — see
+        // sosChannelId(). Granting DND access moves it to the "_dnd" one.
+        final String id = sosChannelId(ctx);
+
+        if (nm.getNotificationChannel(id) != null) {
+            NotificationChannels.refreshText(ctx, nm, id,
                 R.string.ch_sos_name, R.string.ch_sos_desc);
             return;
         }
 
         NotificationChannel channel = new NotificationChannel(
-            SOS_CHANNEL_ID, ctx.getString(R.string.ch_sos_name), NotificationManager.IMPORTANCE_HIGH
+            id, ctx.getString(R.string.ch_sos_name), NotificationManager.IMPORTANCE_HIGH
         );
         channel.setDescription(ctx.getString(R.string.ch_sos_desc));
 
@@ -383,6 +479,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         try { nm.deleteNotificationChannel("sos_alerts");    } catch (Exception ignored) {}
         try { nm.deleteNotificationChannel("sos_alerts_v2"); } catch (Exception ignored) {}
+
+        // Retire whichever of the pair is no longer in use, so notification
+        // settings does not list two identical "SOS alerts" entries and leave
+        // the person toggling the one the app stopped posting to.
+        try {
+            nm.deleteNotificationChannel(
+                id.equals(SOS_CHANNEL_ID) ? SOS_CHANNEL_ID + "_dnd" : SOS_CHANNEL_ID);
+        } catch (Exception ignored) {}
     }
 
     /**

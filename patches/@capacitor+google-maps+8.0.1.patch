@@ -1,0 +1,420 @@
+diff --git a/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMap.kt b/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMap.kt
+index c0bc416..709a076 100644
+--- a/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMap.kt
++++ b/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMap.kt
+@@ -47,8 +47,59 @@ class CapacitorGoogleMap(
+     private val circles = HashMap<String, CapacitorGoogleMapsCircle>()
+     private val polylines = HashMap<String, CapacitorGoogleMapPolyline>()        
+     private val markerIcons = HashMap<String, Bitmap>()
++    // Famora patch: one running glide per marker, so a new position cancels the
++    // old glide instead of two animators fighting over the same marker.
++    private val markerAnimators = HashMap<String, android.animation.ValueAnimator>()
+     private var clusterManager: ClusterManager<CapacitorGoogleMapMarker>? = null
+ 
++    // Famora patch: report ONE marker's on-screen position (CSS px, relative to
++    // the map view) every frame it changes, so the app can hold an HTML card
++    // over it. Per frame rather than on camera events because a pin moves for
++    // three reasons — finger drags, animated camera pans, and its own glide
++    // (animateMarker) — and only a frame callback sees all three the same way.
++    // Emits only when the point actually moved, so an idle map sends nothing.
++    private var trackedMarkerId: String? = null
++    private var hasTrackPoint = false
++    private var lastTrackX = 0f
++    private var lastTrackY = 0f
++    private val trackFrame = object : android.view.Choreographer.FrameCallback {
++        override fun doFrame(frameTimeNanos: Long) {
++            val mid = trackedMarkerId ?: return
++            try {
++                val gm = markers[mid]?.googleMapMarker
++                val map = googleMap
++                if (gm != null && map != null) {
++                    val p = map.projection.toScreenLocation(gm.position)
++                    val density = delegate.bridge.activity.resources.displayMetrics.density
++                    val x = p.x / density
++                    val y = p.y / density
++                    if (!hasTrackPoint || Math.abs(x - lastTrackX) >= 0.5f || Math.abs(y - lastTrackY) >= 0.5f) {
++                        hasTrackPoint = true
++                        lastTrackX = x
++                        lastTrackY = y
++                        val data = JSObject()
++                        data.put("mapId", this@CapacitorGoogleMap.id)
++                        data.put("markerId", mid)
++                        data.put("x", x.toDouble())
++                        data.put("y", y.toDouble())
++                        delegate.notify("onTrackedMarkerMove", data)
++                    }
++                }
++            } catch (_: Exception) {}
++            android.view.Choreographer.getInstance().postFrameCallback(this)
++        }
++    }
++
++    /** Famora patch: start tracking markerId's screen position, or stop with null. */
++    fun trackMarker(markerId: String?) {
++        CoroutineScope(Dispatchers.Main).launch {
++            android.view.Choreographer.getInstance().removeFrameCallback(trackFrame)
++            trackedMarkerId = markerId
++            hasTrackPoint = false
++            if (markerId != null) android.view.Choreographer.getInstance().postFrameCallback(trackFrame)
++        }
++    }
++
+     private val isReadyChannel = Channel<Boolean>()
+     private var debounceJob: Job? = null
+ 
+@@ -187,6 +238,7 @@ class CapacitorGoogleMap(
+     }
+ 
+     fun destroy() {
++        trackedMarkerId = null  // Famora patch: the frame callback stops itself
+         runBlocking {
+             val job =
+                     CoroutineScope(Dispatchers.Main).launch {
+@@ -335,6 +387,121 @@ class CapacitorGoogleMap(
+         }
+     }
+ 
++    // ── Famora patch (patches/@capacitor+google-maps+8.0.1.patch) ─────────────
++    //
++    // The stock plugin can only add or remove a marker, so a pin could only
++    // teleport. Family members' pins glide between location fixes, and doing
++    // that from JS would mean removing and re-adding every marker ~30 times a
++    // second across the bridge. The glide runs here instead, on the UI thread,
++    // as one ValueAnimator per marker.
++    fun animateMarker(
++            id: String,
++            lat: Double,
++            lng: Double,
++            durationMs: Long,
++            callback: (error: GoogleMapsError?) -> Unit
++    ) {
++        try {
++            googleMap ?: throw GoogleMapNotAvailable()
++            val marker = markers[id]
++            marker ?: throw MarkerNotFoundError()
++
++            CoroutineScope(Dispatchers.Main).launch {
++                val gm = marker.googleMapMarker
++                if (gm == null) {
++                    callback(null)
++                    return@launch
++                }
++                markerAnimators.remove(id)?.cancel()
++
++                val to = LatLng(lat, lng)
++                if (durationMs <= 0) {
++                    gm.position = to
++                    callback(null)
++                    return@launch
++                }
++                // Start from wherever the pin is drawn right now — mid-glide if
++                // a previous fix is still animating — so it never jumps back.
++                val from = gm.position
++                val anim = android.animation.ValueAnimator.ofFloat(0f, 1f)
++                anim.duration = durationMs
++                // Same shape as the Leaflet version's easeInOutQuad.
++                anim.interpolator = android.view.animation.AccelerateDecelerateInterpolator()
++                anim.addUpdateListener { a ->
++                    val t = a.animatedFraction.toDouble()
++                    gm.position = LatLng(
++                            from.latitude + (to.latitude - from.latitude) * t,
++                            from.longitude + (to.longitude - from.longitude) * t
++                    )
++                }
++                markerAnimators[id] = anim
++                anim.start()
++                callback(null)
++            }
++        } catch (e: GoogleMapsError) {
++            callback(e)
++        }
++    }
++
++    // Swaps a marker's picture in place: an avatar photo that finishes loading
++    // after the pin is placed replaces its initial letter without the marker
++    // being removed and re-added (which would change its id and restart it).
++    fun setMarkerIcon(
++            id: String,
++            iconUrl: String,
++            callback: (error: GoogleMapsError?) -> Unit
++    ) {
++        try {
++            googleMap ?: throw GoogleMapNotAvailable()
++            val marker = markers[id]
++            marker ?: throw MarkerNotFoundError()
++
++            CoroutineScope(Dispatchers.Main).launch {
++                val bitmap = CoroutineScope(Dispatchers.IO).async { loadIconBitmap(iconUrl) }.await()
++                if (bitmap != null) {
++                    marker.iconUrl = iconUrl
++                    marker.googleMapMarker?.setIcon(getResizedIcon(bitmap, marker))
++                }
++                callback(null)
++            }
++        } catch (e: GoogleMapsError) {
++            callback(e)
++        }
++    }
++
++    // Loads (and caches) a marker picture. Adds data: URLs to the stock https:
++    // and bundled-asset sources, because Famora draws each avatar pin — photo or
++    // initial, white ring, shadow — on a canvas in the app and hands it over as
++    // a PNG data URL; there is no file or web address for it to point at.
++    private fun loadIconBitmap(iconUrl: String): Bitmap? {
++        markerIcons[iconUrl]?.let { return it }
++        return try {
++            val bitmap: Bitmap? = if (iconUrl.startsWith("data:")) {
++                val comma = iconUrl.indexOf(',')
++                val bytes = android.util.Base64.decode(iconUrl.substring(comma + 1), android.util.Base64.DEFAULT)
++                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
++            } else {
++                val stream: InputStream = if (iconUrl.startsWith("https:")) {
++                    URL(iconUrl).openConnection().getInputStream()
++                } else {
++                    this.delegate.context.assets.open("public/$iconUrl")
++                }
++                stream.use { BitmapFactory.decodeStream(it) }
++            }
++            if (bitmap != null) markerIcons[iconUrl] = bitmap
++            bitmap
++        } catch (e: Exception) {
++            var detailedMessage = "${e.javaClass} - ${e.localizedMessage}"
++            if (iconUrl.endsWith(".svg")) detailedMessage = "SVG not supported"
++            Log.w(
++                    "CapacitorGoogleMaps",
++                    "Could not load image '${iconUrl.take(64)}': ${detailedMessage}. Using default marker icon."
++            )
++            null
++        }
++    }
++    // ── end Famora patch ─────────────────────────────────────────────────────
++
+     fun addPolygons(newPolygons: List<CapacitorGoogleMapsPolygon>, callback: (ids: Result<List<String>>) -> Unit) {
+         try {
+             googleMap ?: throw GoogleMapNotAvailable()
+@@ -523,6 +690,7 @@ class CapacitorGoogleMap(
+                     clusterManager?.cluster()
+                 }
+ 
++                markerAnimators.remove(id)?.cancel()  // Famora patch
+                 marker.googleMapMarker?.remove()
+                 markers.remove(id)
+ 
+@@ -642,7 +810,18 @@ class CapacitorGoogleMap(
+                                 .build()
+ 
+                 if (animate) {
+-                    googleMap?.animateCamera(CameraUpdateFactory.newCameraPosition(updatedPosition))
++                    // Famora patch: honour animationDuration. Stock Android parses
++                    // it and then ignores it, so every pan ran at Google's default
++                    // speed — and a map following a member must pan over exactly
++                    // the marker's glide time, or it arrives first and the pin
++                    // trails behind (off screen at high zoom).
++                    val durationMs = config.animationDuration?.toInt() ?: 0
++                    if (durationMs > 0) {
++                        googleMap?.animateCamera(
++                                CameraUpdateFactory.newCameraPosition(updatedPosition), durationMs, null)
++                    } else {
++                        googleMap?.animateCamera(CameraUpdateFactory.newCameraPosition(updatedPosition))
++                    }
+                 } else {
+                     googleMap?.moveCamera(CameraUpdateFactory.newCameraPosition(updatedPosition))
+                 }
+@@ -869,32 +1048,9 @@ class CapacitorGoogleMap(
+ 
+ 
+         if (!marker.iconUrl.isNullOrEmpty()) {
+-            if (this.markerIcons.contains(marker.iconUrl)) {
+-                val cachedBitmap = this.markerIcons[marker.iconUrl]
+-                markerOptions.icon(getResizedIcon(cachedBitmap!!, marker))
+-            } else {
+-                try {
+-                    var stream: InputStream? = null
+-                    if (marker.iconUrl!!.startsWith("https:")) {
+-                        stream = URL(marker.iconUrl).openConnection().getInputStream()
+-                    } else {
+-                        stream = this.delegate.context.assets.open("public/${marker.iconUrl}")
+-                    }
+-                    var bitmap = BitmapFactory.decodeStream(stream)
+-                    this.markerIcons[marker.iconUrl!!] = bitmap
+-                    markerOptions.icon(getResizedIcon(bitmap, marker))
+-                } catch (e: Exception) {
+-                    var detailedMessage = "${e.javaClass} - ${e.localizedMessage}"
+-                    if (marker.iconUrl!!.endsWith(".svg")) {
+-                        detailedMessage = "SVG not supported"
+-                    }
+-
+-                    Log.w(
+-                            "CapacitorGoogleMaps",
+-                            "Could not load image '${marker.iconUrl}': ${detailedMessage}. Using default marker icon."
+-                    )
+-                }
+-            }
++            // Famora patch: one loader for https:, bundled assets and data: URLs.
++            val bitmap = loadIconBitmap(marker.iconUrl!!)
++            if (bitmap != null) markerOptions.icon(getResizedIcon(bitmap, marker))
+         } else {
+             if (marker.colorHue != null) {
+                 markerOptions.icon(BitmapDescriptorFactory.defaultMarker(marker.colorHue!!))
+@@ -947,6 +1103,20 @@ class CapacitorGoogleMap(
+         runBlocking {
+             googleMap = map
+ 
++            // Famora patch:
++            //  - Rotation ON (2026-09-21, on request), tilt OFF. The app's own
++            //    compass overlay follows the bearing via onBearingChange below
++            //    and taps back to north, so it never claims "north is up" while
++            //    the map is turned. Google's compass stays off: it would sit
++            //    under the app's header and duplicate the overlay.
++            //  - No Google map toolbar: it pops up on every marker tap exactly
++            //    where the "Following …" chip sits, and the member card already
++            //    has its own "Open in Google Maps".
++            map.uiSettings.isRotateGesturesEnabled = true
++            map.uiSettings.isTiltGesturesEnabled = false
++            map.uiSettings.isMapToolbarEnabled = false
++            map.uiSettings.isCompassEnabled = false
++
+             val data = JSObject()
+             data.put("mapId", this@CapacitorGoogleMap.id)
+             delegate.notify("onMapReady", data)
+@@ -1049,7 +1219,10 @@ class CapacitorGoogleMap(
+         data.put("title", marker.title)
+         data.put("snippet", marker.snippet)
+         delegate.notify("onMarkerClick", data)
+-        return false
++        // Famora patch: true = "handled". False let Google also recentre the
++        // camera on the pin, which yanked the map out from under a follow and
++        // fought the app's own member card.
++        return true
+     }
+ 
+     override fun onPolylineClick(polyline: Polyline) {
+@@ -1119,6 +1292,14 @@ class CapacitorGoogleMap(
+         data.put("zoom", this@CapacitorGoogleMap.googleMap?.cameraPosition?.zoom)
+         delegate.notify("onCameraIdle", data)
+         delegate.notify("onBoundsChanged", data)
++        // Famora patch: settle the compass on the exact final bearing.
++        googleMap?.cameraPosition?.bearing?.let { b ->
++            lastSentBearing = b
++            val bd = JSObject()
++            bd.put("mapId", this@CapacitorGoogleMap.id)
++            bd.put("bearing", b.toDouble())
++            delegate.notify("onBearingChange", bd)
++        }
+     }
+ 
+     override fun onCameraMoveStarted(reason: Int) {
+@@ -1139,7 +1320,24 @@ class CapacitorGoogleMap(
+         delegate.notify("onInfoWindowClick", data)
+     }
+ 
++    // Famora patch: last bearing sent, so a camera move that does not rotate
++    // (every pan and zoom) sends nothing.
++    private var lastSentBearing = 0f
++
+     override fun onCameraMove() {
++        // Famora patch: stream the map's rotation while it changes, so the
++        // app's compass turns with a two-finger twist rather than only after.
++        googleMap?.cameraPosition?.bearing?.let { b ->
++            var d = Math.abs(b - lastSentBearing)
++            if (d > 180f) d = 360f - d
++            if (d >= 0.5f) {
++                lastSentBearing = b
++                val data = JSObject()
++                data.put("mapId", this@CapacitorGoogleMap.id)
++                data.put("bearing", b.toDouble())
++                delegate.notify("onBearingChange", data)
++            }
++        }
+         debounceJob?.cancel()
+         debounceJob = CoroutineScope(Dispatchers.Main).launch {
+             delay(100)
+diff --git a/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMapsPlugin.kt b/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMapsPlugin.kt
+index 06ecab2..0762241 100644
+--- a/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMapsPlugin.kt
++++ b/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMapsPlugin.kt
+@@ -609,6 +609,84 @@ class CapacitorGoogleMapsPlugin : Plugin(), OnMapsSdkInitializedCallback {
+         }
+     }
+ 
++    // ── Famora patch: see CapacitorGoogleMap.animateMarker / setMarkerIcon ──
++    // Called from the app as Capacitor.Plugins.CapacitorGoogleMaps.animateMarker(
++    // { id, markerId, lat, lng, duration }) — there is no JS wrapper for these.
++    @PluginMethod
++    fun animateMarker(call: PluginCall) {
++        try {
++            val id = call.getString("id")
++            id ?: throw InvalidMapIdError()
++            val markerId = call.getString("markerId")
++            markerId ?: throw InvalidArgumentsError("markerId is invalid or missing")
++            val lat = call.getDouble("lat")
++            val lng = call.getDouble("lng")
++            if (lat == null || lng == null) throw InvalidArgumentsError("lat and lng are required")
++            val duration = (call.getDouble("duration") ?: 0.0).toLong()
++
++            val map = maps[id]
++            map ?: throw MapNotFoundError()
++
++            map.animateMarker(markerId, lat, lng, duration) { err ->
++                if (err != null) {
++                    handleError(call, err)
++                } else {
++                    call.resolve()
++                }
++            }
++        } catch (e: GoogleMapsError) {
++            handleError(call, e)
++        } catch (e: Exception) {
++            handleError(call, e)
++        }
++    }
++
++    // Famora patch: Capacitor.Plugins.CapacitorGoogleMaps.trackMarker({ id, markerId })
++    // streams "onTrackedMarkerMove" { x, y } in CSS px; markerId null stops it.
++    @PluginMethod
++    fun trackMarker(call: PluginCall) {
++        try {
++            val id = call.getString("id")
++            id ?: throw InvalidMapIdError()
++            val map = maps[id]
++            map ?: throw MapNotFoundError()
++            map.trackMarker(call.getString("markerId"))
++            call.resolve()
++        } catch (e: GoogleMapsError) {
++            handleError(call, e)
++        } catch (e: Exception) {
++            handleError(call, e)
++        }
++    }
++
++    @PluginMethod
++    fun setMarkerIcon(call: PluginCall) {
++        try {
++            val id = call.getString("id")
++            id ?: throw InvalidMapIdError()
++            val markerId = call.getString("markerId")
++            markerId ?: throw InvalidArgumentsError("markerId is invalid or missing")
++            val iconUrl = call.getString("iconUrl")
++            iconUrl ?: throw InvalidArgumentsError("iconUrl is required")
++
++            val map = maps[id]
++            map ?: throw MapNotFoundError()
++
++            map.setMarkerIcon(markerId, iconUrl) { err ->
++                if (err != null) {
++                    handleError(call, err)
++                } else {
++                    call.resolve()
++                }
++            }
++        } catch (e: GoogleMapsError) {
++            handleError(call, e)
++        } catch (e: Exception) {
++            handleError(call, e)
++        }
++    }
++    // ── end Famora patch ─────────────────────────────────────────────────────
++
+     @PluginMethod
+     fun removeMarkers(call: PluginCall) {
+         try {

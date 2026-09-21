@@ -9,13 +9,22 @@ import android.util.Log;
 /**
  * BootReceiver
  *
- * Restarts the LocationForegroundService after the device reboots.
- * Without this, the background location service dies on reboot and
- * family members' pins go stale until they manually reopen the app.
+ * Restarts the LocationForegroundService after the two events that otherwise
+ * leave the app silently unprotected:
  *
- * Requires RECEIVE_BOOT_COMPLETED permission (already in manifest).
- * The service will only restart if the user had previously started it
- * (i.e. they were logged in and tracking was active).
+ *   · a device reboot — without this the background service dies and family
+ *     members' pins go stale until someone reopens the app;
+ *   · an app UPDATE. Installing a new version stops the process, and nothing
+ *     started it again: location sharing, shake SOS and the fake-call button
+ *     all stayed off until the person next opened the app, which can be days
+ *     after a Play Store update. It cost several rounds of device testing here
+ *     before it was noticed, and a tester would never notice at all.
+ *
+ * Both broadcasts are on the platform's exemption list, so the foreground
+ * service may be started from them even on Android 12+.
+ *
+ * The service only restarts if the person was signed in and had tracking on:
+ * startService() re-checks the sharing preference and the location permission.
  */
 public class BootReceiver extends BroadcastReceiver {
 
@@ -23,12 +32,14 @@ public class BootReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (!Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction()) &&
-            !"android.intent.action.QUICKBOOT_POWERON".equals(intent.getAction())) {
-            return;
-        }
+        String action = intent != null ? intent.getAction() : null;
+        boolean booted  = Intent.ACTION_BOOT_COMPLETED.equals(action)
+                       || "android.intent.action.QUICKBOOT_POWERON".equals(action);
+        boolean updated = Intent.ACTION_MY_PACKAGE_REPLACED.equals(action);
+        if (!booted && !updated) return;
 
-        Log.i(TAG, "Boot completed — checking if location service should restart");
+        Log.i(TAG, (updated ? "App updated" : "Boot completed")
+                 + " — checking if location service should restart");
 
         // Only restart if we have saved credentials (user was logged in)
         SharedPreferences prefs = context.getSharedPreferences(
@@ -52,7 +63,7 @@ public class BootReceiver extends BroadcastReceiver {
             return;
         }
 
-        Log.i(TAG, "Restarting LocationForegroundService after boot");
+        Log.i(TAG, "Restarting LocationForegroundService after " + (updated ? "update" : "boot"));
         LocationForegroundService.startService(context);
     }
 }

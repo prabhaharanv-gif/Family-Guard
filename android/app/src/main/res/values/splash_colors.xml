@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launch-screen background: the app's cream (the bg variable in
+         global.css), so the system splash, the WebView's first paint
+         (capacitor.config.json android.backgroundColor) and the app's own
+         loading screen are one colour, and launch flows straight into the
+         cream main pages. The system splash shows no icon; see styles-v31.xml. -->
+    <color name="splash_background">#FFF8F0</color>
+</resources>

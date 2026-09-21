@@ -173,11 +173,24 @@ public class CallRingingActivity extends Activity {
         return super.onKeyDown(keyCode, event);
     }
 
+    // Cream screen with the app's --bg / --text / --maroon values. The old
+    // all-maroon screen put a dark-maroon Decline and a white Accept on a
+    // maroon field, and both read as part of the background. On cream, the
+    // two solid buttons are the strongest things on the screen.
+    private static final int CREAM      = Color.parseColor("#FFF8F0");
+    private static final int INK        = Color.parseColor("#2A0A18");
+    private static final int INK_SOFT   = Color.parseColor("#6B4A57");
+    private static final int MAROON     = Color.parseColor("#8B0D3D");
+    private static final int DECLINE_RED = Color.parseColor("#D32F2F");
+    private static final int ACCEPT_GREEN = Color.parseColor("#1E8A4C");
+
     private View buildLayout(final String callId, String callerName, String callType, String avatarUrl) {
+        applyCreamSystemBars();
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER);
-        root.setBackgroundColor(Color.parseColor("#951345"));
+        root.setBackgroundColor(CREAM);
         root.setPadding(dp(32), dp(48), dp(32), dp(48));
 
         // Avatar circle — the caller's profile photo when they have one,
@@ -211,7 +224,7 @@ public class CallRingingActivity extends Activity {
         android.graphics.drawable.GradientDrawable circle =
             new android.graphics.drawable.GradientDrawable();
         circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-        circle.setColor(Color.parseColor("#B01650"));
+        circle.setColor(MAROON);
         initial.setBackground(circle);
         root.addView(initial);
 
@@ -219,7 +232,7 @@ public class CallRingingActivity extends Activity {
 
         TextView title = new TextView(this);
         title.setText(callerName);
-        title.setTextColor(Color.WHITE);
+        title.setTextColor(INK);
         title.setTextSize(26);
         title.setGravity(Gravity.CENTER);
         title.setPadding(0, dp(16), 0, dp(8));
@@ -230,7 +243,7 @@ public class CallRingingActivity extends Activity {
         sub.setText(getString("video".equals(callType)
             ? R.string.call_incoming_video
             : R.string.call_incoming_voice) + "…");
-        sub.setTextColor(Color.parseColor("#FFD9E6"));
+        sub.setTextColor(INK_SOFT);
         sub.setTextSize(16);
         sub.setGravity(Gravity.CENTER);
         sub.setPadding(0, 0, 0, dp(48));
@@ -242,27 +255,17 @@ public class CallRingingActivity extends Activity {
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         buttonRow.setLayoutParams(rowLp);
 
-        Button declineBtn = new Button(this);
-        declineBtn.setText(R.string.call_decline);
-        declineBtn.setTextColor(Color.WHITE);
-        declineBtn.setBackgroundColor(Color.parseColor("#4A0820"));
-        declineBtn.setTextSize(16);
-        declineBtn.setAllCaps(false);
+        Button declineBtn = callButton(R.string.call_decline, DECLINE_RED);
         LinearLayout.LayoutParams declineLp = new LinearLayout.LayoutParams(
-            0, dp(56), 1f);
+            0, dp(60), 1f);
         declineLp.rightMargin = dp(8);
         declineBtn.setLayoutParams(declineLp);
         declineBtn.setOnClickListener(v -> openApp(callId, "decline"));
         buttonRow.addView(declineBtn);
 
-        Button acceptBtn = new Button(this);
-        acceptBtn.setText(R.string.call_accept);
-        acceptBtn.setTextColor(Color.parseColor("#951345"));
-        acceptBtn.setBackgroundColor(Color.WHITE);
-        acceptBtn.setTextSize(16);
-        acceptBtn.setAllCaps(false);
+        Button acceptBtn = callButton(R.string.call_accept, ACCEPT_GREEN);
         LinearLayout.LayoutParams acceptLp = new LinearLayout.LayoutParams(
-            0, dp(56), 1f);
+            0, dp(60), 1f);
         acceptLp.leftMargin = dp(8);
         acceptBtn.setLayoutParams(acceptLp);
         acceptBtn.setOnClickListener(v -> openApp(callId, "accept"));
@@ -270,6 +273,45 @@ public class CallRingingActivity extends Activity {
 
         root.addView(buttonRow);
         return root;
+    }
+
+    /**
+     * Solid pill with white bold text and a ripple for press feedback. The
+     * default Button state-list animator is dropped so there is no raised
+     * shadow — flat fills only.
+     */
+    private Button callButton(int textRes, int fill) {
+        Button b = new Button(this);
+        b.setText(textRes);
+        b.setTextColor(Color.WHITE);
+        b.setTextSize(17);
+        b.setAllCaps(false);
+        b.setTypeface(b.getTypeface(), android.graphics.Typeface.BOLD);
+        b.setStateListAnimator(null);
+
+        android.graphics.drawable.GradientDrawable pill =
+            new android.graphics.drawable.GradientDrawable();
+        pill.setColor(fill);
+        pill.setCornerRadius(dp(30));
+        b.setBackground(new android.graphics.drawable.RippleDrawable(
+            android.content.res.ColorStateList.valueOf(Color.argb(60, 255, 255, 255)),
+            pill, null));
+        return b;
+    }
+
+    /** Cream status and navigation bars with dark icons, so the screen reads as one surface. */
+    private void applyCreamSystemBars() {
+        android.view.Window w = getWindow();
+        w.setStatusBarColor(CREAM);
+        w.setNavigationBarColor(CREAM);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            int flags = w.getDecorView().getSystemUiVisibility()
+                | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            w.getDecorView().setSystemUiVisibility(flags);
+        }
     }
 
     private void openApp(String callId, String action) {

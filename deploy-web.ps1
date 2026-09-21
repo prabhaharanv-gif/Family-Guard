@@ -64,7 +64,11 @@ Write-Host "        $($files.Count) files ready in $out\static"
 if ($NoDeploy) { Write-Host 'Skipped publishing (-NoDeploy).' -ForegroundColor Yellow; exit 0 }
 
 Write-Host '[3/3] Publishing to production...' -ForegroundColor Cyan
-vercel deploy --prebuilt --prod --yes
+# --scope is not optional: famora-family belongs to the Scoop team, while the
+# CLI's default scope is the personal account. Without it the upload fails with
+# a bare "Error: Not authorized", which reads like an expired login but is not -
+# `vercel whoami` still answers fine.
+vercel deploy --prebuilt --prod --yes --scope scoop9
 if ($LASTEXITCODE -ne 0) { throw "vercel deploy failed (exit $LASTEXITCODE)" }
 Write-Host ''
 Write-Host 'Done. Privacy policy:  https://famora-family.vercel.app/privacy' -ForegroundColor Green

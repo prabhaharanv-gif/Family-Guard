@@ -18,9 +18,18 @@ android {
         applicationId "com.scoopfamily.familyguard"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 12
-        versionName "1.1.1"
+        versionCode 18
+        versionName "1.2.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // Google Maps SDK for Android key, read from android/local.properties
+        // (git-ignored) as MAPS_API_KEY=... so it never lands in a tracked file.
+        // The key must be restricted to this package + the release, debug and
+        // Play app-signing SHA-1s. Missing key: the build still succeeds and the
+        // Map tab shows a blank grid; the rest of the app is unaffected.
+        def localProps = new Properties()
+        def localPropsFile = rootProject.file("local.properties")
+        if (localPropsFile.exists()) localPropsFile.withInputStream { localProps.load(it) }
+        manifestPlaceholders = [MAPS_API_KEY: localProps.getProperty("MAPS_API_KEY", "")]
         aaptOptions {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
@@ -42,6 +51,43 @@ android {
             }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        // ── Tester APK — release in every respect except SEND_SMS ───────────
+        // Google Play Protect's enhanced fraud protection (live in India)
+        // refuses to install a SIDELOADED app that declares SMS, call-log,
+        // accessibility or notification-listener permissions. The dialog it
+        // shows has only an OK button — there is no "install anyway" — so a
+        // tester who will not turn Play Protect off simply cannot take the
+        // release APK. Installs from the Play Store are exempt, so this never
+        // affects real users; it only blocks handing an APK around.
+        //
+        // src/sideload/AndroidManifest.xml strips SEND_SMS back out, which puts
+        // the build below Play Protect's threshold. Offline SMS alerts are
+        // therefore dead on this variant: OfflineSms.hasPermission() stays
+        // false and the toggle in Reliability Setup will not take. Everything
+        // else — location, SOS, calls, push — is the release build.
+        //
+        // Same applicationId as release on purpose: google-services.json is
+        // keyed to it, and keeping it identical means this APK updates an
+        // existing install in place instead of sitting beside it.
+        // Named 'sideload', not 'testers': AGP rejects any buildType whose
+        // name starts with 'test' ("BuildType names cannot start with 'test'")
+        // because that collides with the test source sets. Build it with
+        // build.ps1 -Testers, which runs assembleSideload.
+        sideload {
+            if (hasKeystore) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Shows as "1.2.1-sideload (18)" in the app, so a tester can say
+            // which APK they are on without digging through Settings.
+            versionNameSuffix '-sideload'
+            // capacitor-android and the cordova plugin bridge only define
+            // debug and release. Without this, AGP cannot resolve a 'testers'
+            // variant of either and the build fails before it starts.
+            matchingFallbacks = ['release']
         }
     }
 }

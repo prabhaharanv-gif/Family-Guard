@@ -79,4 +79,35 @@ final class SosResponse {
         }
         return id.isEmpty() ? null : id;
     }
+
+    /**
+     * Pulls the alert ids out of a send_sos_all_families reply — a JSON array of
+     * uuids, one per family — and returns them comma-joined, the form the
+     * receipt's Cancel carries. Null when there are none.
+     *
+     * Parsed by hand rather than with org.json, which is only a stub in JVM
+     * unit tests. A uuid never contains a comma, a quote or a bracket.
+     */
+    static String parseIds(String body) {
+        if (body == null) return null;
+        String s = body.trim();
+        if (!s.startsWith("[") || !s.endsWith("]")) return null;
+        StringBuilder out = new StringBuilder();
+        for (String part : s.substring(1, s.length() - 1).split(",")) {
+            String id = parseId(part);
+            if (id == null || id.equals("null")) continue;
+            if (out.length() > 0) out.append(',');
+            out.append(id);
+        }
+        return out.length() == 0 ? null : out.toString();
+    }
+
+    /**
+     * PostgREST answers 404 when the function does not exist — here, when the
+     * send_sos_all_families migration has not been applied yet. The caller
+     * falls back to the single-family send_sos rather than failing the SOS.
+     */
+    static boolean isMissingFunction(int httpCode) {
+        return httpCode == 404;
+    }
 }

@@ -40,9 +40,12 @@
 
     <!-- SOSAlertActivity — లాక్ స్క్రీన్ పైన కనిపించే పూర్తి-స్క్రీన్ హెచ్చరిక -->
     <string name="sos_needs_help">%1$s కు సహాయం కావాలి!</string>
-    <string name="sos_view_location">📍 లొకేషన్ చూడు</string>
+    <string name="sos_view_location">లొకేషన్ చూడు</string>
     <string name="sos_open_app">Famora తెరువు</string>
-    <string name="sos_stop_alarm">✋ అర్థమైంది — అలారం ఆపు</string>
+    <string name="sos_stop_alarm">అర్థమైంది — అలారం ఆపు</string>
+    <string name="sos_calm_hint">ప్రశాంతంగా ఉండండి. వారు ఎక్కడ ఉన్నారో చూసి, కాల్ చేయండి లేదా వారి దగ్గరకు వెళ్ళండి.</string>
+    <string name="sos_call">%1$s కి కాల్ చేయండి</string>
+    <string name="sos_directions">దారి చూడండి</string>
 
     <!-- CallRingingActivity -->
     <string name="call_incoming_voice">వచ్చే వాయిస్ కాల్</string>
@@ -69,4 +72,23 @@
     <string name="ch_reauth_desc">లొకేషన్ షేరింగ్ కొనసాగించడానికి Famora మళ్లీ తెరవాల్సి వచ్చినప్పుడు తెలియజేస్తుంది</string>
     <string name="notif_reauth_title">లొకేషన్ షేరింగ్ ఆగిపోయింది</string>
     <string name="notif_reauth_body">మళ్లీ కనెక్ట్ కావడానికి Famora తెరవండి. అప్పటి వరకు మీ కుటుంబం మీ లొకేషన్‌ను చూడలేరు.</string>
+    <!-- Fake call -->
+    <string name="fake_call_default_name">అమ్మ</string>
+    <string name="fake_call_scheduled_title">రిమైండర్</string>
+    <string name="fake_call_cancel">రద్దు చేయి</string>
+    <string name="fake_call_incoming">వచ్చే కాల్</string>
+    <string name="fake_call_mobile">మొబైల్</string>
+    <string name="fake_call_answer">సమాధానం</string>
+    <string name="fake_call_decline">తిరస్కరించు</string>
+    <string name="fake_call_end">ముగించు</string>
+    <string name="fake_call_notification_action">నాకు కాల్ చేయి</string>
+    <string name="ch_fake_call_name">నకిలీ కాల్</string>
+    <string name="ch_fake_call_quiet_name">నకిలీ కాల్ (నిశ్శబ్దం)</string>
+    <string name="ch_fake_call_desc">మీరే షెడ్యూల్ చేసే నకిలీ ఇన్‌కమింగ్ కాల్</string>
+    <string name="fake_call_voice_script">హలో? ఇప్పుడు ఎక్కడ ఉన్నావు?|సరే. నేను దగ్గరలోనే ఉన్నాను, నీ దగ్గరికి వస్తున్నాను.|అక్కడే ఉండు, రెండు నిమిషాల్లో వస్తాను.|అవును, దారిలో ఉన్నాను. ఫోన్ పెట్టేయకు.</string>
+    <!-- SOS countdown screen -->
+    <string name="sos_countdown_title">మీ కుటుంబానికి SOS పంపబడుతోంది</string>
+    <string name="sos_countdown_hint">పొరపాటున జరిగితే రద్దు చేయి నొక్కండి.</string>
+    <string name="sos_countdown_cancel">రద్దు చేయి</string>
+    <string name="fake_call_tile_subtitle">5 సెకన్లలో నకిలీ కాల్</string>
 </resources>

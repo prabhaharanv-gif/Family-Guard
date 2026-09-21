@@ -1,16 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        Android 12+ (API 31+) system splash.
-        The splash icon is now a TRANSPARENT drawable, so the launch screen
-        shows a solid maroon background with NO shield. The only shield the
-        user sees on launch is the home-screen launcher icon. This removes
-        the "second shield" that came from windowSplashScreenAnimatedIcon.
+        Android 12+ (API 31+) system splash: plain cream, NO icon.
+
+        The app draws its own launch screen (.splash in global.css: the logo on
+        cream with "famora" under it). Any icon here is a SECOND splash in front
+        of that one. Tried twice and dropped twice:
+          - an old, different shield picture, which morphed into the app's own
+            ("the second shield");
+          - the launcher's gold foreground layer (2026-09-21), which MIUI drew
+            with no icon background, so it appeared as a faint gold outline on
+            cream before the real splash.
+        splash_icon_none keeps this stage to a blank cream screen matching the
+        splash that follows, so the only splash anyone sees is the app's own.
     -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">#951345</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_none</item>
-        <item name="windowSplashScreenIconBackgroundColor">#951345</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/splash_background</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

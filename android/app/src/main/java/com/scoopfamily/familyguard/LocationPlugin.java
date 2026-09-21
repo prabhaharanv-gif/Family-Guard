@@ -48,6 +48,10 @@ import com.getcapacitor.annotation.PermissionCallback;
         @Permission(
             alias = "backgroundLocation",
             strings = { Manifest.permission.ACCESS_BACKGROUND_LOCATION }
+        ),
+        @Permission(
+            alias = "sms",
+            strings = { Manifest.permission.SEND_SMS }
         )
     }
 )
@@ -327,6 +331,102 @@ public class LocationPlugin extends Plugin {
      * the preference is saved, and whenever the app observes it changing (it can
      * change on another device).
      */
+    // ── Offline SMS alerts ───────────────────────────────────────────────────
+
+    /** { enabled, extraNumber, hasPermission, recipients } — recipients is a count, not the numbers. */
+    @PluginMethod
+    public void getOfflineSms(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("enabled", OfflineSms.isEnabled(getContext()));
+        r.put("extraNumber", OfflineSms.extraNumber(getContext()));
+        r.put("hasPermission", OfflineSms.hasPermission(getContext()));
+        r.put("recipients", OfflineSms.recipients(getContext()).size());
+        call.resolve(r);
+    }
+
+    /** Saves the switch and the member's own extra number. */
+    @PluginMethod
+    public void setOfflineSms(PluginCall call) {
+        Boolean enabled = call.getBoolean("enabled");
+        if (enabled == null) {
+            call.reject("Missing required parameter: enabled");
+            return;
+        }
+        OfflineSms.saveSettings(getContext(), enabled, call.getString("extraNumber", ""));
+        call.resolve();
+    }
+
+    /**
+     * Admin numbers and the member's own name, cached while there IS data so
+     * they are available when there is not.
+     */
+    @PluginMethod
+    public void setOfflineSmsContacts(PluginCall call) {
+        java.util.List<String> admins = new java.util.ArrayList<>();
+        com.getcapacitor.JSArray arr = call.getArray("admins");
+        if (arr != null) {
+            try {
+                for (Object o : arr.toList()) if (o != null) admins.add(String.valueOf(o));
+            } catch (Exception e) {
+                call.reject("admins must be an array of phone numbers");
+                return;
+            }
+        }
+        OfflineSms.saveContacts(getContext(), admins, call.getString("senderName", ""));
+        call.resolve();
+    }
+
+    /**
+     * Sends one offline-alert SMS immediately, so someone can check the number
+     * works without waiting 15 minutes offline. Resolves { sent }.
+     */
+    @PluginMethod
+    public void sendTestOfflineSms(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("sent", OfflineSms.sendTestNow(getContext(),
+            LocationForegroundService.getLastKnownLocation()));
+        call.resolve(r);
+    }
+
+    /** Asks for SEND_SMS. Called when the member turns offline alerts on, never before. */
+    @PluginMethod
+    public void requestSmsPermission(PluginCall call) {
+        if (OfflineSms.hasPermission(getContext())) {
+            JSObject r = new JSObject();
+            r.put("granted", true);
+            call.resolve(r);
+            return;
+        }
+        requestPermissionForAlias("sms", call, "smsPermCallback");
+    }
+
+    @PermissionCallback
+    private void smsPermCallback(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("granted", OfflineSms.hasPermission(getContext()));
+        call.resolve(r);
+    }
+
+    /** "Shake for SOS": { enabled }. Off unless the member turned it on. */
+    @PluginMethod
+    public void getShakeSos(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("enabled", LocationForegroundService.isShakeSosEnabled(getContext()));
+        r.put("serviceRunning", LocationForegroundService.isRunning);
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void setShakeSos(PluginCall call) {
+        Boolean enabled = call.getBoolean("enabled");
+        if (enabled == null) {
+            call.reject("Missing required parameter: enabled");
+            return;
+        }
+        LocationForegroundService.setShakeSosEnabled(getContext(), enabled);
+        call.resolve();
+    }
+
     @PluginMethod
     public void setSharing(PluginCall call) {
         Boolean sharing = call.getBoolean("sharing");
@@ -352,6 +452,36 @@ public class LocationPlugin extends Plugin {
     public void stop(PluginCall call) {
         LocationForegroundService.stopService(getContext());
         call.resolve();
+    }
+
+    /**
+     * The service's last pushed fix — the one that already passed its accuracy
+     * and jump filters — so the web heartbeat writes the SAME position to the
+     * member's other families instead of fetching its own. It used to ask for a
+     * low-accuracy fix of its own, and a 90m Wi-Fi guess written over the
+     * service's 20m GPS fix is what made a still pin flip ~100m.
+     * Resolves { found:false } when there is none.
+     */
+    @PluginMethod
+    public void getLastFix(PluginCall call) {
+        JSObject r = new JSObject();
+        try {
+            android.content.SharedPreferences p = getContext().getSharedPreferences(
+                LocationForegroundService.PREF_NAME, android.content.Context.MODE_PRIVATE);
+            long t = p.getLong(LocationForegroundService.KEY_LAST_TIME, 0L);
+            r.put("found", t > 0L);
+            if (t > 0L) {
+                r.put("lat", Double.longBitsToDouble(p.getLong(LocationForegroundService.KEY_LAST_LAT, 0L)));
+                r.put("lng", Double.longBitsToDouble(p.getLong(LocationForegroundService.KEY_LAST_LNG, 0L)));
+                r.put("accuracy", (double) p.getFloat(LocationForegroundService.KEY_LAST_ACC, 0f));
+                float sp = p.getFloat(LocationForegroundService.KEY_LAST_SPEED, -1f);
+                if (sp >= 0f) r.put("speed", (double) sp);   // m/s, as the Geolocation API reports
+                r.put("time", t);
+            }
+        } catch (Exception e) {
+            r.put("found", false);
+        }
+        call.resolve(r);
     }
 
     @PluginMethod

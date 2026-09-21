@@ -19,6 +19,7 @@ import { useUnreadMessages }     from './hooks/useUnreadMessages'
 import { useDevicePing }         from './hooks/useDevicePing'
 import { initBackHandler }       from './lib/backHandler'
 import { initSessionKeepAlive }  from './lib/sessionKeepAlive'
+import { refreshOfflineSmsContacts } from './lib/offlineSms'
 
 // Components
 import ConsentGate         from './components/ConsentGate'
@@ -65,7 +66,11 @@ const DeleteAccountPage = lazy(() => import('./pages/DeleteAccountPage'))
 const UserManualPage    = lazy(() => import('./pages/UserManualPage'))
 
 export default function App() {
-  const { initialize, user, familyId, loading, signOut } = useAuthStore()
+  const { initialize, user, familyId, allFamilies, loading, signOut } = useAuthStore()
+  // Ids of every family the member belongs to, for the SOS listener below.
+  // Falls back to the active family before the list has loaded.
+  const sosFamilyIds = (allFamilies?.length ? allFamilies.map(f => f.family_id) : [familyId])
+    .filter(Boolean)
   const location = useLocation()
   const navigate  = useNavigate()
 
@@ -89,8 +94,13 @@ export default function App() {
     if (!user?.id || !Capacitor.isNativePlatform()) return
     let handle, gone = false
     CapApp.addListener('appStateChange', ({ isActive }) => {
-      if (isActive) useAuthStore.getState().loadFamily(user.id)
+      if (isActive) {
+        useAuthStore.getState().loadFamily(user.id)
+        // Cache who to text while there is still data to read it with.
+        refreshOfflineSmsContacts(user.id)
+      }
     }).then((h) => { if (gone) h.remove(); else handle = h })
+    refreshOfflineSmsContacts(user.id)
     return () => { gone = true; handle?.remove() }
   }, [user?.id])
 
@@ -100,7 +110,7 @@ export default function App() {
   const { disclosureOpen, acceptDisclosure, declineDisclosure } = useLocationService()
   useLocationBroadcast(user?.id, familyId)
   useDeviceHealth(user?.id)
-  const { pingRinging, stopPing } = useDevicePing(user, familyId)
+  const { pingRinging, stopPing } = useDevicePing(user)
 
   // ── One account, one device ──────────────────────────────────────────────
   // The newest sign-in owns the session; this device signs itself out when it
@@ -111,11 +121,13 @@ export default function App() {
   useSingleDevice(user, () => setDisplaced(true))
 
   // ── SOS alarm + unread badge ─────────────────────────────────────────────
-  const { sosAlert, nativeAlarmOn, stopAllAlarms } = useSosAlarm(user, familyId)
+  // Every family, not the active one: an SOS from another family must still
+  // sound while the app is open on this one.
+  const { sosAlert, nativeAlarmOn, stopAllAlarms } = useSosAlarm(user, sosFamilyIds)
   const { unreadMessages } = useUnreadMessages(user, familyId)
 
   // ── Incoming call signaling ───────────────────────────────────────────────
-  const { incomingCall, acceptIncoming, declineIncoming } = useCallSignaling(user, familyId)
+  const { incomingCall, acceptIncoming, declineIncoming } = useCallSignaling(user)
   const handleAcceptCall = async () => {
     const callId = await acceptIncoming()
     if (callId) navigate(`/call/${callId}`)

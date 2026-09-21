@@ -23,6 +23,14 @@
             android:name="firebase_crashlytics_collection_enabled"
             android:value="false" />
 
+        <!-- Google Maps SDK for Android (the Map tab). Filled from MAPS_API_KEY
+             in android/local.properties via app/build.gradle; never hard-code
+             the key here. Native map display is free — this key must NOT have
+             the Maps JavaScript API enabled, which is the billed one. -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
+
         <!-- Locked to portrait: the app is a phone-first family app with no
              landscape layouts, and rotating mid-use (notably when a call or
              alert brought a screen forward) was disorienting. Applies to the
@@ -78,6 +86,36 @@
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density"
             android:theme="@style/SOSAlertTheme" />
 
+        <!-- ── SOS countdown with Cancel, shown while a gesture-armed SOS is
+             waiting to send. Over the lock screen, own task — same reasons as
+             the call and alert screens. -->
+        <activity
+            android:name=".SosCountdownActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.scoopfamily.familyguard.soscountdown"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density"
+            android:theme="@style/SOSAlertTheme" />
+
+        <!-- ── Fake incoming call screen ─────────────────────────────────────
+             Same lock-screen pattern as CallRingingActivity, in a task of its
+             own for the same reason: nothing in the app's task may bury it. -->
+        <activity
+            android:name=".FakeCallActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.scoopfamily.familyguard.fakecall"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density"
+            android:theme="@style/SOSAlertTheme" />
+
         <!-- ── FCM background/killed message handler ── -->
         <service
             android:name=".MyFirebaseMessagingService"
@@ -122,6 +160,13 @@
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <!-- An app update stops the process; without this, location sharing,
+                 shake SOS and the fake-call button stay off until someone opens
+                 the app again. Sent only to the app that was replaced, so it
+                 needs no category and no permission. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
         </receiver>
 
         <!-- ── SOS siren foreground service ──────────────────────────────────
@@ -149,6 +194,34 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Incoming voice/video call from a family member that requires showing a full-screen ringing alert over the lock screen." />
+        </service>
+
+        <!-- ── "Call me" Quick Settings tile ─────────────────────────────────
+             Reachable from the lock screen with a swipe and a tap, which is as
+             close to a hardware shortcut as a normal app can get: volume keys
+             are never delivered to a background app on MIUI, and the power
+             button is the national panic gesture. -->
+        <service
+            android:name=".FakeCallTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_fake_call_answer"
+            android:label="@string/fake_call_notification_action"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- ── Fake incoming call ─────────────────────────────────────────────
+             Plays the ringtone and brings a full-screen call over the lock
+             screen, like CallRingingService, hence the same types. -->
+        <service
+            android:name=".FakeCallService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback|specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Personal-safety fake incoming call the user schedules for themselves, shown full-screen over the lock screen." />
         </service>
 
         <!-- ── Find My Device ring foreground service ────────────────────────
@@ -238,8 +311,38 @@
     <!-- ── Notifications ── -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- ── Do Not Disturb ──
+         Without this, NotificationChannel.setBypassDnd(true) is silently
+         forced back to false the moment the channel is created, and
+         setStreamVolume(STREAM_ALARM, ...) throws SecurityException while
+         Do Not Disturb is on. Both are exactly what an SOS needs to survive a
+         silenced phone, and both were failing invisibly. Declaring it only
+         makes the grant POSSIBLE — the user still has to allow Famora under
+         Settings > Do Not Disturb access; SosDnd reads that back. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+
     <!-- ── Vibration ── -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- ── Offline SMS alerts ──────────────────────────────────────────────
+         Texts the family a member's last known position when the phone has no
+         data. Off unless the member turns it on, and requested at that moment.
+
+         Google Play restricts SEND_SMS: this app relies on the "Physical
+         safety/emergency alerts to send SMS" exception, which needs the
+         Permissions Declaration Form completed in the Play Console for EVERY
+         release that ships this permission. Without that approval the listing
+         is at risk, so do not add this permission to a build that is uploaded
+         before the declaration is in place.
+
+         The form cannot be filed ahead of the upload: Play only generates it
+         once a bundle requesting SEND_SMS is uploaded, and an unresolved form
+         blocks publishing anything else to that track. So the declaration is
+         completed AS PART OF the release that carries this permission, never
+         afterwards. Every answer is drafted in
+         docs/play-console-declarations-v1.2.md — the exception claimed is
+         "Physical safety/emergency alerts to send SMS". -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
 
     <!-- ── Alert sound picked from the music app ──────────────────
          A song chosen there is a MediaStore uri, not a document, so no
@@ -250,6 +353,13 @@
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+
+    <!-- ── Saving chat photos/videos to the gallery (MediaSavePlugin) ──────
+         Only Android 7–9 need this: from Android 10 an app adds its own files
+         to the gallery through MediaStore without any permission, which is why
+         maxSdkVersion stops it at 28. Asked for on the first save, not up front. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <!-- ── Voice/video calling (Agora WebRTC via the Capacitor WebView) ── -->
     <uses-permission android:name="android.permission.CAMERA" />

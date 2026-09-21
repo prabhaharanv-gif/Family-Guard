@@ -91,7 +91,15 @@ export default function MessagesPage() {
     // Title line plus one status line (13px + 3px gap); anything taller wrapped.
     const fontSize = parseFloat(getComputedStyle(title).fontSize) || 18
     const tooTall = title.parentElement.getBoundingClientRect().height > fontSize * 1.8 + 16
-    if (overflows || tooTall) setCompactClear(true)
+    // The case the two checks above miss: a title that is a single long word —
+    // "സന്ദേശങ്ങൾ" in Malayalam, "செய்திகள்" in Tamil, "ಸಂದೇಶಗಳು" in Kannada —
+    // cannot wrap, so its box just narrows and the word used to spill sideways
+    // under the Clear button. Nothing overflows the screen and nothing wraps,
+    // so it passed both. The text now ends in "…" rather than spilling, so the
+    // test is on the text span itself: cut short means the button must shrink.
+    const text = title.querySelector('span')
+    const clipped = !!text && text.scrollWidth > text.clientWidth + 1
+    if (overflows || tooTall || clipped) setCompactClear(true)
   })
   const longPressRef   = useRef(null)
   const didLongPress   = useRef(false)
@@ -462,7 +470,12 @@ export default function MessagesPage() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
-              {t('messages.title')}
+              {/* Last resort if even the icon-only Clear button leaves too
+                  little room (a very narrow phone): the title ends in "…"
+                  instead of running underneath the buttons. */}
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {t('messages.title')}
+              </span>
             </div>
             {/* Mute state, in words. The control itself is the bell button on
                 the right; an icon alone cannot say what is muted.
@@ -891,6 +904,13 @@ export default function MessagesPage() {
         )}
         {!recording && <button
           onClick={sendMessage}
+          // Focus must not leave the field: Android closes the keyboard as
+          // soon as the focused element stops being a text input, so tapping
+          // send used to cost the keyboard and a second tap to get it back
+          // mid-conversation. preventDefault here stops the button taking
+          // focus at all; the click still fires. BACK still closes the
+          // keyboard, because Android hands BACK to the IME first.
+          onMouseDown={e => e.preventDefault()}
           disabled={!canSend || sending}
           style={{
             width: 44, height: 44, borderRadius: '50%',

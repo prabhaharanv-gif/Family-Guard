@@ -31,7 +31,11 @@ async function nicknameFor(familyId, ownerUserId, targetUserId) {
   return (data?.nickname || '').trim()
 }
 
-export function useCallSignaling(user, familyId) {
+/**
+ * Incoming-call signalling. Takes no family: a call is addressed to the person
+ * (callee_id), so this listens across every family they belong to.
+ */
+export function useCallSignaling(user) {
   const [incomingCall, setIncomingCall] = useState(null) // { ...call row, callerName }
 
   const dismiss = useCallback(() => {
@@ -103,10 +107,14 @@ export function useCallSignaling(user, familyId) {
   }, [user, checkForRingingCall])
 
   useEffect(() => {
-    if (!user || !familyId) return
+    // Deliberately not gated on familyId. Both filters below match on
+    // callee_id, so this already covers a call from ANY of the member's
+    // families; requiring an active family only meant no subscription at all
+    // while the family list was still loading, or between families.
+    if (!user) return
 
     const channel = supabase
-      .channel(`global-calls:${familyId}:${user.id}`)
+      .channel(`global-calls:${user.id}`)
       .on('postgres_changes', {
         event:  'INSERT',
         schema: 'public',
@@ -147,7 +155,7 @@ export function useCallSignaling(user, familyId) {
       .subscribe()
 
     return () => supabase.removeChannel(channel)
-  }, [user, familyId])
+  }, [user])
 
   const acceptIncoming = useCallback(async () => {
     if (!incomingCall) return null

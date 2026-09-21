@@ -11,7 +11,8 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
+import android.graphics.drawable.GradientDrawable;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -52,11 +53,27 @@ public class SOSAlertActivity extends Activity {
     public static final String EXTRA_MESSAGE = "sos_message";
     public static final String EXTRA_LAT     = "sos_lat";
     public static final String EXTRA_LNG     = "sos_lng";
+    /** Sender's phone number for the Call button; empty when the push has none. */
+    public static final String EXTRA_PHONE   = "sos_phone";
+
+    /**
+     * The alert on screen right now, so it can be taken away when the sender
+     * marks themselves safe. Without this the full-screen alert stayed up after
+     * the emergency was resolved and each person had to dismiss it by hand.
+     */
+    private static volatile SOSAlertActivity visibleInstance = null;
+
+    /** Closes the alert if it is showing. Safe to call from any thread. */
+    public static void finishIfShowing() {
+        SOSAlertActivity a = visibleInstance;
+        if (a != null) a.runOnUiThread(a::finish);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         isShowing = true;
         appearedSinceReset = true;
+        visibleInstance = this;
         super.onCreate(savedInstanceState);
         // Portrait is already declared in the manifest for all three activities,
         // but a manifest value is a request the platform may override: OEM skins
@@ -97,14 +114,39 @@ public class SOSAlertActivity extends Activity {
         // this Activity is in front, with nothing to release by hand.
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        String sender  = getIntent().getStringExtra(EXTRA_SENDER);
-        String message = getIntent().getStringExtra(EXTRA_MESSAGE);
-        final String lat = getIntent().getStringExtra(EXTRA_LAT);
-        final String lng = getIntent().getStringExtra(EXTRA_LNG);
-        if (sender  == null || sender.isEmpty())  sender  = getString(R.string.a_family_member);
-        if (message == null || message.isEmpty()) message = getString(R.string.sos_alert);
+        readAlert(getIntent());
+        render();
+    }
 
-        setContentView(buildLayout(sender, message, lat, lng));
+    // The alert being shown. Kept in fields so Stop Alarm can redraw the same
+    // screen as its second stage without going back to the intent.
+    private String alertSender, alertMessage, alertLat, alertLng, alertPhone;
+    private boolean alarmStopped = false;
+
+    private void readAlert(Intent intent) {
+        alertSender  = intent.getStringExtra(EXTRA_SENDER);
+        alertMessage = intent.getStringExtra(EXTRA_MESSAGE);
+        alertLat     = intent.getStringExtra(EXTRA_LAT);
+        alertLng     = intent.getStringExtra(EXTRA_LNG);
+        alertPhone   = intent.getStringExtra(EXTRA_PHONE);
+        if (alertSender  == null || alertSender.isEmpty())  alertSender  = getString(R.string.a_family_member);
+        if (alertMessage == null || alertMessage.isEmpty()) alertMessage = getString(R.string.sos_alert);
+    }
+
+    /**
+     * Two stages. While the siren sounds, the only button is Stop Alarm: one
+     * obvious thing to do, instead of a choice between four while the phone is
+     * screaming. Once it is quiet, the screen offers what actually helps —
+     * call them, get directions to them, or open the app.
+     *
+     * Starts straight at the second stage when there is no siren to stop: it
+     * already timed out, or this phone's own SOS silence kept it quiet.
+     */
+    private void render() {
+        boolean sirenLive = SOSSirenService.isRunning
+            && !SosSilence.isActive(getApplicationContext());
+        boolean actionStage = alarmStopped || !sirenLive;
+        setContentView(buildLayout(actionStage));
     }
 
     /**
@@ -118,16 +160,13 @@ public class SOSAlertActivity extends Activity {
         if (intent == null) return;
         setIntent(intent);
 
-        String sender  = intent.getStringExtra(EXTRA_SENDER);
-        String message = intent.getStringExtra(EXTRA_MESSAGE);
-        String lat     = intent.getStringExtra(EXTRA_LAT);
-        String lng     = intent.getStringExtra(EXTRA_LNG);
-        if (sender  == null || sender.isEmpty())  sender  = getString(R.string.a_family_member);
-        if (message == null || message.isEmpty()) message = getString(R.string.sos_alert);
+        readAlert(intent);
+        // A new push means the siren has (re)started, so back to stage one.
+        alarmStopped = false;
 
         isShowing = true;
         appearedSinceReset = true;
-        setContentView(buildLayout(sender, message, lat, lng));
+        render();
     }
 
     /**
@@ -148,74 +187,134 @@ public class SOSAlertActivity extends Activity {
         try { startActivity(target); } catch (Exception ignored) {}
     }
 
-    private View buildLayout(String sender, String message, final String lat, final String lng) {
+    // The screen used to be solid alarm red from edge to edge, with a big 🆘
+    // emoji and three near-identical red buttons. Recipients found it
+    // frightening, and nothing on it said what to do first. Now it matches the
+    // call screens: cream, with red kept for the one thing that has to stand
+    // out (the alert badge and the main action), a plain line of guidance, and
+    // buttons ranked by importance. The siren still does the alarming.
+    private static final int CREAM      = Color.parseColor("#FFF8F0");
+    private static final int INK        = Color.parseColor("#2A0A18");
+    private static final int INK_SOFT   = Color.parseColor("#6B4A57");
+    private static final int ALERT_RED  = Color.parseColor("#D32F2F");
+    private static final int RED_TINT   = Color.parseColor("#FDECEC");
+    private static final int RED_DEEP   = Color.parseColor("#B71C1C");
+    private static final int MAROON     = Color.parseColor("#8B0D3D");
+    private static final int BUTTON_FILL = Color.parseColor("#F6DCE6");
+
+    private View buildLayout(boolean actionStage) {
+        applyCreamSystemBars();
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setGravity(Gravity.CENTER);
-        root.setBackgroundColor(Color.parseColor("#C8102E"));
-        root.setPadding(dp(32), dp(48), dp(32), dp(48));
+        root.setGravity(Gravity.CENTER_HORIZONTAL);
+        root.setBackgroundColor(CREAM);
+        root.setPadding(dp(28), dp(40), dp(28), dp(40));
 
-        // 🆘 Big icon
-        TextView icon = new TextView(this);
-        icon.setText("🆘");
-        icon.setTextSize(72);
-        icon.setGravity(Gravity.CENTER);
-        root.addView(icon);
+        root.addView(new View(this), new LinearLayout.LayoutParams(1, 0, 1f));
+
+        // Alert badge: a red disc with a white warning line icon.
+        android.widget.FrameLayout badge = new android.widget.FrameLayout(this);
+        GradientDrawable disc = new GradientDrawable();
+        disc.setShape(GradientDrawable.OVAL);
+        disc.setColor(ALERT_RED);
+        badge.setBackground(disc);
+        ImageView badgeIcon = new ImageView(this);
+        badgeIcon.setImageResource(R.drawable.ic_sos_alert);
+        badge.addView(badgeIcon, new android.widget.FrameLayout.LayoutParams(
+            dp(44), dp(44), Gravity.CENTER));
+        root.addView(badge, new LinearLayout.LayoutParams(dp(92), dp(92)));
 
         // Title
         TextView title = new TextView(this);
-        title.setText(getString(R.string.sos_needs_help, sender));
-        title.setTextColor(Color.WHITE);
+        title.setText(getString(R.string.sos_needs_help, alertSender));
+        title.setTextColor(INK);
         title.setTextSize(26);
         title.setGravity(Gravity.CENTER);
-        title.setPadding(0, dp(16), 0, dp(8));
+        title.setPadding(0, dp(22), 0, dp(12));
         LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         title.setLayoutParams(tlp);
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
         root.addView(title);
 
-        // Message
+        // Message (the SOS type) as a soft red chip rather than more big text.
         TextView msg = new TextView(this);
-        msg.setText(message);
-        msg.setTextColor(Color.parseColor("#FFDDE4"));
-        msg.setTextSize(18);
+        msg.setText(alertMessage);
+        msg.setTextColor(RED_DEEP);
+        msg.setTextSize(15);
+        msg.setTypeface(msg.getTypeface(), android.graphics.Typeface.BOLD);
         msg.setGravity(Gravity.CENTER);
-        msg.setPadding(0, 0, 0, dp(40));
-        root.addView(msg);
+        msg.setPadding(dp(16), dp(7), dp(16), dp(7));
+        GradientDrawable chip = new GradientDrawable();
+        chip.setColor(RED_TINT);
+        chip.setCornerRadius(dp(18));
+        msg.setBackground(chip);
+        root.addView(msg, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-        // View Location button (only if coords present)
-        if (lat != null && !lat.isEmpty() && !"0".equals(lat) && lng != null && !lng.isEmpty()) {
-            Button locBtn = new Button(this);
-            locBtn.setText(R.string.sos_view_location);
-            locBtn.setTextColor(Color.parseColor("#A30E2B"));
-            locBtn.setBackgroundColor(Color.WHITE);
-            locBtn.setTextSize(16);
-            locBtn.setAllCaps(false);
-            LinearLayout.LayoutParams lbp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(52));
-            lbp.bottomMargin = dp(14);
-            locBtn.setLayoutParams(lbp);
-            locBtn.setOnClickListener(v -> {
-                Intent map = new Intent(Intent.ACTION_VIEW,
-                    android.net.Uri.parse("https://www.google.com/maps?q=" + lat + "," + lng));
+        // What to do next, in plain words.
+        TextView hint = new TextView(this);
+        hint.setText(R.string.sos_calm_hint);
+        hint.setTextColor(INK_SOFT);
+        hint.setTextSize(16);
+        hint.setGravity(Gravity.CENTER);
+        hint.setLineSpacing(dp(3), 1f);
+        hint.setPadding(dp(8), dp(18), dp(8), 0);
+        root.addView(hint, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        root.addView(new View(this), new LinearLayout.LayoutParams(1, 0, 1f));
+
+        if (!actionStage) {
+            // Stage one: the siren is sounding and this is the only button.
+            View stopBtn = actionButton(getString(R.string.sos_stop_alarm),
+                R.drawable.ic_sos_silence);
+            stopBtn.setOnClickListener(v -> {
+                SOSSirenService.stopService(getApplicationContext());
+                alarmStopped = true;
+                render();
+            });
+            root.addView(stopBtn);
+            return root;
+        }
+
+        // Stage two: ways to reach them, most direct first.
+        java.util.List<View> actions = new java.util.ArrayList<>();
+
+        final String phone = alertPhone == null ? "" : alertPhone.trim();
+        if (!phone.isEmpty()) {
+            View callBtn = actionButton(getString(R.string.sos_call, alertSender),
+                R.drawable.ic_fake_call_answer);
+            callBtn.setOnClickListener(v -> {
+                // ACTION_DIAL, not ACTION_CALL: needs no CALL_PHONE permission,
+                // and the one confirming tap in the dialler guards against a
+                // pocket-dial to someone who may be hiding.
+                Intent dial = new Intent(Intent.ACTION_DIAL,
+                    android.net.Uri.parse("tel:" + android.net.Uri.encode(phone)));
+                dial.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                leaveTo(dial);
+            });
+            actions.add(callBtn);
+        }
+
+        final String lat = alertLat, lng = alertLng;
+        boolean hasLocation = lat != null && !lat.isEmpty() && !"0".equals(lat)
+            && lng != null && !lng.isEmpty();
+        if (hasLocation) {
+            View dirBtn = actionButton(getString(R.string.sos_directions),
+                R.drawable.ic_sos_directions);
+            dirBtn.setOnClickListener(v -> {
+                Intent map = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(
+                    "https://www.google.com/maps/dir/?api=1&destination=" + lat + "," + lng));
                 map.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 leaveTo(map);
             });
-            root.addView(locBtn);
+            actions.add(dirBtn);
         }
 
-        // Open App button
-        Button openBtn = new Button(this);
-        openBtn.setText(R.string.sos_open_app);
-        openBtn.setTextColor(Color.WHITE);
-        openBtn.setBackgroundColor(Color.parseColor("#A30E2B"));
-        openBtn.setTextSize(16);
-        openBtn.setAllCaps(false);
-        LinearLayout.LayoutParams obp = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(52));
-        obp.bottomMargin = dp(14);
-        openBtn.setLayoutParams(obp);
+        View openBtn = actionButton(getString(R.string.sos_open_app),
+            R.drawable.ic_sos_family);
         openBtn.setOnClickListener(v -> {
             Intent open = new Intent(this, MainActivity.class);
             open.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -223,33 +322,78 @@ public class SOSAlertActivity extends Activity {
             leaveTo(open);
             finish();
         });
-        root.addView(openBtn);
+        actions.add(openBtn);
 
-        // Dismiss / Stop Alarm button
-        Button stopBtn = new Button(this);
-        stopBtn.setText(R.string.sos_stop_alarm);
-        stopBtn.setTextColor(Color.WHITE);
-        stopBtn.setBackgroundColor(Color.parseColor("#5C0818"));
-        stopBtn.setTextSize(16);
-        stopBtn.setAllCaps(false);
-        LinearLayout.LayoutParams sbp = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(52));
-        stopBtn.setLayoutParams(sbp);
-        stopBtn.setOnClickListener(v -> {
-            // Stop the siren, then open the app rather than just closing. Ending
-            // here dropped the user back to the launcher or a lock screen with
-            // no idea what had happened beyond a name — the alert is the start
-            // of dealing with an emergency, not the end of it.
-            SOSSirenService.stopService(getApplicationContext());
-            Intent open = new Intent(this, MainActivity.class);
-            open.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            open.putExtra("sos_notification", true);
-            leaveTo(open);
-            finish();
-        });
-        root.addView(stopBtn);
-
+        for (int i = 0; i < actions.size(); i++) {
+            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) actions.get(i).getLayoutParams();
+            if (i < actions.size() - 1) lp.bottomMargin = dp(12);
+            root.addView(actions.get(i));
+        }
         return root;
+    }
+
+    /**
+     * Pill button with a line icon beside its label, both centred together.
+     * A plain Button with a compound drawable pins the icon to the far edge on
+     * a full-width button, so this is a clickable row instead.
+     *
+     * One style for every button: a light rose fill, deep enough to stand off
+     * the cream, with a maroon outline and maroon label. A tint with no edge
+     * did not read as a button; a different colour per button made the screen
+     * look busy. The red badge stays the only strong colour on the screen.
+     */
+    private View actionButton(CharSequence text, int iconRes) {
+        final int fill = BUTTON_FILL, fg = MAROON, strokeColor = MAROON;
+        LinearLayout b = new LinearLayout(this);
+        b.setOrientation(LinearLayout.HORIZONTAL);
+        b.setGravity(Gravity.CENTER);
+        b.setClickable(true);
+        b.setFocusable(true);
+        b.setPadding(dp(16), 0, dp(16), 0);
+        b.setContentDescription(text);
+        b.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(58)));
+
+        GradientDrawable pill = new GradientDrawable();
+        pill.setColor(fill);
+        pill.setCornerRadius(dp(29));
+        pill.setStroke(dp(2), strokeColor);
+        // White ripple on dark fills, dark ripple on light ones.
+        int ripple = fg == Color.WHITE ? Color.argb(60, 255, 255, 255) : Color.argb(40, 0, 0, 0);
+        b.setBackground(new android.graphics.drawable.RippleDrawable(
+            android.content.res.ColorStateList.valueOf(ripple), pill, null));
+
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconRes);
+        icon.setColorFilter(fg);
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(20), dp(20));
+        ilp.rightMargin = dp(10);
+        b.addView(icon, ilp);
+
+        TextView label = new TextView(this);
+        label.setText(text);
+        label.setTextColor(fg);
+        label.setTextSize(16);
+        label.setTypeface(label.getTypeface(), android.graphics.Typeface.BOLD);
+        label.setMaxLines(2);
+        label.setGravity(Gravity.CENTER);
+        b.addView(label);
+        return b;
+    }
+
+    /** Cream status and navigation bars with dark icons, so the screen reads as one surface. */
+    private void applyCreamSystemBars() {
+        android.view.Window w = getWindow();
+        w.setStatusBarColor(CREAM);
+        w.setNavigationBarColor(CREAM);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            int flags = w.getDecorView().getSystemUiVisibility()
+                | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            w.getDecorView().setSystemUiVisibility(flags);
+        }
     }
 
     private int dp(int value) {
@@ -258,12 +402,16 @@ public class SOSAlertActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        // Prevent accidental dismiss — user must tap Stop Alarm
+        // While the siren sounds, back does nothing — Stop Alarm is the way
+        // out, so the alert cannot be swiped away unread. Once it is quiet,
+        // back closes the screen like any other.
+        if (alarmStopped || !SOSSirenService.isRunning) finish();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         isShowing = false;
+        if (visibleInstance == this) visibleInstance = null;
     }
 }

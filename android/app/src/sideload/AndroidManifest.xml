@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tester-build manifest overlay. Merged on top of src/main/AndroidManifest.xml
+  for the `sideload` buildType only; release and debug are untouched.
+
+  Sole purpose: drop SEND_SMS. Google Play Protect's enhanced fraud protection
+  blocks the SIDELOAD of any app declaring an SMS permission, with a dialog
+  that offers no way through, so the release APK cannot be handed to a tester
+  who has Play Protect on. Removing the permission puts this build under that
+  threshold. See the `sideload` block in app/build.gradle for the full note.
+
+  Consequence to expect when testing: offline SMS alerts cannot be enabled on
+  this build. OfflineSms.hasPermission() returns false, requestSmsPermission()
+  resolves { granted: false } because Android denies an undeclared permission
+  outright, and the Reliability Setup toggle stays off. Nothing crashes — the
+  sender already treats a missing permission as "skip and log". Test that
+  feature on a release build.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="android.permission.SEND_SMS"
+        tools:node="remove" />
+
+</manifest>

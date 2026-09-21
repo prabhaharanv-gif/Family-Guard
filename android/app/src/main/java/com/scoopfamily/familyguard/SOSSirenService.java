@@ -73,6 +73,7 @@ public class SOSSirenService extends Service {
     // ── SOS coordinates — passed through to the full-screen alert activity ───
     private String sosLat = "";
     private String sosLng = "";
+    private String sosPhone = "";
 
     // ─────────────────────────────────────────────────────────────────────────
     @Override
@@ -100,6 +101,7 @@ public class SOSSirenService extends Service {
 
         sosLat = (intent != null && intent.getStringExtra("lat") != null) ? intent.getStringExtra("lat") : "";
         sosLng = (intent != null && intent.getStringExtra("lng") != null) ? intent.getStringExtra("lng") : "";
+        sosPhone = (intent != null && intent.getStringExtra("phone") != null) ? intent.getStringExtra("phone") : "";
 
         // A repeat push for an alert that is already sounding must not touch
         // the volume — see raiseAlarmVolumeForAlert().
@@ -144,10 +146,30 @@ public class SOSSirenService extends Service {
         // continuous siren rather than overlapping copies.
         // Every new alert starts loud. Repeat pushes for the same alert skip
         // this, which is what lets the volume keys work while it is sounding.
-        if (freshAlert) raiseAlarmVolumeForAlert();
+        //
+        // DND comes FIRST and for the same once-per-alert reason. While Do Not
+        // Disturb is muting alarms, zen has an AppOps restriction on
+        // OP_PLAY_AUDIO for USAGE_ALARM — the siren below is stopped above the
+        // app, so no routing or volume work down here can be heard — and
+        // setStreamVolume(STREAM_ALARM, ...) throws SecurityException into
+        // raiseAlarmVolumeForAlert()'s catch. Stepping out of DND is what makes
+        // both of the next two lines mean anything on a silenced phone. It is
+        // given back in onDestroy(). See SosDnd.
+        // Someone else's SOS arriving while THIS phone's owner has one open:
+        // they may be hiding, so the alert is shown but makes no sound — no
+        // siren, no vibration, no stepping out of DND, no alarm-volume raise.
+        // See SosSilence.
+        if (SosSilence.isActive(getApplicationContext())) {
+            android.util.Log.i("FamoraSOS", "siren suppressed — own SOS silence is on");
+        } else {
+            if (freshAlert) {
+                SosDnd.suspendForAlert(getApplicationContext());
+                raiseAlarmVolumeForAlert();
+            }
 
-        startSiren();
-        startVibration();
+            startSiren();
+            startVibration();
+        }
 
         // ── Force the screen ON and launch the alert directly ────────────────
         // Belt-and-suspenders: the full-screen intent above SHOULD launch
@@ -188,7 +210,7 @@ public class SOSSirenService extends Service {
             MyFirebaseMessagingService.setAlertBlocked(getApplicationContext(), true);
             android.util.Log.w("FamoraSOS", "Alert activity did not appear — posting fallback notification");
             MyFirebaseMessagingService.showSosNotification(
-                getApplicationContext(), fbSender, fbMessage, sosLat, sosLng);
+                getApplicationContext(), fbSender, fbMessage, sosLat, sosLng, sosPhone);
         }, 1200);
 
         // Safety net: auto-stop after 60 s even if the user never responds
@@ -209,8 +231,9 @@ public class SOSSirenService extends Service {
         stopSiren();
         cancelVibration();
         // Before isRunning flips: the alert is over, so hand the alarm volume
-        // back at whatever level the person had it on.
+        // and the Do Not Disturb setting back at whatever the person had them on.
         restoreAlarmVolume();
+        SosDnd.restore(getApplicationContext());
         isRunning = false;
 
         try {
@@ -301,6 +324,7 @@ public class SOSSirenService extends Service {
             i.putExtra(SOSAlertActivity.EXTRA_MESSAGE, message);
             i.putExtra(SOSAlertActivity.EXTRA_LAT,     sosLat);
             i.putExtra(SOSAlertActivity.EXTRA_LNG,     sosLng);
+            i.putExtra(SOSAlertActivity.EXTRA_PHONE,   sosPhone);
             startActivity(i);
         } catch (Exception e) { e.printStackTrace(); }
     }
@@ -320,6 +344,27 @@ public class SOSSirenService extends Service {
         // Full-screen intent — launches SOSAlertActivity over the lock screen.
         // On Android 14+, this requires USE_FULL_SCREEN_INTENT runtime permission
         // AND the foreground service type must include specialUse.
+        //
+        // It also requires the CHANNEL to be IMPORTANCE_HIGH, and this one is
+        // not. SystemUI's shouldLaunchFullScreenIntentWhenAdded() drops any
+        // full-screen intent whose entry is below IMPORTANCE_HIGH before it
+        // looks at permissions or service types at all, so ever since this
+        // channel went to IMPORTANCE_LOW (sos_popup_v2, to stop a banner
+        // appearing beside the alert) the intent attached here has been dead
+        // code: the alert only ever appeared because launchAlertActivity()
+        // starts it directly, and on MIUI that is what the background-activity
+        // op refuses — leaving a siren with a blank screen.
+        //
+        // Raising this channel back to HIGH would bring the duplicate banner
+        // back with it, so the live full-screen intent now rides on the
+        // fallback notification instead (showSosNotification, IMPORTANCE_HIGH),
+        // which is posted only when the direct launch is seen to have failed.
+        // One emergency, one announcement, and a real second chance at the
+        // full-screen alert on phones that block the direct start.
+        //
+        // The intent is kept here because an IMPORTANCE_LOW entry is still
+        // allowed to carry one: if a future OEM or Android release honours it,
+        // it lands on the same activity, and it costs nothing when ignored.
         Intent fsIntent = new Intent(this, SOSAlertActivity.class);
         fsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
             | Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -328,6 +373,7 @@ public class SOSSirenService extends Service {
         fsIntent.putExtra(SOSAlertActivity.EXTRA_MESSAGE, message);
         fsIntent.putExtra(SOSAlertActivity.EXTRA_LAT,     sosLat);
         fsIntent.putExtra(SOSAlertActivity.EXTRA_LNG,     sosLng);
+        fsIntent.putExtra(SOSAlertActivity.EXTRA_PHONE,   sosPhone);
         PendingIntent fsPi = PendingIntent.getActivity(
             this, 2, fsIntent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
@@ -343,7 +389,15 @@ public class SOSSirenService extends Service {
             // PRIORITY_LOW to match the channel. Left at MAX this still asks for
             // a heads-up on pre-O devices, which is the banner being removed.
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setCategory(NotificationCompat.CATEGORY_CALL)
+            // No setCategory(CATEGORY_CALL) here, deliberately. MIUI treats a
+            // call-category notification as one that must float, and it gets
+            // there by PROMOTING the channel behind it — so the category was
+            // dragging sos_popup_v2 back up to HIGH and floating this entry as
+            // a banner, which is the exact duplicate the IMPORTANCE_LOW above
+            // exists to prevent. CallRingingService learned this first and
+            // guards it with "if (!quiet)"; this notification is always the
+            // quiet one, so the category never belongs on it. The loud
+            // fallback (showSosNotification) is where CATEGORY_CALL now lives.
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setAutoCancel(false)

@@ -70,6 +70,7 @@ public class SOSAlarmPlugin extends Plugin {
             i.putExtra("message", call.getString("message", getContext().getString(R.string.sos_alert)));
             i.putExtra("lat",     call.getString("lat",     ""));
             i.putExtra("lng",     call.getString("lng",     ""));
+            i.putExtra("phone",   call.getString("phone",   ""));
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 ctx.startForegroundService(i);
@@ -83,6 +84,20 @@ public class SOSAlarmPlugin extends Plugin {
         } catch (Exception e) {
             call.reject("Failed to trigger SOS alert: " + e.getMessage());
         }
+    }
+
+    /** Silence this phone while its owner's own SOS is open. See SosSilence. */
+    @PluginMethod
+    public void enterSosSilence(PluginCall call) {
+        SosSilence.enter(getContext());
+        call.resolve();
+    }
+
+    /** The owner's SOS is resolved: give the ringer back. No-op when not silenced. */
+    @PluginMethod
+    public void exitSosSilence(PluginCall call) {
+        SosSilence.exit(getContext());
+        call.resolve();
     }
 
     /** Is the foreground siren service currently running? */
@@ -144,8 +159,28 @@ public class SOSAlarmPlugin extends Plugin {
         ret.put("oem", oem);
         ret.put("isRestrictive", isRestrictive);
         ret.put("canUseFullScreenIntent", canFullScreen);
+        // Do Not Disturb access. Without it an SOS on a phone in DND is muted
+        // outright — zen blocks USAGE_ALARM audio above the app, so neither the
+        // siren's routing nor its volume can be heard. Always readable, so the
+        // checklist can treat it as verifiable. See SosDnd.
+        ret.put("dndAccess", SosDnd.hasAccess(getContext()));
         ret.put("sdkInt", Build.VERSION.SDK_INT);
         call.resolve(ret);
+    }
+
+    /**
+     * Opens Settings > Do Not Disturb access, where the user allows Famora to
+     * step out of Do Not Disturb for the length of an SOS. It is a Settings
+     * toggle, not a runtime permission, so it cannot be requested inline.
+     */
+    @PluginMethod
+    public void openDndAccessSettings(PluginCall call) {
+        try {
+            getContext().startActivity(SosDnd.accessSettingsIntent());
+            call.resolve(new JSObject().put("opened", true));
+        } catch (Exception e) {
+            call.reject("Could not open settings: " + e.getMessage());
+        }
     }
 
     /**

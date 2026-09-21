@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { useT } from '../i18n'
 import { useBackButton } from '../hooks/useBackButton'
-import { MEDIA_MAX_BYTES, formatBytes, mediaKindOf, signedMediaUrl } from '../lib/chatMedia'
+import { MEDIA_MAX_BYTES, canSaveMedia, formatBytes, mediaKindOf, saveChatMedia, signedMediaUrl } from '../lib/chatMedia'
+import { waveformBars } from '../lib/waveform'
 import Icon from './Icon'
 
 /**
@@ -39,8 +41,25 @@ function formatDuration(ms) {
 }
 
 // ── Full-screen image viewer ────────────────────────────────────────────────
-function ImageViewer({ url, onClose }) {
+// Tap anywhere to close — except the save button, which is where people most
+// often want "keep this photo". The same action is in the long-press menu.
+function ImageViewer({ url, msg, onClose }) {
+  const t = useT()
   useBackButton(true, onClose)
+  const [saving, setSaving] = useState(false)
+
+  const save = (e) => {
+    e.stopPropagation()
+    if (saving) return
+    setSaving(true)
+    // MediaSavePlugin reports the result as a toast; this only has to make
+    // sure a second tap mid-download does not start a second copy.
+    saveChatMedia(msg, t)
+      .catch(err => console.warn('[Messages] save failed:', err?.message || err))
+      .finally(() => setSaving(false))
+  }
+
+  const label = Capacitor.isNativePlatform() ? t('messages.saveToGallery') : t('messages.download')
   return (
     <div
       onClick={onClose}
@@ -51,21 +70,218 @@ function ImageViewer({ url, onClose }) {
       }}
     >
       <img src={url} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+      {canSaveMedia(msg) && (
+        <button
+          onClick={save}
+          aria-label={label}
+          title={label}
+          style={{
+            position: 'absolute', top: 'calc(env(safe-area-inset-top, 0px) + 16px)', right: 16,
+            width: 44, height: 44, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.55 : 1, padding: 0,
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
+      )}
     </div>
   )
 }
 
 /**
- * A photo or video with no caption and no reply quote is drawn on its own,
- * without the coloured bubble behind it — the bubble padding showed as a thick
- * maroon frame around every photo I sent. Audio and documents keep the bubble:
- * the player and the file row need a surface to sit on.
+ * Media with no caption and no reply quote is drawn on its own, without the
+ * coloured bubble behind it — the bubble padding showed as a thick maroon
+ * frame around every photo I sent.
+ *
+ * Voice notes were left out of this at first, on the theory that the player
+ * needed a surface to sit on. It has one: the browser draws its own pale
+ * control, so a maroon bubble behind it was a second surface around the
+ * first, and on a sent message it framed a light grey pill in dark maroon.
+ *
+ * Documents still keep the bubble. That row is drawn by us and is
+ * transparent, so it genuinely has nothing to sit on.
  */
 export function isBareMedia(msg) {
   return !!msg?.media_path
-    && (msg.media_type === 'image' || msg.media_type === 'video')
+    && (msg.media_type === 'image' || msg.media_type === 'video' || msg.media_type === 'audio')
     && !String(msg.content || '').trim()
     && !msg.reply_to_id
+}
+
+// ── Voice notes ────────────────────────────────────────────────────────────
+//
+// The browser control was doing this job and doing it badly: a grey pill in a
+// maroon app, a monospace 0:00 / 0:05, and an overflow menu offering Download
+// and Playback speed in the middle of a family conversation. None of it could
+// be styled — the shadow DOM behind it is closed.
+//
+// So the <audio> element stays, with no controls and nothing drawn, and this
+// draws the surface instead.
+
+// Only one note plays at a time. Two overlapping voices are never what
+// anyone meant, and on a phone it is impossible to tell which row to stop.
+let nowPlaying = null
+
+function mmss(ms) {
+  const total = Math.max(0, Math.round((ms || 0) / 1000))
+  const m = Math.floor(total / 60)
+  const sec = total % 60
+  return m + ":" + String(sec).padStart(2, "0")
+}
+
+function VoiceNote({ msg, url, isOwn }) {
+  const t = useT()
+  // One ink per side: maroon for mine, near-black for theirs. The ring, the
+  // button and the played bars are all drawn in it, so whose note it is
+  // survives being glanced at.
+  const ink = isOwn ? 'var(--maroon)' : 'var(--text)'
+
+  const ref = useRef(null)
+  const [playing, setPlaying] = useState(false)
+  const [elapsedMs, setElapsedMs] = useState(0)
+  // The recorder stored this when the note was sent, so the length is on
+  // screen before the file has been touched — no 0:00 that jumps once the
+  // metadata lands, no row that changes height mid-scroll.
+  const [knownMs, setKnownMs] = useState(msg?.media_duration_ms || 0)
+
+  const bars = useRef(null)
+  if (!bars.current) bars.current = waveformBars(msg?.id)
+
+  const totalMs  = knownMs || 0
+  const progress = totalMs > 0 ? Math.min(1, elapsedMs / totalMs) : 0
+
+  // Whatever stops the audio — finishing, another note starting, unmounting —
+  // the button has to stop looking like it is playing.
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const onTime  = () => setElapsedMs(el.currentTime * 1000)
+    const onEnd   = () => { setPlaying(false); setElapsedMs(0); el.currentTime = 0 }
+    const onPause = () => setPlaying(false)
+    const onPlay  = () => setPlaying(true)
+    const onMeta  = () => {
+      // Older notes predate media_duration_ms, and a live recording can
+      // report Infinity until it has been seeked once.
+      if (!knownMs && Number.isFinite(el.duration)) setKnownMs(el.duration * 1000)
+    }
+    el.addEventListener('timeupdate', onTime)
+    el.addEventListener('ended', onEnd)
+    el.addEventListener('pause', onPause)
+    el.addEventListener('play', onPlay)
+    el.addEventListener('loadedmetadata', onMeta)
+    return () => {
+      el.removeEventListener('timeupdate', onTime)
+      el.removeEventListener('ended', onEnd)
+      el.removeEventListener('pause', onPause)
+      el.removeEventListener('play', onPlay)
+      el.removeEventListener('loadedmetadata', onMeta)
+      if (nowPlaying === el) nowPlaying = null
+    }
+  }, [knownMs])
+
+  const toggle = () => {
+    const el = ref.current
+    if (!el) return
+    if (el.paused) {
+      if (nowPlaying && nowPlaying !== el) { try { nowPlaying.pause() } catch { /* already gone */ } }
+      nowPlaying = el
+      // Autoplay policies can refuse; the catch keeps a refusal from
+      // surfacing as an unhandled rejection in the WebView console.
+      const r = el.play()
+      if (r && r.catch) r.catch(() => setPlaying(false))
+    } else {
+      el.pause()
+    }
+  }
+
+  // Tap anywhere on the bars to jump there. The whole row is the scrubber,
+  // which is the only way to hit a target this short with a thumb.
+  const seek = (e) => {
+    const el = ref.current
+    if (!el || !totalMs) return
+    const box = e.currentTarget.getBoundingClientRect()
+    const x = (e.clientX ?? 0) - box.left
+    const ratio = Math.max(0, Math.min(1, x / box.width))
+    el.currentTime = (ratio * totalMs) / 1000
+    setElapsedMs(ratio * totalMs)
+  }
+
+  return (
+    <div
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        width: 232, maxWidth: '100%', boxSizing: 'border-box',
+        padding: '7px 12px 7px 7px',
+        borderRadius: 24, background: '#fff',
+        border: `2px solid ${ink}`,
+      }}
+    >
+      <audio ref={ref} src={url} preload="metadata" style={{ display: "none" }} />
+
+      <button
+        onClick={toggle}
+        aria-label={playing ? t('messages.voicePause') : t('messages.voicePlay')}
+        style={{
+          width: 34, height: 34, borderRadius: 17, flexShrink: 0,
+          background: ink, border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 0, fontFamily: 'inherit',
+        }}
+      >
+        {playing ? (
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff">
+            <rect x="5" y="4" width="5" height="16" rx="1.6" />
+            <rect x="14" y="4" width="5" height="16" rx="1.6" />
+          </svg>
+        ) : (
+          // Nudged right by a hair: a triangle centred on its bounding box
+          // looks left-of-centre inside a circle.
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff" style={{ marginLeft: 2 }}>
+            <path d="M7 4.5v15a1 1 0 0 0 1.54.84l11.2-7.5a1 1 0 0 0 0-1.68L8.54 3.66A1 1 0 0 0 7 4.5z" />
+          </svg>
+        )}
+      </button>
+
+      <div
+        onClick={seek}
+        style={{
+          flex: 1, minWidth: 0, height: 26, cursor: totalMs ? 'pointer' : 'default',
+          display: 'flex', alignItems: 'center', gap: 2,
+        }}
+      >
+        {bars.current.map((h, i) => {
+          // A bar is played once the playhead has passed its middle, so the
+          // fill advances bar by bar instead of flickering on the boundary.
+          const played = progress > (i + 0.5) / bars.current.length
+          return (
+            <div
+              key={i}
+              style={{
+                flex: 1, minWidth: 0, height: `${Math.round(h * 100)}%`,
+                borderRadius: 2, background: ink,
+                opacity: played ? 1 : 0.24,
+                transition: 'opacity 0.12s linear',
+              }}
+            />
+          )
+        })}
+      </div>
+
+      <div style={{
+        fontSize: 11, fontWeight: 700, flexShrink: 0,
+        color: ink, opacity: 0.75, fontVariantNumeric: 'tabular-nums',
+        minWidth: 30, textAlign: "right",
+      }}>
+        {/* Counting up while it plays, total length while it does not — the
+            two numbers people actually want, never both at once. */}
+        {playing || elapsedMs > 0 ? mmss(elapsedMs) : mmss(totalMs)}
+      </div>
+    </div>
+  )
 }
 
 // ── The attachment inside a bubble ──────────────────────────────────────────
@@ -96,7 +312,7 @@ export function MediaBubble({ msg, isOwn }) {
           onClick={() => setViewing(true)}
           style={{ ...frame, maxHeight: 280, objectFit: 'cover', cursor: 'pointer' }}
         />
-        {viewing && <ImageViewer url={url} onClose={() => setViewing(false)} />}
+        {viewing && <ImageViewer url={url} msg={msg} onClose={() => setViewing(false)} />}
       </>
     )
   }
@@ -106,12 +322,7 @@ export function MediaBubble({ msg, isOwn }) {
   }
 
   if (msg.media_type === 'audio') {
-    return (
-      <audio
-        src={url} controls preload="metadata"
-        style={{ width: 220, maxWidth: '100%', height: 40, display: 'block' }}
-      />
-    )
+    return <VoiceNote msg={msg} url={url} isOwn={isOwn} />
   }
 
   // A document is a link, not a player. Opening an external https URL from the
