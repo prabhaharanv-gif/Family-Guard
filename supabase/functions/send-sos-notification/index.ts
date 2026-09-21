@@ -183,12 +183,25 @@ serve(async (req) => {
 
     const { data: member } = await supabase
       .from('family_members')
-      .select('display_name')
+      .select('display_name, phone')
       .eq('user_id',   record.user_id)
       .eq('family_id', record.family_id)
       .maybeSingle()
 
     const senderName = member?.display_name || 'A family member'
+
+    // For the alert's Call button. family_members.phone is only filled when
+    // the person typed it into that family; the account-level number in
+    // user_profiles is the fallback. Empty means the app hides Call.
+    let senderPhone: string = member?.phone || ''
+    if (!senderPhone) {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('phone')
+        .eq('user_id', record.user_id)
+        .maybeSingle()
+      senderPhone = profile?.phone || ''
+    }
     console.log(`[SOS-FN] Sending to ${tokens.length} device(s) in family ${record.family_id}`)
 
     const rawSA = Deno.env.get('FIREBASE_SERVICE_ACCOUNT')
@@ -209,32 +222,74 @@ serve(async (req) => {
       return new Response('Auth error', { status: 500 })
     }
 
-    // ── STEP 7: Send HYBRID FCM payload ──────────────────────────────────────
+    // ── STEP 7: Send a DATA-ONLY FCM payload ─────────────────────────────────
     //
-    // TWO-LAYER strategy for guaranteed lock screen delivery:
+    // This was a "hybrid" payload — a `notification` block alongside the data —
+    // on the belief that the data block would still reach onMessageReceived()
+    // in the background. It does not, and that single wrong assumption was the
+    // whole SOS failure.
     //
-    // LAYER 1 — `notification` block:
-    //   Android displays this natively even when app is FORCE-STOPPED.
-    //   Uses sos_alerts_v3 channel (IMPORTANCE_HIGH, alarm sound, bypass DnD).
-    //   This is what wakes the screen and shows the alert on the lock screen.
+    // FCM's actual rule: if a message carries a `notification` block, the
+    // Firebase SDK renders it ITSELF whenever the app is not in the foreground,
+    // and onMessageReceived() is never called. The data is handed over only if
+    // the user taps the tray entry. So on a locked or backgrounded phone —
+    // every real SOS — SOSSirenService never started, the siren never played
+    // and SOSAlertActivity was never launched. The recipient got the SDK's
+    // plain banner and nothing else. Confirmed on-device by the notification
+    // tag the SDK stamps on its own entries: "FCM-Notification:238017546".
     //
-    // LAYER 2 — `data` block:
-    //   When app IS alive (foreground/background), onMessageReceived() fires.
-    //   SOSSirenService starts → plays custom siren + shows full-screen overlay.
-    //   The native channel notification is suppressed by SOSSirenService taking
-    //   over — so users hear exactly ONE alarm sound, not two.
+    // It also silently mis-routed the sound. The block pinned
+    // channel_id 'sos_alerts_v3', a channel the app no longer creates (it is
+    // on sos_alerts_v4 / sos_alerts_v4_dnd now), so Android fell back to a
+    // default channel: ordinary importance, ordinary notification sound, no
+    // DND bypass. That is why an SOS went quiet on a silenced phone — the
+    // STREAM_ALARM siren that is exempt from ringer-silent never ran at all.
     //
-    // Why both? Data-only relies on background service waking — Android battery
-    // optimisers (especially on Samsung/Xiaomi/OPPO) kill background services
-    // aggressively. The notification block bypasses this entirely.
+    // Data-only is what makes the app's own code run. A high-priority data
+    // message wakes the app out of Doze and App Standby, which is exactly how
+    // the sos_resolved path above already works. The old comment's argument
+    // for the block — that it survives a FORCE-STOPPED app — does not hold
+    // either: a force-stopped app receives no FCM at all, notification block
+    // or not, until the user opens it again.
+    //
+    // If the alert still cannot reach the screen, the app posts its own
+    // fallback (MyFirebaseMessagingService.showSosNotification) on the right
+    // channel and with a live full-screen intent — strictly better than
+    // anything the SDK would have drawn here.
+    // ── Resolved: silence the alarm instead of raising one ───────────────────
+    //
+    // The sos_resolved_notification trigger (20260918100000) fires when the
+    // sender taps "I am safe now". Before it existed, every family member kept
+    // hearing the siren until they dismissed it by hand — the emergency was
+    // over and their phones had no way to know.
+    //
+    // Data-only on purpose: there is nothing to announce, and a notification
+    // block would put a banner on screen for an alert that just ended.
+    if (record.is_resolved === true) {
+      const stopPayload = {
+        data: {
+          type:      'sos_resolved',
+          sos_id:    String(record.id ?? ''),
+          family_id: String(record.family_id),
+        },
+        android: { priority: 'high', ttl: '120s' },
+      }
+      const stopResults = await Promise.all(
+        tokens.map(({ token }) => sendFCM(token, stopPayload, accessToken))
+      )
+      const stopped = stopResults.filter((r: any) => !r.error).length
+      console.log(`[SOS-FN] Resolved — silenced ${stopped}/${tokens.length} device(s)`)
+      return new Response(
+        JSON.stringify({ resolved: true, sent: stopped, total: tokens.length }),
+        { headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
     const alertMessage = record.message || 'SOS Alert'
     const fcmPayload = {
-      // LAYER 1: notification block — wakes screen, shows on lock screen
-      notification: {
-        title: `🚨 SOS — ${senderName} needs help!`,
-        body:  alertMessage,
-      },
-      // LAYER 2: data block — picked up by onMessageReceived when app alive
+      // No `notification` block, deliberately — see STEP 7 above. Adding one
+      // back stops onMessageReceived() from running in the background, which
+      // disables the siren and the full-screen alert in one go.
       data: {
         type:      'sos',
         sender:    senderName,
@@ -242,21 +297,16 @@ serve(async (req) => {
         family_id: String(record.family_id),
         lat:       String(record.lat ?? ''),
         lng:       String(record.lng ?? ''),
+        phone:     senderPhone,
       },
+      // android.notification is gone with the block it configured. Channel,
+      // importance, visibility and vibration are all decided by the app now,
+      // in ensureSosChannelStatic() — one place, and one that cannot drift out
+      // of sync with the channel ids the way the hardcoded 'sos_alerts_v3'
+      // here had already done.
       android: {
         priority: 'high',
         ttl:      '60s',
-        notification: {
-          // Must match the channel created in MyFirebaseMessagingService.java
-          channel_id:            'sos_alerts_v3',
-          notification_priority: 'PRIORITY_MAX',
-          visibility:            'PUBLIC',
-          // Bypass DnD and vibrate even on silent mode
-          default_vibrate_timings: false,
-          vibrate_timings:         ['0s', '0.5s', '0.25s', '0.5s', '0.25s', '0.5s'],
-          // Clicking notification opens app
-          click_action:          'FLUTTER_NOTIFICATION_CLICK',
-        },
       },
     }
 

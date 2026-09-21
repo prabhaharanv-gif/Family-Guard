@@ -259,12 +259,20 @@ public class CallRingingService extends Service {
             Log.e("FamoraCall", "CallRingingService: startForeground FAILED", e);
         }
 
-        startRingtone();
-        startVibration();
-        // Delay so our own ring-volume bump in startRingtone() is not mistaken
-        // for the user pressing a volume key.
-        new android.os.Handler(android.os.Looper.getMainLooper())
-            .postDelayed(this::registerVolumeObserver, 1200L);
+        // While this phone's own SOS is open its owner may be hiding: the call
+        // screen still comes up so they can see who is calling, but with no
+        // ringtone, no vibration, and no ring-volume raise (which on its own
+        // can switch a phone out of silent). See SosSilence.
+        if (SosSilence.isActive(getApplicationContext())) {
+            Log.i("FamoraCall", "ring suppressed — SOS silence is on");
+        } else {
+            startRingtone();
+            startVibration();
+            // Delay so our own ring-volume bump in startRingtone() is not mistaken
+            // for the user pressing a volume key.
+            new android.os.Handler(android.os.Looper.getMainLooper())
+                .postDelayed(this::registerVolumeObserver, 1200L);
+        }
         forceScreenOn();
 
         // The alert itself, and the only route to it — see the class comment.

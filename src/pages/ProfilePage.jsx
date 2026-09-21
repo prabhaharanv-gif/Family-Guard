@@ -11,6 +11,9 @@ import { useBackButton } from '../hooks/useBackButton'
 import Dialog from '../components/Dialog'
 import { ALERT_TYPES, getRingtones, resetRingtone } from '../lib/ringtones'
 import SoundPickerSheet from '../components/SoundPickerSheet'
+import FakeCallCard from '../components/FakeCallCard'
+import ShakeSosCard from '../components/ShakeSosCard'
+import OfflineSmsCard from '../components/OfflineSmsCard'
 import { useT, useLangStore, UI_LANGUAGES } from '../i18n'
 import Icon from '../components/Icon'
 
@@ -34,6 +37,103 @@ function Toggle({ on, onToggle }) {
         boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
       }} />
     </button>
+  )
+}
+
+/**
+ * One section of the profile: a row in the list, and the screen it opens.
+ *
+ * Thirteen cards in a column meant the settings someone actually came for sat
+ * several screens down. The first attempt at fixing that expanded each group
+ * in place, which put a card inside a card inside a rail — three frames around
+ * one list of toggles, and a heading repeated on both of them.
+ *
+ * A screen of its own has a title bar, so the contents need no frame and no
+ * indent: the cards inside sit at full width and look exactly as they did
+ * before any of this. Same shape as UserManualPage and PrivacyPolicyPage,
+ * which is where someone arriving from this list has already been.
+ */
+function Group({ id, icon, title, subtitle, open, onOpen, onBack, children }) {
+  return (
+    <>
+      <button
+        onClick={onOpen}
+        className="settings-card"
+        style={{
+          width: '100%', marginBottom: 10, padding: '14px 16px',
+          cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}
+      >
+        <div style={{
+          width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+          background: '#F5E8EF', border: '1px solid #EDD0DA',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--maroon)',
+        }}>
+          <Icon name={icon} size={17} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* line-height 1.45: Indic scripts stack marks above and below the
+              base character and clip at tighter leading. */}
+          <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, lineHeight: 1.45 }}>
+            {title}
+          </div>
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)', marginTop: 2, lineHeight: 1.5 }}>
+            {subtitle}
+          </div>
+        </div>
+        <svg
+          width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="#C9A3B4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          style={{ flexShrink: 0 }}
+        >
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          id={`group-${id}`}
+          style={{
+            position: 'fixed', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            background: 'var(--bg)',
+            zIndex: 100,
+          }}
+        >
+          <div style={{
+            background: 'linear-gradient(135deg, var(--maroon) 0%, var(--maroon-deep) 100%)',
+            padding: '16px 16px 14px',
+            flexShrink: 0,
+            boxShadow: '0 2px 12px rgba(139,13,61,0.25)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button onClick={onBack} style={{
+                background: 'rgba(255,255,255,0.15)',
+                border: '1px solid rgba(255,255,255,0.25)',
+                borderRadius: 10, width: 36, height: 36,
+                cursor: 'pointer', fontSize: 18, color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>←</button>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', fontFamily: 'Sora, sans-serif', lineHeight: 1.35 }}>
+                  {title}
+                </div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2, lineHeight: 1.5 }}>
+                  {subtitle}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '12px 14px 24px' }}>
+            {children}
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -451,6 +551,9 @@ export default function ProfilePage() {
   // everything below it off the first screen.
   const [soundsOpen, setSoundsOpen] = useState(false)
 
+  // Which section is open as its own screen, or null for the list.
+  const [openGroup, setOpenGroup] = useState(null)
+
   const [displayName, setDisplayName]   = useState('')
   const [phone, setPhone]               = useState('')
   const [email, setEmail]               = useState('')
@@ -471,6 +574,7 @@ export default function ProfilePage() {
   const fileRef = useRef()
 
   // Hardware back button closes open sheets instead of exiting the app
+  useBackButton(!!openGroup, () => setOpenGroup(null))
   useBackButton(!!selectedFam, () => setSelectedFam(null))
   useBackButton(!!viewFam, () => setViewFam(null))
 
@@ -941,242 +1045,404 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* ── EDIT INFO ── */}
-        <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 10 }}>
-            {t('profile.editInfo')}
-          </div>
+        <Group
+          id="account" icon="user"
+          title={t('profile.group.account')} subtitle={t('profile.group.accountSub')}
+          open={openGroup === "account"} onOpen={() => setOpenGroup("account")} onBack={() => setOpenGroup(null)}
+        >
+          {/* ── EDIT INFO ── */}
+          <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 10 }}>
+              {t('profile.editInfo')}
+            </div>
 
-          <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.displayName')}</label>
-            <input className="input" style={{ padding: '11px 14px', fontSize: 15, fontWeight: 600 }}
-              value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={t('profile.yourName')} />
-          </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.displayName')}</label>
+              <input className="input" style={{ padding: '11px 14px', fontSize: 15, fontWeight: 600 }}
+                value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={t('profile.yourName')} />
+            </div>
 
-          <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.mobileNumber')}</label>
-            <div style={{ display: 'flex', gap: 7 }}>
-              {/* Plain "+91" — the 🇮🇳 flag emoji used to sit here, but MIUI
-                  and several other Android ROMs ship no regional-indicator
-                  glyphs, so the pair fell back to rendering its two underlying
-                  letters as boxed capitals: the strange "IN +91". Padding and
-                  font now match the input beside it so the two read as one
-                  field. */}
-              <span style={{
-                display: 'flex', alignItems: 'center',
-                padding: '11px 14px', background: 'var(--bg2)',
-                border: '1.5px solid var(--border)', borderRadius: 14,
-                fontSize: 15, fontWeight: 700, color: 'var(--text)',
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}>+91</span>
-              <input className="input" type="tel" style={{ padding: '11px 14px', fontSize: 15, fontWeight: 600, flex: 1 }}
-                value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))} placeholder={t('auth.mobileNumber')} maxLength={10} />
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', letterSpacing: 0.2, display: 'block', marginBottom: 6, lineHeight: 1.5 }}>{t('profile.mobileNumber')}</label>
+              <div style={{ display: 'flex', gap: 7 }}>
+                {/* Plain "+91" — the 🇮🇳 flag emoji used to sit here, but MIUI
+                    and several other Android ROMs ship no regional-indicator
+                    glyphs, so the pair fell back to rendering its two underlying
+                    letters as boxed capitals: the strange "IN +91". Padding and
+                    font now match the input beside it so the two read as one
+                    field. */}
+                <span style={{
+                  display: 'flex', alignItems: 'center',
+                  padding: '11px 14px', background: 'var(--bg2)',
+                  border: '1.5px solid var(--border)', borderRadius: 14,
+                  fontSize: 15, fontWeight: 700, color: 'var(--text)',
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                }}>+91</span>
+                <input className="input" type="tel" style={{ padding: '11px 14px', fontSize: 15, fontWeight: 600, flex: 1 }}
+                  value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))} placeholder={t('auth.mobileNumber')} maxLength={10} />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* ── MY CODE ── */}
-        <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-          {myInviteCode && (
-            <>
-              <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 8 }}>
-                {t('profile.myCode')}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: 2, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
-                  {myInviteCode}
-                </div>
-                <button
-                  onClick={() => {
-                    // Best-effort: clipboard is unavailable in some WebView
-                    // configurations, and the code is on screen either way.
-                    try { navigator.clipboard?.writeText(myInviteCode) } catch { /* shown above */ }
-                    setCodeCopied(true)
-                    setTimeout(() => setCodeCopied(false), 1400)
-                  }}
-                  style={{
-                    background: codeCopied ? '#D1FAE5' : 'var(--maroon-wash)',
-                    border: `1.5px solid ${codeCopied ? '#10B981' : '#F0D8E3'}`,
-                    color: codeCopied ? '#059669' : 'var(--maroon)',
-                    borderRadius: 10, padding: '7px 12px',
-                    fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
-                    cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
-                    display: 'flex', alignItems: 'center', gap: 5,
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : 'var(--maroon)'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          {/* ── SAVE + CHANGE PASSWORD side by side ── */}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'stretch', marginBottom: 10 }}>
+            <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
+              {saving ? t('common.saving') : t('profile.saveChanges')}
+            </button>
+            <button onClick={() => setShowPwModal(true)} style={{
+              flex: 1, padding: 14, borderRadius: 14,
+              background: '#fff', border: '1.5px solid var(--maroon)',
+              color: 'var(--maroon)', fontWeight: 800, fontSize: 13,
+              fontFamily: 'inherit', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              lineHeight: 1.5, textAlign: 'center',
+            }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              {t('profile.changePassword')}
+            </button>
+          </div>
+        </Group>
+
+        <Group
+          id="families" icon="users"
+          title={t('profile.group.families')} subtitle={t('profile.group.familiesSub')}
+          open={openGroup === "families"} onOpen={() => setOpenGroup("families")} onBack={() => setOpenGroup(null)}
+        >
+          {/* ── MY FAMILIES ── */}
+          <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div />
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={() => navigate('/join-family')} style={{
+                  background: '#F5E6EC', border: '1px solid var(--maroon)', borderRadius: 8,
+                  padding: '5px 10px', color: 'var(--maroon)', fontWeight: 700,
+                  fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
                   </svg>
-                  {codeCopied ? t('profile.copied') : t('profile.copy')}
+                  Join
+                </button>
+                <button onClick={() => navigate('/create-family')} style={{
+                  background: 'var(--maroon)', border: 'none', borderRadius: 8,
+                  padding: '5px 10px', color: '#fff', fontWeight: 700,
+                  fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Create
                 </button>
               </div>
-            </>
-          )}
-        </div>
+            </div>
 
-        {/* ── MY FAMILIES ── */}
-        <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2 }}>
-              {t('profile.myFamilies')}
-            </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button onClick={() => navigate('/join-family')} style={{
-                background: '#F5E6EC', border: '1px solid var(--maroon)', borderRadius: 8,
-                padding: '5px 10px', color: 'var(--maroon)', fontWeight: 700,
-                fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', gap: 4,
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
-                </svg>
-                Join
-              </button>
-              <button onClick={() => navigate('/create-family')} style={{
-                background: 'var(--maroon)', border: 'none', borderRadius: 8,
-                padding: '5px 10px', color: '#fff', fontWeight: 700,
-                fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', gap: 4,
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Create
-              </button>
-            </div>
-          </div>
-
-          {/* Family list */}
-          {allFamilies.length === 0 ? (
-            <div style={{ fontSize: 13, color: 'var(--muted-soft)', textAlign: 'center', padding: '8px 0' }}>
-              {t('profile.noFamilies')}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {allFamilies.map((fam) => {
-                const isActive = fam.family_id === familyId
-                return (
-                  <div key={fam.family_id} onClick={() => setSelectedFam(fam)}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '10px 12px', borderRadius: 12,
-                      background: isActive ? 'var(--maroon-wash)' : 'var(--bg2)',
-                      border: `1.5px solid ${isActive ? 'var(--maroon)' : 'var(--border)'}`,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                    }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{
-                        width: 36, height: 36, borderRadius: '50%',
-                        background: isActive ? 'var(--maroon)' : 'var(--border)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 16, flexShrink: 0, overflow: 'hidden',
-                        border: `2px solid ${isActive ? 'var(--maroon)' : 'var(--border2)'}`,
+            {/* Family list */}
+            {allFamilies.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--muted-soft)', textAlign: 'center', padding: '8px 0' }}>
+                {t('profile.noFamilies')}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {allFamilies.map((fam) => {
+                  const isActive = fam.family_id === familyId
+                  return (
+                    <div key={fam.family_id} onClick={() => setSelectedFam(fam)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 12px', borderRadius: 12,
+                        background: isActive ? 'var(--maroon-wash)' : 'var(--bg2)',
+                        border: `1.5px solid ${isActive ? 'var(--maroon)' : 'var(--border)'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
                       }}>
-                        {/* The family's initial, not mine: every row showed my own
-                            photo or letter, so all families looked the same. */}
-                        <span style={{ fontSize: 16, fontWeight: 800, color: isActive ? '#fff' : 'var(--maroon)' }}>{familyInitial(fam.name)}</span>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: '#000' }}>{fam.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--muted-soft)', marginTop: 1 }}>
-                          {fam.role === 'admin' ? <><Icon name="crown" /> {t('profile.admin')}</> : <><Icon name="user" /> {t('profile.member')}</>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{
+                          width: 36, height: 36, borderRadius: '50%',
+                          background: isActive ? 'var(--maroon)' : 'var(--border)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 16, flexShrink: 0, overflow: 'hidden',
+                          border: `2px solid ${isActive ? 'var(--maroon)' : 'var(--border2)'}`,
+                        }}>
+                          {/* The family's initial, not mine: every row showed my own
+                              photo or letter, so all families looked the same. */}
+                          <span style={{ fontSize: 16, fontWeight: 800, color: isActive ? '#fff' : 'var(--maroon)' }}>{familyInitial(fam.name)}</span>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: '#000' }}>{fam.name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--muted-soft)', marginTop: 1 }}>
+                            {fam.role === 'admin' ? <><Icon name="crown" /> {t('profile.admin')}</> : <><Icon name="user" /> {t('profile.member')}</>}
+                          </div>
                         </div>
                       </div>
+                      {isActive && (
+                        <div style={{
+                          background: 'var(--maroon)', color: '#fff',
+                          fontSize: 10, fontWeight: 800, padding: '3px 8px',
+                          borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5,
+                        }}>{t('profile.active')}</div>
+                      )}
                     </div>
-                    {isActive && (
-                      <div style={{
-                        background: 'var(--maroon)', color: '#fff',
-                        fontSize: 10, fontWeight: 800, padding: '3px 8px',
-                        borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5,
-                      }}>{t('profile.active')}</div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* ── ALERT SOUNDS ── */}
-        {/* Native only: the picker is a system Activity, so there is nothing to
-            offer on web. */}
-        {ringtones && (
-          <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-            <button
-              onClick={() => setSoundsOpen(o => !o)}
-              aria-expanded={soundsOpen}
-              style={{
-                width: '100%', background: 'none', border: 'none', padding: 0,
-                cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-                display: 'flex', alignItems: 'center', gap: 12,
-              }}
-            >
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2 }}>
-                  {t('profile.alertSounds')}
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginTop: 3, lineHeight: 1.5 }}>
-                  {t('profile.alertSoundsSub')}
-                </div>
+                  )
+                })}
               </div>
-              <svg
-                width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="#C9A3B4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                style={{
-                  flexShrink: 0,
-                  transform: soundsOpen ? 'rotate(90deg)' : 'none',
-                  transition: 'transform 0.18s',
-                }}
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-            {soundsOpen && <div style={{ height: 10 }} />}
-            {soundsOpen && ALERT_TYPES.map((at, i) => (
-              <div key={at.key} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '10px 0',
-                borderTop: i === 0 ? 'none' : '1px solid #F7EFF3',
-              }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{t('profile.sound.' + at.key)}</div>
-                  <div style={{
-                    fontSize: 11.5, color: 'var(--muted-soft)', marginTop: 2,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
-                    {ringtones[at.key] || t('profile.default')}
-                  </div>
+            )}
+          </div>
+
+          {/* ── MY CODE ── */}
+          <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
+            {myInviteCode && (
+              <>
+                <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 8 }}>
+                  {t('profile.myCode')}
                 </div>
-                {ringtones[at.key] && ringtones[at.key] !== t('profile.default') && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: 2, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+                    {myInviteCode}
+                  </div>
                   <button
-                    onClick={() => handleResetTone(at.key)}
-                    title={`Use the default sound for ${t('profile.sound.' + at.key)}`}
+                    onClick={() => {
+                      // Best-effort: clipboard is unavailable in some WebView
+                      // configurations, and the code is on screen either way.
+                      try { navigator.clipboard?.writeText(myInviteCode) } catch { /* shown above */ }
+                      setCodeCopied(true)
+                      setTimeout(() => setCodeCopied(false), 1400)
+                    }}
                     style={{
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      color: 'var(--muted-soft)', fontSize: 11.5, fontWeight: 700,
-                      fontFamily: 'inherit', padding: '6px 2px', flexShrink: 0,
+                      background: codeCopied ? '#D1FAE5' : 'var(--maroon-wash)',
+                      border: `1.5px solid ${codeCopied ? '#10B981' : '#F0D8E3'}`,
+                      color: codeCopied ? '#059669' : 'var(--maroon)',
+                      borderRadius: 10, padding: '7px 12px',
+                      fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
+                      cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      transition: 'all 0.2s',
                     }}
                   >
-                    Default
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : 'var(--maroon)'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    {codeCopied ? t('profile.copied') : t('profile.copy')}
                   </button>
-                )}
-                <button
-                  onClick={() => handlePickTone(at.key)}
+                </div>
+              </>
+            )}
+          </div>
+        </Group>
+
+        <Group
+          id="safety" icon="siren"
+          title={t('profile.group.safety')} subtitle={t('profile.group.safetySub')}
+          open={openGroup === "safety"} onOpen={() => setOpenGroup("safety")} onBack={() => setOpenGroup(null)}
+        >
+          {/* ── SHAKE FOR SOS / FAKE CALL / OFFLINE SMS ──
+              Android only; all three render nothing elsewhere. */}
+          <ShakeSosCard Toggle={Toggle} />
+          <FakeCallCard Toggle={Toggle} />
+          <OfflineSmsCard Toggle={Toggle} />
+
+          {/* ── ALERT SOUNDS ── */}
+          {/* Native only: the picker is a system Activity, so there is nothing to
+              offer on web. */}
+          {ringtones && (
+            <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
+              <button
+                onClick={() => setSoundsOpen(o => !o)}
+                aria-expanded={soundsOpen}
+                style={{
+                  width: '100%', background: 'none', border: 'none', padding: 0,
+                  cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2 }}>
+                    {t('profile.alertSounds')}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginTop: 3, lineHeight: 1.5 }}>
+                    {t('profile.alertSoundsSub')}
+                  </div>
+                </div>
+                <svg
+                  width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  stroke="#C9A3B4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                   style={{
-                    background: 'var(--maroon-wash)', border: '1.5px solid #F0D8E3',
-                    color: 'var(--maroon)', borderRadius: 10, padding: '7px 13px',
-                    fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
-                    cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    transform: soundsOpen ? 'rotate(90deg)' : 'none',
+                    transition: 'transform 0.18s',
                   }}
                 >
-                  {t('profile.change')}
-                </button>
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+              {soundsOpen && <div style={{ height: 10 }} />}
+              {soundsOpen && ALERT_TYPES.map((at, i) => (
+                <div key={at.key} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '10px 0',
+                  borderTop: i === 0 ? 'none' : '1px solid #F7EFF3',
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{t('profile.sound.' + at.key)}</div>
+                    <div style={{
+                      fontSize: 11.5, color: 'var(--muted-soft)', marginTop: 2,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {ringtones[at.key] || t('profile.default')}
+                    </div>
+                  </div>
+                  {ringtones[at.key] && ringtones[at.key] !== t('profile.default') && (
+                    <button
+                      onClick={() => handleResetTone(at.key)}
+                      title={`Use the default sound for ${t('profile.sound.' + at.key)}`}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--muted-soft)', fontSize: 11.5, fontWeight: 700,
+                        fontFamily: 'inherit', padding: '6px 2px', flexShrink: 0,
+                      }}
+                    >
+                      Default
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handlePickTone(at.key)}
+                    style={{
+                      background: 'var(--maroon-wash)', border: '1.5px solid #F0D8E3',
+                      color: 'var(--maroon)', borderRadius: 10, padding: '7px 13px',
+                      fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
+                      cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {t('profile.change')}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </Group>
+
+        <Group
+          id="privacy" icon="lock"
+          title={t('profile.group.privacy')} subtitle={t('profile.group.privacySub')}
+          open={openGroup === "privacy"} onOpen={() => setOpenGroup("privacy")} onBack={() => setOpenGroup(null)}
+        >
+          {/* ── PRIVACY ── */}
+          <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
+
+            {[
+              {
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/>
+                  </svg>
+                ),
+                label: t('profile.showMeOnline'), value: showOnline, handler: handleToggleOnline,
+              },
+              {
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                ),
+                label: t('profile.showMyLocation'), value: showLocation, handler: handleToggleLocation,
+              },
+              {
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                ),
+                label: t('profile.showLastSeen'), value: showLastSeen, handler: handleToggleLastSeen,
+              },
+            ].map((item, i, arr) => (
+              <div key={item.label}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                      background: 'var(--maroon-wash)', border: '1px solid #EDD0DA',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {item.icon}
+                    </div>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{item.label}</div>
+                  </div>
+                  <Toggle on={item.value} onToggle={item.handler} />
+                </div>
+                {i < arr.length - 1 && (
+                  <div style={{ height: 1, background: '#F5EEF2', margin: '10px 0' }} />
+                )}
               </div>
             ))}
           </div>
-        )}
+        </Group>
+
+        <Group
+          id="help" icon="book"
+          title={t('profile.group.help')} subtitle={t('profile.group.helpSub')}
+          open={openGroup === "help"} onOpen={() => setOpenGroup("help")} onBack={() => setOpenGroup(null)}
+        >
+          {/* ── USER GUIDE ── */}
+          <div
+            className="settings-card"
+            onClick={() => navigate('/manual')}
+            style={{ marginBottom: 10, padding: '14px 16px', cursor: 'pointer' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                  background: '#F5E8EF', border: '1px solid #EDD0DA',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{t('profile.userGuide')}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginTop: 1 }}>{t('profile.userGuideSub')}</div>
+                </div>
+              </div>
+              <span style={{ color: 'var(--muted-soft)', fontSize: 16 }}>›</span>
+            </div>
+          </div>
+
+          {/* ── PRIVACY POLICY ── */}
+          <div
+            className="settings-card"
+            onClick={() => navigate('/privacy')}
+            style={{ marginBottom: 10, padding: '14px 16px', cursor: 'pointer' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                  background: '#F5E8EF', border: '1px solid #EDD0DA',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" fill="none"/>
+                    <polyline points="9 12 11 14 15 10" fill="none"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{t('profile.privacyPolicy')}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginTop: 1 }}>{t('profile.privacyPolicySub')}</div>
+                </div>
+              </div>
+              <span style={{ color: 'var(--muted-soft)', fontSize: 18, fontWeight: 300 }}>›</span>
+            </div>
+          </div>
+        </Group>
 
         {soundSheet && (
           <SoundPickerSheet
@@ -1186,136 +1452,6 @@ export default function ProfilePage() {
             onSaved={handleSoundSaved}
           />
         )}
-
-        {/* ── PRIVACY ── */}
-        <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 12 }}>
-            {t('profile.privacy')}
-          </div>
-          {[
-            {
-              icon: (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/>
-                </svg>
-              ),
-              label: t('profile.showMeOnline'), value: showOnline, handler: handleToggleOnline,
-            },
-            {
-              icon: (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                  <circle cx="12" cy="10" r="3"/>
-                </svg>
-              ),
-              label: t('profile.showMyLocation'), value: showLocation, handler: handleToggleLocation,
-            },
-            {
-              icon: (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
-              ),
-              label: t('profile.showLastSeen'), value: showLastSeen, handler: handleToggleLastSeen,
-            },
-          ].map((item, i, arr) => (
-            <div key={item.label}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-                    background: 'var(--maroon-wash)', border: '1px solid #EDD0DA',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {item.icon}
-                  </div>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{item.label}</div>
-                </div>
-                <Toggle on={item.value} onToggle={item.handler} />
-              </div>
-              {i < arr.length - 1 && (
-                <div style={{ height: 1, background: '#F5EEF2', margin: '10px 0' }} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* ── SAVE + CHANGE PASSWORD side by side ── */}
-        <div style={{ display: 'flex', gap: 10, alignItems: 'stretch' }}>
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
-            {saving ? t('common.saving') : t('profile.saveChanges')}
-          </button>
-          <button onClick={() => setShowPwModal(true)} style={{
-            flex: 1, padding: 14, borderRadius: 14,
-            background: '#fff', border: '1.5px solid var(--maroon)',
-            color: 'var(--maroon)', fontWeight: 800, fontSize: 13,
-            fontFamily: 'inherit', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            lineHeight: 1.5, textAlign: 'center',
-          }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-            {t('profile.changePassword')}
-          </button>
-        </div>
-
-        {/* ── USER GUIDE ── */}
-        <div
-          className="settings-card"
-          onClick={() => navigate('/manual')}
-          style={{ marginTop: 10, padding: '14px 16px', cursor: 'pointer' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                background: '#F5E8EF', border: '1px solid #EDD0DA',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                </svg>
-              </div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{t('profile.userGuide')}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginTop: 1 }}>{t('profile.userGuideSub')}</div>
-              </div>
-            </div>
-            <span style={{ color: 'var(--muted-soft)', fontSize: 16 }}>›</span>
-          </div>
-        </div>
-
-        {/* ── PRIVACY POLICY ── */}
-        <div
-          className="settings-card"
-          onClick={() => navigate('/privacy')}
-          style={{ marginTop: 10, padding: '14px 16px', cursor: 'pointer' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                background: '#F5E8EF', border: '1px solid #EDD0DA',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" fill="none"/>
-                  <polyline points="9 12 11 14 15 10" fill="none"/>
-                </svg>
-              </div>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{t('profile.privacyPolicy')}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginTop: 1 }}>{t('profile.privacyPolicySub')}</div>
-              </div>
-            </div>
-            <span style={{ color: 'var(--muted-soft)', fontSize: 18, fontWeight: 300 }}>›</span>
-          </div>
-        </div>
 
         {/* ── DELETE ACCOUNT ──
             Maroon, not the bright #DC2626 it used to be: that red was the only

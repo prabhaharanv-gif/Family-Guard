@@ -62,6 +62,29 @@ function distanceM(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
+// How old the native service's last pushed fix may be and still be written
+// here. The service re-pushes at least every 90s (its heartbeat), so anything
+// older means it is not running and this hook falls back to asking for a fix.
+const NATIVE_FIX_MAX_AGE_MS = 3 * 60 * 1000
+
+/**
+ * The native service's last pushed fix, shaped like GeolocationCoordinates, or
+ * null. On Android this is the position source for this hook: it already passed
+ * the service's accuracy and jump filters. This hook used to take its own
+ * low-accuracy fix instead and write it to every family — a 90m Wi-Fi guess
+ * written over the service's 20m GPS fix, which flipped a still member's pin
+ * ~100m back and forth (Redmi, 2026-09-21).
+ */
+async function nativeLastFix() {
+  try {
+    const f = await LocationService.getLastFix()
+    if (!f?.found || Date.now() - f.time > NATIVE_FIX_MAX_AGE_MS) return null
+    return { latitude: f.lat, longitude: f.lng, accuracy: f.accuracy, speed: f.speed ?? null }
+  } catch {
+    return null   // older native build without getLastFix
+  }
+}
+
 export function useLocationBroadcast(userId, familyId) {
   const watchRef       = useRef(null)
   const lastCoordsRef  = useRef(null)
@@ -169,12 +192,28 @@ export function useLocationBroadcast(userId, familyId) {
       // position, OR if HEARTBEAT_MS has elapsed since the last write. Without
       // the heartbeat, a stationary user's timestamp never advances and their
       // pin shows as stale ("last seen 3h ago") even though the app is running.
+      //
+      // Accuracy-aware, matching LocationFilter.java: a fix only counts as
+      // movement when it lands further away than its own error, or when it is
+      // at least twice as precise as what is on the map (a rough pin being
+      // corrected). A heartbeat carrying a WORSE fix re-sends the last written
+      // position with a fresh timestamp instead of moving the pin onto it.
       if (lastWrittenRef.current) {
-        const moved = distanceM(
-          lastWrittenRef.current.lat, lastWrittenRef.current.lng, lat, lng
-        )
+        const last = lastWrittenRef.current
+        const moved = distanceM(last.lat, last.lng, lat, lng)
         const sinceLastWrite = Date.now() - lastWriteTimeRef.current
-        if (moved < MIN_MOVE_M && sinceLastWrite < HEARTBEAT_MS) return
+        const acc = accuracy ?? 0
+        const lastAcc = last.accuracy ?? 0
+        const realMove = moved >= Math.max(MIN_MOVE_M, acc)
+        const upgrade  = lastAcc > 0 && acc > 0 && acc * 2 <= lastAcc && moved >= MIN_MOVE_M
+        if (!realMove && !upgrade) {
+          if (sinceLastWrite < HEARTBEAT_MS) return
+          if (lastAcc > 0 && acc > lastAcc) {
+            lat = last.lat
+            lng = last.lng
+            accuracy = lastAcc
+          }
+        }
       }
       // ─────────────────────────────────────────────────────────────────────
 
@@ -219,7 +258,7 @@ export function useLocationBroadcast(userId, familyId) {
           })
           if (oneErr) throw oneErr
         }
-        lastWrittenRef.current = { lat, lng }
+        lastWrittenRef.current = { lat, lng, accuracy }
         lastWriteTimeRef.current = Date.now()
       } catch (e) {
         // Fallback: direct upsert (RLS still enforces user_id = auth.uid())
@@ -228,14 +267,16 @@ export function useLocationBroadcast(userId, familyId) {
           lat, lng, accuracy: accuracy || 0, speed: toKmh(speed),
           is_sharing: true, updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id,family_id' })
-        lastWrittenRef.current = { lat, lng }
+        lastWrittenRef.current = { lat, lng, accuracy }
         lastWriteTimeRef.current = Date.now()
       }
     }
 
     const getPosition = async () => {
-      // Native path
+      // Native path — the service's filtered fix first, see nativeLastFix.
       if (Capacitor.isNativePlatform()) {
+        const fix = await nativeLastFix()
+        if (fix) return { coords: fix }
         try {
           return await Geolocation.getCurrentPosition({
             enableHighAccuracy: true, timeout: 20000, maximumAge: 10000,
@@ -319,13 +360,20 @@ export function useLocationBroadcast(userId, familyId) {
         // and enableHighAccuracy:false keeps a cache miss cheap instead of
         // forcing a fresh satellite fix.
         if (Capacitor.isNativePlatform()) {
-          try {
-            const pos = await Geolocation.getCurrentPosition({
-              enableHighAccuracy: false, timeout: 15000, maximumAge: CACHED_FIX_MAX_AGE_MS,
-            })
-            lastCoordsRef.current = pos.coords
-          } catch (e) {
-            console.warn('[LocationBroadcast] Cached fix unavailable:', e?.message)
+          // The service's filtered fix; only if the service has none (not
+          // running) ask the fused provider for its cached one.
+          const fix = await nativeLastFix()
+          if (fix) {
+            lastCoordsRef.current = fix
+          } else {
+            try {
+              const pos = await Geolocation.getCurrentPosition({
+                enableHighAccuracy: false, timeout: 15000, maximumAge: CACHED_FIX_MAX_AGE_MS,
+              })
+              lastCoordsRef.current = pos.coords
+            } catch (e) {
+              console.warn('[LocationBroadcast] Cached fix unavailable:', e?.message)
+            }
           }
         }
 

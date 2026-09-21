@@ -104,6 +104,17 @@ public class PingRingService extends Service {
             startForeground(FOREGROUND_ID, buildForegroundNotification(senderName));
         }
 
+        // This phone's owner has an SOS open and may be hiding. A full-volume
+        // alarm chirp is the one thing that must not happen. startForeground
+        // above still had to run (a foreground-service start that never calls
+        // it crashes the app), so end straight after it.
+        if (SosSilence.isActive(getApplicationContext())) {
+            android.util.Log.i("FamoraSOS", "ping suppressed — SOS silence is on");
+            releaseWakeLock();
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+
         // Restarting is safe — startChirp() stops any existing ring first, so a
         // second ping while one is already ringing gives one continuous chirp
         // rather than two overlapping copies.

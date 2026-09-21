@@ -40,9 +40,12 @@
 
     <!-- SOSAlertActivity — பூட்டுத் திரையின் மேல் தோன்றும் முழுத்திரை எச்சரிக்கை -->
     <string name="sos_needs_help">%1$s அவர்களுக்கு உதவி தேவை!</string>
-    <string name="sos_view_location">📍 இருப்பிடத்தைக் காண்க</string>
+    <string name="sos_view_location">இருப்பிடத்தைக் காண்க</string>
     <string name="sos_open_app">Famora-வைத் திற</string>
-    <string name="sos_stop_alarm">✋ புரிந்தது — அலாரத்தை நிறுத்து</string>
+    <string name="sos_stop_alarm">புரிந்தது — அலாரத்தை நிறுத்து</string>
+    <string name="sos_calm_hint">அமைதியாக இருங்கள். அவர்கள் எங்கே இருக்கிறார்கள் என்று பார்த்து, அழையுங்கள் அல்லது அவர்களிடம் செல்லுங்கள்.</string>
+    <string name="sos_call">%1$s அவர்களை அழைக்கவும்</string>
+    <string name="sos_directions">வழி காண்க</string>
 
     <!-- CallRingingActivity -->
     <string name="call_incoming_voice">உள்வரும் குரல் அழைப்பு</string>
@@ -69,4 +72,23 @@
     <string name="ch_reauth_desc">இருப்பிடப் பகிர்வைத் தொடர Famora-வை மீண்டும் திறக்க வேண்டியிருக்கும் போது அறிவிக்கும்</string>
     <string name="notif_reauth_title">இருப்பிடப் பகிர்வு நிறுத்தப்பட்டது</string>
     <string name="notif_reauth_body">மீண்டும் இணைக்க Famora-வைத் திறக்கவும். அதுவரை உங்கள் குடும்பத்தால் உங்கள் இருப்பிடத்தைப் பார்க்க முடியாது.</string>
+    <!-- Fake call -->
+    <string name="fake_call_default_name">அம்மா</string>
+    <string name="fake_call_scheduled_title">நினைவூட்டல்</string>
+    <string name="fake_call_cancel">ரத்து செய்</string>
+    <string name="fake_call_incoming">உள்வரும் அழைப்பு</string>
+    <string name="fake_call_mobile">மொபைல்</string>
+    <string name="fake_call_answer">பதில்</string>
+    <string name="fake_call_decline">நிராகரி</string>
+    <string name="fake_call_end">முடி</string>
+    <string name="fake_call_notification_action">என்னை அழை</string>
+    <string name="ch_fake_call_name">போலி அழைப்பு</string>
+    <string name="ch_fake_call_quiet_name">போலி அழைப்பு (அமைதி)</string>
+    <string name="ch_fake_call_desc">நீங்களே திட்டமிடும் போலி உள்வரும் அழைப்பு</string>
+    <string name="fake_call_voice_script">ஹலோ? இப்போ எங்கே இருக்கே?|சரி. நான் பக்கத்துல தான் இருக்கேன், உன்கிட்ட வரேன்.|அங்கேயே இரு, ரெண்டு நிமிஷத்துல வந்துடுவேன்.|ஆமா, வந்துட்டே இருக்கேன். ஃபோனை வைக்காதே.</string>
+    <!-- SOS countdown screen -->
+    <string name="sos_countdown_title">உங்கள் குடும்பத்திற்கு SOS அனுப்பப்படுகிறது</string>
+    <string name="sos_countdown_hint">தவறுதலாக நிகழ்ந்திருந்தால் ரத்து செய் என்பதைத் தட்டவும்.</string>
+    <string name="sos_countdown_cancel">ரத்து செய்</string>
+    <string name="fake_call_tile_subtitle">5 வினாடியில் போலி அழைப்பு</string>
 </resources>

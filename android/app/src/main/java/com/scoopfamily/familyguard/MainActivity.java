@@ -52,12 +52,14 @@ public class MainActivity extends BridgeActivity {
 
         registerPlugin(SOSAlarmPlugin.class);
         registerPlugin(MessagesPagePlugin.class);
+        registerPlugin(MediaSavePlugin.class);
         registerPlugin(LocationPlugin.class);
         registerPlugin(CallAlarmPlugin.class);
         registerPlugin(CallAudioPlugin.class);
         registerPlugin(CrashReportingPlugin.class);
         registerPlugin(RingtonePlugin.class);
         registerPlugin(PingRingPlugin.class);
+        registerPlugin(FakeCallPlugin.class);
 
         showWhenLockedAndTurnScreenOn();
 
@@ -172,6 +174,14 @@ public class MainActivity extends BridgeActivity {
         // WebView, not a public web page, so it's safe to disable the
         // gesture requirement entirely.
         getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+
+        // No pinch/double-tap zoom on the app's pages: they are laid out for the
+        // screen and zooming them only breaks the layout. The viewport meta in
+        // index.html says the same; this makes it hold regardless. The Map tab
+        // is unaffected — its map is Google's native view underneath the
+        // WebView, which handles its own pinch-zoom.
+        getBridge().getWebView().getSettings().setSupportZoom(false);
+        getBridge().getWebView().getSettings().setBuiltInZoomControls(false);
 
         getBridge().getWebView().setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
             @Override

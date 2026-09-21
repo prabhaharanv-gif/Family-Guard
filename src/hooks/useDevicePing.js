@@ -116,11 +116,14 @@ function useNativePingRinging(user) {
   return { ringing, stop }
 }
 
-export function useDevicePing(user, familyId) {
+/** Takes no family: a ping is addressed to the person (target_user_id). */
+export function useDevicePing(user) {
   const native = useNativePingRinging(user)
 
   useEffect(() => {
-    if (!user || !familyId) return
+    // Not gated on familyId: the filter below matches target_user_id, so a ping
+    // from any family already arrives. See useCallSignaling for the same note.
+    if (!user) return
     if (Capacitor.isNativePlatform()) return   // PingRingService owns the sound
 
     const channel = supabase
@@ -175,7 +178,7 @@ export function useDevicePing(user, familyId) {
       .subscribe()
 
     return () => supabase.removeChannel(channel)
-  }, [user, familyId])
+  }, [user])
 
   return { pingRinging: native.ringing, stopPing: native.stop }
 }

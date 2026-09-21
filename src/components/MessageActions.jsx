@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { useT } from '../i18n'
+import { canSaveMedia, saveChatMedia } from '../lib/chatMedia'
 import Icon from './Icon'
 
 // ── Swipe right to reply ──────────────────────────────────────────────────────
@@ -251,6 +253,20 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+      ),
+    },
+    {
+      // Photos and videos, sent or received. In the app they go straight into
+      // the gallery (a Famora album) and a toast confirms it; in a browser it
+      // is a plain download, so the label says so. A failure is reported by
+      // the same toast, so nothing is left to catch here.
+      label: Capacitor.isNativePlatform() ? t('messages.saveToGallery') : t('messages.download'),
+      color: 'var(--maroon)', show: canSaveMedia(msg),
+      fn: () => { saveChatMedia(msg, t).catch(e => console.warn('[Messages] save failed:', e?.message || e)) },
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
       ),
     },

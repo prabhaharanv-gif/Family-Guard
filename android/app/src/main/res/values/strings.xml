@@ -60,9 +60,12 @@
 
     <!-- SOSAlertActivity — full-screen alert over the lock screen -->
     <string name="sos_needs_help">%1$s needs help!</string>
-    <string name="sos_view_location">📍 View Location</string>
+    <string name="sos_view_location">View Location</string>
     <string name="sos_open_app">Open Famora</string>
-    <string name="sos_stop_alarm">✋ I Understand — Stop Alarm</string>
+    <string name="sos_stop_alarm">I Understand — Stop Alarm</string>
+    <string name="sos_calm_hint">Stay calm. Check where they are, then call or go to them.</string>
+    <string name="sos_call">Call %1$s</string>
+    <string name="sos_directions">Get Directions</string>
 
     <!-- CallRingingActivity — full-screen incoming call over the lock screen -->
     <string name="call_incoming_voice">Incoming voice call</string>
@@ -95,4 +98,33 @@
     <string name="ch_reauth_desc">Alerts you when Famora must be reopened to keep sharing your location</string>
     <string name="notif_reauth_title">Location sharing paused</string>
     <string name="notif_reauth_body">Open Famora to reconnect. Your family cannot see your location until you do.</string>
+
+    <!-- Offline SMS. Kept short: every 160 characters is another charge, and
+         Indian scripts fit only 70 per part. -->
+    <string name="sms_offline_body">Famora: %1$s has no internet since %2$s. Last known location: %3$s</string>
+    <string name="sms_no_location">no location available</string>
+    <string name="sms_test_prefix">[Test]</string>
+
+    <!-- SOS countdown screen, shown while a shake-armed SOS can still be stopped -->
+    <string name="sos_countdown_title">Sending SOS to your family</string>
+    <string name="sos_countdown_hint">Tap Cancel if you did not mean to do this.</string>
+    <string name="sos_countdown_cancel">Cancel</string>
+
+    <!-- Fake call. The countdown notification and the notification button are
+         worded so they do not say "fake" to someone reading the lock screen. -->
+    <string name="fake_call_default_name">Mom</string>
+    <string name="fake_call_scheduled_title">Reminder</string>
+    <string name="fake_call_cancel">Cancel</string>
+    <string name="fake_call_incoming">Incoming call</string>
+    <string name="fake_call_mobile">Mobile</string>
+    <string name="fake_call_answer">Answer</string>
+    <string name="fake_call_decline">Decline</string>
+    <string name="fake_call_end">End</string>
+    <string name="fake_call_notification_action">Call me</string>
+    <string name="fake_call_tile_subtitle">Fake call in 5s</string>
+    <string name="ch_fake_call_name">Fake call</string>
+    <string name="ch_fake_call_quiet_name">Fake call (silent)</string>
+    <string name="ch_fake_call_desc">A fake incoming call you schedule for yourself</string>
+    <!-- Spoken into the earpiece after answering, one line at a time with pauses. Lines are separated by | -->
+    <string name="fake_call_voice_script">Hello? Hi, where are you right now?|Okay. I\'m close by, I\'m coming to you.|Stay where you are, I\'ll be there in two minutes.|Yes, I\'m on my way. Don\'t hang up.</string>
 </resources>

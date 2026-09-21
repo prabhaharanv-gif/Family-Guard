@@ -151,4 +151,35 @@ public class SosResponseTest {
         assertEquals("an error body is not unwrapped into a fake id",
             body, SosResponse.parseId(body));
     }
+
+    // ── send_sos_all_families replies ────────────────────────────────────────
+
+    @Test
+    public void allFamilies_idsAreJoinedForTheCancelAction() {
+        assertEquals("a-1,b-2",
+            SosResponse.parseIds("[\"a-1\",\"b-2\"]"));
+        assertEquals("one family is still a list", "a-1",
+            SosResponse.parseIds(" [ \"a-1\" ] "));
+    }
+
+    @Test
+    public void allFamilies_nothingUsableMeansNoIds() {
+        assertNull(SosResponse.parseIds("[]"));
+        assertNull(SosResponse.parseIds("[null]"));
+        assertNull(SosResponse.parseIds(null));
+        assertNull("an error object is not a list of ids",
+            SosResponse.parseIds("{\"message\":\"Not a member of any family\"}"));
+    }
+
+    @Test
+    public void allFamilies_blankEntriesAreSkipped() {
+        assertEquals("a-1,b-2", SosResponse.parseIds("[\"a-1\",\"\",\"b-2\"]"));
+    }
+
+    @Test
+    public void aMissingFunction_isRecognisedForTheFallback() {
+        assertTrue(SosResponse.isMissingFunction(404));
+        assertFalse(SosResponse.isMissingFunction(401));
+        assertFalse(SosResponse.isMissingFunction(500));
+    }
 }

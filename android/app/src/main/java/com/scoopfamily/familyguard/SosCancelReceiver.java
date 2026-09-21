@@ -75,6 +75,9 @@ public class SosCancelReceiver extends BroadcastReceiver {
             try {
                 boolean ok = SosSender.resolve(ctx, sosId);
                 Log.i(TAG, ok ? "Accidental SOS withdrawn" : "Could not withdraw the SOS");
+                // Withdrawn, so the ringer comes back. Not on failure: the
+                // alert is still live on every family phone.
+                if (ok) SosSilence.exit(ctx);
             } finally {
                 pending.finish();
             }

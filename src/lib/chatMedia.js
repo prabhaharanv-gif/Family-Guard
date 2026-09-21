@@ -1,4 +1,7 @@
+import { Capacitor, registerPlugin } from '@capacitor/core'
 import { supabase } from './supabase'
+
+const MediaSave = registerPlugin('MediaSave')
 
 /**
  * Chat attachments — upload, and read back through a signed URL.
@@ -181,4 +184,54 @@ export function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+// ── Saving a chat photo or video to the device ────────────────────────────────
+//
+// Photos and videos only: those are what people mean by "save to gallery". A
+// voice note is not gallery material, and a document already opens in the
+// phone's browser, which has its own download.
+export function canSaveMedia(msg) {
+  return !!msg?.media_path && (msg.media_type === 'image' || msg.media_type === 'video')
+}
+
+// The stored object is <uuid>.<ext>, and the extension is what the upload
+// normalised the content type from, so it is the reliable source here too.
+function mimeOfPath(path, kind) {
+  const mime = EXT_MIME[extensionOf(path)]
+  if (mime && mime.startsWith(kind + '/')) return mime
+  return kind === 'video' ? 'video/mp4' : 'image/jpeg'
+}
+
+/**
+ * In the app: straight into the gallery (Pictures/Famora or Movies/Famora) by
+ * MediaSavePlugin, which downloads the signed URL itself and shows a toast.
+ * In a browser: an ordinary file download. Resolves true when saved.
+ */
+export async function saveChatMedia(msg, t) {
+  if (!canSaveMedia(msg)) return false
+  const url = await signedMediaUrl(msg.media_path)
+  if (!url) throw new Error('could not sign the media URL')
+  const mime = mimeOfPath(msg.media_path, msg.media_type)
+
+  if (Capacitor.isNativePlatform()) {
+    await MediaSave.saveToGallery({
+      url, mime, name: msg.media_name || null,
+      savedText: t('messages.savedToGallery'),
+      failedText: t('messages.saveFailed'),
+    })
+    return true
+  }
+
+  // Browser: the signed URL is on another origin, where <a download> is
+  // ignored, so fetch it and download the blob instead.
+  const blob = await (await fetch(url)).blob()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = msg.media_name || `Famora_${Date.now()}.${MIME_EXT[mime] || 'jpg'}`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000)
+  return true
 }

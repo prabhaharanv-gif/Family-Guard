@@ -14,10 +14,36 @@ import { useState, useEffect, useCallback } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { playSOSAlarm, stopSOSAlarm } from '../lib/sosAudio'
-import { stopNativeSOSAlarm, isNativeSOSAlarmPlaying, triggerNativeSOSAlert } from '../lib/nativeSosAlarm'
+import { stopNativeSOSAlarm, isNativeSOSAlarmPlaying, triggerNativeSOSAlert, exitSosSilence } from '../lib/nativeSosAlarm'
+
+/**
+ * Give the ringer back once none of this user's own SOS alerts is open, in any
+ * family (a gesture SOS can go to all of them at once). A failed query decides
+ * nothing: leaving someone who may be hiding silent a little longer is the
+ * safer mistake, and SosSilence expires on its own regardless.
+ */
+async function releaseSosSilenceIfClear(userId) {
+  if (!Capacitor.isNativePlatform() || !userId) return
+  const { data, error } = await supabase
+    .from('sos_alerts')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('is_resolved', false)
+    .limit(1)
+  if (error) return
+  if (!data?.length) exitSosSilence()
+}
 import { pushCloser, removeCloser } from '../lib/backHandler'
 
-export function useSosAlarm(user, familyId) {
+/**
+ * @param familyIds every family the member belongs to, not just the active one.
+ *   An SOS is the one thing that must arrive whichever family the app happens
+ *   to be showing: with a single filter, someone in two families heard nothing
+ *   when the other family raised an alert while the app was open. (The push
+ *   path never had this gap — a phone's token is registered for every family —
+ *   so it only ever went wrong with the app in front of the person.)
+ */
+export function useSosAlarm(user, familyIds) {
   const [sosAlert,     setSosAlert]     = useState(null)
   const [nativeAlarmOn, setNativeAlarmOn] = useState(false)
 
@@ -66,23 +92,26 @@ export function useSosAlarm(user, familyId) {
     }
   }, [])
 
-  // Realtime SOS listener — active on ALL pages
-  useEffect(() => {
-    if (!user || !familyId) return
+  // Realtime SOS listener — active on ALL pages, for ALL of the member's
+  // families. Joined into a string so the effect does not re-subscribe on every
+  // render just because the array is a new object.
+  const familyKey = Array.isArray(familyIds) ? [...familyIds].sort().join(',') : (familyIds || '')
 
-    const channel = supabase
-      .channel(`global-sos:${familyId}:${user.id}`)
-      .on('postgres_changes', {
-        event:  'INSERT',
-        schema: 'public',
-        table:  'sos_alerts',
-        filter: `family_id=eq.${familyId}`,
-      }, async (payload) => {
+  useEffect(() => {
+    if (!user || !familyKey) return
+
+    const ids = familyKey.split(',').filter(Boolean)
+
+    const handleInsert = async (payload) => {
         if (payload.new && payload.new.user_id !== user.id) {
           const { data } = await supabase
             .from('family_members')
-            .select('display_name')
+            .select('display_name, phone')
             .eq('user_id', payload.new.user_id)
+            // Scoped to the family the SOS came from. display_name is per
+            // family and genuinely differs between them, so an unscoped lookup
+            // could name the sender as they are known in a different family.
+            .eq('family_id', payload.new.family_id)
             .limit(1)
             .single()
           const name = data?.display_name || 'A family member'
@@ -102,13 +131,46 @@ export function useSosAlarm(user, familyId) {
             message: payload.new.message,
             lat:     payload.new.lat,
             lng:     payload.new.lng,
+            phone:   data?.phone,
           })
         }
-      })
-      .subscribe()
+    }
 
-    return () => supabase.removeChannel(channel)
-  }, [user, familyId])
+    // The sender tapped "I'm safe now": stop making noise about an emergency
+    // that is over. Previously nothing listened for this, so the siren ran
+    // until every family member silenced it by hand.
+    const handleResolve = (payload) => {
+      if (payload.new?.is_resolved) stopAllAlarms()
+      // This user's own SOS was resolved — possibly from another device. That
+      // is them saying they are safe, so the ringer comes back, the same as
+      // "I'm Safe" on the SOS page.
+      if (payload.new?.is_resolved && payload.new.user_id === user.id) exitSosSilence()
+    }
+
+    // Also on start: a silence whose SOS was resolved while this app was not
+    // listening (another device, or the process was dead) must not linger.
+    releaseSosSilenceIfClear(user.id)
+
+    // One channel per family rather than one filter: postgres_changes takes a
+    // single equality filter, and a member is rarely in more than a few families.
+    const channels = ids.map(id => supabase
+      .channel(`global-sos:${id}:${user.id}`)
+      .on('postgres_changes', {
+        event:  'INSERT',
+        schema: 'public',
+        table:  'sos_alerts',
+        filter: `family_id=eq.${id}`,
+      }, handleInsert)
+      .on('postgres_changes', {
+        event:  'UPDATE',
+        schema: 'public',
+        table:  'sos_alerts',
+        filter: `family_id=eq.${id}`,
+      }, handleResolve)
+      .subscribe())
+
+    return () => channels.forEach(c => supabase.removeChannel(c))
+  }, [user, familyKey, stopAllAlarms])
 
   // Let the hardware back button dismiss the SOS overlay
   useEffect(() => {

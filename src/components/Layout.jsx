@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { useT } from '../i18n'
 import ErrorBoundary from './ErrorBoundary'
+import { useKeyboardOpen } from '../hooks/useKeyboardOpen'
 
 // Premium custom SVG nav icons — pixel-perfect, brand-aligned
 const NAV_ITEMS = [
@@ -80,6 +81,9 @@ const NAV_ITEMS = [
 export default function Layout({ unreadMessages = 0 }) {
   const t = useT()
   const location = useLocation()
+  // Out of the way while someone is typing: the tab bar and the keyboard
+  // together were leaving about four messages visible in a chat.
+  const keyboardOpen = useKeyboardOpen()
   return (
     <div className="app-shell">
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -89,6 +93,9 @@ export default function Layout({ unreadMessages = 0 }) {
           <Outlet />
         </ErrorBoundary>
       </div>
+      {/* Unmounted rather than hidden, so the space it held goes to the
+          conversation instead of sitting empty behind the keyboard. */}
+      {!keyboardOpen && (
       <nav className="bottom-nav">
         {NAV_ITEMS.map(item => (
           <NavLink key={item.to} to={item.to} end={item.end}
@@ -113,6 +120,7 @@ export default function Layout({ unreadMessages = 0 }) {
           </NavLink>
         ))}
       </nav>
+      )}
     </div>
   )
 }

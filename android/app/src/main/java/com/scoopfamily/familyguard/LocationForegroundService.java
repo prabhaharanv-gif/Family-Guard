@@ -93,6 +93,32 @@ public class LocationForegroundService extends Service {
      */
     public static final String KEY_SHARING     = "show_location";
 
+    /**
+     * "Shake for SOS". Absent means OFF — the opposite of KEY_SHARING, on
+     * purpose: a gesture that can alert the whole family must be chosen, never
+     * inherited by default.
+     */
+    public static final String KEY_SHAKE_SOS   = "shake_sos";
+    // The last pushed fix, persisted so a restart (app update, OEM kill,
+    // reboot) does not forget it. Without it the first fix after every restart
+    // was judged against nothing and accepted at up to 2km accuracy — on the
+    // Redmi a 165m Wi-Fi guess, then a 100m one 95m away, before GPS put the
+    // pin back. Also read by LocationPlugin.getLastFix for the web writer.
+    public static final String KEY_LAST_LAT    = "last_push_lat";
+    public static final String KEY_LAST_LNG    = "last_push_lng";
+    public static final String KEY_LAST_ACC    = "last_push_acc";
+    public static final String KEY_LAST_SPEED  = "last_push_speed";
+    public static final String KEY_LAST_TIME   = "last_push_time";
+    /** A saved fix older than this is not trusted as a baseline after a restart. */
+    static final long LAST_PUSH_RESTORE_MAX_AGE_MS = 30 * 60 * 1000L;
+
+    // Runs only while KEY_SHAKE_SOS is on; see syncShakeDetector.
+    private ShakeSosDetector shakeDetector;
+
+    // Watches for the phone losing data, so OfflineSms can text the family the
+    // last known position when nothing else can reach them.
+    private android.net.ConnectivityManager.NetworkCallback networkCallback;
+
     // How many consecutive 401s to leave to the WebView before renewing anyway.
     // At a ~95s heartbeat this is a little over three minutes of deferring.
     private static final int MAX_DEFERRED_AUTH_RETRIES = 2;
@@ -166,6 +192,10 @@ public class LocationForegroundService extends Service {
     private long lastPushTime = 0L;
     // An implausibly-fast fix awaiting a second fix to confirm it isn't a GPS jump
     private Location pendingJumpLocation = null;
+    // When pendingJumpLocation was held, and when the current unbroken run of
+    // rejected jumps began — LocationFilter accepts rather than hold forever.
+    private long pendingJumpTime = 0L;
+    private long jumpHoldStartTime = 0L;
 
     // ─────────────────────────────────────────────────────────────────────────
     @Override
@@ -177,6 +207,37 @@ public class LocationForegroundService extends Service {
         ensureChannel(this);
         registerLocationToggleReceiver();
         registerPowerReceiver();
+        restoreLastPush();
+    }
+
+    /** Reload the last pushed fix saved by rememberLastPush, if it is recent. */
+    private void restoreLastPush() {
+        try {
+            SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            long t = prefs.getLong(KEY_LAST_TIME, 0L);
+            if (t <= 0L || System.currentTimeMillis() - t > LAST_PUSH_RESTORE_MAX_AGE_MS) return;
+            Location l = new Location("restored");
+            l.setLatitude(Double.longBitsToDouble(prefs.getLong(KEY_LAST_LAT, 0L)));
+            l.setLongitude(Double.longBitsToDouble(prefs.getLong(KEY_LAST_LNG, 0L)));
+            l.setAccuracy(prefs.getFloat(KEY_LAST_ACC, LocationFilter.MAX_ACCURACY_M));
+            l.setTime(t);
+            lastPushedLocation = l;
+            lastPushTime = t;
+            Log.i(TAG, "restored last push — accuracy=" + l.getAccuracy() + "m, "
+                + ((System.currentTimeMillis() - t) / 1000) + "s old");
+        } catch (Exception e) {
+            Log.w(TAG, "could not restore last push: " + e.getMessage());
+        }
+    }
+
+    private void rememberLastPush(Location loc, long time) {
+        getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit()
+            .putLong(KEY_LAST_LAT, Double.doubleToRawLongBits(loc.getLatitude()))
+            .putLong(KEY_LAST_LNG, Double.doubleToRawLongBits(loc.getLongitude()))
+            .putFloat(KEY_LAST_ACC, loc.getAccuracy())
+            .putFloat(KEY_LAST_SPEED, loc.hasSpeed() ? loc.getSpeed() : -1f)
+            .putLong(KEY_LAST_TIME, time)
+            .apply();
     }
 
     // ── Location services on/off reporting ───────────────────────────────────
@@ -421,8 +482,84 @@ public class LocationForegroundService extends Service {
         }
 
         startLocationUpdates();
+        syncShakeDetector();
+        watchConnectivity();
         Log.i(TAG, "Location foreground service started — FusedLocationProvider");
         return START_STICKY;
+    }
+
+    /**
+     * Tracks whether the phone has usable internet. Registered once; a second
+     * onStartCommand finds the callback already in place.
+     *
+     * Only the transitions are recorded here — whether a message actually goes
+     * out is OfflineSmsPlan's decision, evaluated on each location fix.
+     */
+    private void watchConnectivity() {
+        if (networkCallback != null) return;
+        try {
+            android.net.ConnectivityManager cm =
+                (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) return;
+
+            networkCallback = new android.net.ConnectivityManager.NetworkCallback() {
+                @Override public void onAvailable(android.net.Network network) {
+                    OfflineSms.setOnline(getApplicationContext(), true);
+                }
+                @Override public void onLost(android.net.Network network) {
+                    OfflineSms.setOnline(getApplicationContext(), false);
+                }
+            };
+            cm.registerDefaultNetworkCallback(networkCallback);
+
+            // The callback only reports changes, so the current state has to be
+            // read once: a service started while already offline would otherwise
+            // never arm the alerts.
+            android.net.Network active = cm.getActiveNetwork();
+            android.net.NetworkCapabilities caps = active != null ? cm.getNetworkCapabilities(active) : null;
+            boolean online = caps != null
+                && caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET);
+            OfflineSms.setOnline(getApplicationContext(), online);
+        } catch (Exception e) {
+            Log.w(TAG, "Could not watch connectivity: " + e.getMessage());
+            networkCallback = null;
+        }
+    }
+
+    /** Starts or stops the shake detector to match the stored preference. */
+    private void syncShakeDetector() {
+        boolean wanted = isShakeSosEnabled(this);
+        if (wanted) {
+            if (shakeDetector == null) shakeDetector = new ShakeSosDetector(this);
+            shakeDetector.start();
+        } else if (shakeDetector != null) {
+            shakeDetector.stop();
+            shakeDetector = null;
+        }
+    }
+
+    public static boolean isShakeSosEnabled(Context ctx) {
+        try {
+            return ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                      .getBoolean(KEY_SHAKE_SOS, false);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Stores the choice and applies it now. The detector lives in this service,
+     * so a running service is re-started to pick it up; when the service is not
+     * running (sharing off) the choice waits for the next start.
+     */
+    public static void setShakeSosEnabled(Context ctx, boolean enabled) {
+        try {
+            ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+               .edit().putBoolean(KEY_SHAKE_SOS, enabled).commit();
+        } catch (Exception e) {
+            Log.w(TAG, "Could not store the shake SOS preference: " + e.getMessage());
+        }
+        if (isRunning) startService(ctx);
     }
 
     /**
@@ -448,6 +585,18 @@ public class LocationForegroundService extends Service {
     public void onDestroy() {
         super.onDestroy();
         isRunning = false;
+        if (shakeDetector != null) {
+            shakeDetector.stop();
+            shakeDetector = null;
+        }
+        try {
+            if (networkCallback != null) {
+                android.net.ConnectivityManager cm =
+                    (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                if (cm != null) cm.unregisterNetworkCallback(networkCallback);
+                networkCallback = null;
+            }
+        } catch (Exception e) { /* ignore */ }
         try {
             if (fusedClient != null && locationCallback != null) {
                 fusedClient.removeLocationUpdates(locationCallback);
@@ -645,10 +794,16 @@ public class LocationForegroundService extends Service {
         // Measured here, with Android's own WGS84 distance, exactly as before.
         float movedM      = hasLastPush ? lastPushedLocation.distanceTo(loc) : LocationFilter.NO_DISTANCE;
         float fromPending = hasPending  ? pendingJumpLocation.distanceTo(loc) : LocationFilter.NO_DISTANCE;
-        long  sinceLastPush = hasLastPush ? System.currentTimeMillis() - lastPushTime : 0L;
+        long  now = System.currentTimeMillis();
+        long  sinceLastPush = hasLastPush ? now - lastPushTime : 0L;
+        long  sincePending  = hasPending  ? now - pendingJumpTime : 0L;
+        long  holdingJumps  = hasPending  ? now - jumpHoldStartTime : 0L;
 
+        float lastAcc = hasLastPush && lastPushedLocation.hasAccuracy()
+            ? lastPushedLocation.getAccuracy() : LocationFilter.NO_DISTANCE;
         LocationFilter.Result verdict = LocationFilter.evaluate(
-            loc.getAccuracy(), hasLastPush, movedM, sinceLastPush, hasPending, fromPending);
+            loc.getAccuracy(), lastAcc, hasLastPush, movedM, sinceLastPush,
+            hasPending, fromPending, sincePending, holdingJumps);
 
         // Decided from the distances already measured above, before the verdict
         // is applied: a rejected fix still tells us whether the phone is moving.
@@ -656,8 +811,13 @@ public class LocationForegroundService extends Service {
 
         if (verdict.note != null) Log.i(TAG, source + " " + verdict.note);
 
-        if (verdict.holdAsPendingJump)     pendingJumpLocation = loc;
-        else if (verdict.clearPendingJump) pendingJumpLocation = null;
+        if (verdict.holdAsPendingJump) {
+            if (pendingJumpLocation == null) jumpHoldStartTime = now;
+            pendingJumpLocation = loc;
+            pendingJumpTime     = now;
+        } else if (verdict.clearPendingJump) {
+            pendingJumpLocation = null;
+        }
 
         if (!verdict.shouldPush()) {
             if (verdict.outcome == LocationFilter.Outcome.REJECTED_JUMP) {
@@ -673,10 +833,24 @@ public class LocationForegroundService extends Service {
         }
         Log.i(TAG, "✅ " + source + " " + verdict.detail);
 
-        lastPushedLocation = loc;
-        lastKnownForSos    = loc;
+        // A heartbeat carrying a less precise fix re-sends the position already
+        // on the map, freshly stamped, instead of moving the pin onto it.
+        final Location toPush;
+        if (verdict.keepLastPosition && lastPushedLocation != null) {
+            toPush = new Location(lastPushedLocation);
+            toPush.setTime(System.currentTimeMillis());
+            if (loc.hasSpeed()) toPush.setSpeed(loc.getSpeed());
+        } else {
+            toPush = loc;
+        }
+        lastPushedLocation = toPush;
+        lastKnownForSos    = toPush;
         lastPushTime = System.currentTimeMillis();
-        executor.submit(() -> pushLocation(loc));
+        rememberLastPush(toPush, lastPushTime);
+        executor.submit(() -> pushLocation(toPush));
+        // With no data the push above goes nowhere; this is the fallback that
+        // still reaches the family. Cheap unless an alert is actually due.
+        executor.submit(() -> OfflineSms.maybeSend(getApplicationContext(), toPush));
     }
 
     /**
@@ -1047,23 +1221,46 @@ public class LocationForegroundService extends Service {
 
     // ── Notification ──────────────────────────────────────────────────────────
     private Notification buildNotification() {
-        Intent tapIntent = new Intent(this, MainActivity.class);
+        return buildNotification(this);
+    }
+
+    private static Notification buildNotification(Context ctx) {
+        Intent tapIntent = new Intent(ctx, MainActivity.class);
         tapIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pi = PendingIntent.getActivity(this, 0, tapIntent,
+        PendingIntent pi = PendingIntent.getActivity(ctx, 0, tapIntent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
+        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_notify)
             .setColor(android.graphics.Color.parseColor("#951345"))
             .setContentTitle("🛡️ Famora")
-            .setContentText(getString(R.string.notif_location_body))
-            .setSubText(getString(R.string.notif_tap_to_open))
+            .setContentText(ctx.getString(R.string.notif_location_body))
+            .setSubText(ctx.getString(R.string.notif_tap_to_open))
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setOngoing(true)
             .setShowWhen(false)
-            .setContentIntent(pi)
-            .build();
+            .setContentIntent(pi);
+
+        // The fake-call trigger that works from the lock screen. Opt-in, because
+        // the button is readable by anyone who picks the phone up.
+        if (FakeCallPrefs.notificationButton(ctx)) {
+            b.addAction(0, ctx.getString(R.string.fake_call_notification_action),
+                FakeCallService.notificationButtonIntent(ctx));
+        }
+        return b.build();
+    }
+
+    /** Redraws the ongoing notification after a setting that changes it. No-op when not running. */
+    static void refreshNotification(Context ctx) {
+        if (!isRunning) return;
+        try {
+            NotificationManager nm =
+                (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.notify(NOTIF_ID, buildNotification(ctx.getApplicationContext()));
+        } catch (Exception e) {
+            Log.w(TAG, "Could not refresh the notification: " + e.getMessage());
+        }
     }
 
     public static void ensureChannel(Context ctx) {
@@ -1234,6 +1431,9 @@ public class LocationForegroundService extends Service {
                .remove(KEY_SESSION)
                .remove(KEY_REFRESH)
                .remove(TokenBroker.KEY_SESSION_JSON)
+               // The saved position belongs to the signed-in session too.
+               .remove(KEY_LAST_LAT).remove(KEY_LAST_LNG).remove(KEY_LAST_ACC)
+               .remove(KEY_LAST_SPEED).remove(KEY_LAST_TIME)
                .commit();
             Log.i(TAG, "Native session cleared on sign-out");
         } catch (Exception e) {

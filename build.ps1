@@ -4,6 +4,8 @@
 #  Run with:  .\build.ps1                  -> debug APK, for local testing
 #             .\build.ps1 -Release         -> signed .aab, for Google Play
 #             .\build.ps1 -Release -Bump   -> same, but versionCode +1 first
+#             .\build.ps1 -Testers         -> signed APK without SEND_SMS,
+#                                             installable past Play Protect
 #
 #  Play rejects an upload whose versionCode is not higher than the last one
 #  you uploaded, so use -Bump on the build you intend to ship. Release builds
@@ -14,10 +16,19 @@ param(
     # Build a signed release bundle (.aab) instead of a debug APK.
     [switch]$Release,
     # Increment versionCode in android/app/build.gradle before building.
-    [switch]$Bump
+    [switch]$Bump,
+    # Build the signed tester APK (the 'sideload' buildType): identical to
+    # release but with SEND_SMS removed, so Google Play Protect will let a
+    # tester sideload it. Offline SMS alerts do not work on that build.
+    [switch]$Testers
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($Release -and $Testers) {
+    Write-Host "[ERROR] Use -Release or -Testers, not both." -ForegroundColor Red
+    exit 1
+}
 $ProjectRoot  = "C:\Users\Public\family-guard-web"
 $AndroidAssets = "$ProjectRoot\android\app\src\main\assets\public"
 $KeystoreProps = "$ProjectRoot\android\keystore.properties"
@@ -27,6 +38,8 @@ Write-Host ""
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
 if ($Release) {
     Write-Host "  FamilyGuard Clean Build - RELEASE BUNDLE" -ForegroundColor Cyan
+} elseif ($Testers) {
+    Write-Host "  FamilyGuard Clean Build - TESTER APK (no SMS)" -ForegroundColor Cyan
 } else {
     Write-Host "  FamilyGuard Clean Build - DEBUG APK" -ForegroundColor Cyan
 }
@@ -38,9 +51,10 @@ Set-Location $ProjectRoot
 # Without keystore.properties, Gradle still reports BUILD SUCCESSFUL but emits
 # an UNSIGNED bundle that Play rejects on upload. Fail here, where the reason
 # is obvious, rather than at the end of a browser upload.
-if ($Release -and -not (Test-Path $KeystoreProps)) {
+if (($Release -or $Testers) -and -not (Test-Path $KeystoreProps)) {
     Write-Host "[ERROR] android\keystore.properties not found." -ForegroundColor Red
-    Write-Host "        Release builds need it, or the bundle comes out unsigned." -ForegroundColor Red
+    Write-Host "        Release and tester builds need it, or the output comes" -ForegroundColor Red
+    Write-Host "        out unsigned and the device refuses to install it." -ForegroundColor Red
     Write-Host "        It is git-ignored, so each machine needs its own copy." -ForegroundColor Red
     exit 1
 }
@@ -133,6 +147,8 @@ $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 Set-Location "$ProjectRoot\android"
 if ($Release) {
     .\gradlew.bat bundleRelease --no-build-cache
+} elseif ($Testers) {
+    .\gradlew.bat assembleSideload --no-build-cache
 } else {
     .\gradlew.bat assembleDebug --no-build-cache
 }
@@ -155,6 +171,12 @@ if ($Release) {
     Write-Host ""
     Write-Host "  Confirm it is signed with your key before uploading:" -ForegroundColor Gray
     Write-Host "    keytool -printcert -jarfile android\app\build\outputs\bundle\release\app-release.aab" -ForegroundColor Gray
+} elseif ($Testers) {
+    Write-Host "  APK:  android\app\build\outputs\apk\sideload\app-sideload.apk" -ForegroundColor White
+    Write-Host "        versionName $VersionName-sideload / versionCode $VersionCode" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "  SEND_SMS is stripped, so Play Protect allows the sideload." -ForegroundColor Gray
+    Write-Host "  Offline SMS alerts cannot be enabled on this build." -ForegroundColor Gray
 } else {
     Write-Host "  APK:  android\app\build\outputs\apk\debug\app-debug.apk" -ForegroundColor White
 }

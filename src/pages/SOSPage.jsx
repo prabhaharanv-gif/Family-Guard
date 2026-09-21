@@ -9,6 +9,7 @@ import Dialog from '../components/Dialog'
 import { useT } from '../i18n'
 import { SOS } from '../lib/sosColors'
 import Icon from '../components/Icon'
+import { enterSosSilence, exitSosSilence } from '../lib/nativeSosAlarm'
 
 // ── SVG Icon components — consistent outlined style ───────────────────────────
 const Icons = {
@@ -234,7 +235,10 @@ function SOSSentScreen({ msg, onDismiss, onSafe }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 200,
-      background: 'linear-gradient(160deg, #0E0308 0%, #2A0618 50%, #0E0308 100%)',
+      // Cream, like the native SOS alert and call screens. It was a near-black
+      // gradient with glowing red, which read as alarming on the one screen
+      // whose job is to reassure the sender that help has been called.
+      background: '#FFF8F0',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       padding: '32px 24px',
@@ -250,11 +254,9 @@ function SOSSentScreen({ msg, onDismiss, onSafe }) {
         }} />
         <div style={{
           width: 100, height: 100, borderRadius: '50%',
-          background: `linear-gradient(135deg, ${SOS.glow}, ${SOS.deep})`,
+          background: '#D32F2F',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: '#fff',
-          boxShadow: `0 0 60px ${SOS.base}60, 0 0 0 1px ${SOS.base}50`,
-          animation: 'sos-pulse-scale 1.8s ease-in-out infinite',
         }}>
           <msg.Icon />
         </div>
@@ -262,15 +264,20 @@ function SOSSentScreen({ msg, onDismiss, onSafe }) {
 
       <style>{`
         @keyframes sos-ring { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
-        @keyframes sos-pulse-scale { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
       `}</style>
 
       {/* Title */}
       <div style={{
         fontFamily: 'Sora, sans-serif', fontSize: 28, fontWeight: 900,
-        color: '#fff', marginBottom: 8, letterSpacing: -0.5,
-      }}><Icon name="siren" /> {t('sos.sentTitle')}</div>
-      <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', marginBottom: 32, fontWeight: 500, lineHeight: 1.5, textAlign: 'center' }}>
+        color: '#2A0A18', marginBottom: 12, letterSpacing: -0.5,
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}><span style={{ display: 'flex', color: '#8B0D3D' }}><Icon name="siren" /></span> {t('sos.sentTitle')}</div>
+      {/* The SOS type as a soft red chip, as on the recipient's alert screen. */}
+      <div style={{
+        fontSize: 15, color: '#B71C1C', background: '#FDECEC', marginBottom: 32,
+        fontWeight: 700, lineHeight: 1.4, textAlign: 'center',
+        padding: '7px 16px', borderRadius: 18,
+      }}>
         {t('sos.msg.' + msg.key)}
       </div>
 
@@ -282,13 +289,13 @@ function SOSSentScreen({ msg, onDismiss, onSafe }) {
           { icon: 'timer', label: t('sos.activeFor', { time: fmt(elapsed) }), ok: true },
         ].map((item, i) => (
           <div key={i} style={{
-            background: 'rgba(255,255,255,0.08)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            background: '#FFFFFF',
+            border: '1px solid #EADBE1',
             borderRadius: 14, padding: '13px 16px',
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
-            <span style={{ display: 'flex', color: '#fff' }}><Icon name={item.icon} size={20} /></span>
-            <span style={{ fontSize: 14, color: '#fff', fontWeight: 600, flex: 1 }}>{item.label}</span>
+            <span style={{ display: 'flex', color: '#8B0D3D' }}><Icon name={item.icon} size={20} /></span>
+            <span style={{ fontSize: 14, color: '#2A0A18', fontWeight: 600, flex: 1 }}>{item.label}</span>
             <div style={{
               width: 22, height: 22, borderRadius: '50%',
               background: '#10B981',
@@ -304,15 +311,16 @@ function SOSSentScreen({ msg, onDismiss, onSafe }) {
 
       {/* I'm Safe button */}
       <button onClick={onSafe} style={{
-        width: '100%', padding: '16px', borderRadius: 18,
-        background: 'linear-gradient(135deg, #10B981, #059669)',
-        border: 'none', color: '#fff',
+        // Same button style as the native SOS alert screen: light rose fill,
+        // maroon outline and label.
+        width: '100%', padding: '16px', borderRadius: 29,
+        background: '#F6DCE6',
+        border: '2px solid #8B0D3D', color: '#8B0D3D',
         fontFamily: 'Sora, sans-serif', fontWeight: 800, fontSize: 17,
         cursor: 'pointer', marginBottom: 14,
-        boxShadow: '0 8px 28px rgba(16,185,129,0.45)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
       }}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           <polyline points="9 12 11 14 15 10"/>
         </svg>
@@ -321,7 +329,7 @@ function SOSSentScreen({ msg, onDismiss, onSafe }) {
 
       <button onClick={onDismiss} style={{
         background: 'none', border: 'none',
-        color: 'rgba(255,255,255,0.45)', fontSize: 13,
+        color: '#6B4A57', fontSize: 14,
         fontFamily: 'inherit', cursor: 'pointer', fontWeight: 500,
       }}>
         {t('sos.dismiss')}
@@ -430,6 +438,9 @@ export default function SOSPage() {
         p_message:   msg.label,
       })
       if (sosErr) throw sosErr
+      // The family will start calling now. Silence this phone in case its
+      // owner is hiding; "I'm Safe" gives the ringer back.
+      enterSosSilence()
       setSentMsg(msg)  // show the sent screen
     } catch (e) {
       console.error('SOS send error:', e)
@@ -453,12 +464,20 @@ export default function SOSPage() {
         return
       }
     }
+    // "I'm Safe" is the person saying they are not hiding, so the ringer comes
+    // back unconditionally. This used to ask the database first whether any
+    // other SOS of theirs was still open — and one forgotten test alert in the
+    // history kept the phone silent after "I'm Safe" (Redmi, 2026-09-21). That
+    // check now only runs as the automatic safety net in useSosAlarm.
+    exitSosSilence()
     setSentMsg(null)
   }
 
   const resolveAlert = async (alertId) => {
     const { error } = await supabase.rpc('resolve_sos', { p_sos_id: alertId })
     if (error) console.error('Resolve error:', error.code || 'unknown')
+    // Resolving your OWN alert from the history says the same as "I'm Safe".
+    else if (alerts.find(a => a.id === alertId)?.user_id === user?.id) exitSosSilence()
   }
 
   const activeCount = alerts.filter(a => !a.is_resolved).length
@@ -607,7 +626,7 @@ export default function SOSPage() {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
                   <span>{first}</span>
                 </div>

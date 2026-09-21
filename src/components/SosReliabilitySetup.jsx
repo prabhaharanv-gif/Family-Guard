@@ -78,6 +78,8 @@ const Icons = {
   popup:     <><rect x="3" y="4" width="18" height="14" rx="2" /><path d="M8 21h8" /><path d="M8.5 9.5h7v5h-7z" /></>,
   overlay:   <><rect x="3" y="7" width="12" height="12" rx="2" /><path d="M9 4h10a1 1 0 0 1 1 1v10" /></>,
   fullscreen:<><path d="M4 9V5a1 1 0 0 1 1-1h4" /><path d="M20 9V5a1 1 0 0 0-1-1h-4" /><path d="M4 15v4a1 1 0 0 0 1 1h4" /><path d="M20 15v4a1 1 0 0 1-1 1h-4" /></>,
+  // Crossed-out bell — Do Not Disturb.
+  dnd:       <><path d="M9 19a3 3 0 0 0 6 0" /><path d="M6 15V10a6 6 0 0 1 9.3-5" /><path d="M18 11v4l2 3H8" /><path d="m4 4 16 16" /></>,
 }
 
 function RowIcon({ shape, done }) {
@@ -272,7 +274,16 @@ export default function SosReliabilitySetup() {
           {t('reliability.title')}
         </div>
         <p style={{ fontSize: 14, color: '#6B4152', lineHeight: 1.5, marginBottom: alertBlocked ? 14 : 18 }}>
-          {t('reliability.intro', {
+          {/* Two intros, because the list can now be about two different
+              things. The OEM one explains apps being held back in the
+              background, which is only true when an autostart/pop-up row is
+              actually on the list. A checklist made up of the plain-Android
+              rows (full-screen alerts, Do Not Disturb access) is about a
+              silenced or locked phone instead, and the OEM sentence describes
+              a problem that phone does not have. */}
+          {t(rows.some(r => r.key === 'autostart' || r.key === 'popup')
+              ? 'reliability.intro'
+              : 'reliability.introPlain', {
             oem: oemLabel(t, info),
             switches: remaining === 1
               ? t('reliability.oneSwitch')
@@ -412,6 +423,17 @@ function neededRows(info, overlayOk, visited) {
   if (!overlayOk) rows.push({ key: 'overlay', verifiable: true, done: false })
   if (info.canUseFullScreenIntent === false) rows.push({ key: 'fsi', verifiable: true, done: false })
 
+  // Do Not Disturb access. Listed on every phone, not just the restrictive
+  // OEMs, because this one is plain Android: while DND is on, zen mutes
+  // USAGE_ALARM above the app, so the SOS siren plays into a muted stream and
+  // the alert lands in silence. Nothing in the app can work around it — the
+  // access is the workaround. Verifiable and self-clearing like the two above.
+  //
+  // `=== false` rather than falsy: an older native build that predates
+  // dndAccess sends undefined, and a missing field must not read as a missing
+  // permission and park an unclearable row on the checklist.
+  if (info.dndAccess === false) rows.push({ key: 'dnd', verifiable: true, done: false })
+
   return rows
 }
 
@@ -443,6 +465,12 @@ function buildRows(t, info, overlayOk, visited) {
       label: t('reliability.fullscreen'),
       sub: t('reliability.fullscreenSub'),
       fn: () => SOSAlarm.openFullScreenIntentSettings(),
+    },
+    dnd: {
+      icon: Icons.dnd,
+      label: t('reliability.dnd'),
+      sub: t('reliability.dndSub'),
+      fn: () => SOSAlarm.openDndAccessSettings(),
     },
   }
 

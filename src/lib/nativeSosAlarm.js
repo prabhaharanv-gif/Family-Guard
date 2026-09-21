@@ -28,7 +28,7 @@ export async function stopNativeSOSAlarm() {
  * delivery path, which is why useSosAlarm.js keeps its Web Audio beeps for web
  * only. (An older comment here claimed this call was silent. It was not.)
  */
-export async function triggerNativeSOSAlert({ sender, message, lat, lng } = {}) {
+export async function triggerNativeSOSAlert({ sender, message, lat, lng, phone } = {}) {
   if (!Capacitor.isNativePlatform()) return
   try {
     await SOSAlarm.trigger({
@@ -36,9 +36,30 @@ export async function triggerNativeSOSAlert({ sender, message, lat, lng } = {}) 
       message: message || 'SOS Alert',
       lat:     lat != null ? String(lat) : '',
       lng:     lng != null ? String(lng) : '',
+      phone:   phone || '',
     })
   } catch (e) {
     console.warn('[nativeSosAlarm] trigger failed:', e)
+  }
+}
+
+/**
+ * Keep this phone silent while its owner's SOS is open, and give the ringer
+ * back once it is resolved. The sender may be hiding, and the family starts
+ * calling the moment the alert goes out. Both are no-ops natively when already
+ * in that state. See SosSilence.java.
+ */
+export async function enterSosSilence() {
+  if (!Capacitor.isNativePlatform()) return
+  try { await SOSAlarm.enterSosSilence() } catch (e) {
+    console.warn('[nativeSosAlarm] enterSosSilence failed:', e)
+  }
+}
+
+export async function exitSosSilence() {
+  if (!Capacitor.isNativePlatform()) return
+  try { await SOSAlarm.exitSosSilence() } catch (e) {
+    console.warn('[nativeSosAlarm] exitSosSilence failed:', e)
   }
 }
 

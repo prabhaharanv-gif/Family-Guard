@@ -1208,13 +1208,20 @@ export default function FamilyPage() {
                   {(() => {
                     const sharingOff = m.show_location === false
                     const sharing    = !sharingOff && !!loc?.isSharing
-                    const gpsOff     = sharing && loc?.locEnabled === false
                     // A row on its own is not a position: the privacy toggle
                     // seeds one at 0,0 (sync_location_sharing_all_families) as
                     // a placeholder, and calling that "Live" would be worse
                     // than saying nothing.
                     const hasFix = hasLocationRow && !!loc.lat && !!loc.lng
                       && !(loc.lat === 0 && loc.lng === 0)
+                    // A fresh position outranks the flag. location_enabled is
+                    // stored per family, and until the 20260918070000 migration
+                    // the all-families writer never cleared it — so a member who
+                    // had location off once kept showing "No GPS" in her other
+                    // families while her pin moved. A position that arrived
+                    // minutes ago is proof the phone has location on.
+                    const gpsOff = sharing && loc?.locEnabled === false
+                      && !(hasFix && !locStale)
                     const waiting = !sharingOff && !gpsOff && !hasFix
                     // Fifth state: sharing is on, GPS is on, a position exists —
                     // and none of it has been refreshed for a long time. Every
@@ -1224,8 +1231,15 @@ export default function FamilyPage() {
                     // the "Live" label, so it sits directly above the distance
                     // and qualifies it.
                     const stale = !sharingOff && !gpsOff && hasFix && locStale
+                    // Traffic-light colours, so a glance reads right:
+                    //   green = Live, amber = on but not updating,
+                    //   red   = location switched off on their phone.
+                    // "No GPS" used to be --muted, a dark mauve that read as the
+                    // app's own maroon (buttons, headers) rather than as a
+                    // problem. Off (sharing turned off in Famora) and Waiting
+                    // stay neutral: neither is something going wrong.
                     const pinFill = sharingOff || waiting ? 'var(--muted3)'
-                      : gpsOff ? 'var(--muted)'
+                      : gpsOff ? '#DC2626'
                       : stale ? '#F59E0B'
                       : '#10B981'
                     const label   = sharingOff ? t('family.gpsOff')
@@ -1233,8 +1247,11 @@ export default function FamilyPage() {
                       : waiting ? t('family.gpsWaiting')
                       : stale ? formatLastSeen(t, loc.updatedAt)
                       : t('family.gpsLive')
+                    // Label follows its pin. Red and amber labels are a shade
+                    // darker than the pin so 9px text stays readable on white.
                     const labelColor = waiting ? 'var(--muted-soft)'
-                      : (gpsOff || sharingOff) ? 'var(--muted)'
+                      : sharingOff ? 'var(--muted)'
+                      : gpsOff ? '#B91C1C'
                       : stale ? '#B45309'
                       : '#10B981'
                     return (
