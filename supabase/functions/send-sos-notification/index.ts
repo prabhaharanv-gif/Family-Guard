@@ -271,6 +271,9 @@ serve(async (req) => {
           type:      'sos_resolved',
           sos_id:    String(record.id ?? ''),
           family_id: String(record.family_id),
+          // So the recipient's alert can say who is safe now, and a phone that
+          // no longer has the alert on screen can still post "<name> is safe".
+          sender:    senderName,
         },
         android: { priority: 'high', ttl: '120s' },
       }
@@ -292,6 +295,9 @@ serve(async (req) => {
       // disables the siren and the full-screen alert in one go.
       data: {
         type:      'sos',
+        // Lets the later sos_resolved push be matched to THIS alert, so
+        // resolving one person's SOS never ends another one still open.
+        sos_id:    String(record.id ?? ''),
         sender:    senderName,
         message:   alertMessage,
         family_id: String(record.family_id),

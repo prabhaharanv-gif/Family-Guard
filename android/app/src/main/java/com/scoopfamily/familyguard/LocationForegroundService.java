@@ -28,11 +28,14 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -99,6 +102,8 @@ public class LocationForegroundService extends Service {
      * inherited by default.
      */
     public static final String KEY_SHAKE_SOS   = "shake_sos";
+    /** "Crash detection": off unless chosen, for the same reason as KEY_SHAKE_SOS. */
+    public static final String KEY_CRASH_SOS   = "crash_sos";
     // The last pushed fix, persisted so a restart (app update, OEM kill,
     // reboot) does not forget it. Without it the first fix after every restart
     // was judged against nothing and accepted at up to 2km accuracy — on the
@@ -114,6 +119,8 @@ public class LocationForegroundService extends Service {
 
     // Runs only while KEY_SHAKE_SOS is on; see syncShakeDetector.
     private ShakeSosDetector shakeDetector;
+    // Runs only while KEY_CRASH_SOS is on; see syncCrashDetector.
+    private CrashSosDetector crashDetector;
 
     // Watches for the phone losing data, so OfflineSms can text the family the
     // last known position when nothing else can reach them.
@@ -483,7 +490,9 @@ public class LocationForegroundService extends Service {
 
         startLocationUpdates();
         syncShakeDetector();
+        syncCrashDetector();
         watchConnectivity();
+        if (executor != null) executor.submit(this::seedPlaces);
         Log.i(TAG, "Location foreground service started — FusedLocationProvider");
         return START_STICKY;
     }
@@ -509,6 +518,12 @@ public class LocationForegroundService extends Service {
                 @Override public void onLost(android.net.Network network) {
                     OfflineSms.setOnline(getApplicationContext(), false);
                 }
+                // Wi-Fi <-> mobile data: tell the family card now rather than
+                // with the next position (up to ~2 min when not moving).
+                @Override public void onCapabilitiesChanged(android.net.Network network,
+                                                            android.net.NetworkCapabilities caps) {
+                    scheduleNetworkReport();
+                }
             };
             cm.registerDefaultNetworkCallback(networkCallback);
 
@@ -524,6 +539,237 @@ public class LocationForegroundService extends Service {
             Log.w(TAG, "Could not watch connectivity: " + e.getMessage());
             networkCallback = null;
         }
+    }
+
+    // ── Network type reported the moment it changes ─────────────────────────
+    // The family card's signal icon otherwise only moved with a position push.
+    // Only a change of TYPE (Wi-Fi <-> mobile) is sent here; bar levels still
+    // ride along with the regular pushes, since capabilities callbacks fire on
+    // every small RSSI wobble and that would mean constant writes.
+
+    /** The network type the server last heard from us; set by both writers. */
+    private volatile String lastSentNetType = null;
+
+    /** Waits for a hand-over to settle: switching networks fires several callbacks. */
+    private static final long NETWORK_REPORT_DEBOUNCE_MS = 3000;
+
+    private final Runnable networkReport = () -> {
+        ExecutorService ex = executor;
+        if (ex != null && !ex.isShutdown()) ex.submit(this::pushNetworkIfChanged);
+    };
+
+    private void scheduleNetworkReport() {
+        Handler h = mainHandler;
+        if (h == null) return;
+        h.removeCallbacks(networkReport);
+        h.postDelayed(networkReport, NETWORK_REPORT_DEBOUNCE_MS);
+    }
+
+    // ── Places (geofencing): "reached Home" / "left Home" ───────────────────
+    // The state machine and the two-fix confirmation live in PlaceGeofence,
+    // which is plain Java and unit tested (PlaceGeofenceTest); this service
+    // only feeds it fixes and reports what it confirms. See its class doc for
+    // why the check runs ahead of the push-quality gate above.
+
+    private final PlaceGeofence placeGeofence = new PlaceGeofence();
+    private volatile long lastPlacesRefreshTime = 0L;
+    // Safety net only — the normal path is refreshPlaces() restarting the
+    // service right after a places CRUD, same mechanism setShakeSosEnabled
+    // already uses to pick up a settings change.
+    private static final long PLACES_REFRESH_INTERVAL_MS = 3_600_000L;
+
+    /** Re-fetches this member's places from the server and reloads PlaceGeofence. */
+    private void seedPlaces() {
+        SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        String supabaseUrl = prefs.getString(KEY_URL, null);
+        String supabaseKey = prefs.getString(KEY_KEY, null);
+        String session     = prefs.getString(KEY_SESSION, null);
+        if (supabaseUrl == null || supabaseKey == null || session == null) return;
+
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) new URL(supabaseUrl + "/rest/v1/rpc/list_my_places").openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("apikey",        supabaseKey);
+            conn.setRequestProperty("Authorization", "Bearer " + session);
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(8_000);
+            conn.setReadTimeout(8_000);
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write("{}".getBytes("UTF-8"));
+            }
+
+            int code = conn.getResponseCode();
+            if (code != 200) {
+                Log.w(TAG, "list_my_places failed HTTP " + code);
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            try (java.io.BufferedReader br = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"))) {
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+            }
+
+            JSONArray rows = new JSONArray(sb.toString());
+            List<PlaceGeofence.Place> places = new ArrayList<>();
+            for (int i = 0; i < rows.length(); i++) {
+                org.json.JSONObject row = rows.getJSONObject(i);
+                places.add(new PlaceGeofence.Place(
+                    row.getString("id"),
+                    row.getString("name"),
+                    row.getDouble("lat"),
+                    row.getDouble("lng"),
+                    row.getInt("radius_m"),
+                    row.getBoolean("currently_inside")
+                ));
+            }
+            placeGeofence.setPlaces(places);
+            Log.i(TAG, "places refreshed — " + places.size() + " saved");
+        } catch (Exception e) {
+            Log.w(TAG, "seedPlaces failed: " + e.getMessage());
+        } finally {
+            if (conn != null) conn.disconnect();
+        }
+    }
+
+    /** Reports one confirmed arrival/departure, with the same auth-retry as reportLocationEnabled. */
+    private void reportPlaceTransition(PlaceGeofence.Transition t) {
+        SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        String supabaseUrl = prefs.getString(KEY_URL, null);
+        String supabaseKey = prefs.getString(KEY_KEY, null);
+        String session     = prefs.getString(KEY_SESSION, null);
+        if (supabaseUrl == null || supabaseKey == null || session == null) return;
+
+        int code = postPlaceTransition(supabaseUrl, supabaseKey, session, t);
+        if (SosResponse.isAuthFailure(code)) {
+            Log.w(TAG, "report_place_transition rejected (HTTP " + code + ") — renewing and retrying once");
+            if (refreshAccessToken(prefs, supabaseUrl, supabaseKey)) {
+                String renewed = prefs.getString(KEY_SESSION, null);
+                code = postPlaceTransition(supabaseUrl, supabaseKey, renewed, t);
+            }
+        }
+        Log.i(TAG, "place_transition " + t.placeName + " entered=" + t.entered + " -> HTTP " + code);
+    }
+
+    private int postPlaceTransition(String supabaseUrl, String supabaseKey, String session,
+                                    PlaceGeofence.Transition t) {
+        if (session == null) return SosResponse.NO_RESPONSE;
+
+        HttpURLConnection conn = null;
+        try {
+            JSONObject body = new JSONObject();
+            body.put("p_place_id", t.placeId);
+            body.put("p_entered",  t.entered);
+
+            conn = (HttpURLConnection) new URL(supabaseUrl + "/rest/v1/rpc/report_place_transition").openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("apikey",        supabaseKey);
+            conn.setRequestProperty("Authorization", "Bearer " + session);
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(8_000);
+            conn.setReadTimeout(8_000);
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body.toString().getBytes("UTF-8"));
+            }
+            return conn.getResponseCode();
+        } catch (Exception e) {
+            Log.w(TAG, "report_place_transition failed — " + e.getMessage());
+            return SosResponse.NO_RESPONSE;
+        } finally {
+            if (conn != null) conn.disconnect();
+        }
+    }
+
+    /**
+     * Called right after any places CRUD from the UI, and by the hourly
+     * safety-net timer above. Mirrors setShakeSosEnabled's mechanism exactly:
+     * a running service is restarted, which re-runs seedPlaces() from
+     * onStartCommand; there is nothing to do when not running because
+     * onStartCommand seeds fresh places on the next real start anyway.
+     */
+    public static void refreshPlaces(Context ctx) {
+        if (isRunning) startService(ctx);
+    }
+
+    private void pushNetworkIfChanged() {
+        NetworkSignal.Reading sig = NetworkSignal.read(getApplicationContext());
+        if (sig.type == null || sig.type.equals(lastSentNetType)) return;
+
+        android.content.SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        String supabaseUrl = prefs.getString(KEY_URL, null);
+        String supabaseKey = prefs.getString(KEY_KEY, null);
+        String session     = prefs.getString(KEY_SESSION, null);
+        // No session means nothing to write as; the next position push, which
+        // owns token renewal, will carry the network instead.
+        if (supabaseUrl == null || supabaseKey == null || session == null) return;
+
+        HttpURLConnection conn = null;
+        try {
+            JSONObject body = new JSONObject();
+            body.put("p_network_type", sig.type);
+            if (sig.level >= 0) body.put("p_signal_level", sig.level);
+
+            conn = (HttpURLConnection) new URL(supabaseUrl + "/rest/v1/rpc/set_network_status").openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("apikey",        supabaseKey);
+            conn.setRequestProperty("Authorization", "Bearer " + session);
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(10_000);
+            conn.setReadTimeout(10_000);
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body.toString().getBytes("UTF-8"));
+            }
+            int code = conn.getResponseCode();
+            if (code == 200 || code == 204) {
+                lastSentNetType = sig.type;
+                Log.i(TAG, "📶 Network now " + sig.type + " (" + sig.level + "/4) — reported");
+            } else {
+                // Deliberately no token refresh here: that belongs to the
+                // position push, and two refreshers spending one single-use
+                // refresh token is what used to log members out.
+                Log.w(TAG, "Network report failed HTTP " + code + " — the next push will carry it");
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Network report error: " + e.getMessage());
+        } finally {
+            if (conn != null) conn.disconnect();
+        }
+    }
+
+    /** Starts or stops the crash detector to match the stored preference. */
+    private void syncCrashDetector() {
+        if (isCrashSosEnabled(this)) {
+            if (crashDetector == null) crashDetector = new CrashSosDetector(this);
+            crashDetector.start();
+        } else if (crashDetector != null) {
+            crashDetector.stop();
+            crashDetector = null;
+        }
+    }
+
+    public static boolean isCrashSosEnabled(Context ctx) {
+        try {
+            return ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                      .getBoolean(KEY_CRASH_SOS, false);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Stores the choice and applies it now (a running service is re-started to pick it up). */
+    public static void setCrashSosEnabled(Context ctx, boolean enabled) {
+        try {
+            ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+               .edit().putBoolean(KEY_CRASH_SOS, enabled).commit();
+        } catch (Exception e) {
+            Log.w(TAG, "Could not store the crash detection preference: " + e.getMessage());
+        }
+        if (isRunning) startService(ctx);
     }
 
     /** Starts or stops the shake detector to match the stored preference. */
@@ -585,10 +831,15 @@ public class LocationForegroundService extends Service {
     public void onDestroy() {
         super.onDestroy();
         isRunning = false;
+        if (crashDetector != null) {
+            crashDetector.stop();
+            crashDetector = null;
+        }
         if (shakeDetector != null) {
             shakeDetector.stop();
             shakeDetector = null;
         }
+        if (mainHandler != null) mainHandler.removeCallbacks(networkReport);
         try {
             if (networkCallback != null) {
                 android.net.ConnectivityManager cm =
@@ -788,6 +1039,29 @@ public class LocationForegroundService extends Service {
     private void handleLocation(Location loc, String source) {
         if (loc == null) return;
 
+        // Crash detection reads every raw fix, before any filtering: the speed
+        // collapse it looks for is exactly what the push gates below would hold back.
+        if (crashDetector != null) crashDetector.onFix(loc);
+
+        // Phone lost mode: ends at its deadline, rings when due.
+        LostPhone.tick(this);
+
+        // Places (geofencing) run on every raw fix, deliberately BEFORE and
+        // independent of the push-worthiness gate below: that gate exists to
+        // decide what is worth writing to the map trail, and can hold a fix
+        // back for up to HEARTBEAT_MS or drop it outright below
+        // LocationFilter.MAX_ACCURACY_M — exactly the kind of fix you get
+        // walking into a building. See PlaceGeofence's class doc.
+        for (PlaceGeofence.Transition t : placeGeofence.checkFix(loc)) {
+            Log.i(TAG, (t.entered ? "📍 Reached " : "📍 Left ") + t.placeName);
+            executor.submit(() -> reportPlaceTransition(t));
+        }
+        long nowForPlaces = System.currentTimeMillis();
+        if (nowForPlaces - lastPlacesRefreshTime > PLACES_REFRESH_INTERVAL_MS) {
+            lastPlacesRefreshTime = nowForPlaces;
+            executor.submit(this::seedPlaces);
+        }
+
         boolean hasLastPush = lastPushedLocation != null;
         boolean hasPending  = pendingJumpLocation != null;
 
@@ -796,6 +1070,11 @@ public class LocationForegroundService extends Service {
         float fromPending = hasPending  ? pendingJumpLocation.distanceTo(loc) : LocationFilter.NO_DISTANCE;
         long  now = System.currentTimeMillis();
         long  sinceLastPush = hasLastPush ? now - lastPushTime : 0L;
+        // Lost mode: report every few seconds even when standing still, by treating
+        // the last push as old enough for the heartbeat to be due.
+        if (hasLastPush && LostPhone.isActive(this) && sinceLastPush >= LostModePlan.PUSH_EVERY_MS) {
+            sinceLastPush = Math.max(sinceLastPush, LocationFilter.HEARTBEAT_MS);
+        }
         long  sincePending  = hasPending  ? now - pendingJumpTime : 0L;
         long  holdingJumps  = hasPending  ? now - jumpHoldStartTime : 0L;
 
@@ -869,7 +1148,8 @@ public class LocationForegroundService extends Service {
      */
     private void adaptCadence(Location loc, float movedM) {
         boolean movedFar   = movedM != LocationFilter.NO_DISTANCE && movedM >= LocationFilter.MIN_MOVE_M;
-        boolean movingFast = loc.hasSpeed() && loc.getSpeed() >= MOVING_SPEED_MPS;
+        boolean movingFast = (loc.hasSpeed() && loc.getSpeed() >= MOVING_SPEED_MPS)
+            || LostPhone.isActive(this);   // lost mode keeps the fast cadence
 
         if (!cadence.update(movedFar, movingFast, System.currentTimeMillis())) return;
 
@@ -1090,6 +1370,13 @@ public class LocationForegroundService extends Service {
                 body.put("p_battery",     battery);
                 body.put("p_is_charging", charging);
             }
+            // Network for the family card's signal icon. Omitted when unknown,
+            // which leaves the stored reading as it was (migration 20260922120000).
+            NetworkSignal.Reading sig = NetworkSignal.read(getApplicationContext());
+            if (sig.type != null) {
+                body.put("p_network_type", sig.type);
+                if (sig.level >= 0) body.put("p_signal_level", sig.level);
+            }
 
             String sessionToken = prefs.getString(KEY_SESSION, null);
             String authHeader   = sessionToken != null
@@ -1112,6 +1399,7 @@ public class LocationForegroundService extends Service {
 
             int code = conn.getResponseCode();
             if (code == 200 || code == 204) {
+                if (sig.type != null) lastSentNetType = sig.type;
                 Log.i(TAG, "✅ Pushed: " + loc.getLatitude() + "," + loc.getLongitude()
                     + " acc=" + loc.getAccuracy() + "m bat=" + battery + "%");
             } else {

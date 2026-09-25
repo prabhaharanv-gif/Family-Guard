@@ -71,6 +71,10 @@ public class MainActivity extends BridgeActivity {
         // it costs nothing when the manifest was being honoured anyway.
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
+        // The "Call me" tile follows its switch; this catches installs from
+        // before the tile shipped disabled. No-op when already in step.
+        FakeCallPrefs.syncTile(this);
+
         // A fresh process means no screen is open yet, whatever the last run
         // left behind. onStop() clears this flag normally, but it never runs
         // when the process is force-stopped, crashed, killed by an OEM battery
@@ -108,6 +112,12 @@ public class MainActivity extends BridgeActivity {
             "popupOverLockScreen=" + canPopupOverLockScreen(this)
             + " (-1=unknown 0=denied 1=allowed)"
             + " overlay=" + canDrawOverlays(this));
+
+        // The wrong-password alert was withdrawn from the app: Android's device-admin
+        // screen is alarming (on MIUI it lists "Erase all data"). Anyone who tried it
+        // in a test build must not be left holding that permission with no switch to
+        // remove it, so give it back on launch.
+        AntiTheft.releaseDeviceAdmin(this);
 
         handleSOSIntent(getIntent());
         handleCallIntent(getIntent());
@@ -400,6 +410,13 @@ public class MainActivity extends BridgeActivity {
                     )
                 );
             }
+        }
+
+        // Weather alert tap: straight to Profile -> Places. Allow-listed, so no
+        // other app can steer the WebView anywhere with a crafted extra.
+        String openRoute = intent.getStringExtra("open_route");
+        if ("/profile?group=places".equals(openRoute) || "/profile?group=antitheft".equals(openRoute)) {
+            navigateWhenWebViewReady(openRoute, 0);
         }
 
         if (intent.getBooleanExtra("open_messages", false)) {

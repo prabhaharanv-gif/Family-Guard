@@ -209,6 +209,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String lat     = data.containsKey("lat") ? data.get("lat") : "";
             String lng     = data.containsKey("lng") ? data.get("lng") : "";
             String phone   = data.containsKey("phone") ? data.get("phone") : "";
+            String sosId   = data.containsKey("sos_id") ? data.get("sos_id") : "";
 
             ensureSosChannelStatic(appCtx);
 
@@ -219,6 +220,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             sirenIntent.putExtra("lat",     lat);
             sirenIntent.putExtra("lng",     lng);
             sirenIntent.putExtra("phone",   phone);
+            sirenIntent.putExtra("sos_id",  sosId);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 appCtx.startForegroundService(sirenIntent);
             } else {
@@ -240,20 +242,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             // misses the Activity still has something to tap.
 
         } else if ("sos_resolved".equals(type)) {
-            // The sender tapped "I am safe now". Silence this phone: the siren,
-            // the full-screen alert and the shade entry all belong to an
-            // emergency that is over, and leaving them for each person to
-            // dismiss by hand is what made a resolved SOS keep screaming.
-            Log.i("FamoraCall", "SOS resolved — stopping siren and clearing the alert");
-            SOSSirenService.stopService(appCtx);
-            SOSAlertActivity.finishIfShowing();
-            try {
-                NotificationManager nm =
-                    (NotificationManager) appCtx.getSystemService(Context.NOTIFICATION_SERVICE);
-                if (nm != null) nm.cancel(SOS_NOTIFICATION_ID);
-            } catch (Exception e) {
-                Log.w("FamoraCall", "could not clear the SOS notification: " + e.getMessage());
-            }
+            // The sender tapped "I am safe now".
+            handleSosResolved(appCtx, data.get("sos_id"), data.get("sender"));
 
         } else if ("call".equals(type)) {
             String callId     = data.containsKey("call_id")     ? data.get("call_id")     : "";
@@ -325,6 +315,514 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String sender  = data.containsKey("sender")  ? data.get("sender")  : "Family";
             String content = data.containsKey("content") ? data.get("content") : "New message";
             showMessageNotification(appCtx, sender, content, muteLevel);
+
+        } else if ("place_enter".equals(type) || "place_exit".equals(type)) {
+            // Plain notification, same shape as "message" above — no foreground
+            // service, no full-screen intent. That machinery is SOS's, not this.
+            String sender    = data.containsKey("sender")     ? data.get("sender")     : "Family";
+            String placeName = data.containsKey("place_name") ? data.get("place_name") : "a place";
+            showPlaceNotification(appCtx, sender, placeName, "place_enter".equals(type));
+
+        } else if ("device_alert".equals(type)) {
+            // Low battery / phone off / back online for a family member. Plain
+            // notification like the place alerts: no service, no full-screen.
+            String sender   = data.containsKey("sender")     ? data.get("sender")     : "Family";
+            String kind     = data.containsKey("kind")       ? data.get("kind")       : "";
+            int battery     = parseIntOr(data.get("battery"), -1);
+            int silentMin   = parseIntOr(data.get("silent_min"), 0);
+            showDeviceAlertNotification(appCtx, sender, kind, battery, silentMin,
+                parseIntOr(data.get("speed"), -1), parseIntOr(data.get("limit"), -1));
+
+        } else if ("weather_alert".equals(type)) {
+            // Severe weather due at one of THIS phone's owner's saved places.
+            // Plain notification, like the device alerts.
+            showWeatherAlertNotification(appCtx,
+                data.containsKey("kind") ? data.get("kind") : "",
+                data.containsKey("place_name") ? data.get("place_name") : "your place",
+                parseLongOr(data.get("at"), 0L),
+                parseIntOr(data.get("temp"), 0),
+                parseIntOr(data.get("gust"), 0),
+                parseIntOr(data.get("rain"), 0));
+
+        } else if ("lost_phone".equals(type)) {
+            // This phone was marked lost (or found again) by a family admin or its
+            // owner, who had allowed it. Time-critical: no waiting for the app.
+            if ("stop".equals(data.get("action"))) {
+                LostPhone.stop(appCtx);
+            } else {
+                LostPhone.start(appCtx,
+                    data.containsKey("message") ? data.get("message") : "",
+                    data.containsKey("starter") ? data.get("starter") : "",
+                    parseLongOr(data.get("until"), 0L));
+            }
+
+        } else if ("unlock_alert".equals(type)) {
+            // Somebody entered the wrong screen-lock password several times on a
+            // phone whose owner switched this on; we are one of that family admins.
+            // No position and no photo in the push — those are read in the app.
+            showUnlockAlertNotification(appCtx,
+                data.containsKey("sender") ? data.get("sender") : "Family",
+                parseIntOr(data.get("attempts"), 3));
+
+        } else if ("nearby_help_request".equals(type)) {
+            // Famora Social: this phone's owner is one of the closest opted-in
+            // strangers to an unanswered SOS. Only the fuzzy area is carried —
+            // the real coordinates are never sent until accept_nearby_help
+            // succeeds (see NearbyHelpActionReceiver).
+            String notificationId = data.containsKey("notification_id")  ? data.get("notification_id")  : "";
+            String escalationId   = data.containsKey("escalation_id")    ? data.get("escalation_id")    : "";
+            String tier           = data.containsKey("tier")             ? data.get("tier")             : "";
+            String fuzzyLat       = data.containsKey("fuzzy_lat")        ? data.get("fuzzy_lat")        : "";
+            String fuzzyLng       = data.containsKey("fuzzy_lng")        ? data.get("fuzzy_lng")        : "";
+            String fuzzyRadiusM   = data.containsKey("fuzzy_radius_m")   ? data.get("fuzzy_radius_m")   : "";
+            String helpKind       = data.containsKey("help_kind")        ? data.get("help_kind")        : "police";
+
+            Log.d("FamoraCall", "onMessageReceived: posting nearby-help request for " + notificationId);
+            // Not a foreground service — see NearbyHelpRingService's class doc.
+            // This just builds and posts one notification; there is no
+            // continuous playback to protect with a service or a wake lock.
+            NearbyHelpRingService.show(appCtx, notificationId, escalationId, tier, fuzzyLat, fuzzyLng, fuzzyRadiusM, helpKind);
+
+        } else if ("nearby_help_standdown".equals(type) || "nearby_help_cancelled".equals(type)) {
+            // Someone else already accepted, or the SOS was resolved. Either
+            // way this bystander no longer needs to do anything — cancel the
+            // tray notification if it is still showing for this escalation,
+            // and stop the ring if it is still going.
+            String escalationId = data.containsKey("escalation_id") ? data.get("escalation_id") : "";
+            Log.d("FamoraCall", "onMessageReceived: nearby help " + type + " for escalation " + escalationId);
+            NearbyHelpRingService.standDown(appCtx, escalationId);
+
+        } else if ("nearby_help_accepted".equals(type) || "nearby_help_exhausted".equals(type)) {
+            // Lands on the SOS SENDER's own phone — count/informational only,
+            // never a bystander's identity. No foreground service: this is a
+            // resume-time fallback for a backgrounded/killed app. The
+            // live/foregrounded case is handled by the web layer over
+            // Supabase Realtime, not by this push.
+            String sosAlertId = data.containsKey("sos_alert_id") ? data.get("sos_alert_id") : "";
+            String helpKind = data.containsKey("help_kind") ? data.get("help_kind") : "police";
+            showNearbyHelpSenderStatus(appCtx, sosAlertId, "nearby_help_accepted".equals(type), helpKind);
+        }
+    }
+
+    // ── SOS resolved ("I'm safe now") ─────────────────────────────────────────
+    /** Posted when the sender marks themselves safe and no alert screen is in front. */
+    public  static final int    SOS_SAFE_NOTIFICATION_ID = 913;
+    private static final String SOS_SAFE_CHANNEL_ID      = "sos_safe_v1";
+    /** Last alert handled here, so the push and the realtime copy act once. */
+    private static volatile String lastResolvedSosId = "";
+
+    /**
+     * The sender tapped "I'm safe now". Reached from the sos_resolved push and,
+     * with the app alive, from realtime via SOSAlarmPlugin.showResolved.
+     *
+     * This is RESOLVED, not silenced: the siren and the SOS shade entry go, and
+     * the alert screen turns into its "safe now" state instead of vanishing —
+     * an alert that simply disappeared left recipients unsure whether they had
+     * only silenced it or the person was really safe. If the screen is not in
+     * front (closed, or left for Maps/the dialler), a notification says so.
+     *
+     * Matched by sos id: with two people's SOS open, resolving one must not
+     * stop the other's siren or say the wrong person is safe. An id missing on
+     * either side (an older edge function) falls back to the previous
+     * behaviour of treating it as the alert on screen.
+     */
+    public static void handleSosResolved(Context ctx, String sosId, String sender) {
+        final Context appCtx = ctx.getApplicationContext();
+        if (sosId == null) sosId = "";
+        if (!sosId.isEmpty() && sosId.equals(lastResolvedSosId)) return;
+        if (!sosId.isEmpty()) lastResolvedSosId = sosId;
+
+        String current = SOSSirenService.currentSosId;
+        boolean sameAlert = sosId.isEmpty() || current == null || current.isEmpty()
+            || sosId.equals(current);
+
+        String name = sender;
+        if ((name == null || name.isEmpty()) && sameAlert) name = SOSSirenService.currentSender;
+        if (name == null || name.isEmpty()) name = appCtx.getString(R.string.a_family_member);
+
+        if (!sameAlert) {
+            // Someone else's SOS is still open on this phone; leave it alone.
+            Log.i("FamoraCall", "SOS " + sosId + " resolved — a different alert is live, not touching it");
+            showSosSafeNotification(appCtx, name);
+            return;
+        }
+
+        Log.i("FamoraCall", "SOS resolved — stopping siren, showing the safe state");
+        SOSSirenService.stopService(appCtx);
+        try {
+            NotificationManager nm =
+                (NotificationManager) appCtx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.cancel(SOS_NOTIFICATION_ID);
+        } catch (Exception e) {
+            Log.w("FamoraCall", "could not clear the SOS notification: " + e.getMessage());
+        }
+        if (!SOSAlertActivity.showResolvedIfShowing(name)) {
+            showSosSafeNotification(appCtx, name);
+        }
+    }
+
+    private static void showSosSafeNotification(Context ctx, String name) {
+        try {
+            NotificationManager nm =
+                (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (nm.getNotificationChannel(SOS_SAFE_CHANNEL_ID) != null) {
+                    NotificationChannels.refreshText(ctx, nm, SOS_SAFE_CHANNEL_ID,
+                        R.string.ch_sos_safe_name, R.string.ch_sos_safe_desc);
+                } else {
+                    // Default notification sound, not the siren: this is good news.
+                    NotificationChannel ch = new NotificationChannel(SOS_SAFE_CHANNEL_ID,
+                        ctx.getString(R.string.ch_sos_safe_name), NotificationManager.IMPORTANCE_HIGH);
+                    ch.setDescription(ctx.getString(R.string.ch_sos_safe_desc));
+                    nm.createNotificationChannel(ch);
+                }
+            }
+
+            Intent tap = new Intent(ctx, MainActivity.class);
+            tap.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            tap.putExtra("route", "/sos");
+            PendingIntent tapPi = PendingIntent.getActivity(ctx, 913, tap,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, SOS_SAFE_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_notify)
+                .setColor(android.graphics.Color.parseColor("#12925B"))
+                .setContentTitle(ctx.getString(R.string.sos_safe_title, name))
+                .setContentText(ctx.getString(R.string.sos_marked_safe, name))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
+                .setContentIntent(tapPi);
+            // This phone's owner has their own SOS open and may be hiding.
+            if (SosSilence.isActive(ctx)) b.setSilent(true);
+            nm.notify(SOS_SAFE_NOTIFICATION_ID, b.build());
+        } catch (Exception e) {
+            Log.w("FamoraCall", "could not post the SOS safe notification: " + e.getMessage());
+        }
+    }
+
+    // ── Places: "reached Home" / "left Home" ─────────────────────────────────
+    private static final String PLACE_CHANNEL_ID = "family_places_v1";
+
+    private static void showPlaceNotification(Context ctx, String sender, String placeName, boolean entered) {
+        try {
+            NotificationManager nm =
+                (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (nm.getNotificationChannel(PLACE_CHANNEL_ID) != null) {
+                    NotificationChannels.refreshText(ctx, nm, PLACE_CHANNEL_ID,
+                        R.string.ch_places_name, R.string.ch_places_desc);
+                } else {
+                    // Default notification sound — its own channel so it can be
+                    // muted independently of chat, but not something a family
+                    // member needs to be woken up for.
+                    NotificationChannel ch = new NotificationChannel(PLACE_CHANNEL_ID,
+                        ctx.getString(R.string.ch_places_name), NotificationManager.IMPORTANCE_HIGH);
+                    ch.setDescription(ctx.getString(R.string.ch_places_desc));
+                    nm.createNotificationChannel(ch);
+                }
+            }
+
+            Intent tap = new Intent(ctx, MainActivity.class);
+            tap.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent tapPi = PendingIntent.getActivity(ctx, 914, tap,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            String title = ctx.getString(
+                entered ? R.string.place_reached_title : R.string.place_left_title,
+                sender, placeName);
+
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, PLACE_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_notify)
+                .setColor(android.graphics.Color.parseColor("#951345"))
+                .setContentTitle(title)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_STATUS)
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                .setAutoCancel(true)
+                .setContentIntent(tapPi);
+            nm.notify((int) System.currentTimeMillis(), b.build());
+        } catch (Exception e) {
+            Log.w("FamoraCall", "could not post the place notification: " + e.getMessage());
+        }
+    }
+
+    // ── Device alerts: low battery / phone off / back online ─────────────────
+    private static final String DEVICE_CHANNEL_ID = "device_alerts_v1";
+
+    private static int parseIntOr(String v, int fallback) {
+        try { return Integer.parseInt(v == null ? "" : v.trim()); } catch (Exception e) { return fallback; }
+    }
+
+    /** 45 -> "45 min", 135 -> "2 h 15 min". */
+    private static String formatSilence(int minutes) {
+        if (minutes < 60) return minutes + " min";
+        int h = minutes / 60, m = minutes % 60;
+        return m == 0 ? h + " h" : h + " h " + m + " min";
+    }
+
+    private static void showDeviceAlertNotification(Context ctx, String sender, String kind, int battery, int silentMin,
+                                                    int speed, int limit) {
+        try {
+            NotificationManager nm =
+                (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(DEVICE_CHANNEL_ID) == null) {
+                NotificationChannel ch = new NotificationChannel(DEVICE_CHANNEL_ID,
+                    ctx.getString(R.string.ch_device_name), NotificationManager.IMPORTANCE_HIGH);
+                ch.setDescription(ctx.getString(R.string.ch_device_desc));
+                nm.createNotificationChannel(ch);
+            }
+
+            String title;
+            String body;
+            String batt = battery >= 0 ? battery + "%" : "";
+            switch (kind) {
+                case "battery_critical":
+                    title = ctx.getString(R.string.device_critical_title, sender);
+                    body  = ctx.getString(R.string.device_critical_body, batt);
+                    break;
+                case "battery_low":
+                    title = ctx.getString(R.string.device_low_title, sender);
+                    body  = ctx.getString(R.string.device_low_body, batt);
+                    break;
+                case "phone_offline":
+                    title = ctx.getString(R.string.device_offline_title, sender);
+                    body  = battery >= 0 && battery <= 15
+                        ? ctx.getString(R.string.device_offline_body_battery, formatSilence(silentMin), batt)
+                        : ctx.getString(R.string.device_offline_body, formatSilence(silentMin));
+                    break;
+                case "overspeed":
+                    title = ctx.getString(R.string.device_overspeed_title, sender);
+                    body  = ctx.getString(R.string.device_overspeed_body, speed, limit);
+                    break;
+                case "overspeed_self":
+                    title = ctx.getString(R.string.device_overspeed_self_title);
+                    body  = ctx.getString(R.string.device_overspeed_self_body, speed, limit);
+                    break;
+                case "back_online":
+                    title = ctx.getString(R.string.device_back_title, sender);
+                    body  = ctx.getString(R.string.device_back_body);
+                    break;
+                default:
+                    return;
+            }
+
+            Intent tap = new Intent(ctx, MainActivity.class);
+            tap.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent tapPi = PendingIntent.getActivity(ctx, 916, tap,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, DEVICE_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_notify)
+                .setColor(android.graphics.Color.parseColor("#951345"))
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_STATUS)
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                .setAutoCancel(true)
+                .setContentIntent(tapPi);
+            nm.notify((int) System.currentTimeMillis(), b.build());
+        } catch (Exception e) {
+            Log.w("FamoraCall", "could not post the device alert: " + e.getMessage());
+        }
+    }
+
+    // ── Wrong-password alert ────────────────────────────────────────────────
+    private static void showUnlockAlertNotification(Context ctx, String sender, int attempts) {
+        try {
+            NotificationManager nm =
+                (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+            // Same channel as the battery / phone-off alerts: it is about a member's phone.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(DEVICE_CHANNEL_ID) == null) {
+                NotificationChannel ch = new NotificationChannel(DEVICE_CHANNEL_ID,
+                    ctx.getString(R.string.ch_device_name), NotificationManager.IMPORTANCE_HIGH);
+                ch.setDescription(ctx.getString(R.string.ch_device_desc));
+                nm.createNotificationChannel(ch);
+            }
+            String title = ctx.getString(R.string.unlock_alert_title, sender);
+            String body  = ctx.getString(R.string.unlock_alert_body, attempts);
+
+            Intent tap = new Intent(ctx, MainActivity.class);
+            tap.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            tap.putExtra("open_route", "/profile?group=antitheft");
+            PendingIntent tapPi = PendingIntent.getActivity(ctx, 918, tap,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, DEVICE_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_notify)
+                .setColor(android.graphics.Color.parseColor("#951345"))
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                .setAutoCancel(true)
+                .setContentIntent(tapPi);
+            nm.notify((int) System.currentTimeMillis(), b.build());
+        } catch (Exception e) {
+            Log.w("FamoraCall", "could not post the unlock alert: " + e.getMessage());
+        }
+    }
+
+    // ── Weather alerts: severe weather at a saved place ─────────────────────
+    private static final String WEATHER_CHANNEL_ID = "weather_alerts_v1";
+
+    private static long parseLongOr(String v, long fallback) {
+        try { return Long.parseLong(v == null ? "" : v.trim()); } catch (Exception e) { return fallback; }
+    }
+
+    private static void showWeatherAlertNotification(Context ctx, String kind, String place,
+                                                     long atSec, int temp, int gust, int rain) {
+        try {
+            NotificationManager nm =
+                (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(WEATHER_CHANNEL_ID) == null) {
+                NotificationChannel ch = new NotificationChannel(WEATHER_CHANNEL_ID,
+                    ctx.getString(R.string.ch_weather_name), NotificationManager.IMPORTANCE_HIGH);
+                ch.setDescription(ctx.getString(R.string.ch_weather_desc));
+                nm.createNotificationChannel(ch);
+            }
+
+            String title;
+            String detail;
+            switch (kind) {
+                case "thunderstorm":
+                    title  = ctx.getString(R.string.weather_title_thunderstorm, place);
+                    detail = ctx.getString(R.string.weather_detail_thunderstorm);
+                    break;
+                case "heavy_rain":
+                    title  = ctx.getString(R.string.weather_title_heavy_rain, place);
+                    detail = rain > 0 ? ctx.getString(R.string.weather_detail_heavy_rain_mm, rain)
+                                      : ctx.getString(R.string.weather_detail_heavy_rain);
+                    break;
+                case "heat":
+                    title  = ctx.getString(R.string.weather_title_heat, place);
+                    detail = ctx.getString(R.string.weather_detail_heat, temp);
+                    break;
+                case "wind":
+                    title  = ctx.getString(R.string.weather_title_wind, place);
+                    detail = ctx.getString(R.string.weather_detail_wind, gust);
+                    break;
+                default: return;
+            }
+
+            long nowMs = System.currentTimeMillis();
+            String when;
+            if (atSec <= 0 || atSec * 1000L <= nowMs + 30 * 60 * 1000L) {
+                when = ctx.getString(R.string.weather_when_now);
+            } else {
+                when = ctx.getString(R.string.weather_when_at,
+                    new java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
+                        .format(new java.util.Date(atSec * 1000L)));
+            }
+            String body = ctx.getString(R.string.weather_body, when, detail);
+
+            Intent tap = new Intent(ctx, MainActivity.class);
+            tap.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            tap.putExtra("open_route", "/profile?group=places");
+            PendingIntent tapPi = PendingIntent.getActivity(ctx, 917, tap,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, WEATHER_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_notify)
+                .setColor(android.graphics.Color.parseColor("#951345"))
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_STATUS)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setAutoCancel(true)
+                .setContentIntent(tapPi);
+            nm.notify((int) nowMs, b.build());
+        } catch (Exception e) {
+            Log.w("FamoraCall", "could not post the weather alert: " + e.getMessage());
+        }
+    }
+
+    // ── Nearby-help: sender-side status fallback ──────────────────────────────
+    // nearby_help_accepted / nearby_help_exhausted, both landing on the SOS
+    // SENDER's own phone. See NearbyHelpRingService for the bystander side.
+    private static final String NEARBY_HELP_STATUS_CHANNEL_ID     = "nearby_help_status_v1";
+    public  static final int    NEARBY_HELP_STATUS_NOTIFICATION_ID = 915;
+
+    /**
+     * Cached so the WebView can read it back on resume — the same
+     * resume-time-fallback shape as KEY_ALERT_BLOCKED. The live/foregrounded
+     * case is Realtime, not this; this exists only for a backgrounded or
+     * killed app that missed the live update.
+     */
+    public static final String KEY_NEARBY_HELP_SOS_ID = "nearby_help_sos_id";
+    /** Value is "helper_found" or "exhausted". */
+    public static final String KEY_NEARBY_HELP_STATUS = "nearby_help_status";
+
+    private static void showNearbyHelpSenderStatus(Context ctx, String sosAlertId, boolean helperFound, String helpKind) {
+        try {
+            ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_NEARBY_HELP_SOS_ID, sosAlertId == null ? "" : sosAlertId)
+                .putString(KEY_NEARBY_HELP_STATUS, helperFound ? "helper_found" : "exhausted")
+                .apply();
+        } catch (Exception e) { /* diagnostics only — never fail the notification for this */ }
+
+        try {
+            NotificationManager nm =
+                (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (nm.getNotificationChannel(NEARBY_HELP_STATUS_CHANNEL_ID) != null) {
+                    NotificationChannels.refreshText(ctx, nm, NEARBY_HELP_STATUS_CHANNEL_ID,
+                        R.string.ch_nearby_help_status_name, R.string.ch_nearby_help_status_desc);
+                } else {
+                    // Low priority and silent on purpose — this is reassurance/
+                    // fallback information, not something that should interrupt
+                    // someone mid-emergency with a second sound on top of
+                    // whatever the SOS screen itself is already playing.
+                    NotificationChannel ch = new NotificationChannel(NEARBY_HELP_STATUS_CHANNEL_ID,
+                        ctx.getString(R.string.ch_nearby_help_status_name), NotificationManager.IMPORTANCE_LOW);
+                    ch.setDescription(ctx.getString(R.string.ch_nearby_help_status_desc));
+                    ch.setSound(null, null);
+                    ch.enableVibration(false);
+                    nm.createNotificationChannel(ch);
+                }
+            }
+
+            Intent tap = new Intent(ctx, MainActivity.class);
+            tap.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            tap.putExtra("route", "/sos");
+            PendingIntent tapPi = PendingIntent.getActivity(ctx, NEARBY_HELP_STATUS_NOTIFICATION_ID, tap,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, NEARBY_HELP_STATUS_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_notify)
+                .setContentTitle(ctx.getString(helperFound
+                    ? R.string.notif_nearby_help_sender_accepted_title
+                    : R.string.notif_nearby_help_sender_exhausted_title))
+                .setContentText(helperFound
+                    ? ctx.getString(R.string.notif_nearby_help_sender_accepted_body)
+                    : ctx.getString(R.string.notif_nearby_help_sender_exhausted_body, NearbyHelpKind.number(helpKind)))
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
+                .setContentIntent(tapPi);
+            nm.notify(NEARBY_HELP_STATUS_NOTIFICATION_ID, b.build());
+        } catch (Exception e) {
+            Log.w("FamoraCall", "could not post the nearby-help status notification: " + e.getMessage());
         }
     }
 

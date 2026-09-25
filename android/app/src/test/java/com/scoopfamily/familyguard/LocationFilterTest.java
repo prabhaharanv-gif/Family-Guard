@@ -45,7 +45,7 @@ public class LocationFilterTest {
     @Test
     public void fixExactlyAtTheAccuracyLimit_isAccepted() {
         assertTrue("the limit is a ceiling, not an exclusion",
-            evaluate(LocationFilter.MAX_ACCURACY_M, 100f, 10_000).shouldPush());
+            evaluate(LocationFilter.MAX_ACCURACY_M, 250f, 10_000).shouldPush());
     }
 
     /**
@@ -106,9 +106,9 @@ public class LocationFilterTest {
     @Test
     public void impreciseFix_beyondItsOwnError_isRealMovement() {
         LocationFilter.Result r = LocationFilter.evaluate(
-            60f, 20f, true, 80f, 10_000, false, NONE, 0, 0);
+            60f, 20f, true, 130f, 10_000, false, NONE, 0, 0);
 
-        assertEquals("80m is more than a 60m fix can be wrong by",
+        assertEquals("130m is beyond twice a 60m fix's error",
             LocationFilter.Outcome.ACCEPTED, r.outcome);
     }
 
@@ -177,6 +177,21 @@ public class LocationFilterTest {
                 sinceLastPush = 0;
             }
         }
+    }
+
+    /**
+     * A Wi-Fi guess understates its own error: a fix that says 60m and lands 110m
+     * away is still the same still phone. Only clearly beyond twice its accuracy
+     * counts as movement; a precise GPS fix keeps the plain rule.
+     */
+    @Test
+    public void coarseFix_needsTwiceItsAccuracyToMoveThePin() {
+        assertEquals(LocationFilter.Outcome.SKIPPED_TOO_CLOSE,
+            LocationFilter.evaluate(60f, 20f, true, 110f, 10_000, false, NONE, 0, 0).outcome);
+        assertEquals(LocationFilter.Outcome.ACCEPTED,
+            LocationFilter.evaluate(60f, 20f, true, 125f, 10_000, false, NONE, 0, 0).outcome);
+        assertEquals(LocationFilter.Outcome.ACCEPTED,
+            LocationFilter.evaluate(20f, 20f, true, 25f, 10_000, false, NONE, 0, 0).outcome);
     }
 
     @Test

@@ -273,8 +273,8 @@ export default function LoginPage() {
       <div className="auth-card" style={{ borderRadius: 28, padding: "40px 32px" }}>
         {/* Brand icon — same artwork as the launcher icon */}
         <div className="auth-logo auth-logo-brand" style={{ marginBottom: 28 }}>
-          <img src={famoraLogo} alt="famora" width={140} height={140}
-            style={{ display: 'block', margin: '0 auto', borderRadius: 28 }} />
+          <img src={famoraLogo} alt="famora" width={110} height={110}
+            style={{ display: 'block', margin: '0 auto', borderRadius: 24 }} />
         </div>
 
         {error && <Dialog type="info" message={error} onClose={() => setError('')} />}

@@ -18,8 +18,8 @@ android {
         applicationId "com.scoopfamily.familyguard"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 18
-        versionName "1.2.1"
+        versionCode 20
+        versionName "1.2.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // Google Maps SDK for Android key, read from android/local.properties
         // (git-ignored) as MAPS_API_KEY=... so it never lands in a tracked file.

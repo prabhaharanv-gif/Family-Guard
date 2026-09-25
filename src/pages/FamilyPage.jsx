@@ -1,19 +1,26 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { App as CapApp } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import AnchoredMenu from '../components/AnchoredMenu'
+import LostPhoneSheet from '../components/LostPhoneSheet'
 import Dialog from '../components/Dialog'
 import { useT } from '../i18n'
 import FamilyIllustration from '../components/FamilyIllustration'
+// One colour rule for every screen. The card used to rotate seven maroon shades
+// by list position, so a member looked different here than on the map and in
+// chat, and changed colour whenever someone joined or left.
+import { avatarColor } from '../lib/avatarColor'
 import PullToRefresh from '../components/PullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import { setNicknameLocally, useNicknames } from '../hooks/useNicknames'
 import Icon from '../components/Icon'
+import { useMemberWeather } from '../hooks/useMemberWeather'
+import { weatherView, cellKey } from '../lib/weather'
+import { etaLabel } from '../lib/eta'
 
-const AVATAR_COLORS = ['#8B0D3D','#6E0A30','#B01650','#A01040','#A5124A','#8A0F3A','#6B0B2C']
 
 // Takes the translator rather than reading the store directly, so these stay
 // pure functions and re-render with the rest of the card on a language switch.
@@ -25,6 +32,30 @@ function formatLastSeen(t, ts) {
   if (diff < 3600) return t('family.minutesAgo', { n: Math.floor(diff / 60) })
   if (diff < 86400) return t('family.hoursAgo', { n: Math.floor(diff / 3600) })
   return t('family.daysAgo', { n: Math.floor(diff / 86400) })
+}
+
+/**
+ * One status line that never wraps, with the time kept whole.
+ *
+ * In Tamil (and on narrow phones) "Last seen 37s ago" did not fit beside the
+ * weather and Live columns and wrapped onto a second line, making that card
+ * taller than the rest. Cutting the end with an ellipsis would lose the time,
+ * the part that matters. So the sentence is split around {when}: the words
+ * shrink with an ellipsis, the time never does. Works whichever side of the
+ * words a language puts the time (Tamil "Joined" is "{when} சேர்ந்தார்").
+ */
+function FittedLine({ t, k, when }) {
+  // Ask for the sentence with the placeholder put back, then split on it.
+  const [before = '', after = ''] = t(k, { when: '{when}' }).split('{when}')
+  // 'pre', not 'nowrap': keeps the space between the words and the time.
+  const words = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'pre', minWidth: 0 }
+  return (
+    <span style={{ display: 'flex', minWidth: 0, maxWidth: '100%', whiteSpace: 'pre' }}>
+      {before && <span style={words}>{before}</span>}
+      <span style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>{when}</span>
+      {after && <span style={words}>{after}</span>}
+    </span>
+  )
 }
 
 // Presence needs BOTH the explicit flag and a fresh heartbeat.
@@ -53,6 +84,86 @@ const ONLINE_STALE_MS = 75 * 1000
  * because it was derived from the sharing flags and never from the clock.
  */
 const LOCATION_STALE_MS = 15 * 60 * 1000
+
+/**
+ * How old a signal reading may be before the card stops showing its bars.
+ * A phone that loses signal cannot say so: the last reading that got through
+ * is always a good one. So past this the icon is drawn as empty outlines, in
+ * the same colour — never confident bars from the past. Five minutes is a few
+ * missed 90s heartbeats.
+ */
+const SIGNAL_STALE_MS = 5 * 60 * 1000
+
+/**
+ * A position fresh enough to put weather beside. An old position says nothing
+ * about the weather where the member is now, so the card shows none for it.
+ */
+function isFreshLoc(l) {
+  return !!l && l.isSharing !== false && l.locEnabled !== false
+    && Number(l.lat) !== 0 && Number(l.lng) !== 0 && l.lat != null && l.lng != null
+    && !!l.updatedAt && (Date.now() - new Date(l.updatedAt)) < LOCATION_STALE_MS
+}
+
+/**
+ * Wi-Fi or mobile signal beside the battery. Line drawing in the card's muted
+ * rose, like the battery. level 0-4 (null on Wi-Fi when the phone did not say).
+ */
+function SignalIcon({ loc, color, t }) {
+  if (!loc?.networkType) return null
+  const stale = !loc.signalAt || (Date.now() - new Date(loc.signalAt)) > SIGNAL_STALE_MS
+  const wifi = loc.networkType === 'wifi'
+  const level = stale ? 0 : (loc.signalLevel ?? (wifi ? 4 : 0))
+  const label = stale
+    ? t('family.signalOld')
+    : t(wifi ? 'family.signalWifi' : 'family.signalMobile', { n: level })
+  if (wifi) {
+    // Three arcs and a dot; 0-4 bars map onto how many arcs are solid.
+    const arcs = Math.min(3, Math.ceil(level * 3 / 4))
+    // Same line weight and 12px height as the battery (viewBox 14 high,
+    // stroke 2): it was drawn at 1.4px in a loose box and looked faint and
+    // shrunk beside it. Three 90-degree arcs round one centre, plus the dot.
+    const arc = (d, i) => (
+      <path key={i} d={d} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"
+        opacity={i < arcs ? 1 : 0.3} />
+    )
+    return (
+      <span role="img" aria-label={label} title={label} style={{ display: 'flex' }}>
+        <svg width="17" height="12" viewBox="0 0 20 14" aria-hidden="true">
+          {[
+            // Arcs sit 0.8 higher than the dot's old centre line so the dot
+            // has a clear gap below the smallest arc (it touched it).
+            'M7.45 8.85A3.6 3.6 0 0 1 12.55 8.85',
+            'M5.05 6.45A7 7 0 0 1 14.95 6.45',
+            'M2.65 4.05A10.4 10.4 0 0 1 17.35 4.05',
+          ].map(arc)}
+          <circle cx="10" cy="12.3" r="1.55" fill={stale ? 'none' : color} stroke={color} strokeWidth="1" />
+        </svg>
+      </span>
+    )
+  }
+  return (
+    <span role="img" aria-label={label} title={label} style={{ display: 'flex' }}>
+      {/* Same 14-unit-high box as the battery (viewBox 26x14, body y 1-13).
+          Optically centred, not edge-matched: bottom-aligned bars carry their
+          weight low, so with the edges matched the icon still read as sitting
+          below the battery. The base is lifted one unit (bars end at y 12, the
+          tallest starts at the battery top) and the shortest bar starts near
+          half height. Filled bars carry no outline: it was eating the gaps and
+          the bars ran together. */}
+      <svg width="18" height="12" viewBox="0 0 21 14" aria-hidden="true">
+        {[0, 1, 2, 3].map(i => {
+          const h = 5 + i * 2
+          const on = i < level
+          return (
+            <rect key={i} x={on ? 1 + i * 5 : 1.5 + i * 5} y={on ? 12 - h : 12.5 - h}
+              width={on ? 3 : 2} height={on ? h : h - 1} rx="0.8"
+              fill={on ? color : 'none'} stroke={on ? 'none' : color} strokeWidth="1" />
+          )
+        })}
+      </svg>
+    </span>
+  )
+}
 
 function isOnline(member) {
   if (!member || member.is_online !== true) return false
@@ -165,31 +276,6 @@ function formatDistance(t, km) {
   return t('family.kmAway', { n: Math.round(km) })
 }
 
-function SOSAlert({ alert, memberName, onDismiss }) {
-  const t = useT()
-  return (
-    <div className="sos-blink-overlay" onClick={onDismiss}>
-      <div className="sos-alert-banner" onClick={e => e.stopPropagation()}>
-        <div className="sos-alert-icon"><Icon name="siren" /></div>
-        <div className="sos-alert-title">{t('family.inTrouble', { name: memberName || t('family.aFamilyMember') })}</div>
-        <div className="sos-alert-sub">
-          {alert.message || t('family.sosAlert')}
-          {alert.lat !== 0 && (
-            <><br />
-              <a href={`https://www.google.com/maps?q=${alert.lat},${alert.lng}`}
-                target="_blank" rel="noopener noreferrer"
-                style={{ color: '#fff', fontWeight: 700, textDecoration: 'underline' }}>
-                <Icon name="pin" /> {t('family.viewLocation')}
-              </a>
-            </>
-          )}
-        </div>
-        <button className="sos-alert-dismiss" onClick={onDismiss}><Icon name="hand" /> {t('family.understandDismiss')}</button>
-      </div>
-    </div>
-  )
-}
-
 // ── Long-press action sheet: Edit Name + Remove ──
 function EditNameModal({ member, currentNickname, onClose, onSave }) {
   const t = useT()
@@ -253,6 +339,11 @@ export default function FamilyPage() {
   const [members, setMembers]           = useState([])
   const [membersLoaded, setMembersLoaded] = useState(false)   // false until first fetch returns
   const [locations, setLocations]       = useState({})
+  // Weather for members with a fresh position (member-weather edge function).
+  const weatherPoints = useMemo(
+    () => Object.values(locations).filter(isFreshLoc).map(l => ({ lat: l.lat, lng: l.lng })),
+    [locations])
+  const weather = useMemberWeather(weatherPoints)
   const [joinRequests, setJoinRequests] = useState([])
   const [selectedMember, setSelectedMember] = useState(null)   // tap → call menu
   const [actionMember, setActionMember]     = useState(null)   // long-press → action sheet
@@ -263,10 +354,12 @@ export default function FamilyPage() {
   const [showInviteSheet, setShowInviteSheet]       = useState(false)
   const [codeCopied, setCodeCopied]                 = useState(false)
   const [newFamilyName, setNewFamilyName]           = useState('')
-  const [sosAlert, setSosAlert]         = useState(null)
-  const [sosAlertMember, setSosAlertMember] = useState(null)
   const [isOwner, setIsOwner]           = useState(false)      // is current user the family creator?
   const [dialog, setDialog]             = useState(null)
+  // Phones marked lost in this family (user_id → row), and the sheet that marks one.
+  const [lostMap, setLostMap]     = useState({})
+  const [lostSheet, setLostSheet] = useState(null)
+  const [lostBusy, setLostBusy]   = useState(false)
   const longPressTimer = useRef(null)
   const didLongPress = useRef(false)
   const navigate = useNavigate()
@@ -309,7 +402,7 @@ export default function FamilyPage() {
     const [famRes, memRes, locRes, reqRes] = await Promise.all([
       supabase.from('families').select('created_by').eq('id', familyId).single(),
       supabase.from('family_members').select('*').eq('family_id', familyId),
-      supabase.from('locations').select('user_id, lat, lng, updated_at, is_sharing, location_enabled, battery_level, is_charging, bg_location_granted, battery_opt_ignored')
+      supabase.from('locations').select('user_id, lat, lng, updated_at, is_sharing, location_enabled, battery_level, is_charging, bg_location_granted, battery_opt_ignored, signal_level, network_type, signal_at')
         .eq('family_id', familyId),
       supabase.from('join_requests').select('*')
         .eq('family_id', familyId).eq('status', 'pending'),
@@ -320,7 +413,7 @@ export default function FamilyPage() {
     setMembersLoaded(true)
     if (locRes.data) {
       const map = {}
-      locRes.data.forEach(l => { map[l.user_id] = { lat: l.lat, lng: l.lng, updatedAt: l.updated_at, isSharing: l.is_sharing, locEnabled: l.location_enabled !== false, battery: l.battery_level ?? null, isCharging: l.is_charging ?? false, bgLocation: l.bg_location_granted, batteryOptIgnored: l.battery_opt_ignored } })
+      locRes.data.forEach(l => { map[l.user_id] = { lat: l.lat, lng: l.lng, updatedAt: l.updated_at, isSharing: l.is_sharing, locEnabled: l.location_enabled !== false, battery: l.battery_level ?? null, isCharging: l.is_charging ?? false, bgLocation: l.bg_location_granted, batteryOptIgnored: l.battery_opt_ignored, signalLevel: l.signal_level ?? null, networkType: l.network_type ?? null, signalAt: l.signal_at ?? null } })
       setLocations(map)
     }
     if (reqRes.data) setJoinRequests(reqRes.data)
@@ -388,6 +481,10 @@ export default function FamilyPage() {
               // back to what we already had rather than blanking the indicator.
               battery: payload.new.battery_level ?? prev[payload.new.user_id]?.battery ?? null,
               isCharging: payload.new.is_charging ?? prev[payload.new.user_id]?.isCharging ?? false,
+              // Same fallback: a partial payload must not blank the signal icon.
+              signalLevel: payload.new.signal_level ?? prev[payload.new.user_id]?.signalLevel ?? null,
+              networkType: payload.new.network_type ?? prev[payload.new.user_id]?.networkType ?? null,
+              signalAt:    payload.new.signal_at    ?? prev[payload.new.user_id]?.signalAt    ?? null,
             } }))
           }
         })
@@ -433,8 +530,6 @@ export default function FamilyPage() {
           supabase.from('family_members').select('*').eq('family_id', familyId)
             .then(({ data }) => { if (data) setMembers(data) })
         })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sos_alerts', filter: `family_id=eq.${familyId}` },
-        (payload) => { if (payload.new && payload.new.user_id !== user?.id) setSosAlert(payload.new) })
       .subscribe((status, err) => {
         // See PersonalChatPanel: one bad binding kills the whole channel, and
         // this one carries locations, presence and join requests.
@@ -496,15 +591,6 @@ export default function FamilyPage() {
     }
   }, [familyId, user])
 
-  useEffect(() => {
-    if (!sosAlert) { setSosAlertMember(null); return }
-    const m = members.find(m => m.user_id === sosAlert.user_id)
-    // Only the real name is stored; SOSAlert supplies the translated fallback
-    // at render, so switching language while an alert is on screen relabels it
-    // rather than leaving the previous language frozen in state.
-    setSosAlertMember(m?.display_name || null)
-  }, [sosAlert, members])
-
   // SECURE: RPC validates admin role server-side; user_id comes from auth.uid()
   const handleAccept = async (request) => {
     try {
@@ -533,6 +619,47 @@ export default function FamilyPage() {
         setDialog({ type: 'error', message: t('family.renameFailed') })
       }
     }
+  }
+
+  // Which phones are lost right now. Realtime keeps the cards current; the
+  // server also deletes a row when its 12 hours are up.
+  useEffect(() => {
+    if (!familyId) return
+    let alive = true
+    const load = async () => {
+      const { data } = await supabase.from('lost_phone').select('user_id, started_at, expires_at')
+      if (!alive) return
+      const now = Date.now()
+      setLostMap(Object.fromEntries((data || [])
+        .filter(r => new Date(r.expires_at).getTime() > now).map(r => [r.user_id, r])))
+    }
+    load()
+    const ch = supabase.channel('lost-phone-' + familyId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lost_phone' }, load)
+      .subscribe()
+    return () => { alive = false; supabase.removeChannel(ch) }
+  }, [familyId])
+
+  const handleStartLost = async (member, message) => {
+    setLostBusy(true)
+    const { error } = await supabase.rpc('start_lost_phone', { p_target: member.user_id, p_message: message || null })
+    setLostBusy(false)
+    setLostSheet(null)
+    if (error) {
+      const notAllowed = /not allowed/i.test(error.message || '')
+      setDialog({ type: notAllowed ? 'info' : 'error',
+        title: notAllowed ? t('lostPhone.notAllowedTitle') : undefined,
+        message: notAllowed ? t('lostPhone.notAllowed', { name: nameFor(member) }) : error.message })
+      return
+    }
+    setDialog({ type: 'alert', title: t('lostPhone.startedTitle'), message: t('lostPhone.started', { name: nameFor(member) }) })
+  }
+
+  const handleStopLost = async (member) => {
+    setActionMember(null)
+    const { error } = await supabase.rpc('stop_lost_phone', { p_target: member.user_id })
+    if (error) { setDialog({ type: 'error', message: error.message }); return }
+    setDialog({ type: 'alert', title: t('lostPhone.stoppedTitle'), message: t('lostPhone.stopped', { name: nameFor(member) }) })
   }
 
   // Long press → action sheet
@@ -614,7 +741,6 @@ export default function FamilyPage() {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
 
-      {sosAlert && <SOSAlert alert={sosAlert} memberName={sosAlertMember} onDismiss={() => setSosAlert(null)} />}
 
       {dialog && (
         <Dialog
@@ -814,6 +940,27 @@ export default function FamilyPage() {
               ),
               onClick: () => handleFindDevice(actionMember),
             },
+            (isOwner || members.find(x => x.user_id === user?.id)?.role === 'admin') && (
+              lostMap[actionMember.user_id]
+                ? {
+                    label: t('lostPhone.markFound'), sub: t('lostPhone.markFoundSub'), color: '#059669',
+                    icon: (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+                      </svg>
+                    ),
+                    onClick: () => handleStopLost(actionMember),
+                  }
+                : {
+                    label: t('lostPhone.markLost'), sub: t('lostPhone.markLostSub'), color: '#B01650',
+                    icon: (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="7" y="2" width="10" height="20" rx="2" /><path d="M11 18h2M9 9l6 6M15 9l-6 6" />
+                      </svg>
+                    ),
+                    onClick: () => { setLostSheet(actionMember); setActionMember(null) },
+                  }
+            ),
             isOwner && {
               // Irreversible, so it sits last and is coloured as destructive.
               label: t('family.removeFromFamily'), danger: true, color: '#E11D48',
@@ -1063,7 +1210,7 @@ export default function FamilyPage() {
                       boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
                     }} />
                   ) : (
-                    <div className="avatar" style={{ background: m.avatar_color && m.avatar_color !== '#4F8EF7' ? m.avatar_color : AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
+                    <div className="avatar" style={{ background: avatarColor(m.avatar_color) }}>
                       {nameFor(m)?.[0]?.toUpperCase()}
                     </div>
                   )}
@@ -1079,6 +1226,13 @@ export default function FamilyPage() {
                 <div className="member-info">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                     <div className="member-name" style={{ color: 'var(--text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nameFor(m)}</div>
+                    {lostMap[m.user_id] && (
+                      <span style={{
+                        flexShrink: 0, fontSize: 10.5, fontWeight: 800, letterSpacing: 0.3,
+                        color: 'var(--maroon)', border: '1.5px solid var(--maroon)', borderRadius: 8,
+                        padding: '1px 6px', lineHeight: 1.4,
+                      }}>{t('lostPhone.badge')}</span>
+                    )}
                     <SignInIcon
                       state={signState}
                       label={t(signState === 'in' ? 'family.usingApp'
@@ -1099,7 +1253,7 @@ export default function FamilyPage() {
                       // problem would suggest a fix that does not exist.
                       <span>{t('family.lastSeenHidden')}</span>
                     ) : lastSeen ? (
-                      <span>{t('family.lastSeen', { when: lastSeen })}</span>
+                      <FittedLine t={t} k="family.lastSeen" when={lastSeen} />
                     ) : joined ? (
                       // Somebody who has never been active has exactly one
                       // fact worth showing: when they joined. "No activity
@@ -1108,7 +1262,7 @@ export default function FamilyPage() {
                       // it reads as something being wrong with them rather
                       // than as them being new. Kept below as the last resort
                       // for a row with no joined_at at all.
-                      <span>{t('family.joined', { when: joined })}</span>
+                      <FittedLine t={t} k="family.joined" when={joined} />
                     ) : (
                       <span>{t('family.noActivity')}</span>
                     )}
@@ -1122,7 +1276,7 @@ export default function FamilyPage() {
                   // service landed, but was never surfaced anywhere.
                   const pct = loc?.battery
                   if (pct == null || Number.isNaN(pct)) {
-                    return <div style={{ fontSize: 11, lineHeight: '13px', marginTop: 3 }}>&nbsp;</div>
+                    return <div style={{ fontSize: 11, lineHeight: '13px', marginTop: 5.5 }}>&nbsp;</div>
                   }
                   const level = Math.max(0, Math.min(100, Math.round(pct)))
                   const charging = !!loc?.isCharging
@@ -1146,8 +1300,15 @@ export default function FamilyPage() {
                       style={{
                         display: 'flex', alignItems: 'center', gap: 4,
                         fontSize: 11, fontWeight: 800, color, whiteSpace: 'nowrap',
-                        marginTop: 3,
+                        // 5.5, not 3: the icons on this row (bolt, battery,
+                        // bars) stand taller than text, so the same 3px gap
+                        // measured 11px on screen against 16px between the name
+                        // and the status line. This evens the two out.
+                        marginTop: 5.5,
                       }}>
+                      {/* Signal first, then battery. */}
+                      <SignalIcon loc={loc} color={color} t={t} />
+                      {loc?.networkType && <span aria-hidden="true" style={{ width: 1.5, height: 14, borderRadius: 1, background: 'currentColor', opacity: 0.6, margin: '0 3px' }} />}
                       <svg width="21" height="12" viewBox="0 0 26 14" fill="none" aria-hidden="true">
                         <rect x="1" y="1" width="21" height="12" rx="3"
                           stroke={color} strokeWidth="2" />
@@ -1164,17 +1325,36 @@ export default function FamilyPage() {
                           style={charging ? { '--bat-w': `${Math.max(2, (level / 100) * 16)}px` } : undefined}
                         />
                         <path d="M24 5 v4" stroke={color} strokeWidth="3" strokeLinecap="round" />
+                        {/* Bolt inside the battery. SVG, not the ⚡ emoji, so it
+                            can be tinted; the white outline keeps it readable
+                            over both the filled and the empty part. */}
+                        {charging && (
+                          <path transform="translate(8.6 2.4) scale(0.76)"
+                            d="M4.6 0 0 6.6h2.7L2.2 12 7.4 5.1H4.4L4.6 0z"
+                            fill="var(--maroon-ink)" stroke="#fff" strokeWidth="1"
+                            strokeLinejoin="round" paintOrder="stroke" />
+                        )}
                       </svg>
                       {level}%
-                      {/* SVG, not the ⚡ emoji: an emoji paints its own
-                          colours and cannot be tinted. Electric blue against
-                          the muted rose so charging is readable at a glance
-                          without competing with the green "Live" pin. */}
-                      {charging && (
-                        <svg width="9" height="13" viewBox="0 0 8 12" fill="var(--maroon-ink)" aria-hidden="true">
-                          <path d="M4.6 0 0 6.6h2.7L2.2 12 7.4 5.1H4.4L4.6 0z" />
-                        </svg>
-                      )}
+                      {/* Weather sits right after the battery reading, behind a divider. */}
+                      {(() => {
+                        if (!isFreshLoc(loc)) return null
+                        const v = weatherView(weather[cellKey(loc.lat, loc.lng)])
+                        if (!v) return null
+                        const c = v.severe ? 'var(--maroon)' : color
+                        const label = t('weather.at', { label: t('weather.' + v.key) + ', ' + v.temp + '°' })
+                        return (
+                          <>
+                          <span aria-hidden="true" style={{ width: 1.5, height: 14, borderRadius: 1, background: 'currentColor', opacity: 0.6, margin: '0 3px' }} />
+                          <span role="img" aria-label={label} title={label} style={{
+                            display: 'flex', alignItems: 'center', gap: 2, color: c,
+                          }}>
+                            <Icon name={v.icon} size={14} strokeWidth={v.severe ? 2.3 : 2} />
+                            {v.temp}°
+                          </span>
+                          </>
+                        )
+                      })()}
                     </span>
                   )
                 })()}
@@ -1294,9 +1474,13 @@ export default function FamilyPage() {
                     // and made that member's card a line shorter than the rest,
                     // which is why the list looked ragged.
                     let label = null
+                    let etaText = null   // rough arrival time, on its own line under the distance
                     if (m.user_id !== user?.id && myHasCoords && loc?.isSharing
                         && loc.lat && loc.lng && !(loc.lat === 0 && loc.lng === 0)) {
-                      label = formatDistance(t, distanceKm(myLoc.lat, myLoc.lng, loc.lat, loc.lng))
+                      const km = distanceKm(myLoc.lat, myLoc.lng, loc.lat, loc.lng)
+                      const eta = etaLabel(t, km)
+                      label = formatDistance(t, km)
+                      etaText = eta
                     }
 
                     // When a member has gone quiet, this line stops being about
@@ -1313,14 +1497,24 @@ export default function FamilyPage() {
                         : loc?.bgLocation === false ? t('family.healthNoBgLocation')
                         : null)
                       : null
-                    if (reason) label = reason
+                    if (reason) { label = reason; etaText = null }
+                    // Both lines are always rendered (a non-breaking space when
+                    // empty) so every card keeps the same height.
                     return (
-                      <span style={{
-                        fontSize: 9, fontWeight: 600, color: 'var(--muted)',
-                        marginTop: 1, whiteSpace: 'nowrap',
-                      }}>
-                        {label || ' '}
-                      </span>
+                      <>
+                        <span style={{
+                          fontSize: 9, fontWeight: 600, color: 'var(--muted)',
+                          marginTop: 1, whiteSpace: 'nowrap',
+                        }}>
+                          {label || ' '}
+                        </span>
+                        <span style={{
+                          fontSize: 9, fontWeight: 600, color: 'var(--muted)',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {etaText || ' '}
+                        </span>
+                      </>
                     )
                   })()}
                 </div>
@@ -1342,6 +1536,11 @@ export default function FamilyPage() {
         </div>
       </div>
       </PullToRefresh>
+
+      {lostSheet && (
+        <LostPhoneSheet name={nameFor(lostSheet)} busy={lostBusy}
+          onStart={(msg) => handleStartLost(lostSheet, msg)} onClose={() => setLostSheet(null)} />
+      )}
 
       {/* Tap a member → call options, anchored to their card. */}
       {selectedMember && selectedMember.user_id !== user?.id && (() => {

@@ -28,7 +28,7 @@ export async function stopNativeSOSAlarm() {
  * delivery path, which is why useSosAlarm.js keeps its Web Audio beeps for web
  * only. (An older comment here claimed this call was silent. It was not.)
  */
-export async function triggerNativeSOSAlert({ sender, message, lat, lng, phone } = {}) {
+export async function triggerNativeSOSAlert({ sender, message, lat, lng, phone, sosId } = {}) {
   if (!Capacitor.isNativePlatform()) return
   try {
     await SOSAlarm.trigger({
@@ -37,9 +37,25 @@ export async function triggerNativeSOSAlert({ sender, message, lat, lng, phone }
       lat:     lat != null ? String(lat) : '',
       lng:     lng != null ? String(lng) : '',
       phone:   phone || '',
+      sosId:   sosId || '',
     })
   } catch (e) {
     console.warn('[nativeSosAlarm] trigger failed:', e)
+  }
+}
+
+/**
+ * The sender marked themselves safe. Natively this stops the siren for THAT
+ * alert and turns the alert screen into its "safe now" state (or posts a
+ * notification if the screen is gone) — the same handling as the sos_resolved
+ * push, whichever arrives first.
+ */
+export async function showNativeSOSResolved({ sosId, sender } = {}) {
+  if (!Capacitor.isNativePlatform()) return
+  try {
+    await SOSAlarm.showResolved({ sosId: sosId || '', sender: sender || '' })
+  } catch (e) {
+    console.warn('[nativeSosAlarm] showResolved failed:', e)
   }
 }
 
@@ -71,4 +87,17 @@ export async function isNativeSOSAlarmPlaying() {
   } catch (e) {
     return false
   }
+}
+
+/**
+ * SOS Quick Settings tile (Profile → Safety). Returns null on web or on a
+ * native build without the methods, so the card can hide itself.
+ */
+export async function getSosTile() {
+  if (!Capacitor.isNativePlatform()) return null
+  try { return await SOSAlarm.getSosTile() } catch { return null }
+}
+
+export async function setSosTile(enabled) {
+  return SOSAlarm.setSosTile({ enabled: !!enabled })
 }

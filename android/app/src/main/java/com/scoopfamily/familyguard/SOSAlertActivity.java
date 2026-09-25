@@ -69,6 +69,39 @@ public class SOSAlertActivity extends Activity {
         if (a != null) a.runOnUiThread(a::finish);
     }
 
+    /** True between onResume and onPause: the person can actually see it. */
+    private static volatile boolean inFront = false;
+
+    /**
+     * The sender marked themselves safe: redraw this alert in its resolved
+     * state rather than closing it, so the recipient sees WHY it ended.
+     * Returns true only when the screen is in front of the person; otherwise
+     * the caller also posts a notification (the screen is still switched, and
+     * shows the safe state when they come back to it).
+     */
+    public static boolean showResolvedIfShowing(String sender) {
+        SOSAlertActivity a = visibleInstance;
+        if (a == null) return false;
+        a.runOnUiThread(() -> {
+            if (sender != null && !sender.isEmpty()) a.alertSender = sender;
+            a.resolved = true;
+            a.render();
+        });
+        return inFront;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        inFront = true;
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        inFront = false;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         isShowing = true;
@@ -122,6 +155,8 @@ public class SOSAlertActivity extends Activity {
     // screen as its second stage without going back to the intent.
     private String alertSender, alertMessage, alertLat, alertLng, alertPhone;
     private boolean alarmStopped = false;
+    // Set only by the sender's "I'm safe now" — never by Silence Alarm.
+    private boolean resolved = false;
 
     private void readAlert(Intent intent) {
         alertSender  = intent.getStringExtra(EXTRA_SENDER);
@@ -145,7 +180,9 @@ public class SOSAlertActivity extends Activity {
     private void render() {
         boolean sirenLive = SOSSirenService.isRunning
             && !SosSilence.isActive(getApplicationContext());
-        boolean actionStage = alarmStopped || !sirenLive;
+        boolean actionStage = resolved || alarmStopped || !sirenLive;
+        // Nothing urgent left to read once they are safe: let the screen sleep.
+        if (resolved) getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(buildLayout(actionStage));
     }
 
@@ -163,6 +200,8 @@ public class SOSAlertActivity extends Activity {
         readAlert(intent);
         // A new push means the siren has (re)started, so back to stage one.
         alarmStopped = false;
+        resolved = false;
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         isShowing = true;
         appearedSinceReset = true;
@@ -201,6 +240,11 @@ public class SOSAlertActivity extends Activity {
     private static final int RED_DEEP   = Color.parseColor("#B71C1C");
     private static final int MAROON     = Color.parseColor("#8B0D3D");
     private static final int BUTTON_FILL = Color.parseColor("#F6DCE6");
+    // Resolved state only — the same green as the sender's status ticks. Red
+    // on this screen always means the SOS is still live.
+    private static final int SAFE_GREEN  = Color.parseColor("#12925B");
+    private static final int GREEN_TINT  = Color.parseColor("#E3F4EC");
+    private static final int GREEN_DEEP  = Color.parseColor("#0E7A4C");
 
     private View buildLayout(boolean actionStage) {
         applyCreamSystemBars();
@@ -217,17 +261,17 @@ public class SOSAlertActivity extends Activity {
         android.widget.FrameLayout badge = new android.widget.FrameLayout(this);
         GradientDrawable disc = new GradientDrawable();
         disc.setShape(GradientDrawable.OVAL);
-        disc.setColor(ALERT_RED);
+        disc.setColor(resolved ? SAFE_GREEN : ALERT_RED);
         badge.setBackground(disc);
         ImageView badgeIcon = new ImageView(this);
-        badgeIcon.setImageResource(R.drawable.ic_sos_alert);
+        badgeIcon.setImageResource(resolved ? R.drawable.ic_sos_safe : R.drawable.ic_sos_alert);
         badge.addView(badgeIcon, new android.widget.FrameLayout.LayoutParams(
             dp(44), dp(44), Gravity.CENTER));
         root.addView(badge, new LinearLayout.LayoutParams(dp(92), dp(92)));
 
         // Title
         TextView title = new TextView(this);
-        title.setText(getString(R.string.sos_needs_help, alertSender));
+        title.setText(getString(resolved ? R.string.sos_safe_title : R.string.sos_needs_help, alertSender));
         title.setTextColor(INK);
         title.setTextSize(26);
         title.setGravity(Gravity.CENTER);
@@ -241,21 +285,32 @@ public class SOSAlertActivity extends Activity {
         // Message (the SOS type) as a soft red chip rather than more big text.
         TextView msg = new TextView(this);
         msg.setText(alertMessage);
-        msg.setTextColor(RED_DEEP);
+        msg.setTextColor(resolved ? GREEN_DEEP : RED_DEEP);
         msg.setTextSize(15);
         msg.setTypeface(msg.getTypeface(), android.graphics.Typeface.BOLD);
         msg.setGravity(Gravity.CENTER);
         msg.setPadding(dp(16), dp(7), dp(16), dp(7));
         GradientDrawable chip = new GradientDrawable();
-        chip.setColor(RED_TINT);
+        chip.setColor(resolved ? GREEN_TINT : RED_TINT);
         chip.setCornerRadius(dp(18));
         msg.setBackground(chip);
         root.addView(msg, new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
+        // One small status line once the siren is quiet, so "I silenced my
+        // alarm" and "they are safe" can never be mistaken for each other:
+        // red dot "Alarm silenced · SOS still active", or green "SOS Resolved".
+        if (actionStage) {
+            root.addView(statusLine(
+                getString(resolved ? R.string.sos_resolved : R.string.sos_still_active),
+                resolved ? SAFE_GREEN : ALERT_RED,
+                resolved ? GREEN_DEEP : INK_SOFT));
+        }
+
         // What to do next, in plain words.
         TextView hint = new TextView(this);
-        hint.setText(R.string.sos_calm_hint);
+        if (resolved) hint.setText(getString(R.string.sos_marked_safe, alertSender));
+        else hint.setText(R.string.sos_calm_hint);
         hint.setTextColor(INK_SOFT);
         hint.setTextSize(16);
         hint.setGravity(Gravity.CENTER);
@@ -299,7 +354,9 @@ public class SOSAlertActivity extends Activity {
         }
 
         final String lat = alertLat, lng = alertLng;
-        boolean hasLocation = lat != null && !lat.isEmpty() && !"0".equals(lat)
+        // No directions once they are safe: nobody needs to go to them now.
+        boolean hasLocation = !resolved
+            && lat != null && !lat.isEmpty() && !"0".equals(lat)
             && lng != null && !lng.isEmpty();
         if (hasLocation) {
             View dirBtn = actionButton(getString(R.string.sos_directions),
@@ -381,6 +438,34 @@ public class SOSAlertActivity extends Activity {
         return b;
     }
 
+    /** A coloured dot and a short bold label, centred under the SOS type. */
+    private View statusLine(CharSequence text, int dotColor, int textColor) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER);
+        row.setPadding(0, dp(12), 0, 0);
+
+        View dot = new View(this);
+        GradientDrawable d = new GradientDrawable();
+        d.setShape(GradientDrawable.OVAL);
+        d.setColor(dotColor);
+        dot.setBackground(d);
+        LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(dp(8), dp(8));
+        dlp.rightMargin = dp(8);
+        row.addView(dot, dlp);
+
+        TextView label = new TextView(this);
+        label.setText(text);
+        label.setTextColor(textColor);
+        label.setTextSize(14);
+        label.setTypeface(label.getTypeface(), android.graphics.Typeface.BOLD);
+        row.addView(label);
+
+        row.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        return row;
+    }
+
     /** Cream status and navigation bars with dark icons, so the screen reads as one surface. */
     private void applyCreamSystemBars() {
         android.view.Window w = getWindow();
@@ -405,7 +490,7 @@ public class SOSAlertActivity extends Activity {
         // While the siren sounds, back does nothing — Stop Alarm is the way
         // out, so the alert cannot be swiped away unread. Once it is quiet,
         // back closes the screen like any other.
-        if (alarmStopped || !SOSSirenService.isRunning) finish();
+        if (resolved || alarmStopped || !SOSSirenService.isRunning) finish();
     }
 
     @Override

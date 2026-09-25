@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { registerPlugin, Capacitor } from '@capacitor/core'
 const LocationService = registerPlugin('LocationService')
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { avatarColor } from '../lib/avatarColor'
@@ -13,6 +13,14 @@ import { ALERT_TYPES, getRingtones, resetRingtone } from '../lib/ringtones'
 import SoundPickerSheet from '../components/SoundPickerSheet'
 import FakeCallCard from '../components/FakeCallCard'
 import ShakeSosCard from '../components/ShakeSosCard'
+import SosTileCard from '../components/SosTileCard'
+import WeatherAlertsCard from '../components/WeatherAlertsCard'
+import OverspeedAlertCard from '../components/OverspeedAlertCard'
+import DrivingTripsCard from '../components/DrivingTripsCard'
+import CrashDetectionCard from '../components/CrashDetectionCard'
+import LostPhoneCard from '../components/LostPhoneCard'
+import SosVoiceClipCard from '../components/SosVoiceClipCard'
+import PlacesCard from '../components/PlacesCard'
 import OfflineSmsCard from '../components/OfflineSmsCard'
 import { useT, useLangStore, UI_LANGUAGES } from '../i18n'
 import Icon from '../components/Icon'
@@ -552,7 +560,16 @@ export default function ProfilePage() {
   const [soundsOpen, setSoundsOpen] = useState(false)
 
   // Which section is open as its own screen, or null for the list.
-  const [openGroup, setOpenGroup] = useState(null)
+  // ?group=places opens that section straight away (a weather alert tap).
+  const [openGroup, setOpenGroup] = useState(() => {
+    const g = new URLSearchParams(window.location.search).get("group")
+    return ["places", "safety", "driving", "account", "families", "help"].includes(g) ? g : null
+  })
+  const routeLocation = useLocation()
+  useEffect(() => {
+    const g = new URLSearchParams(routeLocation.search).get("group")
+    if (["places", "safety", "driving", "account", "families", "help"].includes(g)) setOpenGroup(g)
+  }, [routeLocation.search])
 
   const [displayName, setDisplayName]   = useState('')
   const [phone, setPhone]               = useState('')
@@ -1084,13 +1101,69 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {/* ── PRIVACY ── */}
+          <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 10 }}>
+              {t('profile.privacy')}
+            </div>
+
+            {[
+              {
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/>
+                  </svg>
+                ),
+                label: t('profile.showMeOnline'), value: showOnline, handler: handleToggleOnline,
+              },
+              {
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                ),
+                label: t('profile.showMyLocation'), value: showLocation, handler: handleToggleLocation,
+              },
+              {
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                ),
+                label: t('profile.showLastSeen'), value: showLastSeen, handler: handleToggleLastSeen,
+              },
+            ].map((item, i, arr) => (
+              <div key={item.label}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                      background: 'var(--maroon-wash)', border: '1px solid #EDD0DA',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {item.icon}
+                    </div>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{item.label}</div>
+                  </div>
+                  <Toggle on={item.value} onToggle={item.handler} />
+                </div>
+                {i < arr.length - 1 && (
+                  <div style={{ height: 1, background: '#F5EEF2', margin: '10px 0' }} />
+                )}
+              </div>
+            ))}
+          </div>
+
           {/* ── SAVE + CHANGE PASSWORD side by side ── */}
-          <div style={{ display: 'flex', gap: 10, alignItems: 'stretch', marginBottom: 10 }}>
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'stretch', marginTop: 4 }}>
+            <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "14px 8px", fontSize: 13 }}>
               {saving ? t('common.saving') : t('profile.saveChanges')}
             </button>
             <button onClick={() => setShowPwModal(true)} style={{
-              flex: 1, padding: 14, borderRadius: 14,
+              flex: 1, padding: "14px 6px", borderRadius: 14,
               background: '#fff', border: '1.5px solid var(--maroon)',
               color: 'var(--maroon)', fontWeight: 800, fontSize: 13,
               fontFamily: 'inherit', cursor: 'pointer',
@@ -1104,6 +1177,24 @@ export default function ProfilePage() {
               {t('profile.changePassword')}
             </button>
           </div>
+
+          {/* ── DELETE ACCOUNT ──
+            Maroon, not the bright #DC2626 it used to be: that red was the only
+            one of its kind on the page and read as orange beside the maroon.
+            The trash icon and the type-DELETE confirmation carry the warning. */}
+        <button onClick={() => setShowDeleteModal(true)} style={{
+          width: '100%', marginTop: 10, padding: '14px 16px', borderRadius: 14,
+          background: 'var(--maroon-wash)', border: '1.5px solid var(--maroon)',
+          color: 'var(--maroon)', fontWeight: 800, fontSize: 14,
+          fontFamily: 'inherit', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+          {t('profile.deleteAccount')}
+        </button>
         </Group>
 
         <Group
@@ -1242,6 +1333,10 @@ export default function ProfilePage() {
           {/* ── SHAKE FOR SOS / FAKE CALL / OFFLINE SMS ──
               Android only; all three render nothing elsewhere. */}
           <ShakeSosCard Toggle={Toggle} />
+          <SosTileCard Toggle={Toggle} />
+          <LostPhoneCard Toggle={Toggle} />
+          <WeatherAlertsCard Toggle={Toggle} />
+          <SosVoiceClipCard Toggle={Toggle} />
           <FakeCallCard Toggle={Toggle} />
           <OfflineSmsCard Toggle={Toggle} />
 
@@ -1326,62 +1421,21 @@ export default function ProfilePage() {
         </Group>
 
         <Group
-          id="privacy" icon="lock"
-          title={t('profile.group.privacy')} subtitle={t('profile.group.privacySub')}
-          open={openGroup === "privacy"} onOpen={() => setOpenGroup("privacy")} onBack={() => setOpenGroup(null)}
+          id="driving" icon="car"
+          title={t('profile.group.driving')} subtitle={t('profile.group.drivingSub')}
+          open={openGroup === "driving"} onOpen={() => setOpenGroup("driving")} onBack={() => setOpenGroup(null)}
         >
-          {/* ── PRIVACY ── */}
-          <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
+          <OverspeedAlertCard Toggle={Toggle} />
+          <DrivingTripsCard Toggle={Toggle} />
+          <CrashDetectionCard Toggle={Toggle} />
+        </Group>
 
-            {[
-              {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/>
-                  </svg>
-                ),
-                label: t('profile.showMeOnline'), value: showOnline, handler: handleToggleOnline,
-              },
-              {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                    <circle cx="12" cy="10" r="3"/>
-                  </svg>
-                ),
-                label: t('profile.showMyLocation'), value: showLocation, handler: handleToggleLocation,
-              },
-              {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
-                  </svg>
-                ),
-                label: t('profile.showLastSeen'), value: showLastSeen, handler: handleToggleLastSeen,
-              },
-            ].map((item, i, arr) => (
-              <div key={item.label}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-                      background: 'var(--maroon-wash)', border: '1px solid #EDD0DA',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {item.icon}
-                    </div>
-                    <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{item.label}</div>
-                  </div>
-                  <Toggle on={item.value} onToggle={item.handler} />
-                </div>
-                {i < arr.length - 1 && (
-                  <div style={{ height: 1, background: '#F5EEF2', margin: '10px 0' }} />
-                )}
-              </div>
-            ))}
-          </div>
+        <Group
+          id="places" icon="pin"
+          title={t('profile.group.places')} subtitle={t('profile.group.placesSub')}
+          open={openGroup === "places"} onOpen={() => setOpenGroup("places")} onBack={() => setOpenGroup(null)}
+        >
+          <PlacesCard />
         </Group>
 
         <Group
@@ -1452,24 +1506,6 @@ export default function ProfilePage() {
             onSaved={handleSoundSaved}
           />
         )}
-
-        {/* ── DELETE ACCOUNT ──
-            Maroon, not the bright #DC2626 it used to be: that red was the only
-            one of its kind on the page and read as orange beside the maroon.
-            The trash icon and the type-DELETE confirmation carry the warning. */}
-        <button onClick={() => setShowDeleteModal(true)} style={{
-          width: '100%', marginTop: 10, padding: '14px 16px', borderRadius: 16,
-          background: 'var(--maroon-wash)', border: '1.5px solid var(--maroon)',
-          color: 'var(--maroon)', fontWeight: 800, fontSize: 14,
-          fontFamily: 'inherit', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-        }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-            <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-          </svg>
-          {t('profile.deleteAccount')}
-        </button>
 
       </div>
       </PullToRefresh>

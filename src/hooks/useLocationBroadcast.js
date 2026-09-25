@@ -204,7 +204,7 @@ export function useLocationBroadcast(userId, familyId) {
         const sinceLastWrite = Date.now() - lastWriteTimeRef.current
         const acc = accuracy ?? 0
         const lastAcc = last.accuracy ?? 0
-        const realMove = moved >= Math.max(MIN_MOVE_M, acc)
+        const realMove = moved >= Math.max(MIN_MOVE_M, acc > 30 ? acc * 2 : acc)
         const upgrade  = lastAcc > 0 && acc > 0 && acc * 2 <= lastAcc && moved >= MIN_MOVE_M
         if (!realMove && !upgrade) {
           if (sinceLastWrite < HEARTBEAT_MS) return

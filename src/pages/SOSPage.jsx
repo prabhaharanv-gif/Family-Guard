@@ -10,6 +10,45 @@ import { useT } from '../i18n'
 import { SOS } from '../lib/sosColors'
 import Icon from '../components/Icon'
 import { enterSosSilence, exitSosSilence } from '../lib/nativeSosAlarm'
+import NearbySearchMap from '../components/map/NearbySearchMap'
+import { SosSenderMedia, SosMediaPlayer } from '../components/SosMedia'
+import { helpNumber } from '../lib/nearbyHelp'
+
+// Famora Social's opt-in: shared by SOSPage's own Send tab below (where the
+// switch now lives) and read by GlobalSOSAlert / NearbySearchMap wherever an
+// alert reads it back. Kept here rather than a separate page — see the old
+// FamoraSocialPage, removed in favour of this — because opting in belongs
+// next to the thing it affects: sending an SOS.
+const FAMORA_SOCIAL_CONSENT_TYPE = 'famora_social_visibility'
+
+/**
+ * The nearby-helper switch, drawn as a radar: on = a bright disc with a ring
+ * that keeps rippling outward (you are "listening" for someone nearby),
+ * off = a quiet, dim disc. Lives in the maroon header.
+ */
+function FamoraSocialToggle({ on, onToggle, label }) {
+  return (
+    <button
+      onClick={onToggle}
+      aria-pressed={on}
+      aria-label={label}
+      title={label}
+      style={{
+        width: 40, height: 40, borderRadius: '50%', padding: 0,
+        background: on ? '#fff' : 'rgba(255,255,255,0.18)',
+        color: on ? 'var(--maroon)' : 'rgba(255,255,255,0.85)',
+        border: on ? '1.5px solid #fff' : '1.5px solid rgba(255,255,255,0.4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer', position: 'relative', flexShrink: 0,
+        transition: 'background 0.25s, color 0.25s', boxShadow: 'none',
+      }}
+    >
+      {on && <span className="radar-ripple" />}
+      {on && <span className="radar-ripple radar-ripple-2" />}
+      <Icon name="radar" size={22} />
+    </button>
+  )
+}
 
 // ── SVG Icon components — consistent outlined style ───────────────────────────
 const Icons = {
@@ -221,7 +260,10 @@ function ConfirmSheet({ msg, onConfirm, onCancel }) {
 }
 
 // ── Sent screen ───────────────────────────────────────────────────────────────
-function SOSSentScreen({ msg, onDismiss, onSafe }) {
+// `resolved` flips it once "I'm Safe Now" has actually reached the server:
+// green shield instead of the live red badge, "SOS Resolved" instead of the
+// running timer, and Done in place of the two buttons. Same layout otherwise.
+function SOSSentScreen({ msg, onDismiss, onSafe, resolved, nearbyStatus, sentLoc, nearbyEscalationId, alertId }) {
   const t = useT()
   const [elapsed, setElapsed] = useState(0)
 
@@ -232,92 +274,182 @@ function SOSSentScreen({ msg, onDismiss, onSafe }) {
 
   const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
+  // Cream, like the native SOS alert and call screens (it was a near-black
+  // gradient with glowing red). Laid out as a proper confirmation screen:
+  // header centred in the space above, ONE grouped status card with a real
+  // edge — three loose white boxes vanished into the cream — and the main
+  // action pinned at the bottom as a solid maroon button. The running timer
+  // sits under the title rather than in the list: it is not a completed step,
+  // so it should not wear a tick.
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 200,
-      // Cream, like the native SOS alert and call screens. It was a near-black
-      // gradient with glowing red, which read as alarming on the one screen
-      // whose job is to reassure the sender that help has been called.
       background: '#FFF8F0',
       display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      padding: '32px 24px',
+      padding: '20px 20px 16px',
     }}>
-      {/* Pulsing ring */}
-      <div style={{ position: 'relative', marginBottom: 32 }}>
-        <div style={{
-          width: 140, height: 140, borderRadius: '50%',
-          border: `3px solid ${SOS.base}`,
-          position: 'absolute', inset: -20,
-          animation: 'sos-ring 1.8s ease-out infinite',
-          opacity: 0.4,
-        }} />
-        <div style={{
-          width: 100, height: 100, borderRadius: '50%',
-          background: '#D32F2F',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff',
-        }}>
-          <msg.Icon />
-        </div>
-      </div>
-
       <style>{`
-        @keyframes sos-ring { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
+        @keyframes sos-ring { 0% { transform: scale(1); opacity: 0.35; } 100% { transform: scale(1.45); opacity: 0; } }
+        /* Rows keep their height and the page scrolls instead of squeezing them; auto margins on the first and last child centre the content when it is short, without clipping the top when it is tall. */
+        .sos-sent-body > * { flex-shrink: 0; }
+        .sos-sent-body > :first-child { margin-top: auto; }
+        .sos-sent-body > :last-child { margin-bottom: auto; }
       `}</style>
 
-      {/* Title */}
-      <div style={{
-        fontFamily: 'Sora, sans-serif', fontSize: 28, fontWeight: 900,
-        color: '#2A0A18', marginBottom: 12, letterSpacing: -0.5,
-        display: 'flex', alignItems: 'center', gap: 8,
-      }}><span style={{ display: 'flex', color: '#8B0D3D' }}><Icon name="siren" /></span> {t('sos.sentTitle')}</div>
-      {/* The SOS type as a soft red chip, as on the recipient's alert screen. */}
-      <div style={{
-        fontSize: 15, color: '#B71C1C', background: '#FDECEC', marginBottom: 32,
-        fontWeight: 700, lineHeight: 1.4, textAlign: 'center',
-        padding: '7px 16px', borderRadius: 18,
+      <div className="sos-sent-body" style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'flex-start', minHeight: 0,
+        // Scrollable: the Nearby map panel below can push this taller than a
+        // small screen, and the badge/timer/status card above must stay
+        // reachable rather than clipped by the fixed full-screen overlay.
+        overflowY: 'auto', WebkitOverflowScrolling: 'touch',
       }}>
-        {t('sos.msg.' + msg.key)}
-      </div>
-
-      {/* Status cards */}
-      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
-        {[
-          { icon: 'pin', label: t('sos.locationShared'), ok: true },
-          { icon: 'bell', label: t('sos.familyAlerted'), ok: true },
-          { icon: 'timer', label: t('sos.activeFor', { time: fmt(elapsed) }), ok: true },
-        ].map((item, i) => (
-          <div key={i} style={{
-            background: '#FFFFFF',
-            border: '1px solid #EADBE1',
-            borderRadius: 14, padding: '13px 16px',
-            display: 'flex', alignItems: 'center', gap: 12,
+        {/* Badge, with a thin ring expanding from it to show the alert is live. */}
+        <div style={{ position: 'relative', marginBottom: 12 }}>
+          {!resolved && <div style={{
+            position: 'absolute', inset: -14, borderRadius: '50%',
+            border: '2px solid #D32F2F',
+            animation: 'sos-ring 2s ease-out infinite',
+          }} />}
+          <div style={{
+            width: 72, height: 72, borderRadius: '50%',
+            background: resolved ? '#12925B' : '#D32F2F',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff',
           }}>
-            <span style={{ display: 'flex', color: '#8B0D3D' }}><Icon name={item.icon} size={20} /></span>
-            <span style={{ fontSize: 14, color: '#2A0A18', fontWeight: 600, flex: 1 }}>{item.label}</span>
-            <div style={{
-              width: 22, height: 22, borderRadius: '50%',
-              background: '#10B981',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            {resolved ? <Icon name="shield" size={44} /> : <msg.Icon />}
+          </div>
+        </div>
+
+        <div style={{
+          fontFamily: 'Sora, sans-serif', fontSize: 24, fontWeight: 900,
+          color: '#2A0A18', letterSpacing: -0.5, marginBottom: 6, textAlign: 'center',
+        }}>{t(resolved ? 'sos.safeTitle' : 'sos.sentTitle')}</div>
+
+        {/* The SOS type, as on the recipient's alert screen. */}
+        <div style={{
+          fontSize: 14, color: resolved ? '#0E7A4C' : '#B71C1C', background: resolved ? '#E3F4EC' : '#FDECEC',
+          fontWeight: 700, lineHeight: 1.4, textAlign: 'center',
+          padding: '6px 14px', borderRadius: 16, marginBottom: 8,
+        }}>
+          {t('sos.msg.' + msg.key)}
+        </div>
+
+        {/* Live timer — a small solid dot marks it as running. Green "SOS
+            Resolved" once they are safe. */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 7,
+          fontSize: 13, fontWeight: resolved ? 700 : 600, color: resolved ? '#0E7A4C' : '#6B4A57',
+          fontVariantNumeric: 'tabular-nums', marginBottom: 12,
+        }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: resolved ? '#12925B' : '#D32F2F', display: 'inline-block' }} />
+          {resolved ? t('sos.resolved') : t('sos.activeFor', { time: fmt(elapsed) })}
+        </div>
+
+        {/* One grouped status card: light rose (white read as washed out on the
+            cream), maroon edge and dividers, maroon icon tiles. */}
+        <div style={{
+          width: '100%', background: '#F8E6ED',
+          border: '1.5px solid #8B0D3D', borderRadius: 16,
+          boxShadow: '0 2px 10px rgba(74,8,32,0.07)',
+          overflow: 'hidden',
+        }}>
+          {[
+            { icon: 'pin',  label: t('sos.locationShared') },
+            { icon: 'bell', label: t(resolved ? 'sos.familyToldSafe' : 'sos.familyAlerted') },
+            // Famora Social: a nearby stranger accepted and is calling 112 on
+            // this sender's behalf. Count only, never who — see
+            // useSosAlarm's _nearbyHelpStatus and the plan's safety boundary.
+            // Only added once there is something to report; "exhausted" gets
+            // its own Call 112 button below instead of a checkmark row, since
+            // that state is an action to take, not a completed step.
+            nearbyStatus === 'helper_found' && { icon: 'users', label: t('sos.nearbyHelping') },
+          ].filter(Boolean).map((item, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '9px 16px',
+              borderTop: i ? '1px solid rgba(139,13,61,0.3)' : 'none',
             }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
+              <span style={{
+                width: 30, height: 30, borderRadius: 10, flexShrink: 0,
+                background: '#8B0D3D', color: '#FFF8F0',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}><Icon name={item.icon} size={18} /></span>
+              <span style={{ fontSize: 15, color: '#2A0A18', fontWeight: 600, flex: 1 }}>{item.label}</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#12925B" strokeWidth="2.6"
+                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="16 9 10.5 15 8 12.5" />
               </svg>
             </div>
+          ))}
+        </div>
+
+        {/* Famora Social found no one nearby within its ~6-minute search —
+            an action to take, not a completed step, so it gets its own button
+            rather than another row in the checklist above. Same tel: dialing
+            mechanism ConfirmSheet already uses elsewhere on this page:
+            prefilled, never auto-dialled. */}
+        {!resolved && nearbyStatus === 'exhausted' && (
+          <button
+            onClick={() => window.open('tel:' + (msg.call || '100'), '_system')}
+            style={{
+              width: '100%', marginTop: 14, padding: '14px', borderRadius: 14,
+              background: '#D32F2F', border: 'none', color: '#fff',
+              fontFamily: 'Sora, sans-serif', fontWeight: 800, fontSize: 15,
+              cursor: 'pointer', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', gap: 8,
+            }}
+          >
+            <Icon name="phone" size={17} /> {t('sos.callNow', { number: msg.call || '100' })}
+          </button>
+        )}
+
+        {/* Famora Social: the sender's own read-only view of the search — the
+            same map GlobalSOSAlert shows every other family member. Additive
+            reassurance next to the "1 person nearby is helping" row above,
+            not a replacement for it. Hidden once resolved, like the rest of
+            this live status. */}
+        {!resolved && nearbyStatus && (
+          <div style={{ width: '100%', marginTop: 14 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8,
+              fontSize: 12, fontWeight: 700, color: '#6B4A57',
+            }}>
+              <Icon name="users" size={14} /> {t('sos.nearbyMapTitle')}
+            </div>
+            <div style={{ height: 110, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(139,13,61,0.25)' }}>
+              <NearbySearchMap
+                lat={sentLoc?.lat}
+                lng={sentLoc?.lng}
+                status={nearbyStatus}
+                escalationId={nearbyEscalationId}
+              />
+            </div>
           </div>
-        ))}
+        )}
+
+        {/* Optional voice clip and photo for the family — below the map so the
+            status, then who is nearby, then what you can add. */}
+        {!resolved && <SosSenderMedia alertId={alertId} />}
       </div>
 
-      {/* I'm Safe button */}
+      {/* Actions, pinned to the bottom. */}
+      {resolved ? (
+        <button onClick={onDismiss} style={{
+          width: '100%', padding: '16px', borderRadius: 16,
+          background: '#8B0D3D', border: '1.5px solid #6B0B2C', color: '#FFF8F0',
+          fontFamily: 'Sora, sans-serif', fontWeight: 800, fontSize: 17,
+          cursor: 'pointer', marginTop: 20, marginBottom: 6,
+        }}>
+          {t('common.done')}
+        </button>
+      ) : (<>
       <button onClick={onSafe} style={{
-        // Same button style as the native SOS alert screen: light rose fill,
-        // maroon outline and label.
-        width: '100%', padding: '16px', borderRadius: 29,
-        background: '#F6DCE6',
-        border: '2px solid #8B0D3D', color: '#8B0D3D',
+        width: '100%', padding: '16px', borderRadius: 16,
+        background: '#8B0D3D', border: '1.5px solid #6B0B2C', color: '#FFF8F0',
         fontFamily: 'Sora, sans-serif', fontWeight: 800, fontSize: 17,
-        cursor: 'pointer', marginBottom: 14,
+        cursor: 'pointer', marginTop: 20, marginBottom: 6,
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
       }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -328,12 +460,13 @@ function SOSSentScreen({ msg, onDismiss, onSafe }) {
       </button>
 
       <button onClick={onDismiss} style={{
-        background: 'none', border: 'none',
-        color: '#6B4A57', fontSize: 14,
-        fontFamily: 'inherit', cursor: 'pointer', fontWeight: 500,
+        background: 'none', border: 'none', padding: '12px',
+        color: '#6B4A57', fontSize: 14, fontWeight: 600,
+        fontFamily: 'inherit', cursor: 'pointer',
       }}>
         {t('sos.dismiss')}
       </button>
+      </>)}
     </div>
   )
 }
@@ -348,7 +481,38 @@ export default function SOSPage() {
   const [alarmOn, setAlarmOn]           = useState(false)
   const [confirmMsg, setConfirmMsg]     = useState(null)  // msg waiting for confirm
   const [sentMsg, setSentMsg]           = useState(null)  // msg successfully sent → show sent screen
+  const [sentResolved, setSentResolved] = useState(false) // "I'm Safe" succeeded → sent screen shows resolved
   const [dialog, setDialog]             = useState(null)
+  // The id `send_sos` returns, and the Famora Social nearby-help status for
+  // it — 'searching' | 'helper_found' | 'exhausted' | 'resolved' | null
+  // (null = no escalation row yet, e.g. a GPS-failed SOS at 0,0). See the
+  // realtime subscription below and useSosAlarm.js's parallel one for the
+  // family-side view of the same row.
+  const [sentAlertId, setSentAlertId]   = useState(null)
+  const [nearbyStatus, setNearbyStatus] = useState(null)
+  // The alert's own coordinates (for NearbySearchMap, centred on them — not
+  // on whoever is looking) and the escalation row's own id (for
+  // get_accepted_helper_area, once nearbyStatus is 'helper_found').
+  const [sentLoc, setSentLoc]                     = useState(null)
+  const [nearbyEscalationId, setNearbyEscalationId] = useState(null)
+
+  // Famora Social opt-in — moved here from the old FamoraSocialPage, next to
+  // the Send tab it now lives on.
+  const [socialOptedIn, setSocialOptedIn]   = useState(false)
+  const [socialOptInReady, setSocialOptInReady] = useState(false)
+
+  // This user's own pending nearby-help requests — the in-app fallback for
+  // "someone nearby needs help", for when the native ring notification was
+  // missed, dismissed, or the platform is web (no NearbyHelpRingService
+  // there at all). Deliberately independent of any location state: unlike
+  // the ambient dots on NearbySearchMap, showing "you have a request" never
+  // needed to know where the viewer is.
+  const [pendingHelp, setPendingHelp]     = useState([])
+  const [revealedHelp, setRevealedHelp]   = useState({})  // notification id -> {lat,lng} | 'unavailable'
+  const [respondingHelp, setRespondingHelp] = useState(null)  // notification id currently in flight
+  const [helpHistory, setHelpHistory]     = useState([])    // answered requests, newest first
+  const [socialView, setSocialView]     = useState('helped')  // which history the Nearby Help tab shows
+  const [sentHistory, setSentHistory]     = useState([])    // this user's own SOS escalations, newest first
 
   const prevAlertIds = useRef(new Set())
   const alarmRef     = useRef(null)
@@ -358,6 +522,186 @@ export default function SOSPage() {
     alarmRef.current = createSenderAlarm()
     return () => alarmRef.current?.stop()
   }, [])
+
+  // Famora Social opt-in — same read/upsert/delete against user_consents the
+  // old FamoraSocialPage used, carried over unchanged.
+  useEffect(() => {
+    if (!user?.id) return
+    let cancelled = false
+    supabase
+      .from('user_consents')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .eq('consent_type', FAMORA_SOCIAL_CONSENT_TYPE)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return
+        setSocialOptedIn(!!data)
+        setSocialOptInReady(true)
+      })
+    return () => { cancelled = true }
+  }, [user?.id])
+
+  const handleToggleSocial = async () => {
+    if (!user?.id) return
+    const newVal = !socialOptedIn
+    setSocialOptedIn(newVal)   // optimistic, same pattern as ProfilePage's toggles
+    try {
+      if (newVal) {
+        const { error } = await supabase.from('user_consents').upsert({
+          user_id: user.id, consent_type: FAMORA_SOCIAL_CONSENT_TYPE, agreed_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,consent_type' })
+        if (error) throw error
+      } else {
+        const { error } = await supabase.from('user_consents')
+          .delete().eq('user_id', user.id).eq('consent_type', FAMORA_SOCIAL_CONSENT_TYPE)
+        if (error) throw error
+        // A blocked DELETE (RLS) reports success and removes nothing — confirm
+        // the row is really gone before telling the user they are opted out.
+        const { data: still } = await supabase.from('user_consents')
+          .select('user_id').eq('user_id', user.id).eq('consent_type', FAMORA_SOCIAL_CONSENT_TYPE).maybeSingle()
+        if (still) throw new Error('opt-out not saved')
+      }
+      setDialog({
+        type: 'info',
+        title: t(newVal ? 'famoraSocial.onTitle' : 'famoraSocial.offTitle'),
+        message: t(newVal ? 'famoraSocial.onBody' : 'famoraSocial.offBody'),
+      })
+    } catch (e) {
+      setSocialOptedIn(!newVal)   // revert on failure
+      setDialog({ type: 'error', message: t('famoraSocial.toggleFailed') })
+    }
+  }
+
+  // Pending nearby-help requests for this user — fetch + realtime, same
+  // resilience shape (poll fallback, visibilitychange refetch) as the other
+  // subscriptions on this page.
+  useEffect(() => {
+    if (!user?.id) return
+    let cancelled = false
+
+    const fetchPending = async () => {
+      const { data, error } = await supabase
+        .from('nearby_help_notifications')
+        .select('id, escalation_id, distance_m, fuzzy_lat, fuzzy_lng, fuzzy_radius_m, notified_at, response, help_kind')
+        .eq('helper_id', user.id)
+        .is('response', null)
+      if (cancelled || error || !data || data.length === 0) {
+        if (!cancelled && (!data || data.length === 0)) setPendingHelp([])
+        return
+      }
+      const escalationIds = [...new Set(data.map(n => n.escalation_id))]
+      const { data: escalations } = await supabase
+        .from('nearby_help_escalations')
+        .select('id, status')
+        .in('id', escalationIds)
+      if (cancelled) return
+      const searching = new Set((escalations || []).filter(e => e.status === 'searching').map(e => e.id))
+      setPendingHelp(data.filter(n => searching.has(n.escalation_id)))
+    }
+
+    fetchPending()
+
+    const channel = supabase
+      .channel(`sos-page-pending-help:${user.id}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'nearby_help_notifications', filter: `helper_id=eq.${user.id}` },
+        () => { if (!cancelled) fetchPending() })
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'nearby_help_escalations' },
+        () => { if (!cancelled) fetchPending() })
+      .subscribe()
+
+    const pollTimer = setInterval(fetchPending, 30_000)
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchPending() }
+    document.addEventListener('visibilitychange', onVisible)
+
+    return () => {
+      cancelled = true
+      supabase.removeChannel(channel)
+      clearInterval(pollTimer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [user?.id])
+
+  // History of the requests this user has answered. Refetched when the tab
+  // opens and whenever a pending request appears or is answered.
+  useEffect(() => {
+    if (!user?.id || activeTab !== 'social') return
+    let cancelled = false
+    supabase
+      .from('nearby_help_notifications')
+      .select('id, distance_m, notified_at, response, help_kind')
+      .eq('helper_id', user.id)
+      .eq('hidden_by_helper', false)
+      .not('response', 'is', null)
+      .order('notified_at', { ascending: false })
+      .limit(30)
+      .then(({ data }) => { if (!cancelled && data) setHelpHistory(data) })
+    // RLS lets the requester read their own escalation rows.
+    supabase
+      .from('nearby_help_escalations')
+      .select('id, status, created_at, accepted_by, help_kind')
+      .eq('requester_id', user.id)
+      .eq('hidden_by_requester', false)
+      .order('created_at', { ascending: false })
+      .limit(30)
+      .then(({ data }) => { if (!cancelled && data) setSentHistory(data) })
+    return () => { cancelled = true }
+  }, [user?.id, activeTab, pendingHelp.length])
+
+  // Remove one entry from the Nearby Help history (swipe right or long-press).
+  // Hidden on the server, not deleted — see hide_nearby_help_* in
+  // 20260924140000_nearby_help_hide_history.sql.
+  const handleRemoveHistory = (view, id) => {
+    setDialog({
+      type: 'confirm',
+      title: t('famoraSocial.removeTitle'),
+      message: t('famoraSocial.removeBody'),
+      confirmLabel: t('famoraSocial.remove'),
+      onConfirm: async () => {
+        const { error } = await supabase.rpc(
+          view === 'helped' ? 'hide_nearby_help_notification' : 'hide_nearby_help_escalation',
+          view === 'helped' ? { p_notification_id: id } : { p_escalation_id: id },
+        )
+        if (error) {
+          setDialog({ type: 'error', message: t('famoraSocial.removeFailed') })
+          return
+        }
+        if (view === 'helped') setHelpHistory(prev => prev.filter(h => h.id !== id))
+        else setSentHistory(prev => prev.filter(e => e.id !== id))
+      },
+    })
+  }
+
+  const handleAcceptHelp = async (notificationId, escalationId) => {
+    setRespondingHelp(notificationId)
+    try {
+      const { error: acceptErr } = await supabase.rpc('accept_nearby_help', { p_notification_id: notificationId })
+      if (acceptErr) {
+        setRevealedHelp(prev => ({ ...prev, [notificationId]: 'unavailable' }))
+        return
+      }
+      const { data: loc, error: locErr } = await supabase.rpc('get_nearby_help_location', { p_escalation_id: escalationId })
+      const row = Array.isArray(loc) ? loc[0] : loc
+      setRevealedHelp(prev => ({
+        ...prev,
+        [notificationId]: (!locErr && row) ? { lat: row.lat, lng: row.lng } : 'unavailable',
+      }))
+    } finally {
+      setRespondingHelp(null)
+    }
+  }
+
+  const handleDeclineHelp = async (notificationId) => {
+    setRespondingHelp(notificationId)
+    try {
+      await supabase.rpc('decline_nearby_help', { p_notification_id: notificationId })
+      setPendingHelp(prev => prev.filter(n => n.id !== notificationId))
+    } finally {
+      setRespondingHelp(null)
+    }
+  }
 
   const reloadAlerts = async () => {
     if (!familyId) return
@@ -431,7 +775,7 @@ export default function SOSPage() {
         console.warn('[SOS] GPS unavailable, sending with 0,0:', gpsErr?.message)
       }
 
-      const { error: sosErr } = await supabase.rpc('send_sos', {
+      const { data: sosData, error: sosErr } = await supabase.rpc('send_sos', {
         p_family_id: familyId,
         p_lat:       lat,
         p_lng:       lng,
@@ -441,6 +785,17 @@ export default function SOSPage() {
       // The family will start calling now. Silence this phone in case its
       // owner is hiding; "I'm Safe" gives the ringer back.
       enterSosSilence()
+      setSentResolved(false)
+      // The alert's id, for the Famora Social nearby-help subscription below.
+      // send_sos returns it as a plain uuid; tolerate a row/array shape too
+      // rather than assume one, since nothing here can change the RPC itself.
+      const newAlertId = typeof sosData === 'string'
+        ? sosData
+        : sosData?.id || (Array.isArray(sosData) ? sosData[0]?.id : null)
+      setNearbyStatus(null)
+      setNearbyEscalationId(null)
+      setSentLoc({ lat, lng })
+      setSentAlertId(newAlertId || null)
       setSentMsg(msg)  // show the sent screen
     } catch (e) {
       console.error('SOS send error:', e)
@@ -451,14 +806,26 @@ export default function SOSPage() {
 
   // ── Step 3: "I'm Safe" → resolve latest alert + dismiss sent screen
   const handleSafe = async () => {
-    const myLatest = alerts.find(a => a.user_id === user?.id && !a.is_resolved)
+    let myLatest = alerts.find(a => a.user_id === user?.id && !a.is_resolved)
+    // The realtime INSERT may not have reached the list yet when "I'm Safe"
+    // is tapped straight after sending. Ask the database rather than show
+    // "SOS Resolved" over an alert that is still live on every family phone.
+    if (!myLatest && user?.id && familyId) {
+      const { data } = await supabase
+        .from('sos_alerts').select('id')
+        .eq('user_id', user.id).eq('family_id', familyId).eq('is_resolved', false)
+        .order('created_at', { ascending: false }).limit(1)
+      myLatest = data?.[0]
+    }
     if (myLatest) {
       const { error } = await supabase.rpc('resolve_sos', { p_sos_id: myLatest.id })
       // Do not dismiss on failure. The alert is still standing on every other
       // phone in the family, and telling this user they are safe while their
       // family is still being called is the one wrong answer this screen can
       // give. Leaving the sent screen up keeps "I'm Safe" in reach to retry.
-      if (error) {
+      // 22023 = already resolved (e.g. from the notification's Cancel): that
+      // is the outcome being asked for, not a failure.
+      if (error && error.code !== '22023') {
         console.error('Resolve SOS error:', error.code || 'unknown')
         setDialog({ type: 'error', title: t('common.error'), message: t('common.retry') })
         return
@@ -470,8 +837,45 @@ export default function SOSPage() {
     // history kept the phone silent after "I'm Safe" (Redmi, 2026-09-21). That
     // check now only runs as the automatic safety net in useSosAlarm.
     exitSosSilence()
-    setSentMsg(null)
+    // Stay on the screen in its resolved state; Done closes it.
+    setSentResolved(true)
   }
+
+  // Famora Social: nearby-help status for the alert just sent. Subscribes
+  // once sentAlertId is known and reads the row's current status straight
+  // away too — the escalation is inserted synchronously by a trigger on
+  // sos_alerts, so it usually already exists by the time this effect's
+  // subscription call completes, and postgres_changes only reports rows
+  // changing AFTER it is live.
+  useEffect(() => {
+    if (!sentAlertId) return
+    let cancelled = false
+
+    supabase
+      .from('nearby_help_escalations')
+      .select('id, status')
+      .eq('sos_alert_id', sentAlertId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return
+        setNearbyStatus(data.status)
+        setNearbyEscalationId(data.id)
+      })
+
+    const channel = supabase
+      .channel(`nearby-help-status:${sentAlertId}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'nearby_help_escalations',
+        filter: `sos_alert_id=eq.${sentAlertId}`,
+      }, (payload) => {
+        if (cancelled) return
+        if (payload.new?.status) setNearbyStatus(payload.new.status)
+        if (payload.new?.id) setNearbyEscalationId(payload.new.id)
+      })
+      .subscribe()
+
+    return () => { cancelled = true; supabase.removeChannel(channel) }
+  }, [sentAlertId])
 
   const resolveAlert = async (alertId) => {
     const { error } = await supabase.rpc('resolve_sos', { p_sos_id: alertId })
@@ -493,7 +897,16 @@ export default function SOSPage() {
         <SOSSentScreen
           msg={sentMsg}
           onSafe={handleSafe}
-          onDismiss={() => setSentMsg(null)}
+          resolved={sentResolved}
+          nearbyStatus={nearbyStatus}
+          sentLoc={sentLoc}
+          nearbyEscalationId={nearbyEscalationId}
+          alertId={sentAlertId}
+          onDismiss={() => {
+            setSentMsg(null); setSentResolved(false)
+            setSentAlertId(null); setNearbyStatus(null)
+            setSentLoc(null); setNearbyEscalationId(null)
+          }}
         />
       )}
 
@@ -506,7 +919,9 @@ export default function SOSPage() {
         />
       )}
 
-      <div className="top-bar">
+      {/* Fixed height: the right-hand control differs per tab (switch, Clear
+          Resolved, nothing), and the bar used to resize with it. */}
+      <div className="top-bar" style={{ boxSizing: 'border-box', height: 68 }}>
         <div>
           <div className="top-bar-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -515,6 +930,16 @@ export default function SOSPage() {
             {t('sos.title')}
           </div>
         </div>
+
+        {/* Nearby-helper opt-in lives in the header of its own tab, so it is
+            always in reach without taking a card's worth of space. */}
+        {activeTab === 'social' && (
+          <FamoraSocialToggle
+            on={socialOptedIn}
+            onToggle={socialOptInReady ? handleToggleSocial : undefined}
+            label={t('famoraSocial.toggleTitle')}
+          />
+        )}
 
         {/* Clear Resolved — right side, matches Switch / Sign Out style */}
         {activeTab === 'history' && alerts.some(a => a.is_resolved) && (
@@ -579,6 +1004,7 @@ export default function SOSPage() {
       <div style={{ display: 'flex', background: '#fff', borderBottom: '1.5px solid var(--border)', flexShrink: 0 }}>
         {[
           { key: 'send',    label: t('sos.tabSend') },
+          { key: 'social',  label: t('sos.tabNearby') + (pendingHelp.length > 0 ? ` (${pendingHelp.length})` : '') },
           { key: 'history', label: t('sos.tabHistory') + (activeCount > 0 ? ` (${activeCount})` : '') },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
@@ -654,6 +1080,162 @@ export default function SOSPage() {
 
         </div>
         </PullToRefresh>
+      )}
+
+      {/* NEARBY HELP TAB — Famora Social: opt-in, requests addressed to this
+          user, and their own history of them. */}
+      {activeTab === 'social' && (
+        <>
+        {/* Fixed: the intro and counts stay put while the lists below scroll. */}
+        <div style={{ padding: '16px 14px 0', flexShrink: 0 }}>
+
+          {/* The why, in one breath, then two counts. Kept compact so the
+              opt-in switch stays above the fold. */}
+          <div className="settings-card" style={{ margin: '0 0 12px', padding: '12px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--maroon)', fontSize: 14, fontWeight: 800 }}>
+              <Icon name="heart" size={18} />
+              {t('famoraSocial.heroTitle')}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginTop: 4, lineHeight: 1.45 }}>
+              {t('famoraSocial.heroBody')}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              {[
+                { key: 'helped',   n: helpHistory.filter(h => h.response === 'accepted').length, label: t('famoraSocial.statHelped') },
+                { key: 'received', n: sentHistory.filter(e => e.accepted_by).length,             label: t('famoraSocial.statReceived') },
+              ].map(s => {
+                const active = socialView === s.key
+                return (
+                  <button key={s.key} onClick={() => setSocialView(s.key)} aria-pressed={active} style={{
+                    flex: 1, fontFamily: 'inherit', cursor: 'pointer',
+                    background: active ? 'var(--maroon)' : '#fff', borderRadius: 10, padding: '7px 10px',
+                    border: '1.5px solid var(--maroon)', justifyContent: 'center',
+                    display: 'flex', alignItems: 'center', gap: 8, transition: 'background 0.2s',
+                  }}>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: active ? '#fff' : 'var(--maroon)' }}>{s.n}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: active ? '#fff' : 'var(--maroon)', lineHeight: 1.25 }}>{s.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+          <PullToRefresh onRefresh={reloadAlerts}>
+          <div style={{ padding: '0 14px 16px' }}>
+
+          {/* In-app fallback for a nearby-help request — for when the native
+              ring notification was missed, dismissed, or this is a web
+              session (no NearbyHelpRingService there). Carried over from the
+              old FamoraSocialPage rather than dropped: without this, an
+              opted-in helper whose push never arrived had no way at all to
+              respond. */}
+          {pendingHelp.map(n => {
+            const revealed = revealedHelp[n.id]
+            return (
+              <div key={n.id} className="settings-card" style={{ margin: '0 0 16px', padding: '14px 16px' }}>
+                {!revealed ? (
+                  <>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2 }}>
+                      {t('famoraSocial.pendingTitle')}
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginTop: 4, lineHeight: 1.5 }}>
+                      {t('famoraSocial.pendingBody', { need: t('famoraSocial.need.' + n.help_kind), number: helpNumber(n.help_kind) })}
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                      <button
+                        onClick={() => handleAcceptHelp(n.id, n.escalation_id)}
+                        disabled={respondingHelp === n.id}
+                        style={{
+                          flex: 1, padding: '10px', borderRadius: 12, border: 'none',
+                          background: 'var(--maroon)', color: '#fff', fontWeight: 800, fontSize: 13,
+                          opacity: respondingHelp === n.id ? 0.6 : 1,
+                        }}
+                      >
+                        {t('famoraSocial.accept')}
+                      </button>
+                      <button
+                        onClick={() => handleDeclineHelp(n.id)}
+                        disabled={respondingHelp === n.id}
+                        style={{
+                          flex: 1, padding: '10px', borderRadius: 12, border: '1px solid var(--border)',
+                          background: 'transparent', color: 'var(--text)', fontWeight: 800, fontSize: 13,
+                          opacity: respondingHelp === n.id ? 0.6 : 1,
+                        }}
+                      >
+                        {t('famoraSocial.decline')}
+                      </button>
+                    </div>
+                  </>
+                ) : revealed === 'unavailable' ? (
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)' }}>
+                    {t('famoraSocial.locationFailed')}
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2 }}>
+                      {t('famoraSocial.acceptedTitle', { number: helpNumber(n.help_kind) })}
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginTop: 4, lineHeight: 1.5 }}>
+                      {t('famoraSocial.acceptedBody', { number: helpNumber(n.help_kind) })}
+                    </div>
+                    <div style={{ display: 'flex', gap: 14, marginTop: 10 }}>
+                      <a href={'tel:' + helpNumber(n.help_kind)} style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--maroon)', fontWeight: 800, fontSize: 13, textDecoration: 'none' }}>
+                        <Icon name="phone" /> {t('famoraSocial.callNumber', { number: helpNumber(n.help_kind) })}
+                      </a>
+                      <a
+                        href={`https://www.google.com/maps?q=${revealed.lat},${revealed.lng}`}
+                        target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--maroon)', fontWeight: 800, fontSize: 13, textDecoration: 'none' }}
+                      >
+                        <Icon name="pin" /> {t('famoraSocial.viewOnMaps')}
+                      </a>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })}
+
+          {/* One list at a time, picked with the two counts above, so the tab
+              stays short instead of scrolling through two long histories.
+              Anonymous by design: only when, and what kind of help. */}
+          {(() => {
+            const rows = socialView === 'helped'
+              ? helpHistory.filter(h => h.response === 'accepted').map(h => ({ id: h.id, at: h.notified_at, kind: h.help_kind }))
+              : sentHistory.filter(e => e.accepted_by).map(e => ({ id: e.id, at: e.created_at, kind: e.help_kind }))
+            if (rows.length === 0) {
+              return (
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', lineHeight: 1.5, padding: '8px 4px' }}>
+                  {t(socialView === 'helped' ? 'famoraSocial.helpedEmpty' : 'famoraSocial.receivedEmpty')}
+                </div>
+              )
+            }
+            return (
+              <>
+                {rows.map(r => (
+                  <HistoryRow key={r.id} onRemove={() => handleRemoveHistory(socialView, r.id)}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 800, color: 'var(--maroon)' }}>
+                      <Icon name="heart" size={15} />
+                      {new Date(r.at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    {r.kind && (
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--muted)' }}>
+                        {t('famoraSocial.kind.' + r.kind)}
+                      </div>
+                    )}
+                  </HistoryRow>
+                ))}
+                <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--muted-soft)', textAlign: 'center', padding: '6px 0 2px' }}>
+                  {t('famoraSocial.removeHint')}
+                </div>
+              </>
+            )
+          })()}
+
+        </div>
+        </PullToRefresh>
+        </>
       )}
 
       {/* HISTORY TAB */}
@@ -766,6 +1348,12 @@ export default function SOSPage() {
                   </span>
                 </div>
 
+                {Date.now() - new Date(alert.created_at).getTime() < 7 * 86400000 && (
+                  <div style={{ padding: '0 16px' }}>
+                    <SosMediaPlayer groupId={alert.sos_group_id || alert.id} compact />
+                  </div>
+                )}
+
                 {(hasLocation || canResolve) && (
                   <div style={{ borderTop: '1px solid var(--border)', padding: '11px 16px 13px', display: 'flex', flexDirection: 'column', gap: 11 }}>
                     {hasLocation && (
@@ -805,6 +1393,69 @@ export default function SOSPage() {
           onClose={() => setDialog(null)}
         />
       )}
+    </div>
+  )
+}
+
+// ── A history row you can remove: swipe right, or press and hold ─────────────
+// Both routes only ask for removal (the caller shows a confirm), so a stray
+// brush of the finger never deletes anything. touch-action keeps vertical
+// scrolling of the list working.
+function HistoryRow({ onRemove, children }) {
+  const start = useRef(null)
+  const timer = useRef(null)
+  const [dx, setDx] = useState(0)
+
+  const clearTimer = () => { clearTimeout(timer.current); timer.current = null }
+
+  const onTouchStart = (e) => {
+    start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, fired: false }
+    timer.current = setTimeout(() => {
+      if (start.current) { start.current.fired = true; setDx(0); onRemove() }
+    }, 550)
+  }
+  const onTouchMove = (e) => {
+    const s = start.current
+    if (!s || s.fired) return
+    const mx = e.touches[0].clientX - s.x
+    const my = e.touches[0].clientY - s.y
+    if (Math.abs(mx) > 8 || Math.abs(my) > 8) clearTimer()   // moving, not holding
+    if (Math.abs(mx) > Math.abs(my) && mx > 0) setDx(Math.min(mx, 110))
+  }
+  const onTouchEnd = () => {
+    clearTimer()
+    const s = start.current
+    start.current = null
+    if (s && !s.fired && dx > 70) onRemove()
+    setDx(0)
+  }
+
+  return (
+    <div
+      onTouchStart={onTouchStart} onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}
+      onContextMenu={(e) => { e.preventDefault(); onRemove() }}
+      style={{
+        position: 'relative', margin: '0 0 8px', borderRadius: 16,
+        touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+      }}
+    >
+      {/* The bin the row slides away from (left edge) */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 16, background: '#B3261E',
+        display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: 22,
+        color: '#fff', opacity: dx > 0 ? 1 : 0,
+      }}>
+        <Icon name="trash" size={18} />
+      </div>
+      <div className="settings-card" style={{
+        margin: 0, padding: '10px 16px', position: 'relative',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+        transform: `translateX(${dx}px)`, transition: start.current ? 'none' : 'transform 0.2s',
+      }}>
+        {children}
+      </div>
     </div>
   )
 }

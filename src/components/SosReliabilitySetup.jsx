@@ -7,6 +7,13 @@ const CallAlarm = registerPlugin('CallAlarm')
 
 const STORAGE_KEY = 'sos_oem_setup_done_v1'
 const VISITED_KEY = 'sos_oem_visited_v1'
+// Skips the very first time this sheet would otherwise appear, which used to
+// be the moment someone first opened the app after signup — a full-screen
+// permission wall before they had seen a single other screen. One skip is
+// enough: it costs nothing on returning users (already past this key) and
+// gives a first-time user one look at the app before being asked for OS
+// settings most of them have never heard of.
+const FIRST_SHOWN_KEY = 'sos_oem_first_shown_v1'
 
 /**
  * SosReliabilitySetup
@@ -76,13 +83,27 @@ const writeVisited = (v) => {
 const Icons = {
   autostart: <><circle cx="12" cy="12" r="9" /><path d="M10 8.5 L16 12 L10 15.5 Z" /></>,
   popup:     <><rect x="3" y="4" width="18" height="14" rx="2" /><path d="M8 21h8" /><path d="M8.5 9.5h7v5h-7z" /></>,
-  overlay:   <><rect x="3" y="7" width="12" height="12" rx="2" /><path d="M9 4h10a1 1 0 0 1 1 1v10" /></>,
   fullscreen:<><path d="M4 9V5a1 1 0 0 1 1-1h4" /><path d="M20 9V5a1 1 0 0 0-1-1h-4" /><path d="M4 15v4a1 1 0 0 0 1 1h4" /><path d="M20 15v4a1 1 0 0 1-1 1h-4" /></>,
   // Crossed-out bell — Do Not Disturb.
   dnd:       <><path d="M9 19a3 3 0 0 0 6 0" /><path d="M6 15V10a6 6 0 0 1 9.3-5" /><path d="M18 11v4l2 3H8" /><path d="m4 4 16 16" /></>,
 }
 
-function RowIcon({ shape, done }) {
+// The row's own identity icon (autostart/popup/overlay/…), always drawn the
+// same way regardless of status — StatusBadge below is what carries done vs.
+// not-done, so this doesn't also need to swap to a checkmark.
+function RowIcon({ shape }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)"
+         strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      {shape}
+    </svg>
+  )
+}
+
+// Green tick when granted, a plain cross when not — the explicit yes/no this
+// used to leave to a colour change on the left-hand icon alone, which was easy
+// to miss. Doubles as the visual cue that a not-done row is tappable.
+function StatusBadge({ done }) {
   if (done) {
     return (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
@@ -93,9 +114,10 @@ function RowIcon({ shape, done }) {
     )
   }
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)"
-         strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-      {shape}
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+      <circle cx="12" cy="12" r="10" fill="#F3E4EA" />
+      <path d="M8.7 8.7l6.6 6.6M15.3 8.7l-6.6 6.6" stroke="var(--maroon)"
+            strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   )
 }
@@ -165,11 +187,10 @@ export default function SosReliabilitySetup() {
     setInfo(device)
     setOverlayOk(canOverlay)
 
-    // Closing without a tap, in both senses: everything is granted, or — when a
-    // blocked alert was recorded on a phone that is not one of the restrictive
-    // OEMs and already holds every permission Android will report on — there is
-    // simply nothing left to ask for. Showing an empty checklist would be worse
-    // than showing nothing, so the evidence is cleared and the sheet stays away.
+    // Closing without a tap: everything is granted, or — when a blocked alert
+    // was recorded on a phone that is not one of the restrictive OEMs and
+    // already holds every permission Android will report on — there is simply
+    // nothing left to ask for.
     const rows = neededRows(device, canOverlay, marks)
 
     // A dismissal covers the rows we can only guess at. It does not cover one
@@ -188,10 +209,21 @@ export default function SosReliabilitySetup() {
       try { localStorage.removeItem(STORAGE_KEY) } catch {}
     }
 
-    if (rows.length === 0 || rows.every(r => r.done)) {
+    if (rows.every(r => r.done)) {
       // Only remember "setup complete" when every reading behind it was real.
       if (overlayKnown) { try { localStorage.setItem(STORAGE_KEY, '1') } catch {} }
       if (blocked) { try { CallAlarm.clearAlertBlocked() } catch {} }
+      setVisible(false)
+      return
+    }
+
+    // Give a brand-new install one pass before ever showing this: skip the
+    // very first time it would appear, but not the state that led here — the
+    // next evaluate() (next return to the app) shows it normally.
+    let firstShown = true
+    try { firstShown = localStorage.getItem(FIRST_SHOWN_KEY) === '1' } catch {}
+    if (!firstShown) {
+      try { localStorage.setItem(FIRST_SHOWN_KEY, '1') } catch {}
       setVisible(false)
       return
     }
@@ -235,8 +267,8 @@ export default function SosReliabilitySetup() {
     setVisited(next)
   }
 
-  // The OEM permissions page: pop-up in background, show on lock screen, and
-  // display over other apps all live here, which is why it is the one button.
+  // The standard App Details page — where MIUI keeps "Other permissions" and
+  // the pop-up-in-background / show-on-lock-screen toggles inside it.
   const openAppDetails = () => {
     markVisited('popup')
     try { SOSAlarm.openAppDetailsSettings() } catch {}
@@ -245,6 +277,28 @@ export default function SosReliabilitySetup() {
   const openAutostart = () => {
     markVisited('autostart')
     try { SOSAlarm.openAutostartSettings() } catch {}
+  }
+
+  // Overlay, full-screen-intent and DND each live on their own OS settings
+  // screen — none of them are on the App Details page. The sheet used to have
+  // one button that always called openAppDetails() regardless of which row
+  // was pending, so on a phone where DND was the only thing left, tapping it
+  // landed on App Details with no DND toggle anywhere on it — a dead end that
+  // looked like the app was broken.
+  const openOverlay = () => { try { CallAlarm.openOverlaySettings() } catch {} }
+  const openFullScreen = () => { try { SOSAlarm.openFullScreenIntentSettings() } catch {} }
+  const openDnd = () => { try { SOSAlarm.openDndAccessSettings() } catch {} }
+
+  // Where tapping a row goes. Popup and autostart genuinely share the OEM
+  // permissions page family but live on two different activities within it.
+  // The merged "fullscreen" row can mean either of two screens depending on
+  // which of its two underlying permissions Android still says is missing
+  // (see neededRows) — needsOverlay carries that, so the row resolves to the
+  // right one instead of always defaulting to overlay.
+  const simpleRowActions = { autostart: openAutostart, popup: openAppDetails, dnd: openDnd }
+  const handleRowTap = (row) => {
+    if (row.key === 'fullscreen') { (row.needsOverlay ? openOverlay : openFullScreen)(); return }
+    simpleRowActions[row.key]?.()
   }
 
   const rows = buildRows(t, info, overlayOk, visited)
@@ -303,24 +357,26 @@ export default function SosReliabilitySetup() {
           </div>
         )}
 
-        {/* One list, no per-row buttons.
-            Every toggle below Autostart lives on the same OEM permissions page,
-            so a button per row sent people to different screens for switches
-            sitting side by side. That is how the wrong one kept getting
-            flipped — on this phone an already-granted overlay permission got
-            turned back off while hunting for another. The list says what to
-            switch on; the single button opens the page holding them. */}
+        {/* Each row IS the button now — tapping it opens exactly its own
+            settings screen (handleRowTap above), so there is no separate stack
+            of full-width links turning a 4-row checklist into a much taller
+            sheet than the permission ask actually is. The right-hand badge is
+            the plain yes/no: green tick granted, cross not yet — tapping a
+            ticked row does nothing, there is nothing left to fix there. */}
         <div style={{
           border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', marginBottom: 16,
         }}>
           {rows.map((row, i) => (
-            <div key={row.key} style={{
-              display: 'flex', alignItems: 'flex-start', gap: 11,
-              padding: '12px 14px',
-              borderTop: i === 0 ? 'none' : '1px solid #F3E9ED',
-              background: row.done ? '#F7FBF9' : '#fff',
-            }}>
-              <div style={{ paddingTop: 1 }}><RowIcon shape={row.icon} done={row.done} /></div>
+            <div key={row.key}
+              onClick={row.done ? undefined : () => handleRowTap(row)}
+              style={{
+                display: 'flex', alignItems: 'flex-start', gap: 11,
+                padding: '12px 14px',
+                borderTop: i === 0 ? 'none' : '1px solid #F3E9ED',
+                background: row.done ? '#F7FBF9' : '#fff',
+                cursor: row.done ? 'default' : 'pointer',
+              }}>
+              <div style={{ paddingTop: 1 }}><RowIcon shape={row.icon} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontSize: 14, fontWeight: 700,
@@ -332,32 +388,10 @@ export default function SosReliabilitySetup() {
                   {row.done ? t('reliability.done') : row.sub}
                 </div>
               </div>
+              <div style={{ paddingTop: 1 }}><StatusBadge done={row.done} /></div>
             </div>
           ))}
         </div>
-
-        <button onClick={() => openAppDetails()} style={{
-          width: '100%', padding: 14, borderRadius: 14,
-          background: 'var(--grad-maroon, linear-gradient(135deg,var(--maroon),var(--maroon-bright)))',
-          border: 'none', color: '#fff', fontWeight: 800, fontSize: 15,
-          fontFamily: 'inherit', cursor: 'pointer',
-          boxShadow: '0 6px 18px rgba(139,13,61,0.28)',
-        }}>
-          {t('reliability.openSettings')}
-        </button>
-
-        {/* Autostart is the one switch that genuinely lives elsewhere — a
-            separate activity in the OEM's security app. It gets a quiet link
-            rather than a second loud button. */}
-        {rows.some(r => r.key === 'autostart' && !r.done) && (
-          <button onClick={() => openAutostart()} style={{
-            width: '100%', marginTop: 10, padding: 9, background: 'none',
-            border: 'none', color: 'var(--maroon)', fontSize: 13.5, fontWeight: 700,
-            fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'underline',
-          }}>
-            {t('reliability.openAutostart')}
-          </button>
-        )}
 
         {/* No "Done": the sheet closes itself when the list is complete. This is
             only the way out for someone who does not want to do it now. */}
@@ -382,7 +416,8 @@ function oemLabel(t, info) {
   }[info.oem] || t('reliability.someAndroid')
 }
 
-// Which permissions this phone still needs — and nothing user-facing in it.
+// Which permissions this phone needs, and their current status — nothing
+// user-facing in it.
 //
 // evaluate() decides whether to close the sheet from this list, and keeping it
 // free of translated text is what keeps evaluate() out of the render cycle:
@@ -395,6 +430,11 @@ function oemLabel(t, info) {
 // "they went to the page". Nothing in the UI distinguishes the two — to the
 // person granting them it is the same job — but open() and the blocked-alert
 // evidence both depend on knowing which is which.
+//
+// Rows for the permissions Android can verify (fullscreen, dnd) are always
+// returned, granted or not, so a row that gets fixed while the sheet is open
+// flips to a checkmark and stays visible instead of vanishing from the list —
+// the person can see what they just did, not just that the list got shorter.
 function neededRows(info, overlayOk, visited) {
   const rows = []
 
@@ -418,21 +458,36 @@ function neededRows(info, overlayOk, visited) {
       : { key: 'popup', verifiable: false, done: visited.popup === true })
   }
 
-  // These two are only ever listed while they are off, because Android answers
-  // for them: granting one simply removes it from the list next time round.
-  if (!overlayOk) rows.push({ key: 'overlay', verifiable: true, done: false })
-  if (info.canUseFullScreenIntent === false) rows.push({ key: 'fsi', verifiable: true, done: false })
+  // Full-screen delivery genuinely depends on TWO permissions, not one, and
+  // both are load-bearing — this isn't a legacy ask that a newer API made
+  // redundant. SYSTEM_ALERT_WINDOW is what lets SOSSirenService/
+  // CallRingingService launch the alert Activity directly from the
+  // background when the OS would otherwise block it ("Abort background
+  // activity starts" in logcat); USE_FULL_SCREEN_INTENT (Android 14+) is what
+  // the notification's own setFullScreenIntent() needs, and is the belt to
+  // the overlay permission's suspenders on OEMs where full-screen intents get
+  // silently demoted to a quiet notification. One row either way — the person
+  // is being asked for "full-screen alerts" once, not twice — but it resolves
+  // to whichever of the two Android still says is missing.
+  const overlayMissing = !overlayOk
+  const fsiMissing = info.canUseFullScreenIntent === false
+  rows.push({
+    key: 'fullscreen',
+    verifiable: true,
+    done: !overlayMissing && !fsiMissing,
+    needsOverlay: overlayMissing,
+  })
 
   // Do Not Disturb access. Listed on every phone, not just the restrictive
   // OEMs, because this one is plain Android: while DND is on, zen mutes
   // USAGE_ALARM above the app, so the SOS siren plays into a muted stream and
   // the alert lands in silence. Nothing in the app can work around it — the
-  // access is the workaround. Verifiable and self-clearing like the two above.
+  // access is the workaround.
   //
-  // `=== false` rather than falsy: an older native build that predates
-  // dndAccess sends undefined, and a missing field must not read as a missing
-  // permission and park an unclearable row on the checklist.
-  if (info.dndAccess === false) rows.push({ key: 'dnd', verifiable: true, done: false })
+  // `!== false` rather than a plain boolean: an older native build that
+  // predates dndAccess sends undefined, and a missing field must not read as
+  // a missing permission and park an unclearable row on the checklist.
+  rows.push({ key: 'dnd', verifiable: true, done: info.dndAccess !== false })
 
   return rows
 }
@@ -446,55 +501,23 @@ function buildRows(t, info, overlayOk, visited) {
       icon: Icons.autostart,
       label: t('reliability.autostart'),
       sub: t('reliability.autostartSub'),
-      fn: () => SOSAlarm.openAutostartSettings(),
     },
     popup: {
       icon: Icons.popup,
       label: t('reliability.popup'),
-      sub: popupHint(info),
-      fn: () => SOSAlarm.openAppDetailsSettings(),
+      sub: t('reliability.popupSub'),
     },
-    overlay: {
-      icon: Icons.overlay,
-      label: t('reliability.overlay'),
-      sub: t('reliability.overlaySub'),
-      fn: () => CallAlarm.openOverlaySettings(),
-    },
-    fsi: {
+    fullscreen: {
       icon: Icons.fullscreen,
       label: t('reliability.fullscreen'),
       sub: t('reliability.fullscreenSub'),
-      fn: () => SOSAlarm.openFullScreenIntentSettings(),
     },
     dnd: {
       icon: Icons.dnd,
       label: t('reliability.dnd'),
       sub: t('reliability.dndSub'),
-      fn: () => SOSAlarm.openDndAccessSettings(),
     },
   }
 
   return neededRows(info, overlayOk, visited).map(row => ({ ...row, ...dress[row.key] }))
 }
-
-/* i18n-exempt:start — these are the literal labels on the OEM's own settings
-   screen, quoted so the person can match them by eye. Translating them would
-   describe a toggle whose caption does not say that, which is worse than an
-   English string: MIUI in India overwhelmingly runs in English even where the
-   app is set to another language. The surrounding UI is translated; only the
-   captions being hunted for are not. */
-
-// The wording differs per OEM because the toggle is named differently on each,
-// and a person hunting a settings screen needs the label their phone uses.
-function popupHint(info) {
-  return {
-    // BOTH toggles, because canPopupOverLockScreen requires both ops (10021
-    // and 10020). Naming only one would leave the row unclearable for someone
-    // who did exactly as they were told.
-    xiaomi: 'Other permissions → turn on "Display pop-up windows while running in background" AND "Show on lock screen"',
-    oppo:   'Allow "Display pop-up window while running in background"',
-    vivo:   'Allow "Display pop-up window while running in background"',
-    huawei: 'Allow "Show pop-up windows while running in background"',
-  }[info.oem] || 'Allow "Display over other apps"'
-}
-/* i18n-exempt:end */

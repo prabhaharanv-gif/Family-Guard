@@ -42,10 +42,25 @@
     <string name="sos_needs_help">%1$s அவர்களுக்கு உதவி தேவை!</string>
     <string name="sos_view_location">இருப்பிடத்தைக் காண்க</string>
     <string name="sos_open_app">Famora-வைத் திற</string>
-    <string name="sos_stop_alarm">புரிந்தது — அலாரத்தை நிறுத்து</string>
+    <string name="sos_stop_alarm">புரிந்தது — அலாரத்தை அமைதியாக்கு</string>
     <string name="sos_calm_hint">அமைதியாக இருங்கள். அவர்கள் எங்கே இருக்கிறார்கள் என்று பார்த்து, அழையுங்கள் அல்லது அவர்களிடம் செல்லுங்கள்.</string>
     <string name="sos_call">%1$s அவர்களை அழைக்கவும்</string>
     <string name="sos_directions">வழி காண்க</string>
+    <string name="sos_tile_label">SOS</string>
+    <string name="sos_tile_subtitle">குடும்பத்தை எச்சரி</string>
+    <!-- Resolved state: the sender marked themselves safe. Silencing the alarm never shows these. -->
+    <string name="sos_safe_title">%1$s இப்போது பாதுகாப்பாக இருக்கிறார்</string>
+    <string name="sos_marked_safe">%1$s தாம் பாதுகாப்பாக இருப்பதாகக் குறித்துள்ளார்.</string>
+    <string name="sos_resolved">SOS முடிந்தது</string>
+    <string name="sos_still_active">அலாரம் அமைதி · SOS இன்னும் செயலில்</string>
+    <string name="ch_sos_safe_name">SOS முடிந்தது</string>
+    <string name="ch_sos_safe_desc">SOS-க்குப் பிறகு குடும்ப உறுப்பினர் பாதுகாப்பாக இருப்பதைத் தெரிவிக்கும்</string>
+
+    <!-- Places: a family member reached or left a saved place like Home or Office. -->
+    <string name="place_reached_title">%1$s %2$s சென்றடைந்தார்</string>
+    <string name="place_left_title">%1$s %2$s விட்டு சென்றார்</string>
+    <string name="ch_places_name">இடங்கள்</string>
+    <string name="ch_places_desc">வீடு அல்லது அலுவலகம் போன்ற சேமித்த இடத்தை குடும்ப உறுப்பினர் அடையும்போது அல்லது விட்டுச் செல்லும்போது தெரிவிக்கும்</string>
 
     <!-- CallRingingActivity -->
     <string name="call_incoming_voice">உள்வரும் குரல் அழைப்பு</string>
@@ -91,4 +106,29 @@
     <string name="sos_countdown_hint">தவறுதலாக நிகழ்ந்திருந்தால் ரத்து செய் என்பதைத் தட்டவும்.</string>
     <string name="sos_countdown_cancel">ரத்து செய்</string>
     <string name="fake_call_tile_subtitle">5 வினாடியில் போலி அழைப்பு</string>
+    <string name="weather_title_thunderstorm" formatted="true">%1$s அருகே இடியுடன் கூடிய மழை</string>
+    <string name="weather_detail_thunderstorm" formatted="true">இடி, மின்னல் வர வாய்ப்புள்ளது.</string>
+    <string name="weather_title_heavy_rain" formatted="true">%1$s அருகே கனமழை</string>
+    <string name="weather_detail_heavy_rain" formatted="true">கனமழை வர வாய்ப்புள்ளது.</string>
+    <string name="weather_detail_heavy_rain_mm" formatted="true">சுமார் %1$d மி.மீ மழை எதிர்பார்க்கப்படுகிறது.</string>
+    <string name="weather_title_heat" formatted="true">%1$s அருகே கடும் வெப்பம்</string>
+    <string name="weather_detail_heat" formatted="true">சுமார் %1$d°C. நிறைய தண்ணீர் குடியுங்கள்.</string>
+    <string name="weather_title_wind" formatted="true">%1$s அருகே பலத்த காற்று</string>
+    <string name="weather_detail_wind" formatted="true">மணிக்கு %1$d கி.மீ வரை காற்று வீசும்.</string>
+    <string name="weather_when_now" formatted="true">இப்போது எதிர்பார்க்கப்படுகிறது</string>
+    <string name="weather_when_at" formatted="true">சுமார் %1$s மணிக்கு எதிர்பார்க்கப்படுகிறது</string>
+    <string name="weather_body">%1$s. %2$s</string>
+    <string name="ch_weather_name">வானிலை எச்சரிக்கைகள்</string>
+    <string name="ch_weather_desc">உங்கள் சேமித்த இடங்களில் கடுமையான வானிலை பற்றி எச்சரிக்கிறது</string>
+    <string name="device_overspeed_title" formatted="true">%1$s வேகமாக வாகனம் ஓட்டுகிறார்</string>
+    <string name="device_overspeed_body" formatted="true">மணிக்கு %1$d கி.மீ (வரம்பு %2$d கி.மீ)</string>
+    <string name="device_overspeed_self_title">வேகத்தைக் குறையுங்கள்: நீங்கள் வரம்பைத் தாண்டிவிட்டீர்கள்</string>
+    <string name="device_overspeed_self_body" formatted="true">நீங்கள் மணிக்கு %1$d கி.மீ செல்கிறீர்கள். உங்கள் வரம்பு %2$d கி.மீ.</string>
+    <string name="unlock_alert_title" formatted="true">%1$s-இன் ஃபோனில் தவறான கடவுச்சொல்</string>
+    <string name="unlock_alert_body" formatted="true">தவறான திரைப்பூட்டு முயற்சிகள்: %1$d. ஃபோன் எங்கே இருந்தது என்பதையும், படம் எடுக்கப்பட்டிருந்தால் அதையும் காண Famora-வைத் திறக்கவும்.</string>
+    <string name="ch_lost_name">ஃபோன் தொலைந்த நிலை</string>
+    <string name="ch_lost_desc">உங்கள் குடும்பம் இந்த ஃபோனைத் தொலைந்ததாகக் குறித்திருக்கும்போது காட்டப்படும்</string>
+    <string name="lost_title">இந்த ஃபோன் தொலைந்துவிட்டது</string>
+    <string name="lost_body_default" formatted="true">இதைத் திருப்பித் தர %1$s அவர்களைத் தொடர்பு கொள்ளவும்.</string>
+    <string name="lost_body_generic">இந்த ஃபோனை உரிமையாளரின் குடும்பத்திடம் ஒப்படைக்கவும்.</string>
 </resources>

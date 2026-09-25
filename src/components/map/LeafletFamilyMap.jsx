@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
-import { MapContainer, TileLayer, useMap } from 'react-leaflet'
+import { useEffect, useMemo, useRef } from 'react'
+import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
+import { timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
 import SmoothMarker, { GLIDE_MS } from '../SmoothMarker'
 
 /**
@@ -21,15 +22,18 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-function createIcon(color, initial, avatarUrl) {
+// Every avatar wears a maroon ring outside its white edge (same as the phone's
+// pins, pinIcon.js). ring = null draws the plain white-edged pin.
+function createIcon(color, initial, avatarUrl, ring = 'var(--maroon)') {
+  const shadow = ring ? `0 0 0 3px ${ring},0 2px 12px rgba(0,0,0,0.25)` : '0 2px 12px rgba(0,0,0,0.25)'
   const content = avatarUrl
-    ? `<img src="${avatarUrl}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 12px rgba(0,0,0,0.25);" />`
+    ? `<img src="${avatarUrl}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:${shadow};" />`
     : `<div style="
         width:44px;height:44px;border-radius:50%;
         background:${color};border:3px solid #fff;
         display:flex;align-items:center;justify-content:center;
         font-weight:800;font-size:18px;color:#fff;
-        box-shadow:0 2px 12px rgba(0,0,0,0.25);
+        box-shadow:${shadow};
         font-family:Inter,sans-serif;
       ">${initial}</div>`
   return L.divIcon({
@@ -142,8 +146,74 @@ function FitAll({ locations }) {
   return null
 }
 
+// The Timeline: one solid maroon line per stretch with no gap, framed once
+// each time a route is opened, above the panel covering the foot of the map.
+// The dots and Start/Now boxes are the same bitmaps the phone draws, so both
+// maps show one design; a tap on any of them opens directions to that spot.
+const DOT = { stay: [stayDot, STAY_DOT, 200], start: [startDot, STAY_DOT, 300], end: [endDot, END_DOT, 300] }
+
+function RouteLine({ route, inset, renderSpotPopup }) {
+  const map = useMap()
+  useEffect(() => {
+    if (route && route.path.length >= 2) {
+      map.fitBounds(route.path.map(p => [p.lat, p.lng]), {
+        paddingTopLeft: [50, 50], paddingBottomRight: [50, 50 + inset], maxZoom: 17,
+      })
+    }
+    // inset is a constant from the page; framing happens per route.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, route])
+  if (!route || route.path.length < 2) return null
+  const ll = p => [p.lat, p.lng]
+  const popup = spot => renderSpotPopup && <Popup>{renderSpotPopup(spot)}</Popup>
+  return (
+    <>
+      {route.segments.filter(seg => seg.length >= 2).map((seg, i) => (
+        <Polyline key={'r' + i} positions={seg.map(ll)}
+          pathOptions={{ color: '#8B0D3D', weight: 5, opacity: 0.9 }} />
+      ))}
+      {(route.callouts || []).map((c, i) => {
+        const box = timeCallout(c.labels, c.dir)
+        return (
+          <Marker key={'c' + i} position={ll(c)} zIndexOffset={100}
+            icon={L.icon({ iconUrl: box.url, iconSize: [box.width, box.height], iconAnchor: [box.anchorX, box.anchorY] })}>
+            {popup(c)}
+          </Marker>
+        )
+      })}
+      {(route.spots || []).map((sp, i) => {
+        const [icon, size, z] = DOT[sp.kind]
+        return (
+          <Marker key={'d' + i} position={ll(sp)} zIndexOffset={z}
+            icon={L.icon({ iconUrl: icon(), iconSize: [size, size], iconAnchor: [size / 2, size / 2] })}>
+            {popup(sp)}
+          </Marker>
+        )
+      })}
+    </>
+  )
+}
+
+// Times mode: the member's avatar where they were at the picked time. It
+// jumps with the slider (no glide): the finger is already the animation.
+function RouteCursor({ cursor, renderSpotPopup }) {
+  const initial = cursor?.displayName?.[0]?.toUpperCase() || '?'
+  const icon = useMemo(
+    () => cursor && createIcon(cursor.avatarColor || 'var(--maroon)', initial, cursor.avatarUrl || null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [!!cursor, cursor?.avatarColor, cursor?.avatarUrl, initial],
+  )
+  if (!cursor) return null
+  return (
+    <Marker position={[cursor.lat, cursor.lng]} icon={icon} zIndexOffset={1000}>
+      {renderSpotPopup && <Popup>{renderSpotPopup(cursor)}</Popup>}
+    </Marker>
+  )
+}
+
 export default function LeafletFamilyMap({
-  pins, locations, flyTarget, followLoc, following, onUserPanned, renderPopup,
+  pins, locations, flyTarget, followLoc, following, onUserPanned, renderPopup, renderSpotPopup,
+  route = null, routeCursor = null, routeInset = 0,
 }) {
   return (
     <MapContainer
@@ -159,19 +229,54 @@ export default function LeafletFamilyMap({
       <FitAll locations={locations} />
       <FlyToMember target={flyTarget} />
       <FollowMember loc={followLoc} following={following} onUserPanned={onUserPanned} />
+      <RouteLine route={route} inset={routeInset} renderSpotPopup={renderSpotPopup} />
+      <RouteCursor cursor={routeCursor} renderSpotPopup={renderSpotPopup} />
 
       {Object.entries(pins).map(([uid, loc]) => (
-        <SmoothMarker
-          key={uid}
-          position={[loc.lat, loc.lng]}
-          icon={createIcon(
-            loc.avatarColor || 'var(--maroon)',
-            loc.displayName?.[0]?.toUpperCase() || '?',
-            loc.avatarUrl || null
-          )}
-        >
-          {renderPopup(uid, loc)}
-        </SmoothMarker>
+        loc.kind === 'anonDot' ? (
+          // Famora Social's ambient dots (see NearbySearchMap): no avatar,
+          // no popup, and `interactive={false}` so Leaflet gives them no
+          // click handler or hover cursor at all — untappable by construction,
+          // not by leaving renderPopup empty. A plain Marker rather than
+          // SmoothMarker: these carry no identity to glide between fetches,
+          // and each fetch hands back freshly fuzzed points under new keys,
+          // so gliding one to the next would itself be a small location leak.
+          <Marker
+            key={uid}
+            position={[loc.lat, loc.lng]}
+            icon={L.icon({ iconUrl: anonDot(), iconSize: [ANON_DOT, ANON_DOT], iconAnchor: [ANON_DOT / 2, ANON_DOT / 2] })}
+            interactive={false}
+          />
+        ) : loc.kind === 'helperFound' ? (
+          // The accepted helper's fuzzy area (see NearbySearchMap) — same
+          // untappable, no-popup, no-identity treatment as the ambient dots
+          // above, but green and with a small pulsing ring (helper-found-ring
+          // in global.css) so it reads as "found" without a native-pin-style
+          // bitmap having to animate.
+          <Marker
+            key={uid}
+            position={[loc.lat, loc.lng]}
+            icon={L.divIcon({
+              className: '',
+              html: `<div class="helper-found-marker"><span class="helper-found-ring"></span><img src="${helperDot()}" width="${HELPER_DOT}" height="${HELPER_DOT}" /></div>`,
+              iconSize: [HELPER_DOT, HELPER_DOT],
+              iconAnchor: [HELPER_DOT / 2, HELPER_DOT / 2],
+            })}
+            interactive={false}
+          />
+        ) : (
+          <SmoothMarker
+            key={uid}
+            position={[loc.lat, loc.lng]}
+            icon={createIcon(
+              loc.avatarColor || 'var(--maroon)',
+              loc.displayName?.[0]?.toUpperCase() || '?',
+              loc.avatarUrl || null
+            )}
+          >
+            {renderPopup(uid, loc)}
+          </SmoothMarker>
+        )
       ))}
     </MapContainer>
   )

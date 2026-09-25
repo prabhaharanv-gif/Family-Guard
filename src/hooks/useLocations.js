@@ -167,10 +167,18 @@ export function useLocations(familyId) {
     // This ensures the map stays accurate even if the WebSocket disconnects.
     const pollTimer = setInterval(fetchAll, 30_000)
 
+    // Coming back to the app: a backgrounded WebView gets no realtime, so pins
+    // could sit up to 30 s stale until the next poll. Fetch straight away
+    // instead. This replaced the map's Refresh button, which on the phone
+    // re-asked for permission and fetched nothing.
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchAll() }
+    document.addEventListener('visibilitychange', onVisible)
+
     return () => {
       cancelled = true
       supabase.removeChannel(channel)
       clearInterval(pollTimer)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [familyId])
 

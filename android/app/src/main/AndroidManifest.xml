@@ -200,12 +200,32 @@
              Reachable from the lock screen with a swipe and a tap, which is as
              close to a hardware shortcut as a normal app can get: volume keys
              are never delivered to a background app on MIUI, and the power
-             button is the national panic gesture. -->
+             button is the national panic gesture.
+             Ships DISABLED: it follows Profile → Fake call → "Call me" button
+             (FakeCallPrefs.syncTile), so switching that off removes the tile. -->
         <service
             android:name=".FakeCallTileService"
+            android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_fake_call_answer"
             android:label="@string/fake_call_notification_action"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- ── SOS Quick Settings tile ───────────────────────────────────────
+             Same shortcut, for an SOS: tap starts the 3-second countdown with
+             Cancel. Ships DISABLED — the member turns it on in Profile →
+             Safety (SosTileService.setEnabled), because anything that can
+             alert every family must be a choice. -->
+        <service
+            android:name=".SosTileService"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_sos_alert"
+            android:label="@string/sos_tile_label"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
@@ -232,6 +252,43 @@
             android:name=".PingRingService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
+
+        <!-- ── Famora Social: "I can help" / "No thanks" notification actions ──
+             NearbyHelpRingService is a plain class, not a Service — it posts
+             one notification and relies on the channel's own sound and
+             vibration, no continuous playback to justify a foreground
+             service. Same shape as SosCancelReceiver: exported="false" —
+             only our own PendingIntent may fire this. -->
+        <receiver
+            android:name=".NearbyHelpActionReceiver"
+            android:exported="false" />
+
+        <!-- ── Wrong-password alert (Profile → Anti-theft) ─────────────────────
+             Device-admin with the "watch-login" policy ONLY: the phone tells us
+             about failed unlock attempts. Exported because the system must be
+             able to call it, guarded by BIND_DEVICE_ADMIN so nothing else can. -->
+        <receiver
+            android:name=".AntiTheftAdminReceiver"
+            android:exported="true"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Takes one front-camera photo after repeated wrong attempts.
+             Transparent, over the lock screen, closes itself; only our own
+             code starts it. -->
+        <activity
+            android:name=".IntruderCaptureActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <!-- ── Background location foreground service ──────────────────────
              foregroundServiceType="location" required on Android 10+
@@ -287,6 +344,9 @@
     </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Wi-Fi or mobile data, for the signal icon on the family card
+         (NetworkSignal). Normal permission: granted at install, no prompt. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- ── Location ── -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />

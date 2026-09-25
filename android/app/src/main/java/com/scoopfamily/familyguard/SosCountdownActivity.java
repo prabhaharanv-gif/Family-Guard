@@ -47,12 +47,17 @@ public class SosCountdownActivity extends Activity {
         if (a != null) a.runOnUiThread(a::finish);
     }
 
+    /** The launch intent, shared with SosTileService's collapse-and-open call. */
+    static Intent intent(android.content.Context ctx, long graceMs) {
+        return new Intent(ctx, SosCountdownActivity.class)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NO_USER_ACTION)
+            .putExtra(EXTRA_ENDS_AT, SystemClock.elapsedRealtime() + graceMs);
+    }
+
     static void show(android.content.Context ctx, long graceMs) {
         try {
-            ctx.startActivity(new Intent(ctx, SosCountdownActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NO_USER_ACTION)
-                .putExtra(EXTRA_ENDS_AT, SystemClock.elapsedRealtime() + graceMs));
+            ctx.startActivity(intent(ctx, graceMs));
         } catch (Exception e) {
             android.util.Log.w("SOS_Arming", "countdown screen refused: " + e.getMessage());
         }

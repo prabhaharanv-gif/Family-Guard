@@ -103,7 +103,7 @@ export default function RegisterPage() {
       // again first, or a failed registration would leave them holding a
       // session they never asked for.
       if (verifyData.user.user_metadata?.display_name) {
-        await supabase.auth.signOut()
+        await supabase.auth.signOut({ scope: 'local' })  // global would end the owner's other sessions
         throw new Error(t('register.alreadyRegistered'))
       }
 

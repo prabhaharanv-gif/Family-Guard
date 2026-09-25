@@ -56,6 +56,16 @@ public class SOSSirenService extends Service {
     // ── Shared state — read by SOSAlarmPlugin and MainActivity ───────────────
     public static volatile boolean isRunning = false;
 
+    /**
+     * The sos_alerts id and sender of the alert this phone was last told about,
+     * so a "resolved" message can be matched to the alert it is about. With two
+     * people's SOS open at once, resolving one must not stop the other's siren
+     * or tell the recipient the wrong person is safe. Empty when the push that
+     * raised the alert carried no id (an edge function older than this field).
+     */
+    public static volatile String currentSosId  = "";
+    public static volatile String currentSender = "";
+
     // ── Audio state ──────────────────────────────────────────────────────────
     private static volatile boolean sirenRunning = false;
     private static Thread     sirenThread   = null;
@@ -102,11 +112,18 @@ public class SOSSirenService extends Service {
         sosLat = (intent != null && intent.getStringExtra("lat") != null) ? intent.getStringExtra("lat") : "";
         sosLng = (intent != null && intent.getStringExtra("lng") != null) ? intent.getStringExtra("lng") : "";
         sosPhone = (intent != null && intent.getStringExtra("phone") != null) ? intent.getStringExtra("phone") : "";
+        String sosId = (intent != null) ? intent.getStringExtra("sos_id") : null;
 
         // A repeat push for an alert that is already sounding must not touch
         // the volume — see raiseAlarmVolumeForAlert().
         final boolean freshAlert = !isRunning;
         isRunning = true;
+        // The realtime and push paths both deliver the same alert; whichever
+        // carries the id wins. A fresh alert without one clears the old id, so
+        // it is never matched against a previous emergency.
+        if (sosId != null && !sosId.isEmpty()) currentSosId = sosId;
+        else if (freshAlert) currentSosId = "";
+        currentSender = senderName;
 
         // ── Must call startForeground within 5 s of onStartCommand ──────────
         ensureSosPopupChannelStatic(getApplicationContext());
