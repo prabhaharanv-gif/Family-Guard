@@ -35,3 +35,6 @@ android/keystore.properties
 *.keystore
 .vercel
 .env*
+
+# Raw device logs
+log.txt

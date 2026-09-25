@@ -13,6 +13,8 @@
  *     English has that another language does not.
  */
 
+import { NEARBY_UI } from './ui.nearby.js'
+
 export const UI = {
   // ──────────────────────────────────────────────────────────────── English ──
   en: {
@@ -4802,3 +4804,17 @@ export const UI = {
     },
   },
 }
+
+// Nearby Help, SOS voice clip and estimated-time strings live in ui.nearby.js.
+// Merged in without overwriting: a key already translated here always wins.
+function mergeMissing(target, source) {
+  for (const [k, v] of Object.entries(source)) {
+    if (v && typeof v === 'object') {
+      if (!target[k] || typeof target[k] !== 'object') target[k] = {}
+      mergeMissing(target[k], v)
+    } else if (!(k in target)) {
+      target[k] = v
+    }
+  }
+}
+for (const [lang, extra] of Object.entries(NEARBY_UI)) mergeMissing(UI[lang], extra)

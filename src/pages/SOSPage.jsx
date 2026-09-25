@@ -14,6 +14,16 @@ import NearbySearchMap from '../components/map/NearbySearchMap'
 import { SosSenderMedia, SosMediaPlayer } from '../components/SosMedia'
 import { helpNumber } from '../lib/nearbyHelp'
 
+// Rejects if `promise` has not settled after `ms`. Used around the two awaits in
+// sendSOS that could otherwise never return and leave every SOS button disabled.
+const withTimeout = (promise, ms) => new Promise((resolve, reject) => {
+  const timer = setTimeout(() => reject(new Error('timeout after ' + ms + 'ms')), ms)
+  Promise.resolve(promise).then(
+    v => { clearTimeout(timer); resolve(v) },
+    e => { clearTimeout(timer); reject(e) },
+  )
+})
+
 // Famora Social's opt-in: shared by SOSPage's own Send tab below (where the
 // switch now lives) and read by GlobalSOSAlert / NearbySearchMap wherever an
 // alert reads it back. Kept here rather than a separate page — see the old
@@ -758,9 +768,13 @@ export default function SOSPage() {
       let lat = 0, lng = 0
       try {
         if (Capacitor.isNativePlatform()) {
-          const pos = await Geolocation.getCurrentPosition({
+          // The plugin's own timeout is not a guarantee: a location request that
+          // never answers would leave `sending` true, and every SOS button is
+          // disabled while it is. Bound the wait ourselves; the fallback below
+          // sends the alert with 0,0 rather than not at all.
+          const pos = await withTimeout(Geolocation.getCurrentPosition({
             enableHighAccuracy: true, timeout: 8000, maximumAge: 30000,
-          })
+          }), 12000)
           lat = pos.coords.latitude
           lng = pos.coords.longitude
         } else {
@@ -775,12 +789,12 @@ export default function SOSPage() {
         console.warn('[SOS] GPS unavailable, sending with 0,0:', gpsErr?.message)
       }
 
-      const { data: sosData, error: sosErr } = await supabase.rpc('send_sos', {
+      const { data: sosData, error: sosErr } = await withTimeout(supabase.rpc('send_sos', {
         p_family_id: familyId,
         p_lat:       lat,
         p_lng:       lng,
         p_message:   msg.label,
-      })
+      }), 25000)
       if (sosErr) throw sosErr
       // The family will start calling now. Silence this phone in case its
       // owner is hiding; "I'm Safe" gives the ringer back.
@@ -799,6 +813,10 @@ export default function SOSPage() {
       setSentMsg(msg)  // show the sent screen
     } catch (e) {
       console.error('SOS send error:', e)
+      // This used to fail silently: the sheet closed and nothing else happened,
+      // so the person believed help was on the way. Say it did not go, and let
+      // them try again.
+      setDialog({ type: 'error', title: t('common.error'), message: t('common.retry') })
     } finally {
       setSending(false)
     }

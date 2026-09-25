@@ -48,6 +48,16 @@ Write-Host ""
 
 Set-Location $ProjectRoot
 
+# Run a native command and judge it by exit code only. PowerShell 5.1 turns any
+# stderr line from a native command into a terminating error under
+# $ErrorActionPreference = "Stop", and Vite (chunk-size warning), cap sync and
+# Gradle all write warnings to stderr even when they succeed.
+function Invoke-Native([scriptblock]$Command) {
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try { & $Command 2>&1 | ForEach-Object { "$_" } | Out-Host } finally { $ErrorActionPreference = $prev }
+}
+
 # Without keystore.properties, Gradle still reports BUILD SUCCESSFUL but emits
 # an UNSIGNED bundle that Play rejects on upload. Fail here, where the reason
 # is obvious, rather than at the end of a browser upload.
@@ -102,8 +112,8 @@ if (Test-Path $AndroidAssets) {
 
 # ── STEP 3: Fresh Vite build ──────────────────────────────────────────────────
 Write-Host "[ 3/5 ] Building React app (Vite)..." -ForegroundColor Yellow
-npm run build
-if ($LASTEXITCODE -ne 0) {
+Invoke-Native { npm run build }
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$ProjectRoot\dist\index.html")) {
     Write-Host "`n[ERROR] npm run build failed. Stopping." -ForegroundColor Red
     exit 1
 }
@@ -111,7 +121,7 @@ Write-Host "        Build complete" -ForegroundColor Green
 
 # ── STEP 4: Capacitor sync — copies fresh dist into android assets ────────────
 Write-Host "[ 4/5 ] Syncing to Android (cap sync)..." -ForegroundColor Yellow
-npx cap sync android
+Invoke-Native { npx cap sync android }
 if ($LASTEXITCODE -ne 0) {
     Write-Host "`n[ERROR] cap sync failed. Stopping." -ForegroundColor Red
     exit 1
@@ -146,11 +156,11 @@ $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 
 Set-Location "$ProjectRoot\android"
 if ($Release) {
-    .\gradlew.bat bundleRelease --no-build-cache
+    Invoke-Native { .\gradlew.bat bundleRelease --no-build-cache }
 } elseif ($Testers) {
-    .\gradlew.bat assembleSideload --no-build-cache
+    Invoke-Native { .\gradlew.bat assembleSideload --no-build-cache }
 } else {
-    .\gradlew.bat assembleDebug --no-build-cache
+    Invoke-Native { .\gradlew.bat assembleDebug --no-build-cache }
 }
 if ($LASTEXITCODE -ne 0) {
     Write-Host "`n[ERROR] Gradle build failed." -ForegroundColor Red

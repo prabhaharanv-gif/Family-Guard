@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { MANUAL, LANGUAGES, SECTION_META } from '../i18n/manual'
 import { useLangStore } from '../i18n'
 import Icon from '../components/Icon'
+import AnchoredMenu from '../components/AnchoredMenu'
 
 /**
  * UserManualPage
@@ -113,6 +114,9 @@ export default function UserManualPage() {
   })
   // First section open so the page does not read as an empty list of headings.
   const [openIdx, setOpenIdx] = useState(0)
+  // The language list is a dropdown under the globe in the header, so the header
+  // stays one line tall. Holds the globe's rect while the list is open.
+  const [langAnchor, setLangAnchor] = useState(null)
 
   useEffect(() => {
     try { localStorage.setItem(LANG_KEY, lang) } catch (e) {}
@@ -125,7 +129,7 @@ export default function UserManualPage() {
 
   return (
     <div style={{
-      position: 'fixed', inset: 0,
+      position: 'fixed', top: 0, bottom: 0, left: 0, right: 0, maxWidth: 430, margin: '0 auto',
       display: 'flex', flexDirection: 'column',
       background: 'var(--bg)',
       zIndex: 100,
@@ -145,47 +149,44 @@ export default function UserManualPage() {
             cursor: 'pointer', fontSize: 18, color: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
-          }}>←</button>
-          <div style={{ minWidth: 0 }}>
+          }}><Icon name="arrowLeft" size={18} /></button>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', fontFamily: 'Sora, sans-serif', lineHeight: 1.35 }}>
               {t.title}
             </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.82)', marginTop: 2, lineHeight: 1.5 }}>
               {t.subtitle}
             </div>
           </div>
+          <button
+            onClick={(e) => setLangAnchor(e.currentTarget.getBoundingClientRect())}
+            aria-label={LANGUAGES.find(l => l.code === lang)?.native || 'Language'}
+            aria-expanded={!!langAnchor}
+            title={LANGUAGES.find(l => l.code === lang)?.native || 'Language'}
+            style={{
+              background: langAnchor ? 'rgba(255,255,255,0.32)' : 'rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.25)',
+              borderRadius: 10, width: 36, height: 36,
+              cursor: 'pointer', color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0, padding: 0, boxSizing: 'border-box',
+            }}
+          >
+            <Icon name="globe" size={18} />
+          </button>
         </div>
 
-        {/* Language picker — horizontally scrollable so six options fit any
-            screen width without wrapping into the header. */}
-        <div style={{
-          display: 'flex', gap: 7, marginTop: 12,
-          overflowX: 'auto', paddingBottom: 2,
-          scrollbarWidth: 'none',
-        }}>
-          {LANGUAGES.map((l) => {
-            const active = l.code === lang
-            return (
-              <button
-                key={l.code}
-                onClick={() => setLang(l.code)}
-                style={{
-                  flexShrink: 0,
-                  padding: '7px 13px', borderRadius: 999,
-                  background: active ? '#fff' : 'rgba(255,255,255,0.14)',
-                  border: `1px solid ${active ? '#fff' : 'rgba(255,255,255,0.28)'}`,
-                  color: active ? 'var(--maroon)' : 'rgba(255,255,255,0.92)',
-                  fontWeight: active ? 800 : 600,
-                  fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit',
-                  whiteSpace: 'nowrap', lineHeight: 1.6,
-                }}
-              >
-                {l.native}
-              </button>
-            )
-          })}
-        </div>
       </div>
+
+      {langAnchor && (
+        <AnchoredMenu
+          anchor={langAnchor}
+          align="right"
+          width={190}
+          onClose={() => setLangAnchor(null)}
+          items={LANGUAGES.map(l => ({ label: l.native, checked: l.code === lang, onClick: () => setLang(l.code) }))}
+        />
+      )}
 
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 16px 40px' }}>

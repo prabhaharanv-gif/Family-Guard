@@ -24,6 +24,7 @@ import PlacesCard from '../components/PlacesCard'
 import OfflineSmsCard from '../components/OfflineSmsCard'
 import { useT, useLangStore, UI_LANGUAGES } from '../i18n'
 import Icon from '../components/Icon'
+import AnchoredMenu from '../components/AnchoredMenu'
 
 function Toggle({ on, onToggle }) {
   return (
@@ -104,7 +105,11 @@ function Group({ id, icon, title, subtitle, open, onOpen, onBack, children }) {
         <div
           id={`group-${id}`}
           style={{
-            position: 'fixed', inset: 0,
+            // Fill the screen, but never wider than the app itself (.app-shell is
+            // 430px, centred). Without the cap this opened edge to edge on a wide
+            // browser window, far outside the phone-width frame around it.
+            position: 'fixed', top: 0, bottom: 0, left: 0, right: 0,
+            maxWidth: 430, margin: '0 auto',
             display: 'flex', flexDirection: 'column',
             background: 'var(--bg)',
             zIndex: 100,
@@ -124,12 +129,12 @@ function Group({ id, icon, title, subtitle, open, onOpen, onBack, children }) {
                 cursor: 'pointer', fontSize: 18, color: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
-              }}>←</button>
+              }}><Icon name="arrowLeft" size={18} /></button>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', fontFamily: 'Sora, sans-serif', lineHeight: 1.35 }}>
                   {title}
                 </div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.82)', marginTop: 2, lineHeight: 1.5 }}>
                   {subtitle}
                 </div>
               </div>
@@ -558,6 +563,8 @@ export default function ProfilePage() {
   // Collapsed by default: four rows of sound pickers pushed Privacy and
   // everything below it off the first screen.
   const [soundsOpen, setSoundsOpen] = useState(false)
+  // Holds the globe's rect while the language dropdown is open.
+  const [langAnchor, setLangAnchor] = useState(null)
 
   // Which section is open as its own screen, or null for the list.
   // ?group=places opens that section straight away (a weather alert tap).
@@ -999,7 +1006,9 @@ export default function ProfilePage() {
             background: 'rgba(255,255,255,0.92)',
             border: '1.5px solid #fff',
             color: 'var(--maroon)', borderRadius: 10,
-            padding: '7px 14px', fontWeight: 800, fontSize: 12,
+            // Fixed height, shared with the language button beside it, so the two
+            // read as a pair whatever the script or font size does to the text.
+            boxSizing: 'border-box', height: 34, padding: '0 14px', fontWeight: 800, fontSize: 12,
             fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap',
             display: 'flex', alignItems: 'center', gap: 6,
           }}>
@@ -1010,8 +1019,39 @@ export default function ProfilePage() {
             </svg>
             Sign Out
           </button>
+          {/* Language: a globe rather than a list row, so it is always one tap
+              away without taking a row. Its label is the word "Language" in the
+              CURRENT language, for someone who cannot read the rest. */}
+          <button
+            onClick={(e) => setLangAnchor(e.currentTarget.getBoundingClientRect())}
+            aria-label={t('settings.language')}
+            title={t('settings.language')}
+            style={{
+              background: 'rgba(255,255,255,0.92)',
+              border: '1.5px solid #fff',
+              color: 'var(--maroon)', borderRadius: 10,
+              boxSizing: 'border-box', width: 34, height: 34, padding: 0,
+              cursor: 'pointer', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <Icon name="globe" size={17} />
+          </button>
         </div>
       </div>
+
+      {/* Language dropdown, under the globe in the top bar. Options are written
+          in their own script, so someone who cannot read the rest of the screen
+          can still find theirs. */}
+      {langAnchor && (
+        <AnchoredMenu
+          anchor={langAnchor}
+          align="right"
+          width={190}
+          onClose={() => setLangAnchor(null)}
+          items={UI_LANGUAGES.map(l => ({ label: l.native, checked: l.code === t.lang, onClick: () => setLang(l.code) }))}
+        />
+      )}
 
       {/* ── SCROLLABLE CONTENT ── */}
       <PullToRefresh onRefresh={loadProfile}>
@@ -1025,42 +1065,6 @@ export default function ProfilePage() {
             fontSize: 13, fontWeight: 700, marginBottom: 10, textAlign: 'center',
           }}><Icon name="checkCircle" /> {t('profile.profileSaved')}</div>
         )}
-
-        {/* ── LANGUAGE ──
-            First card, and on Profile rather than Settings: /settings is a
-            registered route but nothing in the app navigates to it, so a
-            picker there could never be reached. It sits above everything else
-            because someone who cannot read the rest of this screen still has
-            to be able to find it — which is also why the options are written
-            in their own script. */}
-        <div className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', letterSpacing: 0.2, marginBottom: 10 }}>
-            {t('settings.language')}
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {UI_LANGUAGES.map(l => {
-              const active = l.code === t.lang
-              return (
-                <button
-                  key={l.code}
-                  onClick={() => setLang(l.code)}
-                  aria-pressed={active}
-                  style={{
-                    padding: '9px 16px', borderRadius: 999,
-                    background: active ? 'linear-gradient(135deg,var(--maroon),var(--maroon-deep))' : 'var(--bg2)',
-                    border: `1.5px solid ${active ? 'transparent' : 'var(--border)'}`,
-                    color: active ? '#fff' : '#5B4652',
-                    fontWeight: active ? 800 : 600,
-                    fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {l.native}
-                </button>
-              )
-            })}
-          </div>
-        </div>
 
         <Group
           id="account" icon="user"

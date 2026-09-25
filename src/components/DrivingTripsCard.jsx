@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Icon from './Icon'
 import { createPortal } from 'react-dom'
 import { useT } from '../i18n'
 import { supabase } from '../lib/supabase'
@@ -66,7 +67,7 @@ function TripsSheet({ onClose }) {
   // transform/filter, which turns position:fixed into position:relative-to-card
   // and clipped this screen to a small window.
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)', zIndex: 300 }}>
+    <div style={{ position: 'fixed', top: 0, bottom: 0, left: 0, right: 0, maxWidth: 430, margin: '0 auto', display: 'flex', flexDirection: 'column', background: 'var(--bg)', zIndex: 300 }}>
       <div style={{
         background: 'linear-gradient(135deg, var(--maroon) 0%, var(--maroon-deep) 100%)',
         padding: '16px 16px 14px', flexShrink: 0, boxShadow: '0 2px 12px rgba(139,13,61,0.25)',
@@ -75,7 +76,7 @@ function TripsSheet({ onClose }) {
         <button onClick={onClose} style={{
           background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
           borderRadius: 10, width: 36, height: 36, cursor: 'pointer', fontSize: 18, color: '#fff',
-        }}>←</button>
+        }}><Icon name="arrowLeft" size={18} /></button>
         <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{t('trips.view')}</div>
       </div>
 
