@@ -53,6 +53,32 @@ final class FakeCallPrefs {
             .putBoolean(KEY_VOICE, voice)
             .putBoolean(KEY_NOTIF_BTN, notificationButton)
             .apply();
+        syncTile(ctx, notificationButton);
+    }
+
+    /**
+     * The "Call me" switch also governs the Quick Settings tile: off means the
+     * tile is gone from the panel, not just the notification button. The tile
+     * service ships disabled in the manifest, so this is the only thing that
+     * turns it on. MainActivity calls it at start-up too, so an install that
+     * had the switch on before this existed gets its tile back.
+     */
+    static void syncTile(Context ctx) {
+        syncTile(ctx, notificationButton(ctx));
+    }
+
+    private static void syncTile(Context ctx, boolean on) {
+        try {
+            android.content.pm.PackageManager pm = ctx.getPackageManager();
+            android.content.ComponentName c = new android.content.ComponentName(ctx, FakeCallTileService.class);
+            int want = on ? android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                          : android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+            if (pm.getComponentEnabledSetting(c) != want) {
+                pm.setComponentEnabledSetting(c, want, android.content.pm.PackageManager.DONT_KILL_APP);
+            }
+        } catch (Exception e) {
+            android.util.Log.w("FakeCall", "could not sync the Call me tile: " + e.getMessage());
+        }
     }
 
     static int clampDelay(int seconds) {

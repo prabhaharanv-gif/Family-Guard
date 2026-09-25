@@ -427,6 +427,85 @@ public class LocationPlugin extends Plugin {
         call.resolve();
     }
 
+    /**
+     * Wrong-password alert state: whether it is on, whether the optional photo is
+     * on, and the three things it needs from Android (device admin, camera,
+     * display-over-apps for the photo).
+     */
+    @PluginMethod
+    public void getAntiTheft(PluginCall call) {
+        JSObject r = new JSObject();
+        android.content.Context c = getContext();
+        r.put("enabled", AntiTheft.isEnabled(c));
+        r.put("photo", AntiTheft.isPhotoEnabled(c));
+        r.put("adminActive", AntiTheft.isAdminActive(c));
+        r.put("cameraGranted", AntiTheft.cameraGranted(c));
+        r.put("overlayGranted", MainActivity.canDrawOverlays(c));
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void setAntiTheft(PluginCall call) {
+        Boolean enabled = call.getBoolean("enabled");
+        if (enabled == null) {
+            call.reject("Missing required parameter: enabled");
+            return;
+        }
+        Boolean photo = call.getBoolean("photo", false);
+        AntiTheft.setConfig(getContext(), enabled, photo != null && photo);
+        call.resolve();
+    }
+
+    /** Opens Android's own dialog asking the owner to make Famora a device admin. */
+    @PluginMethod
+    public void requestAntiTheftAdmin(PluginCall call) {
+        try {
+            android.content.Intent i = new android.content.Intent(
+                android.app.admin.DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+            i.putExtra(android.app.admin.DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                AntiTheft.adminComponent(getContext()));
+            i.putExtra(android.app.admin.DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                "Famora only asks to be told when the screen-lock password is entered wrongly. "
+                + "It cannot lock, wipe or change your phone.");
+            getActivity().startActivity(i);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Could not open the device admin screen: " + e.getMessage());
+        }
+    }
+
+    /** Gives device-admin status back; the wrong-password alert then cannot work. */
+    @PluginMethod
+    public void removeAntiTheftAdmin(PluginCall call) {
+        try {
+            android.app.admin.DevicePolicyManager dpm = (android.app.admin.DevicePolicyManager)
+                getContext().getSystemService(android.content.Context.DEVICE_POLICY_SERVICE);
+            if (dpm != null) dpm.removeActiveAdmin(AntiTheft.adminComponent(getContext()));
+        } catch (Exception ignored) {}
+        AntiTheft.setConfig(getContext(), false, false);
+        call.resolve();
+    }
+
+    /** "Crash detection": { enabled }. Off unless the member turned it on. */
+    @PluginMethod
+    public void getCrashDetect(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("enabled", LocationForegroundService.isCrashSosEnabled(getContext()));
+        r.put("serviceRunning", LocationForegroundService.isRunning);
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void setCrashDetect(PluginCall call) {
+        Boolean enabled = call.getBoolean("enabled");
+        if (enabled == null) {
+            call.reject("Missing required parameter: enabled");
+            return;
+        }
+        LocationForegroundService.setCrashSosEnabled(getContext(), enabled);
+        call.resolve();
+    }
+
     @PluginMethod
     public void setSharing(PluginCall call) {
         Boolean sharing = call.getBoolean("sharing");
@@ -435,6 +514,13 @@ public class LocationPlugin extends Plugin {
             return;
         }
         LocationForegroundService.setSharingEnabled(getContext(), sharing);
+        call.resolve();
+    }
+
+    /** Called right after any Places CRUD so a running service picks up the change now. */
+    @PluginMethod
+    public void refreshPlaces(PluginCall call) {
+        LocationForegroundService.refreshPlaces(getContext());
         call.resolve();
     }
 

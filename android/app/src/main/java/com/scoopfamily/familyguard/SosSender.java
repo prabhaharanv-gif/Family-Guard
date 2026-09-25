@@ -176,7 +176,7 @@ final class SosSender {
             JSONObject body = new JSONObject();
             body.put("p_lat", loc != null ? loc.getLatitude()  : 0d);
             body.put("p_lng", loc != null ? loc.getLongitude() : 0d);
-            body.put("p_message", "SOS! I need help!");
+            body.put("p_message", SosResponse.messageFor(source));
 
             conn = (HttpURLConnection) new URL(supabaseUrl + "/rest/v1/rpc/send_sos_all_families").openConnection();
             conn.setRequestMethod("POST");
@@ -227,7 +227,7 @@ final class SosSender {
             // Matches the English label SOSPage writes for its general alert —
             // sos_alerts.message is read back and translated by label, so a new
             // string here would render as unknown on every other device.
-            body.put("p_message", "SOS! I need help!");
+            body.put("p_message", SosResponse.messageFor(source));
 
             URL url = new URL(supabaseUrl + "/rest/v1/rpc/send_sos");
             conn = (HttpURLConnection) url.openConnection();

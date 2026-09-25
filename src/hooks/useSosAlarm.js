@@ -14,7 +14,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { playSOSAlarm, stopSOSAlarm } from '../lib/sosAudio'
-import { stopNativeSOSAlarm, isNativeSOSAlarmPlaying, triggerNativeSOSAlert, exitSosSilence } from '../lib/nativeSosAlarm'
+import { stopNativeSOSAlarm, isNativeSOSAlarmPlaying, triggerNativeSOSAlert, exitSosSilence, showNativeSOSResolved } from '../lib/nativeSosAlarm'
 
 /**
  * Give the ringer back once none of this user's own SOS alerts is open, in any
@@ -132,6 +132,7 @@ export function useSosAlarm(user, familyIds) {
             lat:     payload.new.lat,
             lng:     payload.new.lng,
             phone:   data?.phone,
+            sosId:   payload.new.id,
           })
         }
     }
@@ -139,12 +140,42 @@ export function useSosAlarm(user, familyIds) {
     // The sender tapped "I'm safe now": stop making noise about an emergency
     // that is over. Previously nothing listened for this, so the siren ran
     // until every family member silenced it by hand.
-    const handleResolve = (payload) => {
-      if (payload.new?.is_resolved) stopAllAlarms()
+    //
+    // RESOLVED, not silenced: the alert is not simply taken away but turned
+    // into its "safe now" state, so the recipient knows why it ended. Scoped
+    // to the resolved alert's id — another member's SOS still open must keep
+    // sounding.
+    const handleResolve = async (payload) => {
+      const row = payload.new
+      if (!row?.is_resolved) return
       // This user's own SOS was resolved — possibly from another device. That
       // is them saying they are safe, so the ringer comes back, the same as
       // "I'm Safe" on the SOS page.
-      if (payload.new?.is_resolved && payload.new.user_id === user.id) exitSosSilence()
+      if (row.user_id === user.id) { exitSosSilence(); return }
+
+      if (Capacitor.isNativePlatform()) {
+        const { data } = await supabase
+          .from('family_members')
+          .select('display_name')
+          .eq('user_id', row.user_id)
+          .eq('family_id', row.family_id)
+          .limit(1)
+          .maybeSingle()
+        // Native matches the id against the alert it is sounding, stops that
+        // siren and redraws SOSAlertActivity. Same work as the push path.
+        await showNativeSOSResolved({ sosId: row.id, sender: data?.display_name })
+        setSosAlert(prev => (prev && prev.id !== row.id ? prev : null))
+        // Another member's siren may legitimately still be sounding.
+        setNativeAlarmOn(await isNativeSOSAlarmPlaying())
+        return
+      }
+
+      // Web: flip the overlay if it is this alert; otherwise leave it alone.
+      setSosAlert(prev => {
+        if (prev && prev.id !== row.id) return prev
+        stopSOSAlarm()
+        return prev ? { ...prev, _resolved: true } : prev
+      })
     }
 
     // Also on start: a silence whose SOS was resolved while this app was not
@@ -171,6 +202,47 @@ export function useSosAlarm(user, familyIds) {
 
     return () => channels.forEach(c => supabase.removeChannel(c))
   }, [user, familyKey, stopAllAlarms])
+
+  // Famora Social: nearby-help status for the alert currently on screen,
+  // written onto the SAME in-memory sosAlert object _resolved already uses
+  // above (matched by id, same pattern) — never separate state, so this can
+  // never desync from which alert GlobalSOSAlert is actually showing.
+  // Depends only on the id, not the whole object, so writing the status back
+  // onto sosAlert below does not itself re-trigger this effect.
+  //
+  // Also captures the escalation's own id (_nearbyHelpEscalationId), not just
+  // its status: NearbySearchMap's get_accepted_helper_area call needs it once
+  // status is 'helper_found', and this is the row it already reads status
+  // from — no second, independent lookup.
+  useEffect(() => {
+    const alertId = sosAlert?.id
+    if (!alertId) return
+    let cancelled = false
+
+    const applyStatus = (status, escalationId) => {
+      if (cancelled || !status) return
+      setSosAlert(prev => (prev && prev.id === alertId
+        ? { ...prev, _nearbyHelpStatus: status, _nearbyHelpEscalationId: escalationId }
+        : prev))
+    }
+
+    supabase
+      .from('nearby_help_escalations')
+      .select('id, status')
+      .eq('sos_alert_id', alertId)
+      .maybeSingle()
+      .then(({ data }) => applyStatus(data?.status, data?.id))
+
+    const channel = supabase
+      .channel(`sos-nearby-help:${alertId}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'nearby_help_escalations',
+        filter: `sos_alert_id=eq.${alertId}`,
+      }, (payload) => applyStatus(payload.new?.status, payload.new?.id))
+      .subscribe()
+
+    return () => { cancelled = true; supabase.removeChannel(channel) }
+  }, [sosAlert?.id])
 
   // Let the hardware back button dismiss the SOS overlay
   useEffect(() => {

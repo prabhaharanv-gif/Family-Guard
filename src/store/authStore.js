@@ -225,7 +225,13 @@ export const useAuthStore = create((set, get) => ({
       }
     }
 
-    await supabase.auth.signOut()
+    // scope 'local': end THIS device's session only. The default is 'global',
+    // which revokes every session the account has. With one-device-per-account
+    // (useSingleDevice) the displaced device signs itself out right after the
+    // new device signs in — a global sign-out there killed the new device's
+    // refresh token too, so it was logged out an hour later, when its access
+    // token expired ("Refresh Token Not Found"), with nothing to point at.
+    await supabase.auth.signOut({ scope: 'local' })
     set({ user: null, familyId: null, familyName: null, inviteCode: null, allFamilies: [] })
   },
 }))

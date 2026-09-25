@@ -42,10 +42,25 @@
     <string name="sos_needs_help">%1$s కు సహాయం కావాలి!</string>
     <string name="sos_view_location">లొకేషన్ చూడు</string>
     <string name="sos_open_app">Famora తెరువు</string>
-    <string name="sos_stop_alarm">అర్థమైంది — అలారం ఆపు</string>
+    <string name="sos_stop_alarm">అర్థమైంది — అలారం నిశ్శబ్దం చేయి</string>
     <string name="sos_calm_hint">ప్రశాంతంగా ఉండండి. వారు ఎక్కడ ఉన్నారో చూసి, కాల్ చేయండి లేదా వారి దగ్గరకు వెళ్ళండి.</string>
     <string name="sos_call">%1$s కి కాల్ చేయండి</string>
     <string name="sos_directions">దారి చూడండి</string>
+    <string name="sos_tile_label">SOS</string>
+    <string name="sos_tile_subtitle">కుటుంబానికి హెచ్చరిక</string>
+    <!-- Resolved state: the sender marked themselves safe. Silencing the alarm never shows these. -->
+    <string name="sos_safe_title">%1$s ఇప్పుడు సురక్షితంగా ఉన్నారు</string>
+    <string name="sos_marked_safe">%1$s తాము సురక్షితంగా ఉన్నట్లు గుర్తించారు.</string>
+    <string name="sos_resolved">SOS పరిష్కరించబడింది</string>
+    <string name="sos_still_active">అలారం నిశ్శబ్దం · SOS ఇంకా యాక్టివ్‌గా ఉంది</string>
+    <string name="ch_sos_safe_name">SOS పరిష్కరించబడింది</string>
+    <string name="ch_sos_safe_desc">SOS తర్వాత కుటుంబ సభ్యులు సురక్షితంగా ఉన్నారని తెలియజేస్తుంది</string>
+
+    <!-- Places: a family member reached or left a saved place like Home or Office. -->
+    <string name="place_reached_title">%1$s %2$s చేరుకున్నారు</string>
+    <string name="place_left_title">%1$s %2$s వదిలారు</string>
+    <string name="ch_places_name">స్థలాలు</string>
+    <string name="ch_places_desc">ఇల్లు లేదా కార్యాలయం వంటి సేవ్ చేసిన స్థలానికి కుటుంబ సభ్యుడు చేరుకున్నప్పుడు లేదా వదిలినప్పుడు తెలియజేస్తుంది</string>
 
     <!-- CallRingingActivity -->
     <string name="call_incoming_voice">వచ్చే వాయిస్ కాల్</string>
@@ -91,4 +106,29 @@
     <string name="sos_countdown_hint">పొరపాటున జరిగితే రద్దు చేయి నొక్కండి.</string>
     <string name="sos_countdown_cancel">రద్దు చేయి</string>
     <string name="fake_call_tile_subtitle">5 సెకన్లలో నకిలీ కాల్</string>
+    <string name="weather_title_thunderstorm" formatted="true">%1$s సమీపంలో ఉరుములతో కూడిన వర్షం</string>
+    <string name="weather_detail_thunderstorm" formatted="true">ఉరుములు, మెరుపులు వచ్చే అవకాశం ఉంది.</string>
+    <string name="weather_title_heavy_rain" formatted="true">%1$s సమీపంలో భారీ వర్షం</string>
+    <string name="weather_detail_heavy_rain" formatted="true">భారీ వర్షం పడే అవకాశం ఉంది.</string>
+    <string name="weather_detail_heavy_rain_mm" formatted="true">సుమారు %1$d మి.మీ వర్షం అంచనా.</string>
+    <string name="weather_title_heat" formatted="true">%1$s సమీపంలో తీవ్రమైన వేడి</string>
+    <string name="weather_detail_heat" formatted="true">సుమారు %1$d°C. నీళ్లు ఎక్కువగా తాగండి.</string>
+    <string name="weather_title_wind" formatted="true">%1$s సమీపంలో బలమైన గాలులు</string>
+    <string name="weather_detail_wind" formatted="true">గంటకు %1$d కి.మీ వరకు గాలులు.</string>
+    <string name="weather_when_now" formatted="true">ఇప్పుడు ఆశించవచ్చు</string>
+    <string name="weather_when_at" formatted="true">సుమారు %1$s కు ఆశించవచ్చు</string>
+    <string name="weather_body">%1$s. %2$s</string>
+    <string name="ch_weather_name">వాతావరణ హెచ్చరికలు</string>
+    <string name="ch_weather_desc">మీరు సేవ్ చేసిన ప్రదేశాలలో తీవ్ర వాతావరణం గురించి హెచ్చరిస్తుంది</string>
+    <string name="device_overspeed_title" formatted="true">%1$s వేగంగా డ్రైవ్ చేస్తున్నారు</string>
+    <string name="device_overspeed_body" formatted="true">గంటకు %1$d కి.మీ (పరిమితి %2$d కి.మీ)</string>
+    <string name="device_overspeed_self_title">వేగం తగ్గించండి: మీరు మీ పరిమితి దాటారు</string>
+    <string name="device_overspeed_self_body" formatted="true">మీరు గంటకు %1$d కి.మీ వెళ్తున్నారు. మీ పరిమితి %2$d కి.మీ.</string>
+    <string name="unlock_alert_title" formatted="true">%1$s ఫోన్‌లో తప్పు పాస్‌వర్డ్</string>
+    <string name="unlock_alert_body" formatted="true">స్క్రీన్-లాక్‌కు తప్పు ప్రయత్నాలు: %1$d. ఫోన్ ఎక్కడ ఉందో, ఫోటో తీసి ఉంటే అది చూడటానికి Famora తెరవండి.</string>
+    <string name="ch_lost_name">ఫోన్ పోయిన మోడ్</string>
+    <string name="ch_lost_desc">మీ కుటుంబం ఈ ఫోన్‌ను పోయినట్లు గుర్తించినప్పుడు చూపబడుతుంది</string>
+    <string name="lost_title">ఈ ఫోన్ పోయింది</string>
+    <string name="lost_body_default" formatted="true">దీన్ని తిరిగి ఇవ్వడానికి దయచేసి %1$s ను సంప్రదించండి.</string>
+    <string name="lost_body_generic">దయచేసి ఈ ఫోన్‌ను దాని యజమాని కుటుంబానికి తిరిగి ఇవ్వండి.</string>
 </resources>

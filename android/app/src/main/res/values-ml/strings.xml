@@ -42,10 +42,25 @@
     <string name="sos_needs_help">%1$s ന് സഹായം വേണം!</string>
     <string name="sos_view_location">ലൊക്കേഷൻ കാണുക</string>
     <string name="sos_open_app">Famora തുറക്കുക</string>
-    <string name="sos_stop_alarm">മനസ്സിലായി — അലാറം നിർത്തുക</string>
+    <string name="sos_stop_alarm">മനസ്സിലായി — അലാറം നിശബ്ദമാക്കുക</string>
     <string name="sos_calm_hint">ശാന്തരായിരിക്കുക. അവർ എവിടെയാണെന്ന് നോക്കി, വിളിക്കുകയോ അവരുടെ അടുത്തേക്ക് പോകുകയോ ചെയ്യുക.</string>
     <string name="sos_call">%1$s-നെ വിളിക്കുക</string>
     <string name="sos_directions">വഴി കാണുക</string>
+    <string name="sos_tile_label">SOS</string>
+    <string name="sos_tile_subtitle">കുടുംബത്തെ അറിയിക്കുക</string>
+    <!-- Resolved state: the sender marked themselves safe. Silencing the alarm never shows these. -->
+    <string name="sos_safe_title">%1$s ഇപ്പോൾ സുരക്ഷിതരാണ്</string>
+    <string name="sos_marked_safe">%1$s താൻ സുരക്ഷിതരാണെന്ന് അടയാളപ്പെടുത്തി.</string>
+    <string name="sos_resolved">SOS പരിഹരിച്ചു</string>
+    <string name="sos_still_active">അലാറം നിശബ്ദം · SOS ഇപ്പോഴും സജീവം</string>
+    <string name="ch_sos_safe_name">SOS പരിഹരിച്ചു</string>
+    <string name="ch_sos_safe_desc">SOS-ന് ശേഷം കുടുംബാംഗം സുരക്ഷിതരാണെന്ന് അറിയിക്കുന്നു</string>
+
+    <!-- Places: a family member reached or left a saved place like Home or Office. -->
+    <string name="place_reached_title">%1$s %2$s എത്തി</string>
+    <string name="place_left_title">%1$s %2$s വിട്ടു</string>
+    <string name="ch_places_name">സ്ഥലങ്ങൾ</string>
+    <string name="ch_places_desc">വീടോ ഓഫീസോ പോലുള്ള സേവ് ചെയ്ത സ്ഥലത്ത് കുടുംബാംഗം എത്തുമ്പോഴോ വിടുമ്പോഴോ അറിയിക്കുന്നു</string>
 
     <!-- CallRingingActivity -->
     <string name="call_incoming_voice">വരുന്ന വോയ്‌സ് കോൾ</string>
@@ -91,4 +106,29 @@
     <string name="sos_countdown_hint">അബദ്ധത്തിൽ സംഭവിച്ചതെങ്കിൽ റദ്ദാക്കുക അമർത്തുക.</string>
     <string name="sos_countdown_cancel">റദ്ദാക്കുക</string>
     <string name="fake_call_tile_subtitle">5 സെക്കൻഡിൽ വ്യാജ കോൾ</string>
+    <string name="weather_title_thunderstorm" formatted="true">%1$s സമീപം ഇടിമിന്നലോടുകൂടിയ മഴ</string>
+    <string name="weather_detail_thunderstorm" formatted="true">ഇടിയും മിന്നലും ഉണ്ടാകാൻ സാധ്യതയുണ്ട്.</string>
+    <string name="weather_title_heavy_rain" formatted="true">%1$s സമീപം കനത്ത മഴ</string>
+    <string name="weather_detail_heavy_rain" formatted="true">കനത്ത മഴയ്ക്ക് സാധ്യതയുണ്ട്.</string>
+    <string name="weather_detail_heavy_rain_mm" formatted="true">ഏകദേശം %1$d മില്ലിമീറ്റർ മഴ പ്രതീക്ഷിക്കുന്നു.</string>
+    <string name="weather_title_heat" formatted="true">%1$s സമീപം കടുത്ത ചൂട്</string>
+    <string name="weather_detail_heat" formatted="true">ഏകദേശം %1$d°C. ധാരാളം വെള്ളം കുടിക്കുക.</string>
+    <string name="weather_title_wind" formatted="true">%1$s സമീപം ശക്തമായ കാറ്റ്</string>
+    <string name="weather_detail_wind" formatted="true">മണിക്കൂറിൽ %1$d കിലോമീറ്റർ വരെ കാറ്റ്.</string>
+    <string name="weather_when_now" formatted="true">ഇപ്പോൾ പ്രതീക്ഷിക്കുന്നു</string>
+    <string name="weather_when_at" formatted="true">ഏകദേശം %1$s ന് പ്രതീക്ഷിക്കുന്നു</string>
+    <string name="weather_body">%1$s. %2$s</string>
+    <string name="ch_weather_name">കാലാവസ്ഥാ മുന്നറിയിപ്പുകൾ</string>
+    <string name="ch_weather_desc">നിങ്ങൾ സേവ് ചെയ്ത സ്ഥലങ്ങളിലെ കടുത്ത കാലാവസ്ഥയെക്കുറിച്ച് മുന്നറിയിപ്പ് നൽകുന്നു</string>
+    <string name="device_overspeed_title" formatted="true">%1$s വേഗത്തിൽ വാഹനമോടിക്കുന്നു</string>
+    <string name="device_overspeed_body" formatted="true">മണിക്കൂറിൽ %1$d കി.മീ (പരിധി %2$d കി.മീ)</string>
+    <string name="device_overspeed_self_title">വേഗം കുറയ്ക്കുക: നിങ്ങൾ പരിധി കടന്നിരിക്കുന്നു</string>
+    <string name="device_overspeed_self_body" formatted="true">നിങ്ങൾ മണിക്കൂറിൽ %1$d കി.മീ പോകുന്നു. നിങ്ങളുടെ പരിധി %2$d കി.മീ.</string>
+    <string name="unlock_alert_title" formatted="true">%1$s ന്റെ ഫോണിൽ തെറ്റായ പാസ്‌വേഡ്</string>
+    <string name="unlock_alert_body" formatted="true">സ്ക്രീൻ-ലോക്കിന് തെറ്റായ ശ്രമങ്ങൾ: %1$d. ഫോൺ എവിടെയായിരുന്നു എന്നും, ഫോട്ടോ എടുത്തിട്ടുണ്ടെങ്കിൽ അതും കാണാൻ Famora തുറക്കുക.</string>
+    <string name="ch_lost_name">ഫോൺ നഷ്ടപ്പെട്ട മോഡ്</string>
+    <string name="ch_lost_desc">നിങ്ങളുടെ കുടുംബം ഈ ഫോൺ നഷ്ടപ്പെട്ടതായി അടയാളപ്പെടുത്തിയപ്പോൾ കാണിക്കും</string>
+    <string name="lost_title">ഈ ഫോൺ നഷ്ടപ്പെട്ടു</string>
+    <string name="lost_body_default" formatted="true">ഇത് തിരികെ നൽകാൻ ദയവായി %1$s നെ ബന്ധപ്പെടുക.</string>
+    <string name="lost_body_generic">ദയവായി ഈ ഫോൺ ഉടമയുടെ കുടുംബത്തിന് തിരികെ നൽകുക.</string>
 </resources>

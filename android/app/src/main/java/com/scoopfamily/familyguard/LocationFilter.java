@@ -41,6 +41,15 @@ final class LocationFilter {
      */
     static final float UPGRADE_FACTOR = 2f;
 
+    /**
+     * A fix less precise than this is a Wi-Fi/cell guess, not GPS. Its stated
+     * accuracy understates its real error, so it must land clear of TWICE that
+     * accuracy before it counts as movement (a 60m guess needs 120m). Real
+     * walking covers that within one heartbeat; a phone sitting indoors does not.
+     */
+    static final float COARSE_FIX_ACCURACY_M = 30f;
+    static final float COARSE_FIX_MOVE_FACTOR = 2f;
+
     /** Anything implying faster than this is held for confirmation. ~200 km/h. */
     static final float MAX_PLAUSIBLE_SPEED_MPS = 55f;
     /** A held fix is confirmed if the next one lands within this of it. */
@@ -224,7 +233,8 @@ final class LocationFilter {
         // own uncertainty and says nothing about movement. The flat 15m rule
         // counted it as movement, and the pin flipped ~100m between the two
         // sources while the member sat still (Redmi logs, 2026-09-21).
-        float moveThresholdM = Math.max(MIN_MOVE_M, accuracyM);
+        float moveThresholdM = Math.max(MIN_MOVE_M,
+            accuracyM > COARSE_FIX_ACCURACY_M ? accuracyM * COARSE_FIX_MOVE_FACTOR : accuracyM);
         boolean moved = movedM >= moveThresholdM;
         boolean knownLastAcc = lastPushAccuracyM != NO_DISTANCE && lastPushAccuracyM > 0f;
         // Much more precise than what is on the map: let it correct the pin.

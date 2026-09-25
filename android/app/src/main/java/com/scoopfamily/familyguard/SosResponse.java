@@ -34,6 +34,21 @@ final class SosResponse {
     /** Reported by a request that never reached the server at all. */
     static final int NO_RESPONSE = 0;
 
+    /** The general alert's label, exactly as SOSPage writes it. */
+    static final String MESSAGE_GENERAL = "SOS! I need help!";
+    /**
+     * The label of the SOSPage tile for an ambulance. The server derives what
+     * Nearby Help tells strangers a person needs from this text
+     * (_nearby_help_kind), so a crash has to carry it to be routed to 108
+     * rather than defaulting to the police, 100.
+     */
+    static final String MESSAGE_AMBULANCE = "Need Ambulance";
+
+    /** The stored message for an SOS raised by this trigger. */
+    static String messageFor(String source) {
+        return "crash".equals(source) ? MESSAGE_AMBULANCE : MESSAGE_GENERAL;
+    }
+
     static boolean isOk(int httpCode) {
         return httpCode == 200 || httpCode == 201 || httpCode == 204;
     }

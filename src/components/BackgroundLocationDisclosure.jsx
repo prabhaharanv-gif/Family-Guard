@@ -59,6 +59,7 @@ export default function BackgroundLocationDisclosure({ open, onAccept, onDecline
           fontSize: 13, color: 'var(--text2)', lineHeight: 1.7,
         }}>
           <div>• Only members of your own family group can see it</div>
+          <div>• They can also see where you have been over the last 7 days</div>
           <div>• It is never sold or used for advertising</div>
           <div>• You can turn sharing off at any time in Settings</div>
         </div>

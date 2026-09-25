@@ -7,6 +7,8 @@ import { useSingleDevice } from './hooks/useSingleDevice'
 import Dialog from './components/Dialog'
 import { useT } from './i18n'
 
+const TIMELINE_NOTICE_KEY = 'famora_timeline_notice_seen'
+
 // Hooks
 import { usePushNotifications }  from './hooks/usePushNotifications'
 import { useLocationService }    from './hooks/useLocationService'
@@ -118,6 +120,18 @@ export default function App() {
   // out, because being locked out of a safety app is its own hazard.
   const t = useT()
   const [displaced, setDisplaced] = useState(false)
+  // One-time notice that family can now see the last 7 days (the Map's
+  // Timeline). Members who joined before it agreed to share where they ARE;
+  // this tells them, once, that where they have BEEN is now visible too.
+  // Someone who accepts the location disclosure has just read the same line
+  // there, so accepting it counts as seen.
+  const [timelineNotice, setTimelineNotice] = useState(() => {
+    try { return localStorage.getItem(TIMELINE_NOTICE_KEY) !== '1' } catch { return false }
+  })
+  const markTimelineNoticeSeen = () => {
+    try { localStorage.setItem(TIMELINE_NOTICE_KEY, '1') } catch { /* private mode */ }
+    setTimelineNotice(false)
+  }
   useSingleDevice(user, () => setDisplaced(true))
 
   // ── SOS alarm + unread badge ─────────────────────────────────────────────
@@ -225,9 +239,18 @@ export default function App() {
       {user && familyId && <SosReliabilitySetup />}
       <BackgroundLocationDisclosure
         open={disclosureOpen}
-        onAccept={acceptDisclosure}
+        onAccept={() => { markTimelineNoticeSeen(); acceptDisclosure() }}
         onDecline={declineDisclosure}
       />
+      {user && familyId && timelineNotice && !disclosureOpen && !displaced && (
+        <Dialog
+          type="info"
+          title={t('map.timelineNoticeTitle')}
+          message={t('map.timelineNoticeBody')}
+          confirmLabel={t('common.ok')}
+          onClose={markTimelineNoticeSeen}
+        />
+      )}
 
       {/* Chunks are packaged inside the APK, so on device this resolves in
           milliseconds; the fallback is really for the web build. Deliberately

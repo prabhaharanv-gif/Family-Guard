@@ -11,11 +11,27 @@ import { formatLocationTime } from '../lib/locationTime'
 import Icon from '../components/Icon'
 import LeafletFamilyMap from '../components/map/LeafletFamilyMap'
 import NativeFamilyMap from '../components/map/NativeFamilyMap'
+import TimelinePanel from '../components/map/TimelinePanel'
+import { buildRoute, clockLabel, dateLabel, daysBetween, distanceM, outwardDir, positionAt, rowsOnDay, timelineSince } from '../lib/route'
+import { fetchLocationHistory } from '../lib/locationHistory'
+import { etaLabel, haversineKm } from '../lib/eta'
 
 // Google's native map in the Android app (free to display); Leaflet +
 // OpenStreetMap in the browser, so the web never uses the billed Google Maps
 // JavaScript API. Everything below is shared — only the drawing differs.
 const FamilyMap = Capacitor.isNativePlatform() ? NativeFamilyMap : LeafletFamilyMap
+
+// Timeline: the last fix counts as "Now" when it is this recent; older, and
+// the end is labelled with its time instead, so a phone that went quiet at
+// 2 PM does not claim they are there now.
+const NOW_WINDOW_MS = 15 * 60 * 1000
+// Start and end closer than this (a round trip from home) share one callout,
+// stacked, instead of two boxes drawn over each other.
+const ENDS_TOGETHER_M = 150
+// Room the Timeline panel takes at the foot of the map (Times mode, the taller
+// one), so the route is framed in the part of the map left visible. The week
+// has one more row, the day picker.
+const TIMELINE_INSET = { '24h': 210, '7d': 250 }
 
 /**
  * offsetOverlapping
@@ -192,7 +208,6 @@ export default function MapAllPage() {
     const stop = startBatteryReporting(b => { batteryRef.current = b })
     return stop
   }, [])
-  const [refreshing, setRefreshing]   = useState(false)
   const [showFindFam, setShowFindFam] = useState(false)
   const [flyTarget, setFlyTarget]     = useState(null)  // { lat, lng } to fly to
   // Whose marker to keep on screen. A uid rather than coordinates: the point is
@@ -202,13 +217,125 @@ export default function MapAllPage() {
   // should not silently undo the thing you asked for, and the chip over the map
   // offers it straight back.
   const [followPaused, setFollowPaused] = useState(false)
-  // Map mode — default / satellite / traffic. Always opens on Default (by
+  // Map type — 'default' (road) or 'satellite' — plus the traffic layer, which
+  // sits on top of either. Always opens on the road map with traffic off (by
   // request); the choice is not remembered between visits.
   const [mapMode, setMapMode] = useState('default')
+  const [traffic, setTraffic] = useState(false)
   const [modeMenuOpen, setModeMenuOpen] = useState(false)
+  // Timeline: whose history is drawn, over which span, and what was loaded.
+  const [routeUid, setRouteUid] = useState(null)
+  // null | 'loading' | { rows (oldest first), since, until (ms) } | { failed: true }
+  const [history, setHistory]   = useState(null)
+  // '24h' | '7d' — see timelineSince. Opens on 24 h every time.
+  const [timelineRange, setTimelineRange] = useState('24h')
+  // Last 7 Days only: one day picked (its local midnight, ms), or null for all.
+  // Picking a day filters what is already loaded — no second download.
+  const [timelineDay, setTimelineDay] = useState(null)
+  // 'route' = the line only; 'times' = plus the member's avatar at timelineTime.
+  const [timelineMode, setTimelineMode] = useState('route')
+  const [timelineTime, setTimelineTime] = useState(null)   // ms
+  // Which load is current: a slow answer for someone tapped earlier must not
+  // replace the timeline of the person tapped since.
+  const routeReqRef = useRef(0)
+  const loadTimeline = useCallback(async (uid, range) => {
+    setHistory('loading')
+    setTimelineDay(null)
+    const req = ++routeReqRef.current
+    const until = Date.now()
+    const since = timelineSince(range, until)
+    let rows
+    try {
+      rows = await fetchLocationHistory(supabase, {
+        userId: uid, familyId,
+        since: new Date(since).toISOString(), until: new Date(until).toISOString(),
+      })
+    } catch (e) {
+      if (req !== routeReqRef.current) return
+      console.warn('[Map] timeline load failed:', e?.message || e)
+      setHistory({ failed: true })
+      return
+    }
+    if (req !== routeReqRef.current) return
+    setHistory({ rows, since, until })
+  }, [familyId])
+  // What is drawn: the whole span, or the picked day of it.
+  const route = useMemo(() => {
+    if (!history || history === 'loading') return history
+    if (history.failed) return { ...buildRoute([]), failed: true }
+    return buildRoute(timelineDay == null ? history.rows : rowsOnDay(history.rows, timelineDay))
+  }, [history, timelineDay])
+  // The week's days for the picker, each marked with whether it has any fixes.
+  const timelineDays = useMemo(() => {
+    if (timelineRange !== '7d' || !history?.rows) return null
+    const has = new Set(history.rows.map(r => new Date(r.recorded_at).toDateString()))
+    return daysBetween(history.since, history.until)
+      .map(start => ({ start, has: has.has(new Date(start).toDateString()) }))
+  }, [timelineRange, history])
+  // Every new route opens Times on its latest moment: where they are, or where
+  // they were last on the picked day.
+  useEffect(() => {
+    setTimelineTime(route?.track?.length ? route.track[route.track.length - 1].t : null)
+  }, [route])
+  const showRoute = useCallback((uid) => {
+    // Following would keep yanking the camera back to their pin.
+    setFollowUid(null); setFollowPaused(false)
+    setRouteUid(uid)
+    setTimelineMode('route')
+    setTimelineRange('24h')
+    loadTimeline(uid, '24h')
+  }, [loadTimeline])
+  // Switching span keeps Route or Times as it was.
+  const changeTimelineRange = useCallback((range) => {
+    if (!routeUid || range === timelineRange) return
+    setTimelineRange(range)
+    loadTimeline(routeUid, range)
+  }, [routeUid, timelineRange, loadTimeline])
+  const hideRoute = useCallback(() => {
+    routeReqRef.current++
+    setRouteUid(null); setHistory(null); setTimelineMode('route'); setTimelineRange('24h'); setTimelineDay(null)
+  }, [])
+  // The Timeline as drawn: one solid line per stretch with no gap, a dot
+  // where they stayed, and the two ends marked — a ring and a "Start" box
+  // where the span begins, a solid dot and a "Now" box where it ends. Every
+  // dot and box can be tapped for directions. Text is made here, in the
+  // chosen language.
+  const drawnRoute = useMemo(() => {
+    if (!route || route === 'loading' || route.path.length < 2) return null
+    const am = t('map.am'), pm = t('map.pm')
+    const first = route.track[0], last = route.track[route.track.length - 1]
+    // With the date: the start is always an earlier day, often by a week.
+    const when = ms => `${dateLabel(ms, t.lang)}, ${clockLabel(ms, am, pm)}`
+    const startLabel = t('map.timelineStart', { time: when(first.t) })
+    const endLabel = Date.now() - last.t < NOW_WINDOW_MS
+      ? t('map.timelineNow')
+      : t('map.timelineLast', { time: when(last.t) })
+    const callout = (p, labels) => ({ lat: p.lat, lng: p.lng, labels, dir: outwardDir(p, route.path) })
+    const callouts = distanceM(first, last) < ENDS_TOGETHER_M
+      ? [callout(last, [startLabel, endLabel])]
+      : [callout(first, [startLabel]), callout(last, [endLabel])]
+    const spots = [
+      ...route.stays.map(st => ({ kind: 'stay', lat: st.lat, lng: st.lng })),
+      { kind: 'start', lat: first.lat, lng: first.lng },
+      { kind: 'end', lat: last.lat, lng: last.lng },
+    ]
+    return { path: route.path, segments: route.segments, spots, callouts }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route, t.lang])
+  // Times mode: the member's avatar where they were at the picked moment.
+  const cursorAt = timelineMode === 'times' && drawnRoute && timelineTime != null
+    ? positionAt(route.track, timelineTime) : null
+  const routeMember = routeUid ? locations[routeUid] : null
+  const routeCursor = useMemo(() => cursorAt && {
+    lat: cursorAt.lat, lng: cursorAt.lng,
+    displayName: routeMember?.displayName, avatarUrl: routeMember?.avatarUrl, avatarColor: routeMember?.avatarColor,
+  }, [cursorAt?.lat, cursorAt?.lng, routeMember?.displayName, routeMember?.avatarUrl, routeMember?.avatarColor]) // eslint-disable-line react-hooks/exhaustive-deps
+  // A different family, a different set of people: drop the old trail.
+  useEffect(() => { hideRoute() }, [familyId, hideRoute])
+
   const pauseFollowing = useCallback(() => setFollowPaused(true), [])
   const stopFollowing  = useCallback(() => { setFollowUid(null); setFollowPaused(false) }, [])
-  const startFollowing = useCallback(uid => { setFollowUid(uid); setFollowPaused(false) }, [])
+  const startFollowing = useCallback(uid => { hideRoute(); setFollowUid(uid); setFollowPaused(false) }, [hideRoute])
   // null   = not yet tried (no banner)
   // 'perm' = permission denied
   // 'fail' = GPS failed AND no locations in DB yet (only show if map is empty)
@@ -303,16 +430,6 @@ export default function MapAllPage() {
     }
   }
 
-  const handleRefresh = async () => {
-    if (refreshing) return
-    setRefreshing(true)
-    try {
-      await startTracking()
-    } finally {
-      setTimeout(() => setRefreshing(false), 600)
-    }
-  }
-
   useEffect(() => {
     if (!user || !familyId) return
     startTracking()
@@ -321,7 +438,13 @@ export default function MapAllPage() {
   }, [user, familyId])
 
   // Pins with members at the same spot fanned out so each can be tapped.
-  const pins = useMemo(() => offsetOverlapping(locations), [locations])
+  // While a route is open no avatar pins are shown at all — not even that
+  // member's own, which sat on the route's end and covered its last time box —
+  // so the trail reads clearly; closing the route brings them all back.
+  const pins = useMemo(
+    () => (routeUid ? {} : offsetOverlapping(locations)),
+    [locations, routeUid],
+  )
 
   // What tapping a pin shows: a Leaflet popup on the web, a card on the phone.
   // Compact on purpose: who this is, and a way to get to them. The
@@ -335,7 +458,9 @@ export default function MapAllPage() {
   // The destination is the member's REAL position — pins of members standing
   // together are fanned out on screen, and directions must not route to the
   // fanned-out spot. No button on your own pin: directions to yourself are noise.
-  const renderMemberPopup = (uid, loc) => {
+  // close: from the native map card, so opening the route takes the card off
+  // the line it would otherwise cover. The web popup closes on a map tap.
+  const renderMemberPopup = (uid, loc, close) => {
     const real = locations[uid] || loc
     const isMe = uid === user?.id
     return (
@@ -363,30 +488,65 @@ export default function MapAllPage() {
               measured to their REAL position, not the fanned-out pin. */}
           {!isMe && myLoc && (() => {
             const dist = formatDistance(myLoc.lat, myLoc.lng, real.lat, real.lng)
+            const eta = etaLabel(t, haversineKm(myLoc.lat, myLoc.lng, real.lat, real.lng))
             return dist ? (
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--maroon)', whiteSpace: 'nowrap' }}>{dist}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--maroon)', whiteSpace: 'nowrap' }}>{dist}{eta ? ' · ' + eta : ''}</div>
             ) : null
           })()}
         </div>
       </div>
-      {/* Directions — sized to its label, not stretched across the card */}
+      {/* Directions, then Today's route underneath: two buttons of one width,
+          stacked, so neither label is squeezed. The name is already at the top
+          of the card, so the button just says "Directions". */}
       {!isMe && (
         <a
           href={`https://www.google.com/maps/dir/?api=1&destination=${real.lat},${real.lng}`}
           target="_blank" rel="noopener noreferrer"
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
-            color: '#fff', padding: '7px 14px', borderRadius: 999,
+            color: '#fff', padding: '8px 14px', borderRadius: 999,
             fontWeight: 700, fontSize: 12.5, textDecoration: 'none', whiteSpace: 'nowrap',
           }}
         >
-          <Icon name="navigate" /> {t('map.directionsTo', { name: loc.displayName })}
+          <Icon name="navigate" /> {t('map.directions')}
         </a>
       )}
+      {/* Outline, so Directions stays the main action. */}
+      <button
+        onClick={() => { close?.(); showRoute(uid) }}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          width: '100%', boxSizing: 'border-box', marginTop: 8,
+          background: '#FFF8F0', color: 'var(--maroon)',
+          border: '1.5px solid var(--maroon)', padding: '7px 14px', borderRadius: 999,
+          fontWeight: 700, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap',
+        }}
+      >
+        <Icon name="map" /> {t('map.todaysRoute')}
+      </button>
     </div>
     )
   }
+
+  // What tapping a dot, a box or the avatar on the Timeline shows: directions
+  // to that spot and nothing else.
+  const renderSpotPopup = spot => (
+    <div style={{ fontFamily: 'Inter, sans-serif' }}>
+      <a
+        href={`https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}`}
+        target="_blank" rel="noopener noreferrer"
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
+          color: '#fff', padding: '8px 14px', borderRadius: 999,
+          fontWeight: 700, fontSize: 12.5, textDecoration: 'none', whiteSpace: 'nowrap',
+        }}
+      >
+        <Icon name="navigate" /> {t('map.directions')}
+      </a>
+    </div>
+  )
 
   const memberCount = Object.keys(locations).length
   // Current user's own location — used to calculate distance to other members
@@ -433,29 +593,33 @@ export default function MapAllPage() {
           {t('map.findFam')}
         </button>
 
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          aria-label={t('map.refresh')}
-          // Same translucent square and icon as the Messages refresh button.
-          style={{
-            background: 'rgba(255,255,255,0.15)',
-            border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10,
-            padding: '7px 10px', cursor: refreshing ? 'wait' : 'pointer',
-            flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          <svg
-            width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-            style={{ animation: refreshing ? 'famguard-spin 0.7s linear infinite' : 'none' }}
+        {/* Map layers, where Refresh used to be. Refresh fetched nothing on the
+            phone (pins update over realtime, and useLocations now re-fetches
+            as soon as the app comes back to the front), so its slot went to
+            the one map control, which then no longer covers the map. Same
+            translucent square as the Messages refresh button. Phone only:
+            satellite and traffic are Google's, not OpenStreetMap's. */}
+        {Capacitor.isNativePlatform() && (
+          <button
+            onClick={() => setModeMenuOpen(o => !o)}
+            aria-label={t('map.mapLayers')}
+            aria-expanded={modeMenuOpen}
+            style={{
+              background: modeMenuOpen ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)',
+              border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10,
+              padding: '7px 10px', cursor: 'pointer',
+              flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
           >
-            <path d="M21 12a9 9 0 1 1-2.64-6.36" /><polyline points="21 3 21 9 15 9" />
-          </svg>
-        </button>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff"
+              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polygon points="12 2 2 7 12 12 22 7 12 2" />
+              <polyline points="2 17 12 22 22 17" />
+              <polyline points="2 12 12 17 22 12" />
+            </svg>
+          </button>
+        )}
       </div>
-
-      <style>{`@keyframes famguard-spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
 
       {/* Permission denied — always show (user must fix it) */}
       {showPermError && (
@@ -491,36 +655,27 @@ export default function MapAllPage() {
           following={!!followUid && !followPaused}
           onUserPanned={pauseFollowing}
           renderPopup={renderMemberPopup}
+          renderSpotPopup={renderSpotPopup}
           mapMode={mapMode}
+          traffic={traffic}
+          route={drawnRoute}
+          routeCursor={routeCursor}
+          routeInset={TIMELINE_INSET[timelineRange]}
         />
 
-        {/* Map mode dropdown, top-right of the map (it sat top-left under the
-            title for a while, where it got in the way).
-            Phone only: satellite imagery and the traffic layer are Google's,
-            which the browser's OpenStreetMap map does not have. The button
-            shows the mode in use; open, the list offers only the two OTHER
-            modes, always in the fixed order Default, Traffic, Satellite so
-            nothing jumps around between visits. Cream with maroon text
-            throughout. Satellite is Google's "hybrid": imagery with street
-            names on top. */}
+        {/* Map layers card, opened by the header's layers button and shown at
+            the top-right of the map. (Before: a pill on the map plus two more
+            pills when open, covering a quarter of it.) The card:
+            Map | Satellite as a two-way choice with the one in use filled
+            maroon, and Traffic as a switch that works on either — traffic was
+            once a third "map type", which meant no traffic on satellite.
+            Satellite is Google's "hybrid": imagery with street names on top. */}
         {Capacitor.isNativePlatform() && (() => {
-          const MODES = [
-            { mode: 'default',   label: t('map.defaultView') },
-            { mode: 'traffic',   label: t('map.trafficView') },
+          const TYPES = [
+            { mode: 'default',   label: t('map.mapView') },
             { mode: 'satellite', label: t('map.satelliteView') },
           ]
-          const current = MODES.find(o => o.mode === mapMode) || MODES[0]
-          const scheme = { bg: '#FFF8F0', fg: 'var(--maroon)' }
-          const pill = (o, extra) => ({
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-            background: o.bg, color: o.fg,
-            border: '1.5px solid var(--maroon)', borderRadius: 999,
-            padding: '7px 13px', minWidth: 104,
-            boxShadow: '0 2px 10px rgba(74,8,32,0.18)',
-            fontSize: 12, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer',
-            whiteSpace: 'nowrap',
-            ...extra,
-          })
+          const maroon = 'var(--maroon)'
           return (
             <>
               {/* Tap anywhere else to close. Transparent, and only there while
@@ -530,47 +685,88 @@ export default function MapAllPage() {
                   style={{ position: 'absolute', inset: 0, zIndex: 399 }} />
               )}
               <div style={{
-                position: 'absolute', top: 12, right: 12, zIndex: 400,
-                display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 8,
+                position: 'absolute', top: 8, right: 12, zIndex: 400,
+                display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8,
               }}>
-                <button
-                  onClick={() => setModeMenuOpen(o => !o)}
-                  aria-haspopup="listbox"
-                  aria-expanded={modeMenuOpen}
-                  style={pill(scheme)}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                    <polyline points="2 17 12 22 22 17" />
-                    <polyline points="2 12 12 17 22 12" />
-                  </svg>
-                  {current.label}
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-                    style={{ transform: modeMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
                 {modeMenuOpen && (
-                  <div role="listbox" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {MODES.filter(o => o.mode !== mapMode).map(o => (
-                      <button
-                        key={o.mode}
-                        role="option"
-                        aria-selected={false}
-                        onClick={() => { setMapMode(o.mode); setModeMenuOpen(false) }}
-                        style={pill(scheme)}
-                      >
-                        {o.label}
-                      </button>
-                    ))}
+                  <div style={{
+                    width: 196, background: '#FFF8F0',
+                    border: '1.5px solid var(--maroon)', borderRadius: 14,
+                    boxShadow: '0 4px 16px rgba(74,8,32,0.18)',
+                    padding: 10, display: 'flex', flexDirection: 'column', gap: 10,
+                  }}>
+                    <div role="radiogroup" aria-label={t('map.mapLayers')} style={{
+                      display: 'flex', border: '1.5px solid var(--maroon)', borderRadius: 10, overflow: 'hidden',
+                    }}>
+                      {TYPES.map(o => {
+                        const on = mapMode === o.mode
+                        return (
+                          <button
+                            key={o.mode}
+                            role="radio"
+                            aria-checked={on}
+                            onClick={() => setMapMode(o.mode)}
+                            style={{
+                              flex: 1, padding: '8px 4px', border: 'none',
+                              background: on ? maroon : 'transparent',
+                              color: on ? '#FFF8F0' : maroon,
+                              fontSize: 12, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {o.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <button
+                      role="switch"
+                      aria-checked={traffic}
+                      onClick={() => setTraffic(v => !v)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                        background: 'none', border: 'none', padding: '2px 2px',
+                        color: maroon, fontSize: 13, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer',
+                      }}
+                    >
+                      {t('map.trafficView')}
+                      {/* Same switch as the Profile toggles, a size smaller. */}
+                      <span aria-hidden="true" style={{
+                        width: 38, height: 22, borderRadius: 11, flexShrink: 0, position: 'relative',
+                        background: traffic ? maroon : 'var(--muted3)', transition: 'background 0.25s',
+                      }}>
+                        <span style={{
+                          width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                          position: 'absolute', top: 3, left: traffic ? 19 : 3,
+                          transition: 'left 0.25s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                        }} />
+                      </span>
+                    </button>
                   </div>
                 )}
               </div>
             </>
           )
         })()}
+
+        {/* Timeline panel: whose day this is, Route | Times, and the time slider. */}
+        {routeUid && route && (
+          <TimelinePanel
+            name={routeMember?.displayName || t('family.aFamilyMember')}
+            route={route === 'loading' ? null : route}
+            loading={route === 'loading'}
+            range={timelineRange}
+            onRange={changeTimelineRange}
+            days={timelineDays}
+            day={timelineDay}
+            onDay={setTimelineDay}
+            mode={timelineMode}
+            onMode={setTimelineMode}
+            time={timelineTime}
+            onTime={setTimelineTime}
+            onClose={hideRoute}
+          />
+        )}
 
         {/* Following chip.
             The first version tracked silently, so there was no way to tell
@@ -606,13 +802,21 @@ export default function MapAllPage() {
             <button
               onClick={stopFollowing}
               aria-label={t('map.followStop')}
+              // A drawn X with a real edge. It was the letter "x" in pale grey on
+              // a pale grey disc, which barely showed on the white paused chip.
               style={{
-                background: followPaused ? 'var(--surface3)' : 'rgba(255,255,255,0.22)',
-                color: followPaused ? 'var(--text2)' : '#fff',
-                border: 'none', borderRadius: '50%', width: 24, height: 24,
-                fontSize: 14, lineHeight: '24px', fontFamily: 'inherit',
+                background: followPaused ? '#F8E6ED' : 'rgba(255,255,255,0.22)',
+                color: followPaused ? 'var(--maroon)' : '#fff',
+                border: followPaused ? '1.5px solid var(--maroon)' : '1.5px solid rgba(255,255,255,0.6)',
+                borderRadius: '50%', width: 28, height: 28,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', flexShrink: 0, padding: 0,
-              }}>x</button>
+              }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         )}
       </div>
@@ -700,9 +904,10 @@ export default function MapAllPage() {
                         {loc.displayName}
                         {myLoc && uid !== user?.id && (() => {
                           const dist = formatDistance(myLoc.lat, myLoc.lng, loc.lat, loc.lng)
+                          const eta = etaLabel(t, haversineKm(myLoc.lat, myLoc.lng, loc.lat, loc.lng))
                           return dist ? (
                             <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--maroon)' }}>
-                              ({dist})
+                              ({dist}{eta ? ' · ' + eta : ''})
                             </span>
                           ) : null
                         })()}

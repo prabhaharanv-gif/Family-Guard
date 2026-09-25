@@ -20,6 +20,18 @@ public class SosResponseTest {
     // ── Status classification ────────────────────────────────────────────────
 
     @Test
+    public void crashSos_isLabelledAmbulance_soNearbyHelpSendsA108Need() {
+        assertEquals("Need Ambulance", SosResponse.messageFor("crash"));
+    }
+
+    @Test
+    public void everyOtherTrigger_keepsTheGeneralLabel() {
+        assertEquals("SOS! I need help!", SosResponse.messageFor("shake"));
+        assertEquals("SOS! I need help!", SosResponse.messageFor("power"));
+        assertEquals("SOS! I need help!", SosResponse.messageFor(null));
+    }
+
+    @Test
     public void successCodes_areRecognised() {
         assertTrue(SosResponse.isOk(200));
         assertTrue("PostgREST answers 201 on insert", SosResponse.isOk(201));

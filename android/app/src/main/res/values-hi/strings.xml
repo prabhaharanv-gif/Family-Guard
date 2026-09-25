@@ -42,10 +42,25 @@
     <string name="sos_needs_help">%1$s को मदद चाहिए!</string>
     <string name="sos_view_location">लोकेशन देखें</string>
     <string name="sos_open_app">Famora खोलें</string>
-    <string name="sos_stop_alarm">समझ गया — अलार्म रोकें</string>
+    <string name="sos_stop_alarm">समझ गया — अलार्म शांत करें</string>
     <string name="sos_calm_hint">शांत रहें। देखें वे कहाँ हैं, फिर उन्हें कॉल करें या उनके पास जाएँ।</string>
     <string name="sos_call">%1$s को कॉल करें</string>
     <string name="sos_directions">रास्ता देखें</string>
+    <string name="sos_tile_label">SOS</string>
+    <string name="sos_tile_subtitle">परिवार को सूचित करें</string>
+    <!-- Resolved state: the sender marked themselves safe. Silencing the alarm never shows these. -->
+    <string name="sos_safe_title">%1$s अब सुरक्षित हैं</string>
+    <string name="sos_marked_safe">%1$s ने खुद को सुरक्षित बताया है।</string>
+    <string name="sos_resolved">SOS हल हो गया</string>
+    <string name="sos_still_active">अलार्म शांत · SOS अभी भी सक्रिय</string>
+    <string name="ch_sos_safe_name">SOS हल हो गया</string>
+    <string name="ch_sos_safe_desc">SOS के बाद परिवार का सदस्य खुद को सुरक्षित बताए तो सूचना देता है</string>
+
+    <!-- Places: a family member reached or left a saved place like Home or Office. -->
+    <string name="place_reached_title">%1$s %2$s पहुँच गए</string>
+    <string name="place_left_title">%1$s %2$s छोड़ गए</string>
+    <string name="ch_places_name">स्थान</string>
+    <string name="ch_places_desc">जब परिवार का सदस्य घर या ऑफिस जैसी सहेजी गई जगह पर पहुँचता या उसे छोड़ता है तो सूचना देता है</string>
 
     <!-- CallRingingActivity -->
     <string name="call_incoming_voice">आने वाली वॉइस कॉल</string>
@@ -91,4 +106,29 @@
     <string name="sos_countdown_hint">अगर आपने गलती से किया है तो रद्द करें दबाएँ।</string>
     <string name="sos_countdown_cancel">रद्द करें</string>
     <string name="fake_call_tile_subtitle">5 सेकंड में नकली कॉल</string>
+    <string name="weather_title_thunderstorm" formatted="true">%1$s के पास आँधी-तूफ़ान</string>
+    <string name="weather_detail_thunderstorm" formatted="true">बिजली गिरने और गरज की संभावना है.</string>
+    <string name="weather_title_heavy_rain" formatted="true">%1$s के पास भारी बारिश</string>
+    <string name="weather_detail_heavy_rain" formatted="true">भारी बारिश की संभावना है.</string>
+    <string name="weather_detail_heavy_rain_mm" formatted="true">लगभग %1$d मिमी बारिश की संभावना.</string>
+    <string name="weather_title_heat" formatted="true">%1$s के पास भीषण गर्मी</string>
+    <string name="weather_detail_heat" formatted="true">करीब %1$d°C. पानी पीते रहें.</string>
+    <string name="weather_title_wind" formatted="true">%1$s के पास तेज़ हवाएँ</string>
+    <string name="weather_detail_wind" formatted="true">%1$d किमी/घंटा तक के झोंके.</string>
+    <string name="weather_when_now" formatted="true">अभी संभावित</string>
+    <string name="weather_when_at" formatted="true">लगभग %1$s बजे संभावित</string>
+    <string name="weather_body">%1$s. %2$s</string>
+    <string name="ch_weather_name">मौसम अलर्ट</string>
+    <string name="ch_weather_desc">आपकी सहेजी हुई जगहों पर गंभीर मौसम की चेतावनी देता है</string>
+    <string name="device_overspeed_title" formatted="true">%1$s तेज़ रफ़्तार से गाड़ी चला रहे हैं</string>
+    <string name="device_overspeed_body" formatted="true">%1$d किमी/घंटा (सीमा %2$d किमी/घंटा)</string>
+    <string name="device_overspeed_self_title">रफ़्तार कम करें: आप अपनी सीमा से तेज़ हैं</string>
+    <string name="device_overspeed_self_body" formatted="true">आप %1$d किमी/घंटा पर हैं। आपकी सीमा %2$d किमी/घंटा है।</string>
+    <string name="unlock_alert_title" formatted="true">%1$s के फ़ोन पर गलत पासवर्ड</string>
+    <string name="unlock_alert_body" formatted="true">स्क्रीन-लॉक के गलत प्रयास: %1$d। फ़ोन कहाँ था, और अगर फ़ोटो ली गई हो तो वह देखने के लिए Famora खोलें।</string>
+    <string name="ch_lost_name">फ़ोन खोया मोड</string>
+    <string name="ch_lost_desc">जब आपके परिवार ने इस फ़ोन को खोया हुआ चिह्नित किया हो तब दिखता है</string>
+    <string name="lost_title">यह फ़ोन खो गया है</string>
+    <string name="lost_body_default" formatted="true">इसे लौटाने के लिए कृपया %1$s से संपर्क करें।</string>
+    <string name="lost_body_generic">कृपया यह फ़ोन इसके मालिक के परिवार को लौटा दें।</string>
 </resources>

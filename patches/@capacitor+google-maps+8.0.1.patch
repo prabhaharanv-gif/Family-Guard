@@ -1,5 +1,5 @@
 diff --git a/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMap.kt b/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMap.kt
-index c0bc416..709a076 100644
+index c0bc416..d7b819e 100644
 --- a/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMap.kt
 +++ b/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMap.kt
 @@ -47,8 +47,59 @@ class CapacitorGoogleMap(
@@ -220,7 +220,19 @@ index c0bc416..709a076 100644
                  } else {
                      googleMap?.moveCamera(CameraUpdateFactory.newCameraPosition(updatedPosition))
                  }
-@@ -869,32 +1048,9 @@ class CapacitorGoogleMap(
+@@ -838,6 +1017,11 @@ class CapacitorGoogleMap(
+         polylineOptions.clickable(line.clickable)
+         polylineOptions.zIndex(line.zIndex)
+         polylineOptions.geodesic(line.geodesic)
++        // Famora: dash sizes in dp so they look the same at every zoom level.
++        if (line.dashed) {
++            val dpr = this.config.devicePixelRatio
++            polylineOptions.pattern(listOf(Dash(10f * dpr), Gap(7f * dpr)))
++        }
+ 
+         line.path.forEach {
+             polylineOptions.add(it)
+@@ -869,32 +1053,9 @@ class CapacitorGoogleMap(
  
  
          if (!marker.iconUrl.isNullOrEmpty()) {
@@ -256,7 +268,7 @@ index c0bc416..709a076 100644
          } else {
              if (marker.colorHue != null) {
                  markerOptions.icon(BitmapDescriptorFactory.defaultMarker(marker.colorHue!!))
-@@ -947,6 +1103,20 @@ class CapacitorGoogleMap(
+@@ -947,6 +1108,20 @@ class CapacitorGoogleMap(
          runBlocking {
              googleMap = map
  
@@ -277,7 +289,7 @@ index c0bc416..709a076 100644
              val data = JSObject()
              data.put("mapId", this@CapacitorGoogleMap.id)
              delegate.notify("onMapReady", data)
-@@ -1049,7 +1219,10 @@ class CapacitorGoogleMap(
+@@ -1049,7 +1224,10 @@ class CapacitorGoogleMap(
          data.put("title", marker.title)
          data.put("snippet", marker.snippet)
          delegate.notify("onMarkerClick", data)
@@ -289,7 +301,7 @@ index c0bc416..709a076 100644
      }
  
      override fun onPolylineClick(polyline: Polyline) {
-@@ -1119,6 +1292,14 @@ class CapacitorGoogleMap(
+@@ -1119,6 +1297,14 @@ class CapacitorGoogleMap(
          data.put("zoom", this@CapacitorGoogleMap.googleMap?.cameraPosition?.zoom)
          delegate.notify("onCameraIdle", data)
          delegate.notify("onBoundsChanged", data)
@@ -304,7 +316,7 @@ index c0bc416..709a076 100644
      }
  
      override fun onCameraMoveStarted(reason: Int) {
-@@ -1139,7 +1320,24 @@ class CapacitorGoogleMap(
+@@ -1139,7 +1325,24 @@ class CapacitorGoogleMap(
          delegate.notify("onInfoWindowClick", data)
      }
  
@@ -329,6 +341,28 @@ index c0bc416..709a076 100644
          debounceJob?.cancel()
          debounceJob = CoroutineScope(Dispatchers.Main).launch {
              delay(100)
+diff --git a/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMapPolyline.kt b/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMapPolyline.kt
+index ab89355..0a714db 100644
+--- a/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMapPolyline.kt
++++ b/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMapPolyline.kt
+@@ -15,6 +15,9 @@ class CapacitorGoogleMapPolyline(fromJSONObject: JSONObject) {
+     var geodesic: Boolean
+     var zIndex: Float = 0.00f
+     var tag: String = ""
++    // Famora: draw as dashes (the "travelling" parts of Today's route). The
++    // stock plugin had no pattern option at all.
++    var dashed: Boolean = false
+     var googleMapsPolyline: Polyline? = null
+ 
+     init {
+@@ -62,6 +65,7 @@ class CapacitorGoogleMapPolyline(fromJSONObject: JSONObject) {
+         geodesic = fromJSONObject.optBoolean("geodesic", false)
+         zIndex = fromJSONObject.optDouble("zIndex", 1.0).toFloat()
+         tag = fromJSONObject.optString("tag", "")
++        dashed = fromJSONObject.optBoolean("dashed", false)
+     }
+ 
+     private fun processColor(hex: String, opacity: Double): Int {
 diff --git a/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMapsPlugin.kt b/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMapsPlugin.kt
 index 06ecab2..0762241 100644
 --- a/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMapsPlugin.kt

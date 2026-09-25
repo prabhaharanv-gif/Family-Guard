@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { GoogleMap, MapType } from '@capacitor/google-maps'
 import { GLIDE_MS } from '../SmoothMarker'
-import { PIN_SIZE, initialPin, photoPin } from './pinIcon'
+import { PIN_SIZE, initialPin, photoPin, timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
 import { useT } from '../../i18n'
 
 /**
@@ -63,15 +63,16 @@ function distanceM(a, b) {
 }
 
 // Centre and zoom that fit every point inside a box of w×h CSS px (the same
-// units as Google's dp zoom levels) with pad px spare on each side. Done here
+// units as Google's dp zoom levels) with pad px spare on each side, and the
+// bottom px of the box left clear (a panel covers it). Done here
 // instead of through the plugin's fitBounds, which always ANIMATES: on opening
 // the tab that swept the camera in from the default city every time, where the
 // map should simply start framed on the family.
-function frameFor(points, w, h, pad) {
+function frameFor(points, w, h, pad, bottom = 0) {
   const lats = points.map(p => p.lat), lngs = points.map(p => p.lng)
   const sw = { lat: Math.min(...lats), lng: Math.min(...lngs) }
   const ne = { lat: Math.max(...lats), lng: Math.max(...lngs) }
-  const center = { lat: (sw.lat + ne.lat) / 2, lng: (sw.lng + ne.lng) / 2 }
+  let center = { lat: (sw.lat + ne.lat) / 2, lng: (sw.lng + ne.lng) / 2 }
   const mercY = lat => {
     const s = Math.sin(lat * Math.PI / 180)
     return Math.log((1 + s) / (1 - s)) / 2
@@ -81,8 +82,16 @@ function frameFor(points, w, h, pad) {
   const zoomFor = (px, frac) => frac > 0 ? Math.log2(Math.max(px - 2 * pad, 1) / 256 / frac) : Infinity
   // Capped at 17, the zoom a single member is flown to: members standing
   // together would otherwise zoom to street-furniture level.
-  const zoom = Math.min(zoomFor(h, latFrac), zoomFor(w, lngFrac), 17)
-  return { coordinate: center, zoom: Number.isFinite(zoom) ? zoom : 15 }
+  const zoom = Math.min(zoomFor(h - bottom, latFrac), zoomFor(w, lngFrac), 17)
+  const z = Number.isFinite(zoom) ? zoom : 15
+  if (bottom) {
+    // Move the camera south by half the covered strip, so the points sit
+    // centred in the part of the map still visible. 2π of Mercator y spans
+    // the whole world, 256·2^z px.
+    const y = mercY(center.lat) - (bottom / 2) * (2 * Math.PI) / (256 * 2 ** z)
+    center = { lat: Math.atan(Math.sinh(y)) * 180 / Math.PI, lng: center.lng }
+  }
+  return { coordinate: center, zoom: z }
 }
 
 function inBounds(bounds, p) {
@@ -93,9 +102,21 @@ function inBounds(bounds, p) {
 
 export default function NativeFamilyMap({
   pins, locations, flyTarget, followLoc, following, onUserPanned, renderPopup,
-  // 'default' (road map), 'satellite' (imagery with street labels — Google's
-  // "hybrid"), or 'traffic' (road map with Google's live traffic layer).
+  // The card for a tapped Timeline dot, box or avatar (directions there).
+  renderSpotPopup,
+  // 'default' (road map) or 'satellite' (imagery with street labels — Google's
+  // "hybrid"). Traffic is a separate layer on top of either, not a third type.
   mapMode = 'default',
+  traffic = false,
+  // The Timeline for one member, or null: { path (for framing), segments (one
+  // line each), spots [{ kind: stay|start|end, lat, lng }], callouts
+  // [{ lat, lng, labels, dir }] } — see MapAllPage's drawnRoute.
+  route = null,
+  // Times mode: { lat, lng, displayName, avatarUrl, avatarColor } — the
+  // member's avatar where they were at the picked time — or null.
+  routeCursor = null,
+  // px at the foot of the map covered by the Timeline panel.
+  routeInset = 0,
   // Called with the map's rotation in degrees (0 = north up) while it turns.
   onBearingChange,
   // Bump to animate the map back to north-up (the compass's tap).
@@ -111,11 +132,15 @@ export default function NativeFamilyMap({
   // still adds up to a glide eventually, exactly as SmoothMarker does.
   const markersRef   = useRef(new Map())
   const uidByIdRef   = useRef(new Map())   // markerId → uid, for taps
+  const spotByIdRef  = useRef(new Map())   // markerId → { spot, gap }: Timeline markers, for taps
+  const cursorRef    = useRef(null)        // Timeline avatar: { idP, lat, lng, look }
   const boundsRef    = useRef(null)        // visible area after the last camera move
   const onPannedRef  = useRef(onUserPanned)
   useEffect(() => { onPannedRef.current = onUserPanned }, [onUserPanned])
 
   const [openUid, setOpenUid] = useState(null)
+  // A tapped Timeline marker: { markerId, spot, gap }. One card at a time.
+  const [openSpot, setOpenSpot] = useState(null)
 
   // Make the page see-through down to the map while it is on screen.
   useEffect(() => {
@@ -130,6 +155,7 @@ export default function NativeFamilyMap({
     let map = null
     const markers = markersRef.current
     const uidById = uidByIdRef.current
+    const spotById = spotByIdRef.current
     ;(async () => {
       try {
         map = await GoogleMap.create({
@@ -146,9 +172,11 @@ export default function NativeFamilyMap({
 
         await map.setOnMarkerClickListener(({ markerId }) => {
           const uid = uidByIdRef.current.get(markerId)
-          if (uid) setOpenUid(uid)
+          if (uid) { setOpenSpot(null); setOpenUid(uid); return }
+          const hit = spotByIdRef.current.get(markerId)
+          if (hit) { setOpenUid(null); setOpenSpot({ markerId, ...hit }) }
         })
-        await map.setOnMapClickListener(() => setOpenUid(null))
+        await map.setOnMapClickListener(() => { setOpenUid(null); setOpenSpot(null) })
         // A finger on the map pauses following, like Leaflet's dragstart. The
         // app's own pans report isGesture false, so following never pauses itself.
         await map.setOnCameraMoveStartedListener(({ isGesture }) => {
@@ -166,6 +194,8 @@ export default function NativeFamilyMap({
       mapRef.current = null
       markers.clear()
       uidById.clear()
+      spotById.clear()
+      cursorRef.current = null
       map?.destroy().catch(() => {})
     }
   }, [])
@@ -184,8 +214,18 @@ export default function NativeFamilyMap({
 
     for (const [uid, loc] of Object.entries(pins)) {
       if (loc.lat == null || loc.lng == null) continue
+      // Famora Social's ambient dots (kind: 'anonDot') and the accepted
+      // helper's fuzzy area (kind: 'helperFound', see NearbySearchMap): no
+      // identity, no photo, and never registered against a marker id below,
+      // so the map's own click listener has nothing to look up for them —
+      // they are untappable by construction, not by convention. They also
+      // arrive under a fresh (anonDot) or fixed but one-shot (helperFound)
+      // key rather than gliding, so only the "new marker" branch below is
+      // ever exercised for them; the look/glide branches are family-pin only.
+      const isAnon = loc.kind === 'anonDot'
+      const isHelper = loc.kind === 'helperFound'
       const initial = loc.displayName?.[0]?.toUpperCase() || '?'
-      const look = `${loc.avatarUrl || ''}|${loc.avatarColor || ''}|${initial}`
+      const look = isAnon ? 'anonDot' : isHelper ? 'helperFound' : `${loc.avatarUrl || ''}|${loc.avatarColor || ''}|${initial}`
       let m = live.get(uid)
 
       if (!m) {
@@ -194,18 +234,20 @@ export default function NativeFamilyMap({
         m = { lat: loc.lat, lng: loc.lng, look }
         m.idP = retrying('add pin', () => map.addMarker({
           coordinate: { lat: loc.lat, lng: loc.lng },
-          iconUrl: initialPin(loc.avatarColor, initial),
-          iconSize: { width: PIN_SIZE, height: PIN_SIZE },
-          iconAnchor: { x: PIN_SIZE / 2, y: PIN_SIZE / 2 },
+          iconUrl: isAnon ? anonDot() : isHelper ? helperDot() : initialPin(loc.avatarColor, initial),
+          iconSize: isAnon ? { width: ANON_DOT, height: ANON_DOT } : isHelper ? { width: HELPER_DOT, height: HELPER_DOT } : { width: PIN_SIZE, height: PIN_SIZE },
+          iconAnchor: isAnon ? { x: ANON_DOT / 2, y: ANON_DOT / 2 } : isHelper ? { x: HELPER_DOT / 2, y: HELPER_DOT / 2 } : { x: PIN_SIZE / 2, y: PIN_SIZE / 2 },
         })).then(id => {
           if (!id) throw new Error('pin was never added')
-          uidByIdRef.current.set(id, uid)
+          if (!isAnon && !isHelper) uidByIdRef.current.set(id, uid)
           return id
         })
         live.set(uid, m)
-        applyPhoto(m, loc.avatarUrl, look)
+        if (!isAnon && !isHelper) applyPhoto(m, loc.avatarUrl, look)
         continue
       }
+
+      if (isAnon || isHelper) continue
 
       if (m.look !== look) {
         m.look = look
@@ -253,6 +295,157 @@ export default function NativeFamilyMap({
     retrying('frame family', () => map.setCamera(frame))
   }, [ready, locations])
 
+  // ── Timeline: the line ───────────────────────────────────────────────────
+  // One solid line per stretch of reports; nothing across a gap or a hop,
+  // where a line would claim a way nobody recorded. Maroon on the road map.
+  // On satellite, maroon sinks into the dark imagery, so it is cream with a
+  // thin maroon edge (a wider maroon line underneath). Redrawn when the map
+  // type changes — a polyline's colour cannot be changed in place — without
+  // touching the dots or the camera, which live in the effect below.
+  const routeIdsRef = useRef([])
+  useEffect(() => {
+    const map = mapRef.current
+    if (!ready || !map) return
+    let cancelled = false
+    ;(async () => {
+      if (routeIdsRef.current.length) {
+        const ids = routeIdsRef.current
+        routeIdsRef.current = []
+        await map.removePolylines(ids).catch(warn('remove route'))
+      }
+      if (cancelled || !route || route.path.length < 2) return
+      const paths = route.segments.filter(seg => seg.length >= 2)
+      const line = (path, strokeColor, strokeWeight, strokeOpacity = 1) =>
+        ({ path, strokeColor, strokeWeight, strokeOpacity, geodesic: false })
+      const lines = mapMode === 'satellite'
+        ? [...paths.map(p => line(p, '#8B0D3D', 8)), ...paths.map(p => line(p, '#FFF8F0', 4.5))]
+        : paths.map(p => line(p, '#8B0D3D', 5, 0.9))
+      const ids = await retrying('draw route', () => map.addPolylines(lines))
+      if (cancelled) { if (ids?.length) map.removePolylines(ids).catch(warn('remove route')); return }
+      routeIdsRef.current = ids || []
+    })()
+    return () => { cancelled = true }
+  }, [ready, route, mapMode])
+
+  // ── Timeline: its dots and boxes, and the camera framed on it ────────────
+  const routeMarkIdsRef = useRef([])
+  useEffect(() => {
+    const map = mapRef.current
+    if (!ready || !map) return
+    let cancelled = false
+    ;(async () => {
+      setOpenSpot(null)
+      if (routeMarkIdsRef.current.length) {
+        const ids = routeMarkIdsRef.current
+        routeMarkIdsRef.current = []
+        ids.forEach(id => spotByIdRef.current.delete(id))
+        await map.removeMarkers(ids).catch(warn('remove route marks'))
+      }
+      if (cancelled || !route || route.path.length < 2) return
+
+      // The Start/Now boxes, then the dots on top of them. Each is added on
+      // its own so every id is known to belong to its spot: the batch call
+      // quietly skips a marker that fails, which would shift every tap after
+      // it onto the wrong place.
+      const DOT = { stay: [stayDot, STAY_DOT, 2], start: [startDot, STAY_DOT, 3], end: [endDot, END_DOT, 3] }
+      const marks = [
+        ...(route.callouts || []).map(c => {
+          const box = timeCallout(c.labels, c.dir)
+          return {
+            marker: {
+              coordinate: { lat: c.lat, lng: c.lng }, iconUrl: box.url,
+              iconSize: { width: box.width, height: box.height },
+              iconAnchor: { x: box.anchorX, y: box.anchorY }, zIndex: 1,
+            },
+            hit: { spot: c, gap: 14 },
+          }
+        }),
+        ...(route.spots || []).map(sp => {
+          const [icon, size, zIndex] = DOT[sp.kind]
+          return {
+            marker: {
+              coordinate: { lat: sp.lat, lng: sp.lng }, iconUrl: icon(),
+              iconSize: { width: size, height: size },
+              iconAnchor: { x: size / 2, y: size / 2 }, zIndex,
+            },
+            hit: { spot: sp, gap: size / 2 + 10 },
+          }
+        }),
+      ]
+      const markIds = await Promise.all(marks.map(m => retrying('route mark', () => map.addMarker(m.marker))))
+      const added = markIds.filter(Boolean)
+      if (cancelled) { if (added.length) map.removeMarkers(added).catch(warn('remove route marks')); return }
+      routeMarkIdsRef.current = added
+      markIds.forEach((id, i) => { if (id) spotByIdRef.current.set(id, marks[i].hit) })
+
+      const box = elRef.current?.getBoundingClientRect()
+      const frame = frameFor(route.path, box?.width || 360, box?.height || 560, 60, routeInset)
+      retrying('frame route', () => map.setCamera({ ...frame, animate: true, animationDuration: 500 }))
+    })()
+    return () => { cancelled = true }
+    // routeInset is a constant from the page; framing happens per route.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, route])
+
+  // ── Timeline cursor: the member's avatar at the picked time (Times mode) ─
+  // The same round, maroon-ringed pin as the live map. It jumps with the slider rather than
+  // gliding: the finger is already the animation, and a glide would lag it.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!ready || !map) return
+    const cur = cursorRef.current
+    if (!routeCursor) {
+      if (cur) {
+        cursorRef.current = null
+        cur.idP.then(id => {
+          spotByIdRef.current.delete(id)
+          setOpenSpot(o => (o?.markerId === id ? null : o))
+          return map.removeMarker(id)
+        }).catch(warn('remove cursor'))
+      }
+      return
+    }
+    const { lat, lng } = routeCursor
+    const initial = routeCursor.displayName?.[0]?.toUpperCase() || '?'
+    const look = `${routeCursor.avatarUrl || ''}|${routeCursor.avatarColor || ''}|${initial}`
+    const hit = { spot: { lat, lng }, gap: PIN_SIZE / 2 + 12 }
+
+    if (!cur) {
+      const m = { lat, lng, look }
+      m.idP = retrying('add cursor', () => map.addMarker({
+        coordinate: { lat, lng },
+        iconUrl: initialPin(routeCursor.avatarColor, initial),
+        iconSize: { width: PIN_SIZE, height: PIN_SIZE },
+        iconAnchor: { x: PIN_SIZE / 2, y: PIN_SIZE / 2 },
+        zIndex: 5,
+      })).then(id => {
+        if (!id) throw new Error('cursor was never added')
+        spotByIdRef.current.set(id, hit)
+        return id
+      })
+      cursorRef.current = m
+      if (routeCursor.avatarUrl) {
+        photoPin(routeCursor.avatarUrl).then(iconUrl => {
+          if (!iconUrl || cursorRef.current !== m) return
+          return m.idP.then(markerId => native().setMarkerIcon({ id: MAP_ID, markerId, iconUrl }))
+        }).catch(warn('cursor photo'))
+      }
+      return
+    }
+
+    // Directions from a tap go to where the avatar is NOW, not where it was
+    // when the card opened.
+    cur.idP.then(id => {
+      spotByIdRef.current.set(id, hit)
+      setOpenSpot(o => (o?.markerId === id ? { ...o, spot: hit.spot } : o))
+    }).catch(() => {})
+    if (cur.lat === lat && cur.lng === lng) return
+    cur.lat = lat
+    cur.lng = lng
+    cur.idP.then(markerId => native().animateMarker({ id: MAP_ID, markerId, lat, lng, duration: 0 }))
+      .catch(warn('move cursor'))
+  }, [ready, routeCursor])
+
   // ── Camera: fly to a member picked in Find Fam ───────────────────────────
   useEffect(() => {
     const map = mapRef.current
@@ -287,6 +480,8 @@ export default function NativeFamilyMap({
 
   // A member who stopped sharing while their card was open simply has no card.
   const openLoc = openUid ? pins[openUid] : null
+  const cardOpen = !!openLoc || !!(openSpot && renderSpotPopup)
+  const closeCard = useCallback(() => { setOpenUid(null); setOpenSpot(null) }, [])
 
   // ── Member card rides on its pin ─────────────────────────────────────────
   // The card used to sit at the bottom of the map, away from the person it was
@@ -299,6 +494,9 @@ export default function NativeFamilyMap({
   const cardRef  = useRef(null)
   const arrowRef = useRef(null)
   const lastPtRef = useRef(null)
+  // How far above the tracked point the card sits: clear of a round avatar
+  // pin, or of a small route dot.
+  const gapRef = useRef(PIN_SIZE / 2 + 12)
 
   const placeCard = useCallback((x, y) => {
     lastPtRef.current = { x, y }
@@ -306,7 +504,7 @@ export default function NativeFamilyMap({
     const box  = elRef.current
     if (!card || !box) return
     const w = card.offsetWidth, h = card.offsetHeight, W = box.clientWidth
-    const gap = PIN_SIZE / 2 + 12          // clear of the round pin, room for the pointer
+    const gap = gapRef.current             // clear of the pin, room for the pointer
     let top = y - gap - h
     const below = top < 8                  // no room above: open underneath instead
     if (below) top = y + gap
@@ -334,8 +532,8 @@ export default function NativeFamilyMap({
     const map = mapRef.current
     if (!ready || !map) return
     retrying('map type', () => map.setMapType(mapMode === 'satellite' ? MapType.Hybrid : MapType.Normal))
-    retrying('traffic layer', () => map.enableTrafficLayer(mapMode === 'traffic'))
-  }, [ready, mapMode])
+    retrying('traffic layer', () => map.enableTrafficLayer(!!traffic))
+  }, [ready, mapMode, traffic])
 
   // Two-finger rotation is on (patched); the plugin streams the bearing while
   // it changes so the compass overlay turns with the map, not after it.
@@ -354,16 +552,27 @@ export default function NativeFamilyMap({
     map.setCamera({ bearing: 0, animate: true, animationDuration: 350 }).catch(warn('reset north'))
   }, [ready, resetNorthKey])
 
+  const spotMarkerId = openSpot?.markerId
   useEffect(() => {
-    if (!ready || !openUid) return
-    const m = markersRef.current.get(openUid)
-    if (!m) return
+    if (!ready) return
+    let idP
+    if (openUid) {
+      const m = markersRef.current.get(openUid)
+      if (!m) return
+      idP = m.idP
+      gapRef.current = PIN_SIZE / 2 + 12
+    } else if (spotMarkerId) {
+      idP = Promise.resolve(spotMarkerId)
+      gapRef.current = openSpot.gap
+    } else return
     // Hidden until the first position lands, so it never flashes at 0,0.
     lastPtRef.current = null
     if (cardRef.current) cardRef.current.style.visibility = 'hidden'
-    m.idP.then(markerId => native().trackMarker({ id: MAP_ID, markerId })).catch(warn('track pin'))
+    idP.then(markerId => native().trackMarker({ id: MAP_ID, markerId })).catch(warn('track pin'))
     return () => { native().trackMarker({ id: MAP_ID, markerId: null }).catch(() => {}) }
-  }, [ready, openUid])
+    // openSpot.gap belongs to spotMarkerId: it cannot change on its own.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, openUid, spotMarkerId])
 
   // The card's own size can change without the pin moving (a photo loading,
   // the distance line updating): re-place it from the last known point.
@@ -376,7 +585,7 @@ export default function NativeFamilyMap({
     })
     ro.observe(card)
     return () => ro.disconnect()
-  }, [openUid, placeCard])
+  }, [openUid, spotMarkerId, placeCard])
 
   return (
     <>
@@ -388,8 +597,9 @@ export default function NativeFamilyMap({
       />
 
       {/* Member card — what the Leaflet popup shows, held over the member's
-          pin by placeCard() above. Sized to its content, not stretched. */}
-      {openLoc && (
+          pin by placeCard() above. Sized to its content, not stretched. The
+          same card holds a tapped route spot's time and directions. */}
+      {cardOpen && (
         <div ref={cardRef} style={{
           position: 'absolute', left: 0, top: 0, visibility: 'hidden',
           willChange: 'transform',
@@ -408,9 +618,11 @@ export default function NativeFamilyMap({
             borderRight: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
             borderTop: '1px solid transparent', borderLeft: '1px solid transparent',
           }} />
-          {renderPopup(openUid, openLoc)}
+          {openLoc
+            ? renderPopup(openUid, openLoc, closeCard)
+            : renderSpotPopup(openSpot.spot, closeCard)}
           <button
-            onClick={() => setOpenUid(null)}
+            onClick={closeCard}
             aria-label={t('common.close')}
             style={{
               position: 'absolute', top: 8, right: 8,

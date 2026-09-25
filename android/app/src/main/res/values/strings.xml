@@ -45,6 +45,14 @@
     <string name="ch_ping_name">Find My Phone</string>
     <string name="ch_ping_desc">Rings this phone when a family member uses Find My Phone</string>
 
+    <!-- Famora Social — nearby-help escalation. ch_nearby_help_* is the
+         bystander's ring notification; ch_nearby_help_status_* is the
+         low-priority fallback shown on the SOS sender's own phone. -->
+    <string name="ch_nearby_help_name">Nearby Help Requests</string>
+    <string name="ch_nearby_help_desc">Asks nearby opted-in users to call the right emergency service for someone in danger</string>
+    <string name="ch_nearby_help_status_name">Nearby Help Status</string>
+    <string name="ch_nearby_help_status_desc">Low-priority updates about a nearby-help request you sent</string>
+
     <!--
       Native UI and notification text.
 
@@ -62,10 +70,25 @@
     <string name="sos_needs_help">%1$s needs help!</string>
     <string name="sos_view_location">View Location</string>
     <string name="sos_open_app">Open Famora</string>
-    <string name="sos_stop_alarm">I Understand — Stop Alarm</string>
+    <string name="sos_stop_alarm">I Understand — Silence Alarm</string>
     <string name="sos_calm_hint">Stay calm. Check where they are, then call or go to them.</string>
     <string name="sos_call">Call %1$s</string>
     <string name="sos_directions">Get Directions</string>
+    <string name="sos_tile_label">SOS</string>
+    <string name="sos_tile_subtitle">Alert family</string>
+    <!-- Resolved state: the sender marked themselves safe. Silencing the alarm never shows these. -->
+    <string name="sos_safe_title">%1$s is safe now</string>
+    <string name="sos_marked_safe">%1$s has marked themselves safe.</string>
+    <string name="sos_resolved">SOS Resolved</string>
+    <string name="sos_still_active">Alarm silenced · SOS still active</string>
+    <string name="ch_sos_safe_name">SOS resolved</string>
+    <string name="ch_sos_safe_desc">Tells you when a family member marks themselves safe after an SOS</string>
+
+    <!-- Places: a family member reached or left a saved place like Home or Office. -->
+    <string name="place_reached_title">%1$s reached %2$s</string>
+    <string name="place_left_title">%1$s left %2$s</string>
+    <string name="ch_places_name">Places</string>
+    <string name="ch_places_desc">Tells you when a family member reaches or leaves a saved place, like Home or Office</string>
 
     <!-- CallRingingActivity — full-screen incoming call over the lock screen -->
     <string name="call_incoming_voice">Incoming voice call</string>
@@ -110,6 +133,34 @@
     <string name="sos_countdown_hint">Tap Cancel if you did not mean to do this.</string>
     <string name="sos_countdown_cancel">Cancel</string>
 
+    <!-- Famora Social — nearby-help bystander notification (NearbyHelpRingService,
+         NearbyHelpActionReceiver). "Never asked to go" is repeated in the body
+         on purpose — see the plan's safety boundary in §7. -->
+    <string name="notif_nearby_help_title">Someone nearby may need help</string>
+    <string name="notif_nearby_help_body">Someone within about %1$s needs %2$s. Would you call %3$s for them?</string>
+    <string name="kind_need_police">the police</string>
+    <string name="kind_need_ambulance">an ambulance</string>
+    <string name="kind_need_disaster">emergency rescue</string>
+    <string name="kind_need_fire">the fire brigade</string>
+    <string name="notif_nearby_help_note">You\'ll only ever be asked to call — never to go there.</string>
+    <string name="notif_action_help">I can help</string>
+    <string name="notif_action_no_thanks">No thanks</string>
+    <string name="notif_action_call_number">Call %1$s</string>
+    <string name="notif_action_open_maps">Open in Maps</string>
+    <string name="notif_nearby_help_already_title">Already being handled</string>
+    <string name="notif_nearby_help_already_body">Thank you — someone else is already helping.</string>
+    <string name="notif_nearby_help_accepted_title">Location revealed</string>
+    <string name="notif_nearby_help_accepted_body">%1$s — call %2$s or open it in Maps.</string>
+
+    <!-- Famora Social — sender-side fallback (MyFirebaseMessagingService).
+         Count/status only, never a helper's identity — the live case is
+         handled by the web layer over Supabase Realtime; this is only shown
+         when the app was backgrounded or killed. -->
+    <string name="notif_nearby_help_sender_accepted_title">Help is on the way</string>
+    <string name="notif_nearby_help_sender_accepted_body">Someone nearby is calling for you.</string>
+    <string name="notif_nearby_help_sender_exhausted_title">No one nearby found</string>
+    <string name="notif_nearby_help_sender_exhausted_body">Call %1$s now if you still need help.</string>
+
     <!-- Fake call. The countdown notification and the notification button are
          worded so they do not say "fake" to someone reading the lock screen. -->
     <string name="fake_call_default_name">Mom</string>
@@ -127,4 +178,42 @@
     <string name="ch_fake_call_desc">A fake incoming call you schedule for yourself</string>
     <!-- Spoken into the earpiece after answering, one line at a time with pauses. Lines are separated by | -->
     <string name="fake_call_voice_script">Hello? Hi, where are you right now?|Okay. I\'m close by, I\'m coming to you.|Stay where you are, I\'ll be there in two minutes.|Yes, I\'m on my way. Don\'t hang up.</string>
+
+    <!-- Device alerts (MyFirebaseMessagingService): low battery, phone off, back online. -->
+    <string name="ch_device_name">Battery and phone status</string>
+    <string name="ch_weather_name">Weather alerts</string>
+    <string name="ch_weather_desc">Warns you about severe weather at your saved places</string>
+    <string name="ch_device_desc">Tells you when a family member\'s battery is low or their phone has gone offline</string>
+    <string name="device_low_title">%1$s\'s battery is low</string>
+    <string name="device_low_body">%1$s left. Their location keeps updating until it runs out.</string>
+    <string name="device_critical_title">%1$s\'s phone is almost out of battery</string>
+    <string name="device_critical_body">%1$s left — it may switch off very soon.</string>
+    <string name="device_offline_title">%1$s hasn\'t been reachable</string>
+    <string name="device_offline_body">No update for %1$s. Their phone may be off or have no signal.</string>
+    <string name="device_offline_body_battery">No update for %1$s. Their battery was at %2$s, so it may have run out.</string>
+    <string name="device_back_title">%1$s is back online</string>
+    <string name="device_back_body">Their phone is reporting again.</string>
+    <string name="weather_title_thunderstorm" formatted="true">Thunderstorm near %1$s</string>
+    <string name="weather_detail_thunderstorm" formatted="true">Thunder and lightning are likely.</string>
+    <string name="weather_title_heavy_rain" formatted="true">Heavy rain near %1$s</string>
+    <string name="weather_detail_heavy_rain" formatted="true">Heavy rain is likely.</string>
+    <string name="weather_detail_heavy_rain_mm" formatted="true">About %1$d mm expected.</string>
+    <string name="weather_title_heat" formatted="true">Extreme heat near %1$s</string>
+    <string name="weather_detail_heat" formatted="true">Around %1$d°C. Stay hydrated.</string>
+    <string name="weather_title_wind" formatted="true">Strong winds near %1$s</string>
+    <string name="weather_detail_wind" formatted="true">Gusts up to %1$d km/h.</string>
+    <string name="weather_when_now" formatted="true">Expected now</string>
+    <string name="weather_when_at" formatted="true">Expected around %1$s</string>
+    <string name="weather_body">%1$s. %2$s</string>
+    <string name="device_overspeed_title" formatted="true">%1$s is driving fast</string>
+    <string name="device_overspeed_body" formatted="true">Going %1$d km/h (limit %2$d km/h)</string>
+    <string name="device_overspeed_self_title">Slow down: you are over your speed limit</string>
+    <string name="device_overspeed_self_body" formatted="true">You are going %1$d km/h. Your limit is %2$d km/h.</string>
+    <string name="unlock_alert_title" formatted="true">Wrong password on %1$s\'s phone</string>
+    <string name="unlock_alert_body" formatted="true">Wrong screen-lock attempts: %1$d. Open Famora to see where the phone was, and a photo if one was taken.</string>
+    <string name="ch_lost_name">Phone lost mode</string>
+    <string name="ch_lost_desc">Shown while this phone has been marked lost by your family</string>
+    <string name="lost_title">This phone is lost</string>
+    <string name="lost_body_default" formatted="true">Please contact %1$s to return it.</string>
+    <string name="lost_body_generic">Please return this phone to its owner\'s family.</string>
 </resources>

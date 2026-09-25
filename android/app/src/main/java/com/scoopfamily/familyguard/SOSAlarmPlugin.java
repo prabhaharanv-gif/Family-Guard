@@ -71,6 +71,7 @@ public class SOSAlarmPlugin extends Plugin {
             i.putExtra("lat",     call.getString("lat",     ""));
             i.putExtra("lng",     call.getString("lng",     ""));
             i.putExtra("phone",   call.getString("phone",   ""));
+            i.putExtra("sos_id",  call.getString("sosId",   ""));
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 ctx.startForegroundService(i);
@@ -98,6 +99,64 @@ public class SOSAlarmPlugin extends Plugin {
     public void exitSosSilence(PluginCall call) {
         SosSilence.exit(getContext());
         call.resolve();
+    }
+
+    /**
+     * The sender marked themselves safe, seen over realtime while the app is
+     * alive. Same handling as the sos_resolved push; whichever arrives first
+     * does the work and the other is a no-op.
+     */
+    @PluginMethod
+    public void showResolved(PluginCall call) {
+        MyFirebaseMessagingService.handleSosResolved(getContext(),
+            call.getString("sosId", ""), call.getString("sender", ""));
+        call.resolve();
+    }
+
+    /** SOS Quick Settings tile: on/off, and whether Android can offer to add it. */
+    @PluginMethod
+    public void getSosTile(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("enabled", SosTileService.isEnabled(getContext()));
+        ret.put("canPrompt", Build.VERSION.SDK_INT >= 33);
+        call.resolve(ret);
+    }
+
+    /**
+     * Turns the tile on or off. On Android 13+ turning it on also asks the
+     * system to show its own "Add tile?" sheet; older versions (the Redmi is
+     * 12) have no such API, and the card tells the member where to add it.
+     */
+    @PluginMethod
+    public void setSosTile(PluginCall call) {
+        boolean enabled = Boolean.TRUE.equals(call.getBoolean("enabled", false));
+        Context ctx = getContext();
+        try {
+            SosTileService.setEnabled(ctx, enabled);
+        } catch (Exception e) {
+            call.reject("Could not change the SOS tile: " + e.getMessage());
+            return;
+        }
+        boolean prompted = false;
+        if (enabled && Build.VERSION.SDK_INT >= 33) {
+            try {
+                android.app.StatusBarManager sbm = ctx.getSystemService(android.app.StatusBarManager.class);
+                if (sbm != null) {
+                    sbm.requestAddTileService(SosTileService.component(ctx),
+                        ctx.getString(R.string.sos_tile_label),
+                        android.graphics.drawable.Icon.createWithResource(ctx, R.drawable.ic_sos_alert),
+                        ctx.getMainExecutor(),
+                        result -> android.util.Log.i("SOS_Arming", "add-tile prompt result " + result));
+                    prompted = true;
+                }
+            } catch (Exception e) {
+                android.util.Log.w("SOS_Arming", "add-tile prompt refused: " + e.getMessage());
+            }
+        }
+        JSObject ret = new JSObject();
+        ret.put("enabled", enabled);
+        ret.put("prompted", prompted);
+        call.resolve(ret);
     }
 
     /** Is the foreground siren service currently running? */
