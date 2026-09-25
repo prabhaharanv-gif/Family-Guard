@@ -10,7 +10,7 @@ export default function PrivacyPolicyPage() {
 
   return (
     <div style={{
-      position: 'fixed', inset: 0,
+      position: 'fixed', top: 0, bottom: 0, left: 0, right: 0, maxWidth: 430, margin: '0 auto',
       display: 'flex', flexDirection: 'column',
       background: 'var(--bg)',
       zIndex: 100,
@@ -30,12 +30,12 @@ export default function PrivacyPolicyPage() {
             cursor: 'pointer', fontSize: 18, color: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
-          }}>←</button>
+          }}><Icon name="arrowLeft" size={18} /></button>
           <div>
             <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', fontFamily: 'Sora, sans-serif', lineHeight: 1.35 }}>
               {p.pageTitle}
             </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.82)', marginTop: 2 }}>
               {p.lastUpdatedLabel}: {p.lastUpdated}
             </div>
           </div>

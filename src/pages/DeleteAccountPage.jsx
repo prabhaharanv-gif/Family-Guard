@@ -265,7 +265,7 @@ export default function DeleteAccountPage() {
             cursor: 'pointer', fontSize: 18, color: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0, fontFamily: 'inherit',
-          }}>←</button>
+          }}><Icon name="arrowLeft" size={18} /></button>
           <div style={{ minWidth: 0 }}>
             <div style={{
               fontSize: 18, fontWeight: 900, color: '#fff',
@@ -273,7 +273,7 @@ export default function DeleteAccountPage() {
             }}>
               {t('deletePage.title')}
             </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.82)', marginTop: 2, lineHeight: 1.5 }}>
               {t('deletePage.sub')}
             </div>
           </div>
