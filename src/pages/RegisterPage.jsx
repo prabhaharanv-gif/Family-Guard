@@ -108,12 +108,20 @@ export default function RegisterPage() {
         // The marker above misses an existing account that has none (its
         // password would be overwritten) and an older email-registered account
         // (a second account would be created for the same number). The database
-        // knows both; see registration_number_taken. If that function is not
-        // deployed yet the call errors, and registration carries on as before
-        // rather than being blocked for everyone.
+        // knows both; see registration_number_taken.
+        //
+        // If the check itself fails, registration STOPS. It used to carry on, on
+        // the reasoning that a missing function should not block everyone, and
+        // that let an already-registered number through whenever the call failed.
+        // Being unable to tell is not the same as being safe: a blocked sign-up
+        // can be retried, a second account or an overwritten password cannot.
         const { data: dbTaken, error: takenErr } = await supabase.rpc('registration_number_taken')
-        if (takenErr) console.warn('[Register] registration_number_taken failed:', takenErr.message)
-        else taken = dbTaken === true
+        if (takenErr) {
+          console.warn('[Register] registration_number_taken failed:', takenErr.message)
+          await supabase.auth.signOut({ scope: 'local' })
+          throw new Error(t('register.registrationFailed'))
+        }
+        taken = dbTaken === true
       }
       if (taken) {
         await supabase.auth.signOut({ scope: 'local' })  // global would end the owner's other sessions
