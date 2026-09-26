@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { withCaptcha } from '../lib/captcha'
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { useAuthStore } from '../store/authStore'
 import { useT } from '../i18n'
@@ -64,7 +65,7 @@ export default function RegisterPage() {
       // anyone enumerating users — so a probe reads as "taken" for every
       // number on earth and blocks all registration. The check belongs after
       // verifyOtp, where the answer is actually knowable; see handleVerifyOtp.
-      const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: toE164(mobile) })
+      const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: toE164(mobile), options: await withCaptcha() })
       if (otpErr) throw otpErr
       setStep(2)
       setResendIn(30)
@@ -135,7 +136,7 @@ export default function RegisterPage() {
     setError('')
     setLoading(true)
     try {
-      const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: toE164(mobile) })
+      const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: toE164(mobile), options: await withCaptcha() })
       if (otpErr) throw otpErr
       setResendIn(30)
     } catch (err) {

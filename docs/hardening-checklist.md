@@ -32,7 +32,12 @@ Sign-up is open and the OTP step is what proves a phone number, so this is the c
 - [ ] **Twilio:** Console → Messaging → Settings → Geo permissions: allow India only.
 - [ ] **Twilio:** set a usage alert and a spend cap (Billing → Usage triggers).
 - [ ] **Supabase:** Authentication → Rate Limits. Lower the SMS-per-hour limit to something real families need, for example 5 to 10 per hour.
-- [ ] **Supabase:** Authentication → Attack Protection → enable CAPTCHA (hCaptcha or Cloudflare Turnstile). This is not just a switch: the app must send a CAPTCHA token with sign-up, sign-in and OTP requests. Ask Claude to wire it in once you pick a provider.
+- [ ] **CAPTCHA (code is done, switched off until you do the steps below).** Supabase applies CAPTCHA to every sign-in and OTP call, not only sign-up, so the app passes a Cloudflare Turnstile token on all nine such calls (register, resend, login x2, forgot password, resend, change password, delete account). With no key set the app behaves exactly as before. Roll it out in this order, and do not skip ahead:
+  1. Cloudflare dashboard → Turnstile → Add widget. Widget mode **Managed** (or Invisible). Add hostnames `famora-family.vercel.app` and `localhost` (the Android app runs from `https://localhost`). Copy the **site key** and the **secret key**.
+  2. Put the site key in `.env` as `VITE_TURNSTILE_SITE_KEY=...` and in Vercel → Project → Settings → Environment Variables (Production). Rebuild the web and the APK.
+  3. Install the new APK on your phone and Sudha's, and test register, login, forgot password and delete account. While Supabase CAPTCHA is still off the tokens are simply ignored, so nothing can break yet. A slow first request (up to 15 s) means the widget could not run there: stop and tell Claude.
+  4. Only when **every** phone runs that build: Supabase → Authentication → Attack Protection → enable CAPTCHA, provider Turnstile, paste the **secret key**. From that moment any build without the key can no longer sign in, register or reset a password.
+  5. Rollback is the same switch: turn CAPTCHA off in Supabase and everything works again at once.
 
 ### 3. Secrets in git history **[you]**
 `log.txt` and `google-services.json` are no longer tracked, but four earlier commits contain them. `log.txt` is about 180,000 lines. The current copy has no keys or passwords, but the old ones weren't checked.

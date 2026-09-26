@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { withCaptcha } from '../lib/captcha'
 import { useNavigate } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
 import { useT } from '../i18n'
@@ -109,7 +110,7 @@ function WebDeleteFlow() {
     // has no account would quietly create one, the way registration relies on.
     const { error: otpErr } = await getDeleteClient().auth.signInWithOtp({
       phone: toE164(mobile),
-      options: { shouldCreateUser: false },
+      options: await withCaptcha({ shouldCreateUser: false }),
     })
     setLoading(false)
     if (otpErr) { setError(t('deletePage.couldNotSend')); return }
