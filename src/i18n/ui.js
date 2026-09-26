@@ -709,7 +709,7 @@ export const UI = {
     },
 
     // Rough arrival time between two members (lib/eta.js).
-    eta: { minutes: 'About {n} min', hours: 'About {h} h', hoursMinutes: 'About {h} h {m} min' },
+    eta: { minutes: 'About {n} min', hours: 'About {h} h', hoursMinutes: 'About {h} h {m} min', reachBy: 'Reach by {time}' },
 
     // Voice clip and photo attached to an SOS. Seen only by the family the SOS
     // went to, kept 7 days.

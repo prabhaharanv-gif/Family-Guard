@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-
 import L from 'leaflet'
 import { timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
 import SmoothMarker, { GLIDE_MS } from '../SmoothMarker'
-import { haversineKm, etaLabel, formatDistance } from '../../lib/eta'
+import { haversineKm, arrivalLabel, formatDistance } from '../../lib/eta'
 import { useT } from '../../i18n'
 
 /**
@@ -255,7 +255,7 @@ function HoldToMeasure({ origin, enabled }) {
 
   const km   = haversineKm(origin.lat, origin.lng, point.lat, point.lng)
   const dist = formatDistance(t, km)
-  const eta  = etaLabel(t, km)
+  const eta  = arrivalLabel(t, km)
 
   return (
     <Marker ref={markerRef} position={[point.lat, point.lng]} icon={measureIcon()} zIndexOffset={900}

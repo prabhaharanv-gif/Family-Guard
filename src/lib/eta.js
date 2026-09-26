@@ -47,6 +47,21 @@ export function etaLabel(t, km) {
   return m === 0 ? t('eta.hours', { h }) : t('eta.hoursMinutes', { h, m })
 }
 
+/**
+ * "Reach by 1:50 PM" — the same rough estimate as etaLabel, worded as a clock
+ * time instead of a duration for when the point is "when would they get
+ * there", not "how long is the trip". hour12 is forced rather than left to the
+ * device locale so the wording always matches ("by 14:20" reads oddly next to
+ * "Reach by").
+ */
+export function arrivalLabel(t, km) {
+  const min = etaMinutes(km)
+  if (min == null) return null
+  const arrival = new Date(Date.now() + min * 60000)
+  const time = arrival.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
+  return t('eta.reachBy', { time })
+}
+
 /** "Nearby" / "230 m away" / "1.4 km away" — the same wording Find Fam uses. */
 export function formatDistance(t, km) {
   if (km == null) return null
