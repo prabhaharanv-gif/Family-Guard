@@ -49,8 +49,8 @@ function loadScript() {
   return scriptPromise
 }
 
-/** A fresh single-use token, or undefined when CAPTCHA is off or could not run. */
-export async function getCaptchaToken() {
+/** Asks Cloudflare for one new single-use token. Slow: seconds, up to the timeout. */
+async function requestToken() {
   if (!SITE_KEY) return undefined
   try { await loadScript() } catch { return undefined }
 
@@ -94,6 +94,34 @@ export async function getCaptchaToken() {
       finish(undefined)
     }
   })
+}
+
+// ── Tokens made ahead of time ───────────────────────────────────────────────
+// A token takes seconds to come back, and a page that asked for one only when
+// the button was tapped left the person on "Sending..." for that long (15 s in
+// the worst case). So a page asks for its tokens as it opens, while the person
+// is still typing, and the tap then finds them ready. A token stays valid for
+// about five minutes and works once; older ones are thrown away.
+const TOKEN_TTL_MS = 240_000
+let pool = []
+
+/** Start getting tokens now, so a later getCaptchaToken() is instant. */
+export function prefetchCaptchaToken(count = 1) {
+  if (!SITE_KEY) return
+  pool = pool.filter(e => Date.now() - e.at < TOKEN_TTL_MS)
+  while (pool.length < count) pool.push({ at: Date.now(), promise: requestToken() })
+}
+
+/** A single-use token: a ready one if there is one, else a new request. */
+export async function getCaptchaToken() {
+  if (!SITE_KEY) return undefined
+  pool = pool.filter(e => Date.now() - e.at < TOKEN_TTL_MS)
+  const ready = pool.shift()
+  if (ready) {
+    const token = await ready.promise
+    if (token) return token
+  }
+  return requestToken()
 }
 
 /**

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { withCaptcha } from '../lib/captcha'
+import { withCaptcha, prefetchCaptchaToken } from '../lib/captcha'
+import { isNumberRegistered } from '../lib/registrationCheck'
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { useAuthStore } from '../store/authStore'
 import { useT } from '../i18n'
@@ -43,6 +44,10 @@ export default function RegisterPage() {
   const [resendIn, setResendIn] = useState(0)
   const { createOwnFamily } = useAuthStore()
 
+  // Two tokens are needed on Send code (the already-registered check and the SMS).
+  // Getting them now, while the details are typed, is what keeps that tap quick.
+  useEffect(() => { prefetchCaptchaToken(2) }, [])
+
   // Step 1 → send OTP to the entered mobile number, move to step 2
   const handleSendOtp = async (e) => {
     e.preventDefault()
@@ -59,16 +64,27 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
-      // No "is this number taken?" probe here, and there cannot be one.
-      // signInWithPassword returns "Invalid login credentials" whether or not
-      // the account exists — that is deliberate on Supabase's part, to stop
-      // anyone enumerating users — so a probe reads as "taken" for every
-      // number on earth and blocks all registration. The check belongs after
-      // verifyOtp, where the answer is actually knowable; see handleVerifyOtp.
+      // Is this number already registered? Asked BEFORE the SMS goes out, so the
+      // person is told at once and no code is wasted.
+      //
+      // It cannot be asked of Supabase Auth directly: signInWithPassword returns
+      // "Invalid login credentials" whether or not the account exists (on
+      // purpose, to stop anyone enumerating users), so a probe that way reads as
+      // "taken" for every number on earth. The answer comes from the
+      // check-registration function instead, which replies only to a request
+      // carrying a valid CAPTCHA token, so nobody can test lists of numbers.
+      //
+      // A courtesy, not the guarantee: when it cannot answer (no CAPTCHA token,
+      // not deployed, no network) this carries on to the SMS step, and the check
+      // after verifyOtp (handleVerifyOtp) still stops a second account.
+      const registered = await isNumberRegistered(supabase, mobile.replace(/[^0-9]/g, ''))
+      if (registered === true) throw new Error(t('register.alreadyRegistered'))
+
       const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: toE164(mobile), options: await withCaptcha() })
       if (otpErr) throw otpErr
       setStep(2)
       setResendIn(30)
+      prefetchCaptchaToken(1)   // ready for Resend code
     } catch (err) {
       setError(err.message || t('register.couldNotSend'))
     } finally {
@@ -108,12 +124,20 @@ export default function RegisterPage() {
         // The marker above misses an existing account that has none (its
         // password would be overwritten) and an older email-registered account
         // (a second account would be created for the same number). The database
-        // knows both; see registration_number_taken. If that function is not
-        // deployed yet the call errors, and registration carries on as before
-        // rather than being blocked for everyone.
+        // knows both; see registration_number_taken.
+        //
+        // If the check itself fails, registration STOPS. It used to carry on, on
+        // the reasoning that a missing function should not block everyone, and
+        // that let an already-registered number through whenever the call failed.
+        // Being unable to tell is not the same as being safe: a blocked sign-up
+        // can be retried, a second account or an overwritten password cannot.
         const { data: dbTaken, error: takenErr } = await supabase.rpc('registration_number_taken')
-        if (takenErr) console.warn('[Register] registration_number_taken failed:', takenErr.message)
-        else taken = dbTaken === true
+        if (takenErr) {
+          console.warn('[Register] registration_number_taken failed:', takenErr.message)
+          await supabase.auth.signOut({ scope: 'local' })
+          throw new Error(t('register.registrationFailed'))
+        }
+        taken = dbTaken === true
       }
       if (taken) {
         await supabase.auth.signOut({ scope: 'local' })  // global would end the owner's other sessions

@@ -39,6 +39,13 @@ Sign-up is open and the OTP step is what proves a phone number, so this is the c
   4. Only when **every** phone runs that build: Supabase → Authentication → Attack Protection → enable CAPTCHA, provider Turnstile, paste the **secret key**. From that moment any build without the key can no longer sign in, register or reset a password.
   5. Rollback is the same switch: turn CAPTCHA off in Supabase and everything works again at once.
 
+- [ ] **Already-registered warning before the SMS (built, needs deploying).** Create Account asks the `check-registration` function first, so a registered number is refused before any code is sent. It only answers to a request with a valid Turnstile token, so it cannot be used to test lists of numbers. Until it is deployed the app simply carries on to the SMS step, where the older after-verification check still stops a duplicate. Deploy in this order:
+  1. SQL Editor: run `supabase/migrations/20260926130000_phone_registered.sql`. Then run `docs/launch-readiness.sql`: it must still say 0 problems (it now also checks that only the server role can run `phone_registered`).
+  2. Supabase → Edge Functions → **Deploy a new function** (via Editor) → name it exactly `check-registration` → paste `supabase/functions/check-registration/index.ts` → Deploy.
+  3. Open that function → **Details** → switch **Verify JWT** to **OFF**. The caller has no session and sends a publishable key, so the platform check would reject every request. The CAPTCHA is the protection instead.
+  4. Edge Functions → **Secrets** → add `TURNSTILE_SECRET_KEY` = your Cloudflare Turnstile **secret** key. Keep this key out of chat, files and git.
+  5. Test: Create Account with a registered number must be refused on the first screen, with no SMS arriving. Run `.elease-check.ps1`: the function must show `ok`, not 404.
+
 ### 3. Secrets in git history **[you]**
 `log.txt` and `google-services.json` are no longer tracked, but four earlier commits contain them. `log.txt` is about 180,000 lines. The current copy has no keys or passwords, but the old ones weren't checked.
 
