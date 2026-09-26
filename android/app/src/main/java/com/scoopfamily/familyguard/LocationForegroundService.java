@@ -15,6 +15,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -203,6 +204,12 @@ public class LocationForegroundService extends Service {
     // rejected jumps began — LocationFilter accepts rather than hold forever.
     private long pendingJumpTime = 0L;
     private long jumpHoldStartTime = 0L;
+
+    // Stale-fix and unconfirmed-far-fix guard (see TeleportGuard), and the last
+    // time a GPS-quality fix showed the phone really moving.
+    private final TeleportGuard teleportGuard = new TeleportGuard();
+    private Location teleportCandidate = null;
+    private long lastMotionTime = 0L;
 
     // ─────────────────────────────────────────────────────────────────────────
     @Override
@@ -1045,6 +1052,36 @@ public class LocationForegroundService extends Service {
 
         // Phone lost mode: ends at its deadline, rings when due.
         LostPhone.tick(this);
+
+        // A fix that is really a memory (the provider's cached last position) or
+        // a far-away one-off on a phone that has not moved must reach neither the
+        // pin nor the Places check: it made a phone sitting at home announce
+        // "Reached / Left" every few minutes. See TeleportGuard.
+        long nowGuard = System.currentTimeMillis();
+        if (loc.hasSpeed() && loc.getSpeed() >= PlaceGeofence.MOVING_MPS
+                && loc.hasAccuracy() && loc.getAccuracy() <= PlaceGeofence.MOTION_ACCURACY_M) {
+            lastMotionTime = nowGuard;
+        }
+        long fixAgeMs = loc.getElapsedRealtimeNanos() > 0
+            ? (SystemClock.elapsedRealtimeNanos() - loc.getElapsedRealtimeNanos()) / 1_000_000L : 0L;
+        if (TeleportGuard.isStale(fixAgeMs)) {
+            Log.d(TAG, source + " fix ignored — " + (fixAgeMs / 1000) + "s old, a cached position, not a reading");
+            return;
+        }
+        boolean guardBaseline = lastPushedLocation != null;
+        float guardMoved = guardBaseline ? lastPushedLocation.distanceTo(loc) : TeleportGuard.NO_DISTANCE;
+        float guardFromCandidate = teleportCandidate != null
+            ? teleportCandidate.distanceTo(loc) : TeleportGuard.NO_DISTANCE;
+        if (teleportGuard.shouldHold(guardBaseline, guardMoved,
+                guardBaseline ? nowGuard - lastPushTime : 0L,
+                nowGuard - lastMotionTime <= TeleportGuard.MOTION_WINDOW_MS && lastMotionTime != 0L,
+                guardFromCandidate, nowGuard)) {
+            // Measured from the LATEST held fix, so a vehicle keeps counting as one move.
+            teleportCandidate = loc;
+            Log.w(TAG, source + " fix held — " + guardMoved + "m from the last position with no movement seen; waiting to see if it lasts");
+            return;
+        }
+        if (!teleportGuard.hasCandidate()) teleportCandidate = null;
 
         // Places (geofencing) run on every raw fix, deliberately BEFORE and
         // independent of the push-worthiness gate below: that gate exists to
