@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { withCaptcha } from '../lib/captcha'
+import { isNumberRegistered } from '../lib/registrationCheck'
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { useAuthStore } from '../store/authStore'
 import { useT } from '../i18n'
@@ -59,12 +60,22 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
-      // No "is this number taken?" probe here, and there cannot be one.
-      // signInWithPassword returns "Invalid login credentials" whether or not
-      // the account exists — that is deliberate on Supabase's part, to stop
-      // anyone enumerating users — so a probe reads as "taken" for every
-      // number on earth and blocks all registration. The check belongs after
-      // verifyOtp, where the answer is actually knowable; see handleVerifyOtp.
+      // Is this number already registered? Asked BEFORE the SMS goes out, so the
+      // person is told at once and no code is wasted.
+      //
+      // It cannot be asked of Supabase Auth directly: signInWithPassword returns
+      // "Invalid login credentials" whether or not the account exists (on
+      // purpose, to stop anyone enumerating users), so a probe that way reads as
+      // "taken" for every number on earth. The answer comes from the
+      // check-registration function instead, which replies only to a request
+      // carrying a valid CAPTCHA token, so nobody can test lists of numbers.
+      //
+      // A courtesy, not the guarantee: when it cannot answer (no CAPTCHA token,
+      // not deployed, no network) this carries on to the SMS step, and the check
+      // after verifyOtp (handleVerifyOtp) still stops a second account.
+      const registered = await isNumberRegistered(supabase, mobile.replace(/[^0-9]/g, ''))
+      if (registered === true) throw new Error(t('register.alreadyRegistered'))
+
       const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: toE164(mobile), options: await withCaptcha() })
       if (otpErr) throw otpErr
       setStep(2)
