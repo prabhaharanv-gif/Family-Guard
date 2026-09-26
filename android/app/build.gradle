@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 // Release signing is read from android/keystore.properties, which is gitignored.
 // Absent (any clean checkout, CI, or a debug-only build) the release buildType
-// simply has no signingConfig and assembleDebug is unaffected â€” so a missing
+// simply has no signingConfig and assembleDebug is unaffected Ã¢â‚¬â€ so a missing
 // keystore can never break the normal build.
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
@@ -18,8 +18,8 @@ android {
         applicationId "com.scoopfamily.familyguard"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 21
-        versionName "1.2.3"
+        versionCode 22
+        versionName "1.2.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // Google Maps SDK for Android key, read from android/local.properties
         // (git-ignored) as MAPS_API_KEY=... so it never lands in a tracked file.
@@ -53,11 +53,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
 
-        // â”€â”€ Tester APK â€” release in every respect except SEND_SMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Ã¢â€â‚¬Ã¢â€â‚¬ Tester APK Ã¢â‚¬â€ release in every respect except SEND_SMS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         // Google Play Protect's enhanced fraud protection (live in India)
         // refuses to install a SIDELOADED app that declares SMS, call-log,
         // accessibility or notification-listener permissions. The dialog it
-        // shows has only an OK button â€” there is no "install anyway" â€” so a
+        // shows has only an OK button Ã¢â‚¬â€ there is no "install anyway" Ã¢â‚¬â€ so a
         // tester who will not turn Play Protect off simply cannot take the
         // release APK. Installs from the Play Store are exempt, so this never
         // affects real users; it only blocks handing an APK around.
@@ -66,7 +66,7 @@ android {
         // the build below Play Protect's threshold. Offline SMS alerts are
         // therefore dead on this variant: OfflineSms.hasPermission() stays
         // false and the toggle in Reliability Setup will not take. Everything
-        // else â€” location, SOS, calls, push â€” is the release build.
+        // else Ã¢â‚¬â€ location, SOS, calls, push Ã¢â‚¬â€ is the release build.
         //
         // Same applicationId as release on purpose: google-services.json is
         // keyed to it, and keeping it identical means this APK updates an
@@ -109,17 +109,17 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
 
-    // â”€â”€ Firebase Cloud Messaging â€” required for background SOS notifications â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Firebase Cloud Messaging Ã¢â‚¬â€ required for background SOS notifications Ã¢â€â‚¬Ã¢â€â‚¬
     implementation platform('com.google.firebase:firebase-bom:33.8.0')
     implementation 'com.google.firebase:firebase-messaging'
 
-    // â”€â”€ Crashlytics â€” native crash + ANR reporting from real devices â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Crashlytics Ã¢â‚¬â€ native crash + ANR reporting from real devices Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     // ANRs matter most here: an OEM killing LocationForegroundService, or the
     // SOS siren blocking the main thread, surfaces as an ANR in the field on
     // handsets we do not own.
     implementation 'com.google.firebase:firebase-crashlytics'
 
-    // Fused Location Provider â€” required for LocationForegroundService
+    // Fused Location Provider Ã¢â‚¬â€ required for LocationForegroundService
     implementation 'com.google.android.gms:play-services-location:21.3.0'
 }
 
@@ -129,7 +129,7 @@ try {
     def servicesJSON = file('google-services.json')
     if (servicesJSON.text) {
         apply plugin: 'com.google.gms.google-services'
-        // Must come after google-services â€” Crashlytics reads its config.
+        // Must come after google-services Ã¢â‚¬â€ Crashlytics reads its config.
         apply plugin: 'com.google.firebase.crashlytics'
     }
 } catch(Exception e) {
