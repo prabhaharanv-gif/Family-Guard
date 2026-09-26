@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { withCaptcha } from '../lib/captcha'
+import { withCaptcha, prefetchCaptchaToken } from '../lib/captcha'
 import { isNumberRegistered } from '../lib/registrationCheck'
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { useAuthStore } from '../store/authStore'
@@ -44,6 +44,10 @@ export default function RegisterPage() {
   const [resendIn, setResendIn] = useState(0)
   const { createOwnFamily } = useAuthStore()
 
+  // Two tokens are needed on Send code (the already-registered check and the SMS).
+  // Getting them now, while the details are typed, is what keeps that tap quick.
+  useEffect(() => { prefetchCaptchaToken(2) }, [])
+
   // Step 1 → send OTP to the entered mobile number, move to step 2
   const handleSendOtp = async (e) => {
     e.preventDefault()
@@ -80,6 +84,7 @@ export default function RegisterPage() {
       if (otpErr) throw otpErr
       setStep(2)
       setResendIn(30)
+      prefetchCaptchaToken(1)   // ready for Resend code
     } catch (err) {
       setError(err.message || t('register.couldNotSend'))
     } finally {
