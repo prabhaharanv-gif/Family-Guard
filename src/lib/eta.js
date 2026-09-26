@@ -1,5 +1,5 @@
 // Rough arrival time between two people, worked out from the straight-line
-// distance — free, instant, and worded "About …" so nobody reads it as a route.
+// distance — free, instant, and shown as "Reach by 01:50 PM".
 // Real road time (with traffic) is one tap away in Google Maps.
 //
 // Longer trips are faster per kilometre (highways, fewer junctions), so the
@@ -37,12 +37,15 @@ export function etaMinutes(km) {
   return min < 10 ? Math.max(1, Math.round(min)) : Math.round(min / 5) * 5
 }
 
-/** "About 9 min" / "About 1 h 10 min", or null when there is nothing worth saying. */
+/** "Reach by 01:50 PM" — the clock time of arrival, or null when there is nothing worth saying. */
 export function etaLabel(t, km) {
   const min = etaMinutes(km)
   if (min == null) return null
-  if (min < 60) return t('eta.minutes', { n: min })
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return m === 0 ? t('eta.hours', { h }) : t('eta.hoursMinutes', { h, m })
+  const time = new Date(Date.now() + min * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return t('map.destReachBy', { time })
+}
+
+/** Rough road distance in km from a straight-line one (same factor etaMinutes uses). */
+export function roadKm(km) {
+  return km == null ? null : km * (km > 25 ? 1.2 : 1.3)
 }
