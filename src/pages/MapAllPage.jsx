@@ -495,36 +495,38 @@ export default function MapAllPage() {
           })()}
         </div>
       </div>
-      {/* Directions, then Today's route underneath: two buttons of one width,
-          stacked, so neither label is squeezed. The name is already at the top
-          of the card, so the button just says "Directions". */}
-      {!isMe && (
-        <a
-          href={`https://www.google.com/maps/dir/?api=1&destination=${real.lat},${real.lng}`}
-          target="_blank" rel="noopener noreferrer"
+      {/* Directions and Timeline share one row, compact pills split evenly.
+          The name is already at the top of the card, so labels can stay short. */}
+      <div style={{ display: 'flex', gap: 6, marginTop: isMe ? 8 : 0 }}>
+        {!isMe && (
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${real.lat},${real.lng}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+              flex: 1, minWidth: 0,
+              background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
+              color: '#fff', padding: '6px 10px', borderRadius: 999,
+              fontWeight: 700, fontSize: 11.5, textDecoration: 'none', whiteSpace: 'nowrap',
+            }}
+          >
+            <Icon name="navigate" size={13} /> {t('map.directions')}
+          </a>
+        )}
+        {/* Outline, so Directions stays the main action. */}
+        <button
+          onClick={() => { close?.(); showRoute(uid) }}
           style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
-            color: '#fff', padding: '8px 14px', borderRadius: 999,
-            fontWeight: 700, fontSize: 12.5, textDecoration: 'none', whiteSpace: 'nowrap',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+            flex: 1, minWidth: 0, boxSizing: 'border-box',
+            background: '#FFF8F0', color: 'var(--maroon)',
+            border: '1.5px solid var(--maroon)', padding: '6px 10px', borderRadius: 999,
+            fontWeight: 700, fontSize: 11.5, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap',
           }}
         >
-          <Icon name="navigate" /> {t('map.directions')}
-        </a>
-      )}
-      {/* Outline, so Directions stays the main action. */}
-      <button
-        onClick={() => { close?.(); showRoute(uid) }}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          width: '100%', boxSizing: 'border-box', marginTop: 8,
-          background: '#FFF8F0', color: 'var(--maroon)',
-          border: '1.5px solid var(--maroon)', padding: '7px 14px', borderRadius: 999,
-          fontWeight: 700, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap',
-        }}
-      >
-        <Icon name="map" /> {t('map.todaysRoute')}
-      </button>
+          <Icon name="map" size={13} /> {t('map.todaysRoute')}
+        </button>
+      </div>
     </div>
     )
   }
