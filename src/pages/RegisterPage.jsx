@@ -103,7 +103,19 @@ export default function RegisterPage() {
       // down, so a user carrying one has been through this before. Signed out
       // again first, or a failed registration would leave them holding a
       // session they never asked for.
-      if (verifyData.user.user_metadata?.display_name) {
+      let taken = !!verifyData.user.user_metadata?.display_name
+      if (!taken) {
+        // The marker above misses an existing account that has none (its
+        // password would be overwritten) and an older email-registered account
+        // (a second account would be created for the same number). The database
+        // knows both; see registration_number_taken. If that function is not
+        // deployed yet the call errors, and registration carries on as before
+        // rather than being blocked for everyone.
+        const { data: dbTaken, error: takenErr } = await supabase.rpc('registration_number_taken')
+        if (takenErr) console.warn('[Register] registration_number_taken failed:', takenErr.message)
+        else taken = dbTaken === true
+      }
+      if (taken) {
         await supabase.auth.signOut({ scope: 'local' })  // global would end the owner's other sessions
         throw new Error(t('register.alreadyRegistered'))
       }

@@ -84,6 +84,13 @@ with checks(kind, name, ok) as (
     exists (select 1 from vault.secrets where name = 'service_role_key')
 
   union all
+  -- registration guard: must exist and be callable by signed-in users only
+  select 'registration guard missing or wrong grants', 'registration_number_taken()',
+    to_regprocedure('public.registration_number_taken()') is not null
+    and has_function_privilege('authenticated', 'public.registration_number_taken()', 'execute')
+    and not has_function_privilege('anon', 'public.registration_number_taken()', 'execute')
+
+  union all
   -- internal functions signed-in users must NOT be able to run
   select 'internal function open to signed-in users', p.oid::regprocedure::text,
     not has_function_privilege('authenticated', p.oid, 'execute')
