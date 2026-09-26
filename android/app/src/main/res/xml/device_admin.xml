@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- The ONE device-admin policy Famora asks for: to be told when the screen-lock
-     password is entered wrongly. No lock, no wipe, no password rules. -->
-<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-policies>
-        <watch-login />
-    </uses-policies>
-</device-admin>

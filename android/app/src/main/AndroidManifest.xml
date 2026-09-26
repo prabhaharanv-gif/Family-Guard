@@ -263,32 +263,12 @@
             android:name=".NearbyHelpActionReceiver"
             android:exported="false" />
 
-        <!-- ── Wrong-password alert (Profile → Anti-theft) ─────────────────────
-             Device-admin with the "watch-login" policy ONLY: the phone tells us
-             about failed unlock attempts. Exported because the system must be
-             able to call it, guarded by BIND_DEVICE_ADMIN so nothing else can. -->
-        <receiver
-            android:name=".AntiTheftAdminReceiver"
-            android:exported="true"
-            android:permission="android.permission.BIND_DEVICE_ADMIN">
-            <meta-data
-                android:name="android.app.device_admin"
-                android:resource="@xml/device_admin" />
-            <intent-filter>
-                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
-            </intent-filter>
-        </receiver>
-
-        <!-- Takes one front-camera photo after repeated wrong attempts.
-             Transparent, over the lock screen, closes itself; only our own
-             code starts it. -->
-        <activity
-            android:name=".IntruderCaptureActivity"
-            android:exported="false"
-            android:excludeFromRecents="true"
-            android:noHistory="true"
-            android:showWhenLocked="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <!-- Anti-theft (device-admin wrong-password alert and intruder photo) was
+             withdrawn 2026-09-25 and its receiver and capture activity removed from
+             the manifest 2026-09-26: it drew Play review scrutiny and the MIUI
+             device-admin screen frightened testers. The Java is kept, unregistered,
+             and MainActivity still calls AntiTheft.releaseDeviceAdmin, which does
+             nothing once the receiver is undeclared. -->
 
         <!-- ── Background location foreground service ──────────────────────
              foregroundServiceType="location" required on Android 10+
