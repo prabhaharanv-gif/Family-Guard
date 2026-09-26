@@ -91,6 +91,14 @@ with checks(kind, name, ok) as (
     and not has_function_privilege('anon', 'public.registration_number_taken()', 'execute')
 
   union all
+  -- pre-OTP registration lookup: must exist and be callable by the server role ONLY
+  select 'phone_registered missing or open to app users', 'phone_registered(text)',
+    to_regprocedure('public.phone_registered(text)') is not null
+    and has_function_privilege('service_role', 'public.phone_registered(text)', 'execute')
+    and not has_function_privilege('authenticated', 'public.phone_registered(text)', 'execute')
+    and not has_function_privilege('anon', 'public.phone_registered(text)', 'execute')
+
+  union all
   -- internal functions signed-in users must NOT be able to run
   select 'internal function open to signed-in users', p.oid::regprocedure::text,
     not has_function_privilege('authenticated', p.oid, 'execute')
