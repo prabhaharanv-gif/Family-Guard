@@ -46,3 +46,12 @@ export function etaLabel(t, km) {
   const m = min % 60
   return m === 0 ? t('eta.hours', { h }) : t('eta.hoursMinutes', { h, m })
 }
+
+/** "Nearby" / "230 m away" / "1.4 km away" — the same wording Find Fam uses. */
+export function formatDistance(t, km) {
+  if (km == null) return null
+  if (km < 0.1) return t('family.nearby')
+  if (km < 1) return t('family.metersAway', { n: Math.round(km * 1000) })
+  if (km < 10) return t('family.kmAway', { n: km.toFixed(1) })
+  return t('family.kmAway', { n: Math.round(km) })
+}

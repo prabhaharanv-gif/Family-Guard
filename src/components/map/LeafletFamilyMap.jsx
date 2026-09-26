@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
 import SmoothMarker, { GLIDE_MS } from '../SmoothMarker'
+import { haversineKm, etaLabel, formatDistance } from '../../lib/eta'
+import { useT } from '../../i18n'
 
 /**
  * The family map on the WEB (browser / dev preview). The Android app uses
@@ -128,6 +130,145 @@ function FollowMember({ loc, following, onUserPanned }) {
   return null
 }
 
+// A small maroon target, distinct from an avatar pin — this marks a point on
+// the map, not a person.
+const MEASURE_SIZE = 20
+function measureIcon() {
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+        width:${MEASURE_SIZE}px;height:${MEASURE_SIZE}px;border-radius:50%;
+        background:var(--maroon);border:3px solid #fff;
+        box-shadow:0 2px 8px rgba(0,0,0,0.35);
+      "></div>`,
+    iconSize: [MEASURE_SIZE, MEASURE_SIZE],
+    iconAnchor: [MEASURE_SIZE / 2, MEASURE_SIZE / 2],
+  })
+}
+
+/**
+ * Hold a finger anywhere on the map while following someone, and see how far
+ * THEY still have to travel to reach that spot — not how far it is from you.
+ *
+ * Built on plain pointer/touch events on the map's own DOM container rather
+ * than a Leaflet plugin: a genuine hold (finger down, no real drag, released
+ * or not) is release-timing logic Leaflet has no event for, and the map
+ * already fires 'dragstart' on the same gesture, which would otherwise also
+ * pause following (see FollowMember) for what is really just a measurement.
+ * stopPropagation on the confirmed hold is what keeps the two from fighting.
+ */
+const HOLD_MS = 450
+const MOVE_TOLERANCE_PX = 12
+
+function HoldToMeasure({ origin, enabled }) {
+  const map = useMap()
+  const t = useT()
+  const [point, setPoint] = useState(null)
+  const timerRef = useRef(null)
+  const startRef = useRef(null)
+  // The mouseup/touchend that ends the hold still fires an ordinary click
+  // right after it — that is what a tap is, hold or not — and it would land
+  // on the 'click' listener below and clear the reading the instant it
+  // appears. Ignoring a click this soon after a hold is what tells the two
+  // apart.
+  const heldAtRef = useRef(0)
+
+  useEffect(() => {
+    if (!enabled) { setPoint(null); return }
+    const container = map.getContainer()
+
+    const clearTimer = () => {
+      if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null }
+    }
+
+    const onDown = (e) => {
+      if (e.touches && e.touches.length > 1) return   // pinch/rotate, not a hold
+      if (e.button != null && e.button !== 0) return   // left button / primary touch only
+      const p = e.touches ? e.touches[0] : e
+      startRef.current = { x: p.clientX, y: p.clientY }
+      clearTimer()
+      timerRef.current = setTimeout(() => {
+        if (!startRef.current) return
+        const rect = container.getBoundingClientRect()
+        const cp = L.point(startRef.current.x - rect.left, startRef.current.y - rect.top)
+        setPoint(map.containerPointToLatLng(cp))
+        heldAtRef.current = Date.now()
+        // A held finger that hasn't moved is not the drag Leaflet thinks it
+        // started — stop it here so following isn't paused by a measurement.
+        map.dragging.disable()
+      }, HOLD_MS)
+    }
+    const onMove = (e) => {
+      if (!startRef.current || point) return
+      const p = e.touches ? e.touches[0] : e
+      const dx = p.clientX - startRef.current.x
+      const dy = p.clientY - startRef.current.y
+      if (Math.hypot(dx, dy) > MOVE_TOLERANCE_PX) { clearTimer(); startRef.current = null }
+    }
+    const onUp = () => {
+      clearTimer()
+      startRef.current = null
+      map.dragging.enable()
+    }
+
+    container.addEventListener('mousedown', onDown)
+    container.addEventListener('touchstart', onDown, { passive: true })
+    container.addEventListener('mousemove', onMove)
+    container.addEventListener('touchmove', onMove, { passive: true })
+    container.addEventListener('mouseup', onUp)
+    container.addEventListener('touchend', onUp)
+    container.addEventListener('touchcancel', onUp)
+    return () => {
+      clearTimer()
+      map.dragging.enable()
+      container.removeEventListener('mousedown', onDown)
+      container.removeEventListener('touchstart', onDown)
+      container.removeEventListener('mousemove', onMove)
+      container.removeEventListener('touchmove', onMove)
+      container.removeEventListener('mouseup', onUp)
+      container.removeEventListener('touchend', onUp)
+      container.removeEventListener('touchcancel', onUp)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, enabled])
+
+  // A tap anywhere else on the map (not on this marker — Leaflet already stops
+  // that tap's propagation) clears the reading, the same as any other popup.
+  useEffect(() => {
+    if (!point) return
+    const onClick = () => {
+      if (Date.now() - heldAtRef.current < 400) return   // the hold's own trailing click
+      setPoint(null)
+    }
+    map.on('click', onClick)
+    return () => { map.off('click', onClick) }
+  }, [map, point])
+
+  // The whole point of the gesture is not needing a second tap on the dot it
+  // drops — the reading has to appear the moment the hold is recognised.
+  const markerRef = useRef(null)
+  useEffect(() => {
+    if (point) markerRef.current?.openPopup()
+  }, [point])
+
+  if (!point || origin?.lat == null) return null
+
+  const km   = haversineKm(origin.lat, origin.lng, point.lat, point.lng)
+  const dist = formatDistance(t, km)
+  const eta  = etaLabel(t, km)
+
+  return (
+    <Marker ref={markerRef} position={[point.lat, point.lng]} icon={measureIcon()} zIndexOffset={900}
+      eventHandlers={{ click: (e) => L.DomEvent.stopPropagation(e) }}>
+      <Popup closeButton={false} autoPan={false} offset={[0, -MEASURE_SIZE / 2]}>
+        <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 700, color: 'var(--maroon)', whiteSpace: 'nowrap' }}>
+          {dist}{eta ? ' · ' + eta : ''}
+        </div>
+      </Popup>
+    </Marker>
+  )
+}
+
 function FitAll({ locations }) {
   const map = useMap()
   const hasFit = useRef(false)
@@ -229,6 +370,7 @@ export default function LeafletFamilyMap({
       <FitAll locations={locations} />
       <FlyToMember target={flyTarget} />
       <FollowMember loc={followLoc} following={following} onUserPanned={onUserPanned} />
+      <HoldToMeasure origin={followLoc} enabled={following} />
       <RouteLine route={route} inset={routeInset} renderSpotPopup={renderSpotPopup} />
       <RouteCursor cursor={routeCursor} renderSpotPopup={renderSpotPopup} />
 
