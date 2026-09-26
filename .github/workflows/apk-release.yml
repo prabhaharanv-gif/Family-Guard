@@ -5,6 +5,8 @@ name: Publish debug APK
 
 on:
   workflow_dispatch:
+  push:
+    branches: [claude/apk-generation-xxib6p]
 
 permissions:
   contents: write
