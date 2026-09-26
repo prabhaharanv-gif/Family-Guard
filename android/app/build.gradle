@@ -76,9 +76,12 @@ android {
         // because that collides with the test source sets. Build it with
         // build.ps1 -Testers, which runs assembleSideload.
         sideload {
-            if (hasKeystore) {
-                signingConfig signingConfigs.release
-            }
+            // Play Protect's block is keyed off the permission set, not the
+            // signature, so a debug-signed sideload APK clears it just as
+            // well as a release-signed one. Falls back to the debug key
+            // when there is no keystore.properties (CI, any clean checkout)
+            // so this variant is always installable, never left unsigned.
+            signingConfig hasKeystore ? signingConfigs.release : signingConfigs.debug
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             // Shows as "1.2.1-sideload (18)" in the app, so a tester can say

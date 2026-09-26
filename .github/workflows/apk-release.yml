@@ -1,6 +1,9 @@
-# Manually-triggered: builds the debug APK and publishes it as a GitHub
+# Manually-triggered: builds the sideload APK and publishes it as a GitHub
 # Release asset, so it can be downloaded directly (not just as a
-# time-limited Actions artifact). Never runs on push — dispatch only.
+# time-limited Actions artifact). The sideload variant (not debug) is used
+# because Google Play Protect's enhanced fraud protection blocks installing
+# a sideloaded APK that declares SEND_SMS — see the `sideload` buildType note
+# in android/app/build.gradle.
 name: Publish debug APK
 
 on:
@@ -45,18 +48,18 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Build debug APK
+      - name: Build sideload APK
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleSideload --no-daemon
         working-directory: android
 
       - name: Publish release asset
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "debug-apk-run${{ github.run_id }}" \
-            android/app/build/outputs/apk/debug/app-debug.apk \
+          gh release create "sideload-apk-run${{ github.run_id }}" \
+            android/app/build/outputs/apk/sideload/app-sideload.apk \
             --repo "${{ github.repository }}" \
-            --title "FamilyGuard debug APK (run ${{ github.run_number }})" \
-            --notes "Automated debug build from commit ${{ github.sha }}. Unsigned/debug build — installable for testing only."
+            --title "FamilyGuard sideload APK (run ${{ github.run_number }})" \
+            --notes "Automated sideload build from commit ${{ github.sha }}. Debug-signed, SEND_SMS stripped so Play Protect allows the install — installable for testing only. Offline SMS alerts are disabled on this build."
