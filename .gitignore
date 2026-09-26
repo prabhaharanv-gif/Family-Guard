@@ -33,6 +33,9 @@ supabase/.temp/
 android/keystore.properties
 *.jks
 *.keystore
+# Except the debug keystore: not a secret (see android/app/build.gradle), and
+# committing it is what lets a CI-built debug APK update in place.
+!android/ci-debug-keystore/debug.keystore
 .vercel
 .env*
 
