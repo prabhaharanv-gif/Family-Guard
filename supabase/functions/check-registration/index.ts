@@ -58,13 +58,23 @@ serve(async (req: Request) => {
   const ip = req.headers.get('CF-Connecting-IP') || req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
   if (ip) form.set('remoteip', ip)
   let ok = false
+  let codes: string[] = []
   try {
     const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: form })
-    ok = !!(await r.json()).success
+    const result = await r.json()
+    ok = !!result.success
+    codes = Array.isArray(result['error-codes']) ? result['error-codes'] : []
   } catch {
     return json({ error: 'captcha check unavailable' }, 502)
   }
-  if (!ok) return json({ error: 'captcha failed' }, 403)
+  if (!ok) {
+    // Cloudflare's reason codes, for example invalid-input-secret (this function
+    // holds the wrong secret), invalid-input-response (the token is not real),
+    // timeout-or-duplicate (already used or expired). Generic, no secrets in
+    // them, and what makes a rejected CAPTCHA diagnosable.
+    console.log('[check-registration] captcha rejected:', JSON.stringify(codes))
+    return json({ error: 'captcha failed', codes }, 403)
+  }
 
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const { data, error } = await supabase.rpc('phone_registered', { p_digits: `91${phone}` })
