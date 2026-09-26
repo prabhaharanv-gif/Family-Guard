@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { GoogleMap, MapType } from '@capacitor/google-maps'
 import { GLIDE_MS } from '../SmoothMarker'
-import { PIN_SIZE, initialPin, photoPin, timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
+import { DEST_PIN, destPin, PIN_SIZE, initialPin, photoPin, timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
 import { useT } from '../../i18n'
 
 /**
@@ -117,6 +117,10 @@ export default function NativeFamilyMap({
   routeCursor = null,
   // px at the foot of the map covered by the Timeline panel.
   routeInset = 0,
+  // A held finger on the map: called with { lat, lng }. `destination` is the
+  // { lat, lng } to mark with a target pin, or null.
+  onLongPress,
+  destination = null,
   // Called with the map's rotation in degrees (0 = north up) while it turns.
   onBearingChange,
   // Bump to animate the map back to north-up (the compass's tap).
@@ -545,6 +549,32 @@ export default function NativeFamilyMap({
     return () => { handleP.then(h => h.remove()).catch(() => {}) }
   }, [ready])
 
+  // Patched plugin event: a held finger on empty map.
+  const onLongPressRef = useRef(onLongPress)
+  useEffect(() => { onLongPressRef.current = onLongPress }, [onLongPress])
+  useEffect(() => {
+    if (!ready) return
+    const handleP = native().addListener('onMapLongClick', ({ latitude, longitude }) =>
+      onLongPressRef.current?.({ lat: latitude, lng: longitude }))
+    return () => { handleP.then(h => h.remove()).catch(() => {}) }
+  }, [ready])
+
+  // The held spot's target pin.
+  const destLat = destination?.lat
+  const destLng = destination?.lng
+  useEffect(() => {
+    const map = mapRef.current
+    if (!ready || !map || destLat == null || destLng == null) return
+    const idP = retrying('add destination', () => map.addMarker({
+      coordinate: { lat: destLat, lng: destLng }, iconUrl: destPin(),
+      iconSize: { width: DEST_PIN, height: DEST_PIN },
+      iconAnchor: { x: DEST_PIN / 2, y: DEST_PIN / 2 }, zIndex: 4,
+    }))
+    return () => {
+      idP.then(id => id && map.removeMarker(id)).catch(warn('remove destination'))
+    }
+  }, [ready, destLat, destLng])
+
   useEffect(() => {
     const map = mapRef.current
     if (!ready || !map || !resetNorthKey) return
@@ -608,7 +638,7 @@ export default function NativeFamilyMap({
           background: '#fff', borderRadius: 14,
           border: '1px solid var(--border)',
           boxShadow: '0 8px 28px rgba(74,8,32,0.22)',
-          padding: '10px 40px 10px 12px',
+          padding: '8px 10px',
         }}>
           {/* Pointer to the pin: a rotated square sharing the card's border. */}
           <div ref={arrowRef} style={{

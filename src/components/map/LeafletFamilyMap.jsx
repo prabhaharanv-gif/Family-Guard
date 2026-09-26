@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
-import { timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
+import { DEST_PIN, destPin, timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
 import SmoothMarker, { GLIDE_MS } from '../SmoothMarker'
 
 /**
@@ -211,9 +211,16 @@ function RouteCursor({ cursor, renderSpotPopup }) {
   )
 }
 
+// A held finger (Leaflet turns a touch long-press into contextmenu) or a right
+// click on the map: the spot to measure the followed member's trip to.
+function LongPress({ onLongPress }) {
+  useMapEvents({ contextmenu: e => onLongPress?.({ lat: e.latlng.lat, lng: e.latlng.lng }) })
+  return null
+}
+
 export default function LeafletFamilyMap({
   pins, locations, flyTarget, followLoc, following, onUserPanned, renderPopup, renderSpotPopup,
-  route = null, routeCursor = null, routeInset = 0,
+  route = null, routeCursor = null, routeInset = 0, onLongPress, destination = null,
 }) {
   return (
     <MapContainer
@@ -231,6 +238,14 @@ export default function LeafletFamilyMap({
       <FollowMember loc={followLoc} following={following} onUserPanned={onUserPanned} />
       <RouteLine route={route} inset={routeInset} renderSpotPopup={renderSpotPopup} />
       <RouteCursor cursor={routeCursor} renderSpotPopup={renderSpotPopup} />
+      <LongPress onLongPress={onLongPress} />
+      {destination && (
+        <Marker
+          position={[destination.lat, destination.lng]}
+          icon={L.icon({ iconUrl: destPin(), iconSize: [DEST_PIN, DEST_PIN], iconAnchor: [DEST_PIN / 2, DEST_PIN / 2] })}
+          interactive={false}
+        />
+      )}
 
       {Object.entries(pins).map(([uid, loc]) => (
         loc.kind === 'anonDot' ? (

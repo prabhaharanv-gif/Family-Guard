@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { withCaptcha } from '../lib/captcha'
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { useT } from '../i18n'
 import AuthLanguagePicker from '../components/AuthLanguagePicker'
@@ -60,7 +61,7 @@ function ForgotPasswordModal({ onClose }) {
     // account is resolved by reset_password_verified once ownership is proven,
     // and it raises 'No account found for this verified phone number' there if
     // there really is none.
-    const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: `+91${digits}` })
+    const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: `+91${digits}`, options: await withCaptcha() })
     setLoading(false)
     if (otpErr) { setError(otpErr.message || t('reset.couldNotSend')); return }
     setStep(2)
@@ -72,7 +73,7 @@ function ForgotPasswordModal({ onClose }) {
     setError('')
     setLoading(true)
     const digits = mobile.replace(/[^0-9]/g, '')
-    const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: `+91${digits}` })
+    const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: `+91${digits}`, options: await withCaptcha() })
     setLoading(false)
     if (otpErr) { setError(otpErr.message || t('reset.couldNotResend')); return }
     setResendIn(30)
@@ -257,12 +258,12 @@ export default function LoginPage() {
     // password is set and correct, but nothing matches the address being looked
     // up. It went unnoticed because a session that never expires never asks.
     const { error: phoneErr } = await supabase.auth.signInWithPassword({
-      phone: `91${digits}`, password,
+      phone: `91${digits}`, password, options: await withCaptcha(),
     })
     if (!phoneErr) { navigate('/'); return }
 
     const email = `91${digits}@familyguard.app`
-    const { error: authErr } = await supabase.auth.signInWithPassword({ email, password })
+    const { error: authErr } = await supabase.auth.signInWithPassword({ email, password, options: await withCaptcha() })
     if (authErr) { setError(t('auth.invalidCreds')); return }
     navigate('/')
   }

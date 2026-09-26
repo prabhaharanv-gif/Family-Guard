@@ -290,3 +290,12 @@ const HELPER_DOT_COLOR = '#10B981'
 export const helperDot = () => dot('helperFound', HELPER_DOT, (g, c) => {
   disc(g, c, c - 0.5, '#fff'); disc(g, c, c - 3.5, HELPER_DOT_COLOR)
 })
+
+// ── Long-press destination ──────────────────────────────────────────────────
+// The spot held on the map while following someone ("how far is their trip to
+// here?"). A bigger maroon disc with a white core, so it reads as a target and
+// not as a Timeline stay dot.
+export const DEST_PIN = 26
+export const destPin = () => dot('destination', DEST_PIN, (g, c, maroon) => {
+  disc(g, c, c - 0.5, '#fff'); disc(g, c, c - 3, maroon); disc(g, c, c - 9, '#fff'); disc(g, c, c - 11.5, maroon)
+})

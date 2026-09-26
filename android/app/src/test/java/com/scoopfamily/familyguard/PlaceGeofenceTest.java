@@ -155,4 +155,79 @@ public class PlaceGeofenceTest {
         // the floor is a floor, not a second, tighter ceiling.
         assertTrue(PlaceGeofence.accurateEnough(true, 95f, 30));
     }
+
+    // ── Motion, dwell, cooldown and jump checks (2026-09-26) ─────────────────
+    // A phone lying still overnight produced eight reached/left notices from
+    // Wi-Fi and cell fixes that agreed with each other for minutes.
+
+    private static final long S = 1000L;
+    private static final long MIN = 60_000L;
+
+    private static PlaceGeofence.Place home(boolean inside) {
+        return new PlaceGeofence.Place("h", "Home", 0, 0, 150, inside);
+    }
+
+    /** Drives one place through fixes at the given times; returns the first transition. */
+    private static PlaceGeofence.Transition drive(PlaceGeofence.Place p, boolean farAway,
+                                                   long fromMs, long toMs, long lastMotionMs) {
+        // Inside a 150m place at 10m, outside at 400m; 20m accuracy.
+        float dist = farAway ? 400f : 10f;
+        for (long t = fromMs; t <= toMs; t += 10 * S) {
+            PlaceGeofence.Transition tr = PlaceGeofence.step(p, dist, true, 20f, t, lastMotionMs);
+            if (tr != null) return tr;
+        }
+        return null;
+    }
+
+    @Test
+    public void stillPhone_withNoRecentMotion_neverLeaves() {
+        PlaceGeofence.Place p = home(true);
+        // Ten minutes of agreeing "outside" fixes, but the phone never moved.
+        assertEquals(null, drive(p, true, 1_000_000L, 1_000_000L + 10 * MIN, 0L));
+        assertTrue(p.insideConfirmed);
+    }
+
+    @Test
+    public void realDeparture_withRecentMotion_isReportedAfterTheDwell() {
+        PlaceGeofence.Place p = home(true);
+        long t0 = 1_000_000L;
+        PlaceGeofence.Transition tr = drive(p, true, t0, t0 + 5 * MIN, t0);
+        assertTrue(tr != null && !tr.entered);
+        assertFalse(p.insideConfirmed);
+    }
+
+    @Test
+    public void crossing_isNotReportedBeforeItHasLastedTheDwell() {
+        PlaceGeofence.Place p = home(true);
+        long t0 = 1_000_000L;
+        // Only 40s of "outside" — under EXIT_DWELL_MS (90s) — with fresh motion.
+        assertEquals(null, drive(p, true, t0, t0 + 40 * S, t0));
+        assertTrue(p.insideConfirmed);
+    }
+
+    @Test
+    public void oppositeChange_isHeldByTheCooldown_thenReportedNotDropped() {
+        PlaceGeofence.Place p = home(false);
+        long t0 = 1_000_000L;
+        PlaceGeofence.Transition arrive = drive(p, false, t0, t0 + 2 * MIN, t0);
+        assertTrue(arrive != null && arrive.entered);
+
+        // A quick "leave" 3 min later is inside the 10 min cooldown: held back.
+        long t1 = t0 + 3 * MIN;
+        assertEquals(null, drive(p, true, t1, t1 + 5 * MIN, t1));
+        assertTrue(p.insideConfirmed);
+
+        // Still outside once the cooldown ends: now it is reported.
+        long t2 = t0 + 11 * MIN;
+        PlaceGeofence.Transition leave = drive(p, true, t2, t2 + 2 * MIN, t2);
+        assertTrue(leave != null && !leave.entered);
+    }
+
+    @Test
+    public void teleportingFix_isImplausible_butAnUnrelatedFirstFixIsNot() {
+        // 5 km in 10 s is 500 m/s.
+        assertFalse(PlaceGeofence.isPlausibleMove(5000f, 10 * S));
+        // A car at 100 km/h (about 28 m/s) is fine.
+        assertTrue(PlaceGeofence.isPlausibleMove(2800f, 100 * S));
+    }
 }

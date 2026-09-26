@@ -3,6 +3,7 @@ import { registerPlugin, Capacitor } from '@capacitor/core'
 const LocationService = registerPlugin('LocationService')
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { withCaptcha } from '../lib/captcha'
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { avatarColor } from '../lib/avatarColor'
 import { useAuthStore } from '../store/authStore'
@@ -226,7 +227,7 @@ function ChangePasswordModal({ onClose, userPhone }) {
         ? { phone: authUser.phone, password: oldPw }
         : null
     if (!credentials) { setBusy(false); setErr(t('profile.currentPasswordWrong')); return }
-    const { error: signInErr } = await supabase.auth.signInWithPassword(credentials)
+    const { error: signInErr } = await supabase.auth.signInWithPassword({ ...credentials, options: await withCaptcha() })
     if (signInErr) { setBusy(false); setErr(t('profile.currentPasswordWrong')); return }
     // Update to new password
     const { error } = await supabase.auth.updateUser({ password: pw })
@@ -248,7 +249,7 @@ function ChangePasswordModal({ onClose, userPhone }) {
     if (resend && resendIn > 0) return
     setErr('')
     setBusy(true)
-    const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: `+91${digits}` })
+    const { error: otpErr } = await supabase.auth.signInWithOtp({ phone: `+91${digits}`, options: await withCaptcha() })
     setBusy(false)
     if (otpErr) {
       setErr(otpErr.message || t(resend ? 'reset.couldNotResend' : 'reset.couldNotSend'))

@@ -14,7 +14,7 @@ import NativeFamilyMap from '../components/map/NativeFamilyMap'
 import TimelinePanel from '../components/map/TimelinePanel'
 import { buildRoute, clockLabel, dateLabel, daysBetween, distanceM, outwardDir, positionAt, rowsOnDay, timelineSince } from '../lib/route'
 import { fetchLocationHistory } from '../lib/locationHistory'
-import { etaLabel, haversineKm } from '../lib/eta'
+import { etaLabel, haversineKm, roadKm } from '../lib/eta'
 
 // Google's native map in the Android app (free to display); Leaflet +
 // OpenStreetMap in the browser, so the web never uses the billed Google Maps
@@ -217,6 +217,9 @@ export default function MapAllPage() {
   // should not silently undo the thing you asked for, and the chip over the map
   // offers it straight back.
   const [followPaused, setFollowPaused] = useState(false)
+  // A spot held on the map while following: how far the followed member's
+  // trip to it is. Lives only as long as the following does.
+  const [dest, setDest] = useState(null)
   // Map type — 'default' (road) or 'satellite' — plus the traffic layer, which
   // sits on top of either. Always opens on the road map with traffic off (by
   // request); the choice is not remembered between visits.
@@ -279,7 +282,7 @@ export default function MapAllPage() {
   }, [route])
   const showRoute = useCallback((uid) => {
     // Following would keep yanking the camera back to their pin.
-    setFollowUid(null); setFollowPaused(false)
+    setFollowUid(null); setFollowPaused(false); setDest(null)
     setRouteUid(uid)
     setTimelineMode('route')
     setTimelineRange('24h')
@@ -334,8 +337,8 @@ export default function MapAllPage() {
   useEffect(() => { hideRoute() }, [familyId, hideRoute])
 
   const pauseFollowing = useCallback(() => setFollowPaused(true), [])
-  const stopFollowing  = useCallback(() => { setFollowUid(null); setFollowPaused(false) }, [])
-  const startFollowing = useCallback(uid => { hideRoute(); setFollowUid(uid); setFollowPaused(false) }, [hideRoute])
+  const stopFollowing  = useCallback(() => { setFollowUid(null); setFollowPaused(false); setDest(null) }, [])
+  const startFollowing = useCallback(uid => { hideRoute(); setFollowUid(uid); setFollowPaused(false); setDest(null) }, [hideRoute])
   // null   = not yet tried (no banner)
   // 'perm' = permission denied
   // 'fail' = GPS failed AND no locations in DB yet (only show if map is empty)
@@ -466,7 +469,7 @@ export default function MapAllPage() {
     return (
     <div style={{ fontFamily: 'Inter, sans-serif' }}>
       {/* Avatar + name row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: isMe ? 0 : 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingRight: 30, marginBottom: 6 }}>
         <div style={{ flexShrink: 0 }}>
           {loc.avatarUrl ? (
             <img src={loc.avatarUrl} alt={loc.displayName} style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid var(--maroon)' }} />
@@ -495,18 +498,19 @@ export default function MapAllPage() {
           })()}
         </div>
       </div>
-      {/* Directions, then Today's route underneath: two buttons of one width,
-          stacked, so neither label is squeezed. The name is already at the top
-          of the card, so the button just says "Directions". */}
+      {/* Directions and Timeline side by side, half the card each (they were
+          stacked, which made the card tall enough to cover much of the map).
+          The name is already at the top, so the button just says "Directions". */}
+      <div style={{ display: 'flex', gap: 6 }}>
       {!isMe && (
         <a
           href={`https://www.google.com/maps/dir/?api=1&destination=${real.lat},${real.lng}`}
           target="_blank" rel="noopener noreferrer"
           style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
             background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
-            color: '#fff', padding: '8px 14px', borderRadius: 999,
-            fontWeight: 700, fontSize: 12.5, textDecoration: 'none', whiteSpace: 'nowrap',
+            color: '#fff', padding: '6px 10px', borderRadius: 999,
+            fontWeight: 700, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap',
           }}
         >
           <Icon name="navigate" /> {t('map.directions')}
@@ -516,15 +520,16 @@ export default function MapAllPage() {
       <button
         onClick={() => { close?.(); showRoute(uid) }}
         style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          width: '100%', boxSizing: 'border-box', marginTop: 8,
+          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+          boxSizing: 'border-box',
           background: '#FFF8F0', color: 'var(--maroon)',
-          border: '1.5px solid var(--maroon)', padding: '7px 14px', borderRadius: 999,
-          fontWeight: 700, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap',
+          border: '1.5px solid var(--maroon)', padding: '5px 10px', borderRadius: 999,
+          fontWeight: 700, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap',
         }}
       >
         <Icon name="map" /> {t('map.todaysRoute')}
       </button>
+      </div>
     </div>
     )
   }
@@ -532,7 +537,7 @@ export default function MapAllPage() {
   // What tapping a dot, a box or the avatar on the Timeline shows: directions
   // to that spot and nothing else.
   const renderSpotPopup = spot => (
-    <div style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ fontFamily: 'Inter, sans-serif', paddingRight: 30 }}>
       <a
         href={`https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}`}
         target="_blank" rel="noopener noreferrer"
@@ -654,6 +659,8 @@ export default function MapAllPage() {
           followLoc={followUid ? locations[followUid] : null}
           following={!!followUid && !followPaused}
           onUserPanned={pauseFollowing}
+          onLongPress={followUid ? setDest : undefined}
+          destination={followUid ? dest : null}
           renderPopup={renderMemberPopup}
           renderSpotPopup={renderSpotPopup}
           mapMode={mapMode}
@@ -774,6 +781,45 @@ export default function MapAllPage() {
             turned it off with nothing on screen to say so. This states which
             member is being followed, says when a drag has paused it, and offers
             it back in one tap without reopening Find Fam. */}
+        {followUid && locations[followUid] && dest && (() => {
+          const who = locations[followUid]
+          const km = haversineKm(who.lat, who.lng, dest.lat, dest.lng)
+          const road = roadKm(km)
+          const eta = etaLabel(t, km)
+          const far = road == null ? '' : road < 1 ? `${Math.round(road * 10) * 100} m` : `${road.toFixed(1)} km`
+          return (
+            <div style={{
+              position: 'absolute', left: '50%', bottom: 72, transform: 'translateX(-50%)',
+              zIndex: 1000, display: 'flex', alignItems: 'center', gap: 10,
+              background: '#fff', color: 'var(--text)', border: '1.5px solid var(--border2)',
+              borderRadius: 16, padding: '10px 10px 10px 14px',
+              boxShadow: '0 6px 20px rgba(74,8,32,0.22)', maxWidth: '88%',
+            }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 800 }}>
+                  {km != null && km < 0.15
+                    ? t('map.destThere', { name: who.displayName })
+                    : t('map.destAway', { name: who.displayName, dist: far })}
+                </div>
+                {eta && <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--maroon)' }}>{eta}</div>}
+              </div>
+              <button
+                onClick={() => setDest(null)}
+                aria-label={t('map.destClear')}
+                style={{
+                  background: '#F8E6ED', color: 'var(--maroon)', border: '1.5px solid var(--maroon)',
+                  borderRadius: 999, width: 26, height: 26, flexShrink: 0, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )
+        })()}
+
         {followUid && locations[followUid] && (
           <div style={{
             position: 'absolute', left: '50%', bottom: 18, transform: 'translateX(-50%)',

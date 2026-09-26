@@ -1,8 +1,16 @@
 diff --git a/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMap.kt b/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMap.kt
-index c0bc416..d7b819e 100644
+index c0bc416..94d9996 100644
 --- a/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMap.kt
 +++ b/node_modules/@capacitor/google-maps/android/src/main/java/com/capacitorjs/plugins/googlemaps/CapacitorGoogleMap.kt
-@@ -47,8 +47,59 @@ class CapacitorGoogleMap(
+@@ -33,6 +33,7 @@ class CapacitorGoogleMap(
+         OnMyLocationClickListener,
+         OnMapReadyCallback,
+         OnMapClickListener,
++        OnMapLongClickListener,
+         OnMarkerClickListener,
+         OnMarkerDragListener,
+         OnInfoWindowClickListener,
+@@ -47,8 +48,59 @@ class CapacitorGoogleMap(
      private val circles = HashMap<String, CapacitorGoogleMapsCircle>()
      private val polylines = HashMap<String, CapacitorGoogleMapPolyline>()        
      private val markerIcons = HashMap<String, Bitmap>()
@@ -62,7 +70,7 @@ index c0bc416..d7b819e 100644
      private val isReadyChannel = Channel<Boolean>()
      private var debounceJob: Job? = null
  
-@@ -187,6 +238,7 @@ class CapacitorGoogleMap(
+@@ -187,6 +239,7 @@ class CapacitorGoogleMap(
      }
  
      fun destroy() {
@@ -70,7 +78,7 @@ index c0bc416..d7b819e 100644
          runBlocking {
              val job =
                      CoroutineScope(Dispatchers.Main).launch {
-@@ -335,6 +387,121 @@ class CapacitorGoogleMap(
+@@ -335,6 +388,121 @@ class CapacitorGoogleMap(
          }
      }
  
@@ -192,7 +200,7 @@ index c0bc416..d7b819e 100644
      fun addPolygons(newPolygons: List<CapacitorGoogleMapsPolygon>, callback: (ids: Result<List<String>>) -> Unit) {
          try {
              googleMap ?: throw GoogleMapNotAvailable()
-@@ -523,6 +690,7 @@ class CapacitorGoogleMap(
+@@ -523,6 +691,7 @@ class CapacitorGoogleMap(
                      clusterManager?.cluster()
                  }
  
@@ -200,7 +208,7 @@ index c0bc416..d7b819e 100644
                  marker.googleMapMarker?.remove()
                  markers.remove(id)
  
-@@ -642,7 +810,18 @@ class CapacitorGoogleMap(
+@@ -642,7 +811,18 @@ class CapacitorGoogleMap(
                                  .build()
  
                  if (animate) {
@@ -220,7 +228,7 @@ index c0bc416..d7b819e 100644
                  } else {
                      googleMap?.moveCamera(CameraUpdateFactory.newCameraPosition(updatedPosition))
                  }
-@@ -838,6 +1017,11 @@ class CapacitorGoogleMap(
+@@ -838,6 +1018,11 @@ class CapacitorGoogleMap(
          polylineOptions.clickable(line.clickable)
          polylineOptions.zIndex(line.zIndex)
          polylineOptions.geodesic(line.geodesic)
@@ -232,7 +240,7 @@ index c0bc416..d7b819e 100644
  
          line.path.forEach {
              polylineOptions.add(it)
-@@ -869,32 +1053,9 @@ class CapacitorGoogleMap(
+@@ -869,32 +1054,9 @@ class CapacitorGoogleMap(
  
  
          if (!marker.iconUrl.isNullOrEmpty()) {
@@ -268,7 +276,7 @@ index c0bc416..d7b819e 100644
          } else {
              if (marker.colorHue != null) {
                  markerOptions.icon(BitmapDescriptorFactory.defaultMarker(marker.colorHue!!))
-@@ -947,6 +1108,20 @@ class CapacitorGoogleMap(
+@@ -947,6 +1109,20 @@ class CapacitorGoogleMap(
          runBlocking {
              googleMap = map
  
@@ -289,7 +297,32 @@ index c0bc416..d7b819e 100644
              val data = JSObject()
              data.put("mapId", this@CapacitorGoogleMap.id)
              delegate.notify("onMapReady", data)
-@@ -1049,7 +1224,10 @@ class CapacitorGoogleMap(
+@@ -969,6 +1145,7 @@ class CapacitorGoogleMap(
+             this@CapacitorGoogleMap.googleMap?.setOnCircleClickListener(this@CapacitorGoogleMap)
+             this@CapacitorGoogleMap.googleMap?.setOnMarkerDragListener(this@CapacitorGoogleMap)
+             this@CapacitorGoogleMap.googleMap?.setOnMapClickListener(this@CapacitorGoogleMap)
++            this@CapacitorGoogleMap.googleMap?.setOnMapLongClickListener(this@CapacitorGoogleMap)
+             this@CapacitorGoogleMap.googleMap?.setOnMyLocationButtonClickListener(
+                     this@CapacitorGoogleMap
+             )
+@@ -1040,6 +1217,16 @@ class CapacitorGoogleMap(
+         delegate.notify("onMapClick", data)
+     }
+ 
++    // Famora: a held finger on empty map, streamed as 'onMapLongClick' (no JS
++    // wrapper; the app listens through Capacitor.Plugins.CapacitorGoogleMaps).
++    override fun onMapLongClick(point: LatLng) {
++        val data = JSObject()
++        data.put("mapId", this@CapacitorGoogleMap.id)
++        data.put("latitude", point.latitude)
++        data.put("longitude", point.longitude)
++        delegate.notify("onMapLongClick", data)
++    }
++
+     override fun onMarkerClick(marker: Marker): Boolean {
+         val data = JSObject()
+         data.put("mapId", this@CapacitorGoogleMap.id)
+@@ -1049,7 +1236,10 @@ class CapacitorGoogleMap(
          data.put("title", marker.title)
          data.put("snippet", marker.snippet)
          delegate.notify("onMarkerClick", data)
@@ -301,7 +334,7 @@ index c0bc416..d7b819e 100644
      }
  
      override fun onPolylineClick(polyline: Polyline) {
-@@ -1119,6 +1297,14 @@ class CapacitorGoogleMap(
+@@ -1119,6 +1309,14 @@ class CapacitorGoogleMap(
          data.put("zoom", this@CapacitorGoogleMap.googleMap?.cameraPosition?.zoom)
          delegate.notify("onCameraIdle", data)
          delegate.notify("onBoundsChanged", data)
@@ -316,7 +349,7 @@ index c0bc416..d7b819e 100644
      }
  
      override fun onCameraMoveStarted(reason: Int) {
-@@ -1139,7 +1325,24 @@ class CapacitorGoogleMap(
+@@ -1139,7 +1337,24 @@ class CapacitorGoogleMap(
          delegate.notify("onInfoWindowClick", data)
      }
  
