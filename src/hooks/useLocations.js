@@ -23,7 +23,7 @@ export function useLocations(familyId) {
       const [{ data: locs }, { data: members }] = await Promise.all([
         supabase
           .from('locations')
-          .select('user_id, lat, lng, accuracy, updated_at, is_sharing, battery_level, is_charging, speed')
+          .select('user_id, lat, lng, updated_at, is_sharing, battery_level, is_charging, speed')
           .eq('family_id', familyId)
           .eq('is_sharing', true),
         supabase
@@ -49,7 +49,6 @@ export function useLocations(familyId) {
           if (!m) return
           map[l.user_id] = {
             lat:         l.lat,
-            accuracy:    l.accuracy      ?? null,
             lng:         l.lng,
             updatedAt:   l.updated_at,
             displayName: m.display_name || 'Member',
@@ -87,7 +86,7 @@ export function useLocations(familyId) {
           // Re-fetch the single updated row so we always have the full record
           const { data: rows } = await supabase
             .from('locations')
-            .select('user_id, lat, lng, accuracy, updated_at, is_sharing, battery_level, is_charging, speed')
+            .select('user_id, lat, lng, updated_at, is_sharing, battery_level, is_charging, speed')
             .eq('family_id', familyId)
             .eq('user_id', uid)
             .single()
@@ -141,7 +140,6 @@ export function useLocations(familyId) {
               ...prev,
               [uid]: {
                 lat:         rows.lat,
-                accuracy:    rows.accuracy   ?? null,
                 lng:         rows.lng,
                 updatedAt:   rows.updated_at,
                 displayName: memberInfo.displayName,

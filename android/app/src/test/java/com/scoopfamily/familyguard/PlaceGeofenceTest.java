@@ -200,8 +200,8 @@ public class PlaceGeofenceTest {
     public void crossing_isNotReportedBeforeItHasLastedTheDwell() {
         PlaceGeofence.Place p = home(true);
         long t0 = 1_000_000L;
-        // Only 40s of "outside" — under EXIT_DWELL_MS (90s) — with fresh motion.
-        assertEquals(null, drive(p, true, t0, t0 + 40 * S, t0));
+        // Only 30s of "outside" — under EXIT_DWELL_MS (45s) — with fresh motion.
+        assertEquals(null, drive(p, true, t0, t0 + 30 * S, t0));
         assertTrue(p.insideConfirmed);
     }
 
@@ -212,15 +212,57 @@ public class PlaceGeofenceTest {
         PlaceGeofence.Transition arrive = drive(p, false, t0, t0 + 2 * MIN, t0);
         assertTrue(arrive != null && arrive.entered);
 
-        // A quick "leave" 3 min later is inside the 10 min cooldown: held back.
+        // A quick "leave" 3 min later is inside the 15 min cooldown: held back.
         long t1 = t0 + 3 * MIN;
         assertEquals(null, drive(p, true, t1, t1 + 5 * MIN, t1));
         assertTrue(p.insideConfirmed);
 
         // Still outside once the cooldown ends: now it is reported.
-        long t2 = t0 + 11 * MIN;
+        long t2 = t0 + 16 * MIN;
         PlaceGeofence.Transition leave = drive(p, true, t2, t2 + 2 * MIN, t2);
         assertTrue(leave != null && !leave.entered);
+    }
+
+    // ── Arrive within 100m, leave beyond 250m (2026-09-27) ────────────────────
+
+    /** Fixes at distM with 20m accuracy, with fresh motion and long dwell. */
+    private static PlaceGeofence.Transition atDistance(PlaceGeofence.Place p, float distM) {
+        long t0 = 1_000_000L;
+        for (long t = t0; t <= t0 + 5 * MIN; t += 10 * S) {
+            PlaceGeofence.Transition tr = PlaceGeofence.step(p, distM, true, 20f, t, t0);
+            if (tr != null) return tr;
+        }
+        return null;
+    }
+
+    @Test
+    public void arriving_needsToBeWithin100m() {
+        assertEquals(100f, PlaceGeofence.enterRadiusM(home(false)), 0f);
+        PlaceGeofence.Transition in = atDistance(home(false), 90f);
+        assertTrue(in != null && in.entered);
+        assertEquals("120m is outside the arrive line", null, atDistance(home(false), 120f));
+    }
+
+    @Test
+    public void wobbleBetweenTheArriveAndLeaveLines_neverFiresLeft() {
+        // Inside; fixes drift out to 100m..270m (20m accuracy): past the arrive
+        // line but short of 250m plus the fix's own error.
+        assertEquals(null, atDistance(home(true), 130f));
+        assertEquals(null, atDistance(home(true), 260f));
+        assertEquals(null, atDistance(home(true), 269f));
+    }
+
+    @Test
+    public void reallyLeaving_beyondTheLeaveLine_isReported() {
+        PlaceGeofence.Transition tr = atDistance(home(true), 275f);   // 275 - 20 error >= 250
+        assertTrue(tr != null && !tr.entered);
+    }
+
+    @Test
+    public void largePlace_keepsItsOwnRadiusPlusTheGap() {
+        PlaceGeofence.Place big = new PlaceGeofence.Place("o", "Office", 0, 0, 500, false);
+        assertEquals(500f, PlaceGeofence.enterRadiusM(big), 0f);
+        assertEquals(650f, PlaceGeofence.leaveRadiusM(big), 0f);
     }
 
     @Test
