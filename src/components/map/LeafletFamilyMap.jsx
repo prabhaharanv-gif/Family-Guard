@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { MapContainer, TileLayer, Polyline, Marker, Circle, Popup, useMap, useMapEvents } from 'react-leaflet'
-import { accuracyRadius } from '../../lib/accuracyCircle'
+import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import { DEST_PIN, destPin, timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
 import SmoothMarker, { GLIDE_MS } from '../SmoothMarker'
@@ -247,20 +246,6 @@ export default function LeafletFamilyMap({
           interactive={false}
         />
       )}
-
-      {/* How sure the phone is, for loose fixes only (see accuracyCircle.js). */}
-      {Object.entries(pins).map(([uid, loc]) => {
-        const r = loc.kind ? null : accuracyRadius(loc)
-        return r && (
-          <Circle
-            key={'acc' + uid}
-            center={[loc.lat, loc.lng]}
-            radius={r}
-            interactive={false}
-            pathOptions={{ color: '#8B0D3D', weight: 1, opacity: 0.45, fillColor: '#8B0D3D', fillOpacity: 0.1 }}
-          />
-        )
-      })}
 
       {Object.entries(pins).map(([uid, loc]) => (
         loc.kind === 'anonDot' ? (

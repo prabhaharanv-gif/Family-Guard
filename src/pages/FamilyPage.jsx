@@ -940,7 +940,7 @@ export default function FamilyPage() {
               ),
               onClick: () => handleFindDevice(actionMember),
             },
-            (isOwner || members.find(x => x.user_id === user?.id)?.role === 'admin') && (
+            (
               lostMap[actionMember.user_id]
                 ? {
                     label: t('lostPhone.markFound'), sub: t('lostPhone.markFoundSub'), color: '#059669',
