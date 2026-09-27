@@ -18,7 +18,7 @@ android {
         applicationId "com.scoopfamily.familyguard"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 26
+        versionCode 28
         versionName "1.2.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // Google Maps SDK for Android key, read from android/local.properties
@@ -134,4 +134,22 @@ try {
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+// A release build without google-services.json used to SUCCEED and ship an app
+// that crashes at login ("Default FirebaseApp is not initialized"): the block
+// above just skips the plugin. vc27 went out that way on 2026-09-27 after a
+// branch switch deleted the (gitignored) file. Refuse to build anything meant
+// for users without it; debug builds may still go without, as before.
+gradle.taskGraph.whenReady { graph ->
+    def shipping = graph.allTasks.any { t ->
+        t.project == project && t.name ==~ /(assemble|bundle|package)(Release|Sideload).*/
+    }
+    def json = file('google-services.json')
+    if (shipping && !(json.exists() && json.length() > 0)) {
+        throw new GradleException(
+            "android/app/google-services.json is missing, so this build would have no Firebase " +
+            "config and crash at login. Restore it (Firebase console -> Project settings -> " +
+            "Your apps -> google-services.json) and build again.")
+    }
 }
