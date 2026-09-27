@@ -61,6 +61,18 @@ import java.util.List;
  */
 final class PlaceGeofence {
 
+    /**
+     * Two lines, not one. A member counts as having ARRIVED within ARRIVE_RADIUS_M
+     * of the place, and only counts as having LEFT beyond LEAVE_RADIUS_M — 150m
+     * further out. A phone wobbling around a single boundary kept crossing it
+     * both ways, and each crossing was a notification; with the lines this far
+     * apart, GPS wobble cannot cross both. The stored radius_m is no longer the
+     * line (every place had the 150 default and the app has no way to change it);
+     * a place saved with a radius over 150m still gets that radius plus the gap.
+     */
+    static final float ARRIVE_RADIUS_M = 100f;
+    static final float LEAVE_RADIUS_M  = 250f;
+
     /** Never MORE strict than this, however small a place's radius. */
     static final float MIN_ACCURACY_FLOOR_M = 100f;
 
@@ -73,10 +85,10 @@ final class PlaceGeofence {
 
     /** How long a crossing has to persist before it is reported. */
     static final long ENTER_DWELL_MS = 30_000L;
-    static final long EXIT_DWELL_MS  = 90_000L;
+    static final long EXIT_DWELL_MS  = 45_000L;
 
     /** After a place changes state, the opposite change is held back this long. */
-    static final long COOLDOWN_MS = 10 * 60_000L;
+    static final long COOLDOWN_MS = 15 * 60_000L;
 
     /** Same plausibility ceiling as the push gate. */
     static final float MAX_PLAUSIBLE_SPEED_MPS = LocationFilter.MAX_PLAUSIBLE_SPEED_MPS;
@@ -193,7 +205,7 @@ final class PlaceGeofence {
         }
 
         for (Place p : places) {
-            if (!accurateEnough(loc.hasAccuracy(), loc.getAccuracy(), p.radiusM)) continue;
+            if (!accurateEnough(loc.hasAccuracy(), loc.getAccuracy(), (int) leaveRadiusM(p))) continue;
 
             Location placeLoc = new Location("place");
             placeLoc.setLatitude(p.lat);
@@ -204,6 +216,16 @@ final class PlaceGeofence {
             if (t != null) transitions.add(t);
         }
         return transitions;
+    }
+
+    /** The distance within which the member counts as having arrived. */
+    static float enterRadiusM(Place p) {
+        return p.radiusM > 150 ? p.radiusM : ARRIVE_RADIUS_M;
+    }
+
+    /** The distance beyond which the member counts as having left. */
+    static float leaveRadiusM(Place p) {
+        return p.radiusM > 150 ? p.radiusM + (LEAVE_RADIUS_M - ARRIVE_RADIUS_M) : LEAVE_RADIUS_M;
     }
 
     /**
@@ -231,11 +253,12 @@ final class PlaceGeofence {
                            long nowMs, long lastMotionMs) {
         boolean rawInside;
         if (p.insideConfirmed) {
-            // To count as having left, the fix must be outside by more than its own error.
+            // To count as having left, the fix must be past the LEAVE line by more
+            // than its own error.
             float err = hasAccuracy ? accuracyM : 0f;
-            rawInside = !(distanceM - err >= p.radiusM);
+            rawInside = !(distanceM - err >= leaveRadiusM(p));
         } else {
-            rawInside = distanceM <= p.radiusM;
+            rawInside = distanceM <= enterRadiusM(p);
         }
 
         boolean hadPending = p.hasPending;
