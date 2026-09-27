@@ -69,4 +69,28 @@ public class CoarseFixConfirmTest {
         assertFalse(c.isActive());
         assertFalse(c.offer(150f, 10f, 150f, 25_000L));
     }
+
+    // ── Motion evidence (2026-09-27) ──────────────────────────────────────────
+    // Fixes agreeing with each other is not enough on its own: a stationary
+    // phone's stuck Wi-Fi/cell lock can do that too. Something else must show
+    // the phone is actually moving.
+
+    @Test
+    public void fixReportingRealSpeed_isMotionEvidenceOnItsOwn() {
+        assertTrue(CoarseFixConfirm.hasMotionEvidence(true, 4f, false));
+    }
+
+    @Test
+    public void fixReportingNoOrSlowSpeed_needsARecentAccurateMovingFix() {
+        assertFalse(CoarseFixConfirm.hasMotionEvidence(false, 0f, false));
+        assertFalse(CoarseFixConfirm.hasMotionEvidence(true, 0.3f, false));
+        assertTrue(CoarseFixConfirm.hasMotionEvidence(false, 0f, true));
+    }
+
+    @Test
+    public void stationaryPhoneWithAStuckWrongFix_hasNoMotionEvidence() {
+        // No speed reading (typical of a cached Wi-Fi/cell fix) and nothing
+        // moving recently: this is exactly the "lying still overnight" case.
+        assertFalse(CoarseFixConfirm.hasMotionEvidence(false, 0f, false));
+    }
 }

@@ -44,6 +44,34 @@ final class CoarseFixConfirm {
 
     void reset() { active = false; reads = 0; worstAccuracyM = 0f; }
 
+    /**
+     * True only when something OTHER than the poor fixes agreeing with each
+     * other says the phone is actually moving: this fix's own reported speed
+     * (Doppler-derived, usable even when its position accuracy is coarse), or
+     * a proper GPS-quality fix that showed real movement within the last few
+     * minutes.
+     *
+     * Without this, a phone sitting still whose Wi-Fi/cell position locks onto
+     * one consistent WRONG point for a couple of minutes satisfies every other
+     * check here — the fixes agree with each other, the distance is outside
+     * their own uncertainty, the implied speed is plausible — exactly the
+     * "phone lying still overnight" failure TeleportGuard and PlaceGeofence
+     * were built to catch, which this class did not otherwise share.
+     */
+    static boolean hasMotionEvidence(boolean fixHasSpeed, float fixSpeedMps, boolean recentAccurateMotion) {
+        return (fixHasSpeed && fixSpeedMps >= MIN_MOVING_SPEED_MPS) || recentAccurateMotion;
+    }
+
+    /**
+     * Lower than LocationFilter.STRONG_SPEED_MPS (which asks for vehicle-grade
+     * evidence, ~11km/h, to raise the accuracy ceiling itself). A walking
+     * member with GPS that never gets better than 100-200m for the whole walk
+     * is exactly the case this class exists for, and a phone's Doppler-derived
+     * speed reading is usable even when its position accuracy is coarse — so
+     * this only needs to clear ordinary GPS noise, not prove vehicle speed.
+     */
+    static final float MIN_MOVING_SPEED_MPS = 0.5f;
+
     boolean isActive() { return active; }
 
     /**
