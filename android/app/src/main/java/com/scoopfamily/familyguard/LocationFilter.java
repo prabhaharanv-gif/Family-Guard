@@ -25,6 +25,29 @@ final class LocationFilter {
     /** Discard fixes worse than this once we have a baseline. */
     static final float MAX_ACCURACY_M = 100f;
     /**
+     * Hard ceiling for a fix worse than MAX_ACCURACY_M: allowed only with strong
+     * evidence the member is really travelling (see hasStrongMotionEvidence).
+     * Through a tunnel or an urban canyon a moving phone can honestly report
+     * 100-200m; a stationary one reporting the same is a Wi-Fi guess.
+     */
+    static final float EVIDENCE_ACCURACY_M = 200f;
+    /** Reported speed that counts as travel: ~11 km/h. */
+    static final float STRONG_SPEED_MPS = 3f;
+    /** ...and the distance since the last push must agree with at least this pace. */
+    static final float MIN_TRAVEL_MPS = 1f;
+    /** No speed reading on the fix. */
+    static final float NO_SPEED = -1f;
+    /**
+     * A fix this coarse that reports it is (almost) standing still yet implies
+     * more than STILL_BUT_FAR_MPS since the last push is drift or a Wi-Fi guess,
+     * not a fast walk: held like a jump until a second fix agrees.
+     */
+    static final float STILL_SPEED_MPS = 1f;
+    static final float STILL_BUT_FAR_MPS = 15f;
+    /** Tolerance when comparing fix times, for providers that stamp to the second. */
+    static final long OUT_OF_ORDER_TOLERANCE_MS = 5_000L;
+
+    /**
      * Until this device has pushed anything there is no row in `locations` at
      * all, and the Family list draws the member as if they were not sharing.
      * Indoors the first fix is routinely worse than 100m, so the strict gate
@@ -166,10 +189,47 @@ final class LocationFilter {
                            float fromPendingM,
                            long msSincePending,
                            long msHoldingJumps) {
+        return evaluate(accuracyM, lastPushAccuracyM, hasLastPush, movedM, msSinceLastPush,
+            hasPendingJump, fromPendingM, msSincePending, msHoldingJumps, NO_SPEED);
+    }
+
+    /** True when a fix is stamped earlier than the last one accepted: late delivery, not a reading. */
+    static boolean isOutOfOrder(long fixTimeMs, long lastAcceptedTimeMs) {
+        return fixTimeMs > 0L && lastAcceptedTimeMs > 0L
+            && fixTimeMs < lastAcceptedTimeMs - OUT_OF_ORDER_TOLERANCE_MS;
+    }
+
+    /**
+     * Strong evidence of travel: the fix reports a real speed AND the ground
+     * covered since the last push agrees with it. Either alone is what a jumpy
+     * Wi-Fi guess looks like.
+     */
+    static boolean hasStrongMotionEvidence(float speedMps, float movedM, long msSinceLastPush) {
+        if (speedMps == NO_SPEED || speedMps < STRONG_SPEED_MPS) return false;
+        if (movedM == NO_DISTANCE || msSinceLastPush <= 0L) return false;
+        return movedM / (msSinceLastPush / 1000f) >= MIN_TRAVEL_MPS;
+    }
+
+    /**
+     * @param speedMps the fix's own reported speed in m/s, or NO_SPEED.
+     */
+    static Result evaluate(float accuracyM,
+                           float lastPushAccuracyM,
+                           boolean hasLastPush,
+                           float movedM,
+                           long msSinceLastPush,
+                           boolean hasPendingJump,
+                           float fromPendingM,
+                           long msSincePending,
+                           long msHoldingJumps,
+                           float speedMps) {
 
         // Accuracy gate — discard poor fixes, but let the very first one through
-        // so the member stops looking like they are not sharing.
-        float accuracyLimit = hasLastPush ? MAX_ACCURACY_M : FIRST_FIX_ACCURACY_M;
+        // so the member stops looking like they are not sharing. Past 100m a fix
+        // is believed only with strong evidence of travel, and never past 200m.
+        float accuracyLimit = !hasLastPush ? FIRST_FIX_ACCURACY_M
+            : hasStrongMotionEvidence(speedMps, movedM, msSinceLastPush) ? EVIDENCE_ACCURACY_M
+            : MAX_ACCURACY_M;
         if (accuracyM > accuracyLimit) {
             return new Result(Outcome.DISCARDED_ACCURACY,
                 "fix discarded — accuracy " + accuracyM + "m > " + accuracyLimit + "m",
@@ -190,7 +250,9 @@ final class LocationFilter {
         float impliedMps = speedElapsedMs > 0 ? movedM / (speedElapsedMs / 1000f) : 0f;
 
         boolean clearPending = false;
-        if (impliedMps > MAX_PLAUSIBLE_SPEED_MPS) {
+        boolean stillButFar = speedMps != NO_SPEED && speedMps < STILL_SPEED_MPS
+            && accuracyM > COARSE_FIX_ACCURACY_M && impliedMps > STILL_BUT_FAR_MPS;
+        if (impliedMps > MAX_PLAUSIBLE_SPEED_MPS || stillButFar) {
             // A held fix is confirmed when this one could plausibly follow it —
             // near it, or a believable distance away for the time between them.
             //

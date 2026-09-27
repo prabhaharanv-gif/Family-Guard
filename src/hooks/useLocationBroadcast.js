@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { LocationService } from '../lib/locationPlugin'
 import { startBatteryReporting } from './useBattery'
+import { isStaleFix, accuracyLimit as trustedAccuracyLimit } from '../lib/locationTrust'
 
 /**
  * Global, always-on location writer.
@@ -20,17 +21,9 @@ import { startBatteryReporting } from './useBattery'
  *   - Respects the member's show_location privacy toggle.
  */
 // ── Location quality filters ─────────────────────────────────────────────────
-// Reject fixes worse than this. Loosened from 50m to 100m so normal indoor
-// WiFi/cell fixes are accepted instead of silently rejected — matches the
-// native LocationForegroundService gate.
-const MAX_ACCURACY_M = 100       // metres — discard anything worse than this
-// Until this device has written ANYTHING for this family there is no row in
-// `locations` at all, and the Family list has nothing to draw: the member shows
-// as if they were not sharing. Indoors on WiFi the first fix is routinely worse
-// than 100m, so the strict gate above could keep somebody who had just joined
-// invisible for as long as they stayed inside. A rough first position is far
-// better than none — the normal gate applies from the second write on.
-const FIRST_FIX_ACCURACY_M = 2000
+// The accuracy and staleness limits (100m normally, 200m only with strong
+// evidence of travel, 2000m for the very first fix, 30s for a cached fix) live
+// in lib/locationTrust.js and match the native LocationFilter.
 // Only write if the user has moved more than this from the last written position
 // Eliminates GPS noise making a stationary pin drift around
 const MIN_MOVE_M     = 15        // metres
@@ -150,13 +143,30 @@ export function useLocationBroadcast(userId, familyId) {
     // different units depending on which writer last ran.
     const toKmh = (mps) => (mps == null || Number.isNaN(mps) ? null : mps * 3.6)
 
-    const write = async (lat, lng, accuracy, speed) => {
+    const write = async (lat, lng, accuracy, speed, fixTime) => {
       if (cancelled) return
+
+      // A fix stamped long ago is the provider's cache, not a reading. Callers
+      // that re-send the last known coordinates on purpose (the heartbeat) pass
+      // no timestamp and skip this.
+      if (isStaleFix(fixTime)) {
+        console.warn(`[LocationBroadcast] Ignoring stale fix — ${Math.round((Date.now() - fixTime) / 1000)}s old`)
+        return
+      }
 
       // ── Quality gate ──────────────────────────────────────────────────────
       // Reject fixes with poor accuracy (cell tower / network fallback).
       // These are the main cause of pins jumping while the user is stationary.
-      const accuracyLimit = lastWrittenRef.current ? MAX_ACCURACY_M : FIRST_FIX_ACCURACY_M
+      // Worse than 100m is dropped; up to 200m only when the fix itself reports
+      // real speed AND the distance covered agrees (someone genuinely travelling).
+      // The last accepted position stays on the map either way.
+      const lastW = lastWrittenRef.current
+      const accuracyLimit = trustedAccuracyLimit({
+        hasBaseline: !!lastW,
+        speedMps: speed,
+        movedM: lastW ? distanceM(lastW.lat, lastW.lng, lat, lng) : null,
+        msSinceLast: lastW ? Date.now() - lastWriteTimeRef.current : 0,
+      })
       if (accuracy != null && accuracy > accuracyLimit) {
         console.warn(`[LocationBroadcast] Discarding poor fix — accuracy ${Math.round(accuracy)}m > ${accuracyLimit}m`)
         return
@@ -303,7 +313,7 @@ export function useLocationBroadcast(userId, familyId) {
       try {
         const pos = await getPosition()
         lastCoordsRef.current = pos.coords
-        await write(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, pos.coords.speed)
+        await write(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, pos.coords.speed, pos.timestamp)
       } catch (e) {
         console.warn('[LocationBroadcast] Initial fix failed:', e?.message)
       }
@@ -327,7 +337,7 @@ export function useLocationBroadcast(userId, familyId) {
             (p) => {
               if (cancelled) return
               lastCoordsRef.current = p.coords
-              write(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.coords.speed)
+              write(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.coords.speed, p.timestamp)
             },
             (err) => console.warn('[LocationBroadcast] Watch error:', err?.message),
             { enableHighAccuracy: true, maximumAge: 10000, timeout: 25000 }

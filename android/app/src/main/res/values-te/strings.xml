@@ -131,4 +131,5 @@
     <string name="lost_title">ఈ ఫోన్ పోయింది</string>
     <string name="lost_body_default" formatted="true">దీన్ని తిరిగి ఇవ్వడానికి దయచేసి %1$s ను సంప్రదించండి.</string>
     <string name="lost_body_generic">దయచేసి ఈ ఫోన్‌ను దాని యజమాని కుటుంబానికి తిరిగి ఇవ్వండి.</string>
+    <string name="lost_close">మూసివేయి</string>
 </resources>

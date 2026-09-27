@@ -208,6 +208,10 @@ public class LocationForegroundService extends Service {
     // Stale-fix and unconfirmed-far-fix guard (see TeleportGuard), and the last
     // time a GPS-quality fix showed the phone really moving.
     private final TeleportGuard teleportGuard = new TeleportGuard();
+    // Poor fixes (100-500m) that keep agreeing with each other may still move the
+    // pin; one alone never does. See CoarseFixConfirm.
+    private final CoarseFixConfirm coarseConfirm = new CoarseFixConfirm();
+    private Location coarseCandidate = null;
     private Location teleportCandidate = null;
     private long lastMotionTime = 0L;
 
@@ -1068,6 +1072,13 @@ public class LocationForegroundService extends Service {
             Log.d(TAG, source + " fix ignored — " + (fixAgeMs / 1000) + "s old, a cached position, not a reading");
             return;
         }
+        // Delivered late: older than the position already accepted, so it says
+        // where the phone WAS. Never lets an old reading replace a newer one.
+        if (lastPushedLocation != null
+                && LocationFilter.isOutOfOrder(loc.getTime(), lastPushedLocation.getTime())) {
+            Log.d(TAG, source + " fix ignored — older than the last accepted position");
+            return;
+        }
         boolean guardBaseline = lastPushedLocation != null;
         float guardMoved = guardBaseline ? lastPushedLocation.distanceTo(loc) : TeleportGuard.NO_DISTANCE;
         float guardFromCandidate = teleportCandidate != null
@@ -1119,7 +1130,8 @@ public class LocationForegroundService extends Service {
             ? lastPushedLocation.getAccuracy() : LocationFilter.NO_DISTANCE;
         LocationFilter.Result verdict = LocationFilter.evaluate(
             loc.getAccuracy(), lastAcc, hasLastPush, movedM, sinceLastPush,
-            hasPending, fromPending, sincePending, holdingJumps);
+            hasPending, fromPending, sincePending, holdingJumps,
+            loc.hasSpeed() ? loc.getSpeed() : LocationFilter.NO_SPEED);
 
         // Decided from the distances already measured above, before the verdict
         // is applied: a rejected fix still tells us whether the phone is moving.
@@ -1135,19 +1147,44 @@ public class LocationForegroundService extends Service {
             pendingJumpLocation = null;
         }
 
-        if (!verdict.shouldPush()) {
+        // A poor fix is dropped on its own, but a run of them that agree with each
+        // other and land outside the pin's own uncertainty is a real move.
+        boolean coarseAccepted = false;
+        String coarseNote = null;
+        if (verdict.outcome == LocationFilter.Outcome.DISCARDED_ACCURACY && hasLastPush
+                && loc.getAccuracy() <= CoarseFixConfirm.MAX_M) {
+            float fromPrev = coarseCandidate != null ? coarseCandidate.distanceTo(loc) : CoarseFixConfirm.NO_DISTANCE;
+            float prevAcc  = coarseCandidate != null ? coarseCandidate.getAccuracy() : CoarseFixConfirm.NO_DISTANCE;
+            boolean runConfirmed = coarseConfirm.offer(loc.getAccuracy(), fromPrev, prevAcc, now);
+            coarseCandidate = loc;
+            float impliedMps = sinceLastPush > 0 ? movedM / (sinceLastPush / 1000f) : Float.MAX_VALUE;
+            boolean outsideUncertainty = movedM >= loc.getAccuracy() * LocationFilter.COARSE_FIX_MOVE_FACTOR;
+            if (runConfirmed && outsideUncertainty && impliedMps <= LocationFilter.MAX_PLAUSIBLE_SPEED_MPS) {
+                coarseAccepted = true;
+                coarseNote = "poor fix (" + loc.getAccuracy() + "m) accepted — a run of agreeing fixes, "
+                    + movedM + "m from the last position";
+                pendingJumpLocation = null;
+            }
+        } else if (verdict.outcome != LocationFilter.Outcome.DISCARDED_ACCURACY) {
+            coarseConfirm.reset();
+            coarseCandidate = null;
+        }
+        if (coarseAccepted) { coarseConfirm.reset(); coarseCandidate = null; }
+
+        if (!verdict.shouldPush() && !coarseAccepted) {
             if (verdict.outcome == LocationFilter.Outcome.REJECTED_JUMP) {
                 Log.w(TAG, source + " " + verdict.detail);
             } else {
                 Log.d(TAG, source + " " + verdict.detail);
             }
+            logRejection(source, verdict, loc, hasLastPush, movedM, sinceLastPush);
             return;
         }
 
         if (verdict.outcome == LocationFilter.Outcome.ACCEPTED_HEARTBEAT) {
             Log.i(TAG, source + " heartbeat push — stationary, refreshing timestamp");
         }
-        Log.i(TAG, "✅ " + source + " " + verdict.detail);
+        Log.i(TAG, "✅ " + source + " " + (coarseAccepted ? coarseNote : verdict.detail));
 
         // A heartbeat carrying a less precise fix re-sends the position already
         // on the map, freshly stamped, instead of moving the pin onto it.
@@ -1167,6 +1204,27 @@ public class LocationForegroundService extends Service {
         // With no data the push above goes nowhere; this is the fallback that
         // still reaches the family. Cheap unless an alert is actually due.
         executor.submit(() -> OfflineSms.maybeSend(getApplicationContext(), toPush));
+    }
+
+    /**
+     * One line per fix that was not pushed, with everything needed to see why:
+     * where the pin is, where the fix is, how far, how good, how fast, how old.
+     * Debug builds only, so a shipped app writes nothing extra to the log.
+     */
+    private void logRejection(String source, LocationFilter.Result verdict, Location loc,
+                              boolean hasLastPush, float movedM, long sinceLastPushMs) {
+        if ((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) == 0) return;
+        Location prev = lastPushedLocation;
+        Log.d(TAG, "Location rejected [" + source + "]: " + verdict.outcome
+            + " | new=" + loc.getLatitude() + "," + loc.getLongitude()
+            + " acc=" + (loc.hasAccuracy() ? loc.getAccuracy() + "m" : "?")
+            + " speed=" + (loc.hasSpeed() ? loc.getSpeed() + "m/s" : "?")
+            + " fixTime=" + loc.getTime()
+            + " | prev=" + (prev != null ? prev.getLatitude() + "," + prev.getLongitude()
+                + " acc=" + (prev.hasAccuracy() ? prev.getAccuracy() + "m" : "?") : "none")
+            + " | jump=" + (hasLastPush ? movedM + "m" : "n/a")
+            + " sincePush=" + (sinceLastPushMs / 1000) + "s"
+            + " | reason: " + verdict.detail);
     }
 
     /**

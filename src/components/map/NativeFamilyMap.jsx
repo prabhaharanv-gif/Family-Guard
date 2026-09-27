@@ -4,6 +4,7 @@ import { GoogleMap, MapType } from '@capacitor/google-maps'
 import { GLIDE_MS } from '../SmoothMarker'
 import { DEST_PIN, destPin, PIN_SIZE, initialPin, photoPin, timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
 import { useT } from '../../i18n'
+import { accuracyRadius } from '../../lib/accuracyCircle'
 
 /**
  * The family map in the ANDROID app: Google's native map (Maps SDK for
@@ -280,6 +281,39 @@ export default function NativeFamilyMap({
         return m.idP.then(markerId => native().setMarkerIcon({ id: MAP_ID, markerId, iconUrl }))
       }).catch(warn('photo pin'))
     }
+  }, [ready, pins])
+
+  // ── Accuracy circles ─────────────────────────────────────────────────────
+  // A loose fix (indoors, Wi-Fi guess) is drawn as the area the phone could be
+  // in, so it does not read as a wrong pin. Redrawn only when a circle's
+  // centre or radius changes, which is rare next to how often pins update.
+  const circleIdsRef = useRef([])
+  const circleSigRef = useRef('')
+  useEffect(() => {
+    const map = mapRef.current
+    if (!ready || !map) return
+    const circles = []
+    for (const loc of Object.values(pins)) {
+      const radius = loc.kind || loc.lat == null ? null : accuracyRadius(loc)
+      if (!radius) continue
+      circles.push({
+        center: { lat: loc.lat, lng: loc.lng }, radius,
+        strokeColor: '#8B0D3D', strokeWeight: 1, strokeOpacity: 0.45,
+        fillColor: '#8B0D3D', fillOpacity: 0.1, clickable: false,
+      })
+    }
+    const sig = circles.map(c => `${c.center.lat.toFixed(5)},${c.center.lng.toFixed(5)},${Math.round(c.radius)}`).join('|')
+    if (sig === circleSigRef.current) return
+    circleSigRef.current = sig
+    const old = circleIdsRef.current
+    circleIdsRef.current = []
+    ;(async () => {
+      if (old.length) await map.removeCircles(old).catch(warn('remove circles'))
+      if (!circles.length || circleSigRef.current !== sig) return
+      const ids = await retrying('draw circles', () => map.addCircles(circles))
+      if (circleSigRef.current !== sig) { if (ids?.length) map.removeCircles(ids).catch(warn('remove circles')); return }
+      circleIdsRef.current = ids || []
+    })()
   }, [ready, pins])
 
   // ── Camera: frame everyone once, on first data ───────────────────────────
