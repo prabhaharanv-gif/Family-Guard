@@ -131,4 +131,5 @@
     <string name="lost_title">यह फ़ोन खो गया है</string>
     <string name="lost_body_default" formatted="true">इसे लौटाने के लिए कृपया %1$s से संपर्क करें।</string>
     <string name="lost_body_generic">कृपया यह फ़ोन इसके मालिक के परिवार को लौटा दें।</string>
+    <string name="lost_close">बंद करें</string>
 </resources>

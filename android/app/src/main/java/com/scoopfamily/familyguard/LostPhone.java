@@ -68,6 +68,7 @@ final class LostPhone {
             .commit();
         Log.w(TAG, "LOST MODE ON until " + new java.util.Date(until));
         postNotification(ctx);
+        launchScreen(ctx);
         // Make sure the location service is running to report; it also drives tick().
         if (LocationForegroundService.hasLocationPermission(ctx) && !LocationForegroundService.isRunning) {
             try { LocationForegroundService.startService(ctx); } catch (Exception e) {
@@ -86,6 +87,7 @@ final class LostPhone {
             if (nm != null) nm.cancel(NOTIF_ID);
         } catch (Exception ignored) {}
         try { PingRingService.stopService(ctx); } catch (Exception ignored) {}
+        LostPhoneActivity.finishIfShowing();
         if (was) Log.w(TAG, "LOST MODE OFF");
     }
 
@@ -100,11 +102,33 @@ final class LostPhone {
             if (LostModePlan.shouldRing(now, until, p.getLong(KEY_LAST_RING, 0L))) {
                 p.edit().putLong(KEY_LAST_RING, now).commit();
                 ring(ctx);
+                launchScreen(ctx);
                 // Re-post so the message is back on the lock screen if it was swiped away.
                 postNotification(ctx);
             }
         } catch (Exception e) {
             Log.w(TAG, "tick failed: " + e.getMessage());
+        }
+    }
+
+    /** The message a finder should read: the custom text, else who to contact. */
+    static String bodyText(Context ctx) {
+        SharedPreferences p = prefs(ctx);
+        String msg = p.getString(KEY_MESSAGE, "");
+        String starter = p.getString(KEY_STARTER, "");
+        return !msg.isEmpty() ? msg
+            : !starter.isEmpty() ? ctx.getString(R.string.lost_body_default, starter)
+            : ctx.getString(R.string.lost_body_generic);
+    }
+
+    /** Puts the message full-screen over the lock screen; the notification's full-screen intent is the fallback. */
+    private static void launchScreen(Context ctx) {
+        try {
+            Intent i = new Intent(ctx, LostPhoneActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            ctx.startActivity(i);
+        } catch (Exception e) {
+            Log.w(TAG, "could not open the lost-phone screen: " + e.getMessage());
         }
     }
 
@@ -132,16 +156,15 @@ final class LostPhone {
                 ch.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
                 nm.createNotificationChannel(ch);
             }
-            SharedPreferences p = prefs(ctx);
-            String msg = p.getString(KEY_MESSAGE, "");
-            String starter = p.getString(KEY_STARTER, "");
-            String body = !msg.isEmpty() ? msg
-                : !starter.isEmpty() ? ctx.getString(R.string.lost_body_default, starter)
-                : ctx.getString(R.string.lost_body_generic);
+            String body = bodyText(ctx);
 
             Intent tap = new Intent(ctx, MainActivity.class);
             tap.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             PendingIntent pi = PendingIntent.getActivity(ctx, 919, tap,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            Intent fs = new Intent(ctx, LostPhoneActivity.class);
+            fs.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent fsPi = PendingIntent.getActivity(ctx, 920, fs,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
             Notification n = new NotificationCompat.Builder(ctx, CHANNEL_ID)
@@ -157,6 +180,7 @@ final class LostPhone {
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setContentIntent(pi)
+                .setFullScreenIntent(fsPi, true)
                 .build();
             nm.notify(NOTIF_ID, n);
         } catch (Exception e) {

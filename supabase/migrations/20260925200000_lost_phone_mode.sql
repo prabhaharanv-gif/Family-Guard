@@ -84,7 +84,7 @@ begin
   end if;
 
   select display_name into v_name from public.family_members
-   where user_id = auth.uid() order by created_at limit 1;
+   where user_id = auth.uid() order by joined_at limit 1;
 
   insert into public.lost_phone (user_id, started_by, starter_name, message, started_at, expires_at)
   values (p_target, auth.uid(), v_name, left(nullif(trim(coalesce(p_message, '')), ''), 140),

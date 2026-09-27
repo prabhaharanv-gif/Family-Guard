@@ -131,4 +131,5 @@
     <string name="lost_title">ഈ ഫോൺ നഷ്ടപ്പെട്ടു</string>
     <string name="lost_body_default" formatted="true">ഇത് തിരികെ നൽകാൻ ദയവായി %1$s നെ ബന്ധപ്പെടുക.</string>
     <string name="lost_body_generic">ദയവായി ഈ ഫോൺ ഉടമയുടെ കുടുംബത്തിന് തിരികെ നൽകുക.</string>
+    <string name="lost_close">അടയ്ക്കുക</string>
 </resources>

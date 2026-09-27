@@ -101,6 +101,20 @@
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density"
             android:theme="@style/SOSAlertTheme" />
 
+        <!-- ── "This phone is lost" message over the lock screen, own task like
+             the other lock-screen activities. -->
+        <activity
+            android:name=".LostPhoneActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.scoopfamily.familyguard.lost"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density"
+            android:theme="@style/SOSAlertTheme" />
+
         <!-- ── Fake incoming call screen ─────────────────────────────────────
              Same lock-screen pattern as CallRingingActivity, in a task of its
              own for the same reason: nothing in the app's task may bury it. -->

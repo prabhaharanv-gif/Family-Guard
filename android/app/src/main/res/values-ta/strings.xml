@@ -131,4 +131,5 @@
     <string name="lost_title">இந்த ஃபோன் தொலைந்துவிட்டது</string>
     <string name="lost_body_default" formatted="true">இதைத் திருப்பித் தர %1$s அவர்களைத் தொடர்பு கொள்ளவும்.</string>
     <string name="lost_body_generic">இந்த ஃபோனை உரிமையாளரின் குடும்பத்திடம் ஒப்படைக்கவும்.</string>
+    <string name="lost_close">மூடு</string>
 </resources>

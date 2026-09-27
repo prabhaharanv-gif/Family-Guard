@@ -449,4 +449,60 @@ public class LocationFilterTest {
                 r.detail != null && !r.detail.isEmpty());
         }
     }
+
+    // ── Evidence-based accuracy, staleness order, speed consistency ──────────
+
+    private static LocationFilter.Result withSpeed(float accuracy, float moved, long msSince, float speed) {
+        return LocationFilter.evaluate(accuracy, NONE, true, moved, msSince, false, NONE, 0, 0, speed);
+    }
+
+    @Test
+    public void fixWorseThan100m_isDroppedWhenNothingShowsTheMemberIsMoving() {
+        assertEquals(LocationFilter.Outcome.DISCARDED_ACCURACY,
+            withSpeed(150f, 600f, 20_000, LocationFilter.NO_SPEED).outcome);
+        assertEquals(LocationFilter.Outcome.DISCARDED_ACCURACY,
+            withSpeed(150f, 600f, 20_000, 0.2f).outcome);
+    }
+
+    @Test
+    public void fixBetween100And200m_isBelievedOnlyWithSpeedAndMatchingDistance() {
+        // 8 m/s reported, 600m covered in 20s (30 m/s): a vehicle, believable.
+        assertTrue(withSpeed(150f, 600f, 20_000, 8f).shouldPush());
+        // Reported speed but no ground covered: not evidence.
+        assertEquals(LocationFilter.Outcome.DISCARDED_ACCURACY,
+            withSpeed(150f, 2f, 20_000, 8f).outcome);
+    }
+
+    @Test
+    public void nothingWorseThan200m_isAcceptedEvenWhenMoving() {
+        assertEquals(LocationFilter.Outcome.DISCARDED_ACCURACY,
+            withSpeed(201f, 900f, 20_000, 12f).outcome);
+        assertTrue(withSpeed(200f, 900f, 20_000, 12f).shouldPush());
+    }
+
+    @Test
+    public void veryFirstFix_stillGetsThroughSoTheMemberIsVisible() {
+        assertTrue(firstFix(500f).shouldPush());
+    }
+
+    @Test
+    public void coarseFixThatSaysItIsStandingStillButImpliesAFastMove_isHeld() {
+        // 400m in 20s = 20 m/s implied, yet the fix reports 0.1 m/s and is a 60m guess.
+        LocationFilter.Result r = withSpeed(60f, 400f, 20_000, 0.1f);
+        assertEquals(LocationFilter.Outcome.REJECTED_JUMP, r.outcome);
+        assertTrue(r.holdAsPendingJump);
+    }
+
+    @Test
+    public void preciseGpsFixThatMovedFast_isNotHeldJustForReportingLowSpeed() {
+        assertTrue(withSpeed(8f, 400f, 20_000, 0.1f).shouldPush());
+    }
+
+    @Test
+    public void olderFixThanTheLastAccepted_isOutOfOrder() {
+        assertTrue(LocationFilter.isOutOfOrder(100_000L, 200_000L));
+        assertFalse("equal or newer is fine", LocationFilter.isOutOfOrder(200_000L, 200_000L));
+        assertFalse("within the stamping tolerance", LocationFilter.isOutOfOrder(197_000L, 200_000L));
+        assertFalse("no timestamp cannot be judged", LocationFilter.isOutOfOrder(0L, 200_000L));
+    }
 }
