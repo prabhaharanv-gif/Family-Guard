@@ -333,7 +333,12 @@ public class LocationPlugin extends Plugin {
      */
     // ── Offline SMS alerts ───────────────────────────────────────────────────
 
-    /** { enabled, extraNumber, hasPermission, recipients } — recipients is a count, not the numbers. */
+    /**
+     * { enabled, extraNumber, hasPermission, recipients, adminNames } —
+     * recipients is a count, not the numbers; adminNames is the cached family
+     * admins' display names (blank entries where none was cached), for the
+     * card to name recipients instead of saying "family admins".
+     */
     @PluginMethod
     public void getOfflineSms(PluginCall call) {
         JSObject r = new JSObject();
@@ -341,6 +346,9 @@ public class LocationPlugin extends Plugin {
         r.put("extraNumber", OfflineSms.extraNumber(getContext()));
         r.put("hasPermission", OfflineSms.hasPermission(getContext()));
         r.put("recipients", OfflineSms.recipients(getContext()).size());
+        com.getcapacitor.JSArray names = new com.getcapacitor.JSArray();
+        for (String n : OfflineSms.adminNames(getContext())) names.put(n);
+        r.put("adminNames", names);
         call.resolve(r);
     }
 
@@ -372,7 +380,17 @@ public class LocationPlugin extends Plugin {
                 return;
             }
         }
-        OfflineSms.saveContacts(getContext(), admins, call.getString("senderName", ""));
+        java.util.List<String> adminNames = new java.util.ArrayList<>();
+        com.getcapacitor.JSArray nameArr = call.getArray("adminNames");
+        if (nameArr != null) {
+            try {
+                for (Object o : nameArr.toList()) adminNames.add(o == null ? "" : String.valueOf(o));
+            } catch (Exception e) {
+                call.reject("adminNames must be an array of strings");
+                return;
+            }
+        }
+        OfflineSms.saveContacts(getContext(), admins, adminNames, call.getString("senderName", ""));
         call.resolve();
     }
 

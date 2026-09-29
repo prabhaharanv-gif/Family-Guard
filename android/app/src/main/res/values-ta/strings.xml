@@ -124,6 +124,8 @@
     <string name="device_overspeed_body" formatted="true">மணிக்கு %1$d கி.மீ (வரம்பு %2$d கி.மீ)</string>
     <string name="device_overspeed_self_title">வேகத்தைக் குறையுங்கள்: நீங்கள் வரம்பைத் தாண்டிவிட்டீர்கள்</string>
     <string name="device_overspeed_self_body" formatted="true">நீங்கள் மணிக்கு %1$d கி.மீ செல்கிறீர்கள். உங்கள் வரம்பு %2$d கி.மீ.</string>
+    <string name="ch_overspeed_self_name">வேக வரம்பு எச்சரிக்கை</string>
+    <string name="ch_overspeed_self_desc">நீங்கள் அமைத்த வேக வரம்பை மீறும்போது ஒரு மெல்லிய ஒலியுடன் எச்சரிக்கும்</string>
     <string name="unlock_alert_title" formatted="true">%1$s-இன் ஃபோனில் தவறான கடவுச்சொல்</string>
     <string name="unlock_alert_body" formatted="true">தவறான திரைப்பூட்டு முயற்சிகள்: %1$d. ஃபோன் எங்கே இருந்தது என்பதையும், படம் எடுக்கப்பட்டிருந்தால் அதையும் காண Famora-வைத் திறக்கவும்.</string>
     <string name="ch_lost_name">ஃபோன் தொலைந்த நிலை</string>

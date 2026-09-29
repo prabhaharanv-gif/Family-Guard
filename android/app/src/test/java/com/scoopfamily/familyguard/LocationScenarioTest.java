@@ -34,8 +34,10 @@ public class LocationScenarioTest {
                     Float.isNaN(candX) ? NONE : Math.abs(x - candX), candAcc, now);
                 candX = x; candAcc = acc;
                 float implied = since > 0 ? moved / (since / 1000f) : Float.MAX_VALUE;
+                boolean motionEvidence = CoarseFixConfirm.hasMotionEvidence(
+                    speed != LocationFilter.NO_SPEED, speed, false);
                 if (confirmed && moved >= acc * LocationFilter.COARSE_FIX_MOVE_FACTOR
-                        && implied <= LocationFilter.MAX_PLAUSIBLE_SPEED_MPS) accept = true;
+                        && implied <= LocationFilter.MAX_PLAUSIBLE_SPEED_MPS && motionEvidence) accept = true;
             } else if (r.outcome != LocationFilter.Outcome.DISCARDED_ACCURACY) {
                 coarse.reset(); candX = Float.NaN;
             }
@@ -82,21 +84,45 @@ public class LocationScenarioTest {
         Pin p = new Pin();
         p.fix(0, 15, 0, 0);
         long t = 10_000;
-        // The member walks 300m away and GPS stays at ~130m for a minute.
-        for (int i = 0; i < 8; i++) { p.fix(300, 130, LocationFilter.NO_SPEED, t); t += 10_000; }
+        // The member walks 300m away (~1.3 m/s) and GPS stays at ~130m for a minute.
+        for (int i = 0; i < 8; i++) { p.fix(300, 130, 1.3f, t); t += 10_000; }
         assertEquals(300f, p.x, 0f);
         assertEquals("the pin carries the fix's own accuracy, not a better one", 130f, p.acc, 0f);
+    }
+
+    @Test
+    public void genuineMoveWithNoSpeedReadingAtAll_isNeverShown() {
+        // Same walk as above, but the fix carries no speed (common for network/
+        // Wi-Fi fixes) and nothing else shows real movement: indistinguishable
+        // from a stationary phone's stuck fix, so it must not move the pin.
+        Pin p = new Pin();
+        p.fix(0, 15, 0, 0);
+        long t = 10_000;
+        for (int i = 0; i < 8; i++) { p.fix(300, 130, LocationFilter.NO_SPEED, t); t += 10_000; }
+        assertEquals(0f, p.x, 0f);
     }
 
     @Test
     public void moveOver200mAccuracy_needsThreeAgreeingReads() {
         Pin p = new Pin();
         p.fix(0, 15, 0, 0);
-        p.fix(600, 250, LocationFilter.NO_SPEED, 10_000);
-        p.fix(600, 250, LocationFilter.NO_SPEED, 30_000);
+        p.fix(600, 250, 2f, 10_000);
+        p.fix(600, 250, 2f, 30_000);
         assertEquals("two reads at 250m is not enough", 0f, p.x, 0f);
-        p.fix(600, 250, LocationFilter.NO_SPEED, 60_000);
+        p.fix(600, 250, 2f, 60_000);
         assertEquals(600f, p.x, 0f);
+    }
+
+    @Test
+    public void stationaryPhoneWithAStuckWifiFix_neverConfirmsEvenWithEnoughReadsAndTime() {
+        // The exact "phone lying still overnight" pattern: the same wrong
+        // position, repeated well past the read/time thresholds, with no
+        // speed reading — because the phone never moved.
+        Pin p = new Pin();
+        p.fix(0, 15, 0, 0);
+        long t = 10_000;
+        for (int i = 0; i < 6; i++) { p.fix(300, 130, LocationFilter.NO_SPEED, t); t += 60_000; }
+        assertEquals(0f, p.x, 0f);
     }
 
     @Test

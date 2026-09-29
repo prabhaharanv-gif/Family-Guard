@@ -12,25 +12,15 @@ function extractBearer(req: Request): string | null {
   return auth.slice(7).trim()
 }
 
-const PROJECT_REF = 'xiwfmunwodovzpzicyvu'
-
-function b64urlDecode(seg: string): string {
-  seg = seg.replace(/-/g, '+').replace(/_/g, '/')
-  while (seg.length % 4) seg += '='
-  try { return atob(seg) } catch { return '' }
-}
-
+// The only legitimate caller is the Postgres trigger that sends the raw
+// service_role key straight from Vault as the bearer token (see
+// supabase/migrations/20260828190000_fix_edge_function_trigger_payload.sql).
+// A previous fallback here decoded a bearer value as an unverified JWT and
+// trusted its claims (role/ref/exp) without checking a signature — anyone
+// who could reach this function's URL could forge one. Removed rather than
+// fixed: no legitimate caller ever needed it.
 function isServiceRoleJwt(token: string, serviceRoleKey: string): boolean {
-  if (token && serviceRoleKey && token === serviceRoleKey) return true
-  const parts = token.split('.')
-  if (parts.length !== 3) return false
-  try {
-    const payload = JSON.parse(b64urlDecode(parts[1]))
-    if (payload.role !== 'service_role') return false
-    if (payload.ref && payload.ref !== PROJECT_REF) return false
-    if (payload.exp && Date.now() / 1000 > payload.exp) return false
-    return true
-  } catch { return false }
+  return !!token && !!serviceRoleKey && token === serviceRoleKey
 }
 
 function b64url(input: string | Uint8Array): string {
@@ -125,6 +115,26 @@ serve(async (req) => {
     const stop = parsed?.type === 'DELETE'
 
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, srKey)
+
+    // Re-read the row rather than trust the webhook body's message/starter_name
+    // directly (same defence-in-depth as send-place-notification): user_id is
+    // the row's own primary key, so this also confirms lost mode is genuinely
+    // active for a start event. A stop event has nothing left to read back —
+    // the row is already gone by the time DELETE fires.
+    let verified = record
+    if (!stop) {
+      const { data: row } = await supabase
+        .from('lost_phone')
+        .select('user_id, starter_name, message, expires_at')
+        .eq('user_id', record.user_id)
+        .maybeSingle()
+      if (!row) {
+        console.warn('[LOST-FN] Row not found for start event — ignoring')
+        return new Response('Record not found', { status: 200 })
+      }
+      verified = row
+    }
+
     const { data: tokens } = await supabase.from('device_tokens').select('token').eq('user_id', record.user_id)
     const unique = [...new Set((tokens || []).map((t: any) => t.token))]
     if (unique.length === 0) return new Response('No tokens', { status: 200 })
@@ -136,13 +146,13 @@ serve(async (req) => {
     const accessToken = await getAccessToken(serviceAccount)
     if (!accessToken) return new Response('Auth error', { status: 500 })
 
-    const expiresAt = record.expires_at ? Math.floor(new Date(record.expires_at).getTime() / 1000) : 0
+    const expiresAt = verified.expires_at ? Math.floor(new Date(verified.expires_at).getTime() / 1000) : 0
     const payload = {
       data: {
         type:    'lost_phone',
         action:  stop ? 'stop' : 'start',
-        message: String(record.message || ''),
-        starter: String(record.starter_name || ''),
+        message: String(verified.message || ''),
+        starter: String(verified.starter_name || ''),
         until:   String(expiresAt),
       },
       // High priority so a sleeping phone hears it; lost mode is time-critical.

@@ -16,29 +16,16 @@ function extractBearer(req: Request): string | null {
   return auth.slice(7).trim()
 }
 
-const PROJECT_REF = 'xiwfmunwodovzpzicyvu'
-
-function b64urlDecode(seg: string): string {
-  seg = seg.replace(/-/g, '+').replace(/_/g, '/')
-  while (seg.length % 4) seg += '='
-  try { return atob(seg) } catch { return '' }
-}
-
-// Accept ANY structurally-valid service_role JWT for this project.
-// This is resilient to key rotation: legacy and new-format service_role
-// keys both carry role=service_role and ref=<project> in their payload.
-// Falls back to exact-match against the injected env key for non-JWT keys.
+// The only legitimate caller is the Postgres trigger that sends the raw
+// service_role key straight from Vault as the bearer token (see
+// supabase/migrations/20260828190000_fix_edge_function_trigger_payload.sql).
+// A previous fallback here decoded a bearer value as an unverified JWT and
+// trusted its claims (role/ref/exp) without checking a signature — the
+// "resilient to key rotation" reasoning didn't hold, since it never checked
+// a signature either: anyone who could reach this function's URL could
+// forge one. Removed rather than fixed: no legitimate caller ever needed it.
 function isServiceRoleJwt(token: string, serviceRoleKey: string): boolean {
-  if (token && serviceRoleKey && token === serviceRoleKey) return true
-  const parts = token.split('.')
-  if (parts.length !== 3) return false
-  try {
-    const payload = JSON.parse(b64urlDecode(parts[1]))
-    if (payload.role !== 'service_role') return false
-    if (payload.ref && payload.ref !== PROJECT_REF) return false
-    if (payload.exp && Date.now() / 1000 > payload.exp) return false
-    return true
-  } catch { return false }
+  return !!token && !!serviceRoleKey && token === serviceRoleKey
 }
 
 function b64url(input: string | Uint8Array): string {

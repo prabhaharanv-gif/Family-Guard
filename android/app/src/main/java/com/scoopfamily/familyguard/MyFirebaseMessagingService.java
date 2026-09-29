@@ -555,6 +555,31 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     // ── Device alerts: low battery / phone off / back online ─────────────────
     private static final String DEVICE_CHANNEL_ID = "device_alerts_v1";
 
+    // Own-overspeed gets a separate channel from the shared device_alerts_v1:
+    // that channel is used for quiet status updates (battery, offline), and a
+    // channel's sound is fixed at creation, so overspeed_self needs its own id
+    // to carry an audible-but-soft tone instead of inheriting whatever
+    // device_alerts_v1 was set (or later muted) to.
+    private static final String OVERSPEED_SELF_CHANNEL_ID = "overspeed_self_v1";
+
+    private static void ensureOverspeedSelfChannelStatic(Context ctx) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        NotificationManager nm =
+            (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null || nm.getNotificationChannel(OVERSPEED_SELF_CHANNEL_ID) != null) return;
+
+        NotificationChannel ch = new NotificationChannel(OVERSPEED_SELF_CHANNEL_ID,
+            ctx.getString(R.string.ch_overspeed_self_name), NotificationManager.IMPORTANCE_HIGH);
+        ch.setDescription(ctx.getString(R.string.ch_overspeed_self_desc));
+        // Reuse the gentle message tone rather than an alarm/siren sound — this
+        // fires while the person is actively driving, so it needs to be
+        // noticeable without being alarming.
+        ch.setSound(messageToneUri(ctx), notificationAudioAttributes());
+        ch.enableVibration(true);
+        ch.setVibrationPattern(new long[]{0, 200, 100, 200});
+        nm.createNotificationChannel(ch);
+    }
+
     private static int parseIntOr(String v, int fallback) {
         try { return Integer.parseInt(v == null ? "" : v.trim()); } catch (Exception e) { return fallback; }
     }
@@ -579,6 +604,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 ch.setDescription(ctx.getString(R.string.ch_device_desc));
                 nm.createNotificationChannel(ch);
             }
+            if ("overspeed_self".equals(kind)) ensureOverspeedSelfChannelStatic(ctx);
 
             String title;
             String body;
@@ -619,7 +645,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             PendingIntent tapPi = PendingIntent.getActivity(ctx, 916, tap,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, DEVICE_CHANNEL_ID)
+            String notifyChannelId = "overspeed_self".equals(kind) ? OVERSPEED_SELF_CHANNEL_ID : DEVICE_CHANNEL_ID;
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, notifyChannelId)
                 .setSmallIcon(R.drawable.ic_stat_notify)
                 .setColor(android.graphics.Color.parseColor("#951345"))
                 .setContentTitle(title)

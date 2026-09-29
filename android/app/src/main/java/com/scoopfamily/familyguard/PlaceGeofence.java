@@ -88,7 +88,7 @@ final class PlaceGeofence {
     static final long EXIT_DWELL_MS  = 45_000L;
 
     /** After a place changes state, the opposite change is held back this long. */
-    static final long COOLDOWN_MS = 15 * 60_000L;
+    static final long COOLDOWN_MS = 10 * 60_000L;
 
     /** Same plausibility ceiling as the push gate. */
     static final float MAX_PLAUSIBLE_SPEED_MPS = LocationFilter.MAX_PLAUSIBLE_SPEED_MPS;

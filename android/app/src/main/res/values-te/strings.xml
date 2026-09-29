@@ -124,6 +124,8 @@
     <string name="device_overspeed_body" formatted="true">గంటకు %1$d కి.మీ (పరిమితి %2$d కి.మీ)</string>
     <string name="device_overspeed_self_title">వేగం తగ్గించండి: మీరు మీ పరిమితి దాటారు</string>
     <string name="device_overspeed_self_body" formatted="true">మీరు గంటకు %1$d కి.మీ వెళ్తున్నారు. మీ పరిమితి %2$d కి.మీ.</string>
+    <string name="ch_overspeed_self_name">వేగ పరిమితి హెచ్చరిక</string>
+    <string name="ch_overspeed_self_desc">మీరు నిర్ణయించిన వేగ పరిమితిని మించినప్పుడు చిన్న శబ్దంతో హెచ్చరిస్తుంది</string>
     <string name="unlock_alert_title" formatted="true">%1$s ఫోన్‌లో తప్పు పాస్‌వర్డ్</string>
     <string name="unlock_alert_body" formatted="true">స్క్రీన్-లాక్‌కు తప్పు ప్రయత్నాలు: %1$d. ఫోన్ ఎక్కడ ఉందో, ఫోటో తీసి ఉంటే అది చూడటానికి Famora తెరవండి.</string>
     <string name="ch_lost_name">ఫోన్ పోయిన మోడ్</string>

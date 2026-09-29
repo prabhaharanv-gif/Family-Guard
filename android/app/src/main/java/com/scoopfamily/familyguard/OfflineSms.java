@@ -43,6 +43,7 @@ final class OfflineSms {
     private static final String KEY_ENABLED   = "sms_enabled";
     private static final String KEY_EXTRA     = "sms_extra_number";
     private static final String KEY_ADMINS    = "sms_admin_numbers";   // newline separated
+    private static final String KEY_ADMIN_NAMES = "sms_admin_names";   // newline separated, same order/length as KEY_ADMINS
     private static final String KEY_NAME      = "sms_sender_name";
     private static final String KEY_OFFLINE   = "sms_offline_since";
     private static final String KEY_LAST_SENT = "sms_last_sent";
@@ -71,20 +72,40 @@ final class OfflineSms {
         Log.i(TAG, "settings saved — enabled=" + enabled);
     }
 
-    /** Refreshed by the app while it has data, so the numbers are there when it does not. */
-    static void saveContacts(Context ctx, List<String> adminNumbers, String senderName) {
-        StringBuilder sb = new StringBuilder();
+    /**
+     * Refreshed by the app while it has data, so the numbers are there when it
+     * does not. adminNames is positional with adminNumbers (same length, same
+     * order) so the recipients list shown on the Offline SMS card can name
+     * who gets the alert, not just say "family admins".
+     */
+    static void saveContacts(Context ctx, List<String> adminNumbers, List<String> adminNames, String senderName) {
+        StringBuilder numbers = new StringBuilder();
+        StringBuilder names = new StringBuilder();
         if (adminNumbers != null) {
-            for (String n : adminNumbers) {
+            for (int i = 0; i < adminNumbers.size(); i++) {
+                String n = adminNumbers.get(i);
                 if (n == null || n.trim().isEmpty()) continue;
-                if (sb.length() > 0) sb.append('\n');
-                sb.append(n.trim());
+                if (numbers.length() > 0) { numbers.append('\n'); names.append('\n'); }
+                numbers.append(n.trim());
+                String name = (adminNames != null && i < adminNames.size()) ? adminNames.get(i) : null;
+                names.append(name == null ? "" : name.trim());
             }
         }
         prefs(ctx).edit()
-            .putString(KEY_ADMINS, sb.toString())
+            .putString(KEY_ADMINS, numbers.toString())
+            .putString(KEY_ADMIN_NAMES, names.toString())
             .putString(KEY_NAME, senderName == null ? "" : senderName.trim())
             .apply();
+    }
+
+    /** Display names for the recipients() numbers, same order; blank where no name was cached. */
+    static List<String> adminNames(Context ctx) {
+        List<String> out = new ArrayList<>();
+        String stored = prefs(ctx).getString(KEY_ADMIN_NAMES, "");
+        if (!stored.isEmpty()) {
+            for (String n : stored.split("\n", -1)) out.add(n);
+        }
+        return out;
     }
 
     /** Admins plus the member's own extra number, de-duplicated, in that order. */

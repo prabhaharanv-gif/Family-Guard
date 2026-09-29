@@ -1159,7 +1159,12 @@ public class LocationForegroundService extends Service {
             coarseCandidate = loc;
             float impliedMps = sinceLastPush > 0 ? movedM / (sinceLastPush / 1000f) : Float.MAX_VALUE;
             boolean outsideUncertainty = movedM >= loc.getAccuracy() * LocationFilter.COARSE_FIX_MOVE_FACTOR;
-            if (runConfirmed && outsideUncertainty && impliedMps <= LocationFilter.MAX_PLAUSIBLE_SPEED_MPS) {
+            // Independent evidence the phone is actually moving — not just poor
+            // fixes agreeing with each other, which a stationary phone's stuck
+            // Wi-Fi/cell lock can do just as well. See CoarseFixConfirm.
+            boolean recentAccurateMotion = lastMotionTime != 0L && nowGuard - lastMotionTime <= TeleportGuard.MOTION_WINDOW_MS;
+            boolean motionEvidence = CoarseFixConfirm.hasMotionEvidence(loc.hasSpeed(), loc.getSpeed(), recentAccurateMotion);
+            if (runConfirmed && outsideUncertainty && impliedMps <= LocationFilter.MAX_PLAUSIBLE_SPEED_MPS && motionEvidence) {
                 coarseAccepted = true;
                 coarseNote = "poor fix (" + loc.getAccuracy() + "m) accepted — a run of agreeing fixes, "
                     + movedM + "m from the last position";

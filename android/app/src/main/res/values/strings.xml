@@ -209,6 +209,8 @@
     <string name="device_overspeed_body" formatted="true">Going %1$d km/h (limit %2$d km/h)</string>
     <string name="device_overspeed_self_title">Slow down: you are over your speed limit</string>
     <string name="device_overspeed_self_body" formatted="true">You are going %1$d km/h. Your limit is %2$d km/h.</string>
+    <string name="ch_overspeed_self_name">Speed limit alert</string>
+    <string name="ch_overspeed_self_desc">A short sound to warn you when you go over the speed limit you set for yourself</string>
     <string name="unlock_alert_title" formatted="true">Wrong password on %1$s\'s phone</string>
     <string name="unlock_alert_body" formatted="true">Wrong screen-lock attempts: %1$d. Open Famora to see where the phone was, and a photo if one was taken.</string>
     <string name="ch_lost_name">Phone lost mode</string>

@@ -7,7 +7,6 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const PROJECT_ID = Deno.env.get('FIREBASE_PROJECT_ID') || 'family-guard-b343f'
-const PROJECT_REF = 'xiwfmunwodovzpzicyvu'
 
 // ── JWT verification helpers (identical to send-sos-notification) ────────────
 function extractBearer(req: Request): string | null {
@@ -16,23 +15,15 @@ function extractBearer(req: Request): string | null {
   return auth.slice(7).trim()
 }
 
-function b64urlDecode(seg: string): string {
-  seg = seg.replace(/-/g, '+').replace(/_/g, '/')
-  while (seg.length % 4) seg += '='
-  try { return atob(seg) } catch { return '' }
-}
-
+// The only legitimate caller is the Postgres trigger that sends the raw
+// service_role key straight from Vault as the bearer token (see
+// supabase/migrations/20260828190000_fix_edge_function_trigger_payload.sql).
+// A previous fallback here decoded a bearer value as an unverified JWT and
+// trusted its claims (role/ref/exp) without checking a signature — anyone
+// who could reach this function's URL could forge one. Removed rather than
+// fixed: no legitimate caller ever needed it.
 function isServiceRoleJwt(token: string, serviceRoleKey: string): boolean {
-  if (token && serviceRoleKey && token === serviceRoleKey) return true
-  const parts = token.split('.')
-  if (parts.length !== 3) return false
-  try {
-    const payload = JSON.parse(b64urlDecode(parts[1]))
-    if (payload.role !== 'service_role') return false
-    if (payload.ref && payload.ref !== PROJECT_REF) return false
-    if (payload.exp && Date.now() / 1000 > payload.exp) return false
-    return true
-  } catch { return false }
+  return !!token && !!serviceRoleKey && token === serviceRoleKey
 }
 
 function b64url(input: string | Uint8Array): string {

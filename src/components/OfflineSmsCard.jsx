@@ -30,6 +30,11 @@ export default function OfflineSmsCard({ Toggle }) {
 
   if (!settings) return null
 
+  // Named admins when the app has synced them at least once; otherwise the
+  // generic term, since a brand-new install has nothing cached yet.
+  const adminNames = (settings.adminNames || []).filter(Boolean)
+  const recipientNames = adminNames.length ? adminNames.join(', ') : t('offlineSms.adminsFallback')
+
   const toggle = async () => {
     const next = !settings.enabled
     const { saved } = await saveOfflineSms({ ...settings, enabled: next })
@@ -98,7 +103,7 @@ export default function OfflineSmsCard({ Toggle }) {
             onChange={e => onNumber(e.target.value)}
           />
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
-            {t('offlineSms.costNote')}
+            {t('offlineSms.costNote', { names: recipientNames })}
           </div>
 
           {settings.enabled && (

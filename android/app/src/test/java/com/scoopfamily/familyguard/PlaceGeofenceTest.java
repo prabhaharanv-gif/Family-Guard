@@ -212,7 +212,7 @@ public class PlaceGeofenceTest {
         PlaceGeofence.Transition arrive = drive(p, false, t0, t0 + 2 * MIN, t0);
         assertTrue(arrive != null && arrive.entered);
 
-        // A quick "leave" 3 min later is inside the 15 min cooldown: held back.
+        // A quick "leave" 3 min later is inside the 10 min cooldown: held back.
         long t1 = t0 + 3 * MIN;
         assertEquals(null, drive(p, true, t1, t1 + 5 * MIN, t1));
         assertTrue(p.insideConfirmed);

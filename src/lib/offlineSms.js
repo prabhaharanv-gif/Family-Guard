@@ -89,19 +89,28 @@ export async function refreshOfflineSmsContacts(userId) {
 
     const { data: admins } = await supabase
       .from('family_members')
-      .select('phone, user_id')
+      .select('phone, user_id, display_name')
       .in('family_id', mine.map(m => m.family_id))
       .eq('role', 'admin')
 
-    const numbers = [...new Set(
-      (admins || [])
-        .filter(a => a.user_id !== userId && a.phone)
-        .map(a => String(a.phone).trim())
-        .filter(Boolean)
-    )]
+    // De-duplicated by phone number, keeping the first name seen for it — the
+    // recipients list shown on the Offline SMS card is read from this same
+    // pairing, so names and numbers must stay in step.
+    const seen = new Set()
+    const numbers = []
+    const names = []
+    for (const a of admins || []) {
+      if (a.user_id === userId || !a.phone) continue
+      const phone = String(a.phone).trim()
+      if (!phone || seen.has(phone)) continue
+      seen.add(phone)
+      numbers.push(phone)
+      names.push(a.display_name || '')
+    }
 
     await LocationService.setOfflineSmsContacts({
       admins: numbers,
+      adminNames: names,
       senderName: mine[0]?.display_name || '',
     })
   } catch (e) {
