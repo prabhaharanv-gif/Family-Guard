@@ -124,6 +124,8 @@
     <string name="device_overspeed_body" formatted="true">%1$d किमी/घंटा (सीमा %2$d किमी/घंटा)</string>
     <string name="device_overspeed_self_title">रफ़्तार कम करें: आप अपनी सीमा से तेज़ हैं</string>
     <string name="device_overspeed_self_body" formatted="true">आप %1$d किमी/घंटा पर हैं। आपकी सीमा %2$d किमी/घंटा है।</string>
+    <string name="ch_overspeed_self_name">स्पीड लिमिट अलर्ट</string>
+    <string name="ch_overspeed_self_desc">जब आप अपनी तय की गई गति सीमा से तेज़ चलें, तो एक छोटी ध्वनि से चेतावनी देता है</string>
     <string name="unlock_alert_title" formatted="true">%1$s के फ़ोन पर गलत पासवर्ड</string>
     <string name="unlock_alert_body" formatted="true">स्क्रीन-लॉक के गलत प्रयास: %1$d। फ़ोन कहाँ था, और अगर फ़ोटो ली गई हो तो वह देखने के लिए Famora खोलें।</string>
     <string name="ch_lost_name">फ़ोन खोया मोड</string>

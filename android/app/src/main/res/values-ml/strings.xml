@@ -124,6 +124,8 @@
     <string name="device_overspeed_body" formatted="true">മണിക്കൂറിൽ %1$d കി.മീ (പരിധി %2$d കി.മീ)</string>
     <string name="device_overspeed_self_title">വേഗം കുറയ്ക്കുക: നിങ്ങൾ പരിധി കടന്നിരിക്കുന്നു</string>
     <string name="device_overspeed_self_body" formatted="true">നിങ്ങൾ മണിക്കൂറിൽ %1$d കി.മീ പോകുന്നു. നിങ്ങളുടെ പരിധി %2$d കി.മീ.</string>
+    <string name="ch_overspeed_self_name">വേഗപരിധി മുന്നറിയിപ്പ്</string>
+    <string name="ch_overspeed_self_desc">നിങ്ങൾ സജ്ജമാക്കിയ വേഗപരിധി കടക്കുമ്പോൾ ചെറിയ ശബ്ദത്തിൽ മുന്നറിയിപ്പ് നൽകുന്നു</string>
     <string name="unlock_alert_title" formatted="true">%1$s ന്റെ ഫോണിൽ തെറ്റായ പാസ്‌വേഡ്</string>
     <string name="unlock_alert_body" formatted="true">സ്ക്രീൻ-ലോക്കിന് തെറ്റായ ശ്രമങ്ങൾ: %1$d. ഫോൺ എവിടെയായിരുന്നു എന്നും, ഫോട്ടോ എടുത്തിട്ടുണ്ടെങ്കിൽ അതും കാണാൻ Famora തുറക്കുക.</string>
     <string name="ch_lost_name">ഫോൺ നഷ്ടപ്പെട്ട മോഡ്</string>

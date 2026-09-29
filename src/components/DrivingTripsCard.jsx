@@ -37,7 +37,21 @@ function TripsSheet({ onClose }) {
   const { user, familyId } = useAuthStore()
   const [trips, setTrips] = useState(null)
   const [names, setNames] = useState({})
+  const [expanded, setExpanded] = useState({})
+  const [confirmId, setConfirmId] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
+  const [deleteErrorId, setDeleteErrorId] = useState(null)
   useBackButton(true, onClose)
+
+  const deleteTrip = async (id) => {
+    setDeletingId(id)
+    setDeleteErrorId(null)
+    const { error } = await supabase.from('trips').delete().eq('id', id)
+    setDeletingId(null)
+    if (error) { setDeleteErrorId(id); return }
+    setTrips(prev => (prev || []).filter(x => x.id !== id))
+    setConfirmId(null)
+  }
 
   useEffect(() => {
     if (!familyId) { setTrips([]); return }
@@ -87,31 +101,100 @@ function TripsSheet({ onClose }) {
             {t('trips.empty')}
           </div>
         )}
-        {(trips || []).map(x => {
-          const sec = (new Date(x.ended_at) - new Date(x.started_at)) / 1000
-          const km = x.distance_m / 1000
-          const avg = sec > 0 ? Math.round(km / (sec / 3600)) : 0
-          return (
-            <div key={x.id} className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)' }}>{names[x.user_id] || '—'}</div>
-                <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)' }}>{fmtWhen(x.started_at)}</div>
+        {(() => {
+          // Groups appear in order of each person's most recent trip, since
+          // `trips` already arrives newest-first and a group is opened on its
+          // first sighting.
+          const groups = []
+          const byUser = new Map()
+          for (const trip of trips || []) {
+            let g = byUser.get(trip.user_id)
+            if (!g) { g = { userId: trip.user_id, items: [] }; byUser.set(trip.user_id, g); groups.push(g) }
+            g.items.push(trip)
+          }
+          return groups.map(g => {
+            const isOpen = !!expanded[g.userId]
+            return (
+              <div key={g.userId} style={{ marginBottom: 10 }}>
+                <button
+                  onClick={() => setExpanded(e => ({ ...e, [g.userId]: !e[g.userId] }))}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+                    background: 'none', border: 'none', padding: '8px 2px', cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  <span style={{
+                    fontSize: 13, fontWeight: 800, color: 'var(--maroon)', textTransform: 'uppercase', letterSpacing: 0.4,
+                  }}>
+                    {names[g.userId] || '—'} <span style={{ color: 'var(--muted)', fontWeight: 700, textTransform: 'none' }}>({g.items.length})</span>
+                  </span>
+                  <Icon name="arrowLeft" size={14} color="var(--maroon)"
+                    style={{ transform: `rotate(${isOpen ? 90 : -90}deg)`, transition: 'transform 0.15s' }} />
+                </button>
+                {isOpen && g.items.map(x => {
+                  const sec = (new Date(x.ended_at) - new Date(x.started_at)) / 1000
+                  const km = x.distance_m / 1000
+                  const avg = sec > 0 ? Math.round(km / (sec / 3600)) : 0
+                  const mine = x.user_id === user?.id
+                  return (
+                    <div key={x.id} className="settings-card" style={{ marginBottom: 10, padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)' }}>{fmtWhen(x.started_at)}</div>
+                        {mine && (
+                          <button onClick={() => setConfirmId(x.id)} aria-label={t('common.delete')} style={{
+                            background: 'none', border: 'none', padding: 4, margin: '-4px', cursor: 'pointer',
+                            color: 'var(--muted)', display: 'flex',
+                          }}>
+                            <Icon name="trash" size={15} />
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 14, fontWeight: 700, color: 'var(--text)', flexWrap: 'wrap' }}>
+                        <span>{km.toFixed(1)} km</span>
+                        <span>{fmtDuration(sec)}</span>
+                        <span>{t('trips.avg')} {avg} km/h</span>
+                        <span>{t('trips.top')} {x.top_kmh} km/h</span>
+                      </div>
+                      {(x.hard_brakes > 0 || x.hard_accels > 0) && (
+                        <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 12.5, fontWeight: 700, color: 'var(--muted)', flexWrap: 'wrap' }}>
+                          {x.hard_brakes > 0 && <span>{t('trips.brakes')}: {x.hard_brakes}</span>}
+                          {x.hard_accels > 0 && <span>{t('trips.accels')}: {x.hard_accels}</span>}
+                        </div>
+                      )}
+                      {confirmId === x.id && (
+                        <div style={{
+                          marginTop: 10, paddingTop: 10, borderTop: '1px solid #F0D8E3',
+                        }}>
+                          {deleteErrorId === x.id && (
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#8B0D3D', marginBottom: 8 }}>
+                              {t('common.error')}
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                          <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--muted)' }}>{t('common.areYouSure')}</span>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={() => setConfirmId(null)} style={{
+                              padding: '6px 12px', borderRadius: 10, background: 'var(--maroon-wash)',
+                              border: '1.5px solid #F0D8E3', color: 'var(--maroon)', fontFamily: 'inherit',
+                              fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
+                            }}>{t('common.cancel')}</button>
+                            <button onClick={() => deleteTrip(x.id)} disabled={deletingId === x.id} style={{
+                              padding: '6px 12px', borderRadius: 10, background: '#8B0D3D',
+                              border: '1.5px solid #8B0D3D', color: '#fff', fontFamily: 'inherit',
+                              fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
+                              opacity: deletingId === x.id ? 0.6 : 1,
+                            }}>{t('common.delete')}</button>
+                          </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
-              <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 14, fontWeight: 700, color: 'var(--text)', flexWrap: 'wrap' }}>
-                <span>{km.toFixed(1)} km</span>
-                <span>{fmtDuration(sec)}</span>
-                <span>{t('trips.avg')} {avg} km/h</span>
-                <span>{t('trips.top')} {x.top_kmh} km/h</span>
-              </div>
-              {(x.hard_brakes > 0 || x.hard_accels > 0) && (
-                <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 12.5, fontWeight: 700, color: 'var(--muted)', flexWrap: 'wrap' }}>
-                  {x.hard_brakes > 0 && <span>{t('trips.brakes')}: {x.hard_brakes}</span>}
-                  {x.hard_accels > 0 && <span>{t('trips.accels')}: {x.hard_accels}</span>}
-                </div>
-              )}
-            </div>
-          )
-        })}
+            )
+          })
+        })()}
       </div>
     </div>,
     document.body

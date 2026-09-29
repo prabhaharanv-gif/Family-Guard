@@ -30,6 +30,8 @@ function ForgotPasswordModal({ onClose }) {
   const [otp, setOtp]                   = useState('')
   const [newPassword, setNewPassword]   = useState('')
   const [confirmPw, setConfirmPw]       = useState('')
+  const [showNewPw, setShowNewPw]       = useState(false)
+  const [showConfirmPw, setShowConfirmPw] = useState(false)
   const [step, setStep]                 = useState(1)   // 1 mobile, 2 otp, 3 new password
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState('')
@@ -191,14 +193,32 @@ function ForgotPasswordModal({ onClose }) {
               </>
             ) : (
               <>
-                <input className="input" type="password" value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  placeholder={t('reset.newPasswordPh')}
-                  autoFocus style={{ marginBottom: 10 }} />
-                <input className="input" type="password" value={confirmPw}
-                  onChange={e => setConfirmPw(e.target.value)}
-                  placeholder={t('reset.confirmNewPassword')}
-                  style={{ marginBottom: 16 }} />
+                <div style={{ position: 'relative', marginBottom: 10 }}>
+                  <input className="input" type={showNewPw ? 'text' : 'password'} value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder={t('reset.newPasswordPh')}
+                    autoFocus style={{ paddingRight: 44 }} />
+                  <button type="button" onClick={() => setShowNewPw(v => !v)} style={{
+                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: 18, padding: 4, lineHeight: 1,
+                  }}>
+                    <EyeIcon open={showNewPw} />
+                  </button>
+                </div>
+                <div style={{ position: 'relative', marginBottom: 16 }}>
+                  <input className="input" type={showConfirmPw ? 'text' : 'password'} value={confirmPw}
+                    onChange={e => setConfirmPw(e.target.value)}
+                    placeholder={t('reset.confirmNewPassword')}
+                    style={{ paddingRight: 44 }} />
+                  <button type="button" onClick={() => setShowConfirmPw(v => !v)} style={{
+                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: 18, padding: 4, lineHeight: 1,
+                  }}>
+                    <EyeIcon open={showConfirmPw} />
+                  </button>
+                </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={() => setStep(2)} style={{
                     flex: 1, padding: 14, borderRadius: 14, background: 'var(--bg2)',
