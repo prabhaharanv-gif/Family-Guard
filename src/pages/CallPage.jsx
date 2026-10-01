@@ -6,9 +6,11 @@ import { useNicknames } from '../hooks/useNicknames'
 import { useT } from '../i18n'
 import { useBackButton } from '../hooks/useBackButton'
 import { joinChannel, leaveChannel, setMuted, setCameraOff, switchCamera } from '../lib/agora'
+import { shouldLeave, callClock, ringingLegs, addableMembers, isFull, participantSummary } from '../lib/conference'
+import AddToCallSheet from '../components/AddToCallSheet'
 import {
   MicIcon, MicOffIcon, SpeakerIcon, SpeakerOffIcon,
-  VideoIcon, VideoOffIcon, FlipCameraIcon, PhoneIcon, PhoneOffIcon,
+  VideoIcon, VideoOffIcon, FlipCameraIcon, PhoneIcon, PhoneOffIcon, UserPlusIcon,
 } from '../components/CallIcons'
 import { stopNativeCallAlarm } from '../lib/nativeCallAlarm'
 import { startNativeCallAudio, setNativeSpeakerOn, stopNativeCallAudio,
@@ -57,15 +59,39 @@ export default function CallPage() {
   const [ending, setEnding]     = useState(false)
   const [joinError, setJoinError] = useState('')
 
+  // ── Conference ──────────────────────────────────────────────────────────
+  // A call is still one row per pair. Adding a person creates another row on
+  // the same Agora channel (see lib/conference.js and the 20260929160000
+  // migration), so this screen holds its own row plus the other rows of the
+  // channel it can see, and asks the server who else is in the call.
+  const [legs, setLegs]                   = useState([])
+  const [participants, setParticipants]   = useState([])
+  const [confSupported, setConfSupported] = useState(true)  // false when the migration is not applied yet
+  const [showAdd, setShowAdd]             = useState(false)
+  const [addBusyId, setAddBusyId]         = useState(null)
+  const [members, setMembers]             = useState([])
+  const [notice, setNotice]               = useState('')
+
   const localVideoRef  = useRef(null)
   const remoteVideoRef = useRef(null)
   const noAnswerTimer  = useRef(null)
   const durationTimer  = useRef(null)
   const joinedRef      = useRef(false)
   const endedNavigatedRef = useRef(false)
+  const remoteTilesRef = useRef(new Map())        // Agora uid -> that person's video tile
+  const refreshParticipantsRef = useRef(() => {})
+  const legsRef        = useRef([])
+  const prevLegsRef    = useRef(new Map())
+  const terminalCheckedRef = useRef(false)
+  const goHomeTimerRef = useRef(null)
+  const noticeTimerRef = useRef(null)
+  const knownNamesRef  = useRef({})               // user id -> display name, for notices
+  legsRef.current = legs
 
   const isCaller = call && user && call.caller_id === user.id
   const isVideo  = call?.call_type === 'video'
+  // My own row, unless I am still connected through another one.
+  const clock = callClock(call, legs, user?.id)
 
   // ── Load the call row + subscribe to updates ────────────────────────────
   useEffect(() => {
@@ -225,10 +251,24 @@ export default function CallPage() {
           onRemoteUser: (remoteUser, mediaType) => {
             console.log('[CallPage] Remote user published', mediaType)
             if (mediaType === 'video' && remoteVideoRef.current) {
-              remoteUser.videoTrack?.play(remoteVideoRef.current)
+              let tile = remoteTilesRef.current.get(remoteUser.uid)
+              if (!tile) {
+                tile = document.createElement('div')
+                tile.style.cssText = 'position:relative;width:100%;height:100%;overflow:hidden;background:#000'
+                remoteTilesRef.current.set(remoteUser.uid, tile)
+                remoteVideoRef.current.appendChild(tile)
+                layoutRemoteTiles()
+              }
+              remoteUser.videoTrack?.play(tile)
             } else if (mediaType === 'audio') {
               remoteUser.audioTrack?.play()
             }
+            refreshParticipantsRef.current()
+          },
+          onRemoteLeft: (remoteUser) => {
+            const tile = remoteTilesRef.current.get(remoteUser.uid)
+            if (tile) { tile.remove(); remoteTilesRef.current.delete(remoteUser.uid); layoutRemoteTiles() }
+            refreshParticipantsRef.current()
           },
         })
         if (localVideoTrack && localVideoRef.current) {
@@ -261,18 +301,21 @@ export default function CallPage() {
 
   // ── Live call duration ticker ────────────────────────────────────────────
   useEffect(() => {
-    if (!call || call.status !== 'accepted') return
-    const start = call.answered_at ? new Date(call.answered_at).getTime() : Date.now()
+    if (clock.status !== 'accepted') return
+    const start = clock.since ? new Date(clock.since).getTime() : Date.now()
     durationTimer.current = setInterval(() => {
       setElapsed(Math.floor((Date.now() - start) / 1000))
     }, 1000)
     return () => clearInterval(durationTimer.current)
-  }, [call?.status, call?.answered_at])
+  }, [clock.status, clock.since])
 
   // ── Call resolved (declined/missed/ended) — leave and navigate back ─────
   useEffect(() => {
     if (!call || endedNavigatedRef.current) return
-    if (['declined', 'ended', 'missed'].includes(call.status)) {
+    if (!['declined', 'ended', 'missed'].includes(call.status)) return
+    let cancelled = false
+
+    const finish = () => {
       endedNavigatedRef.current = true
       leaveChannel()
       stopNativeCallAlarm()
@@ -284,15 +327,154 @@ export default function CallPage() {
       // cold start with no previous history entry, so navigate(-1) was a
       // no-op and the finished call screen ("Call ended") stayed on screen
       // indefinitely.
-      const goHomeTimer = setTimeout(() => navigate('/', { replace: true }), 1200)
-      return () => clearTimeout(goHomeTimer)
+      goHomeTimerRef.current = setTimeout(() => navigate('/', { replace: true }), 1200)
     }
-  }, [call?.status, navigate])
+
+    // My own row is over. In a conference I may still be connected through
+    // another row, so leave only when nothing else holds me here. The rows are
+    // read once more first, so a leg that changed a moment ago is not missed.
+    const decide = async () => {
+      let current = legsRef.current
+      if (!terminalCheckedRef.current && call.agora_channel_name) {
+        terminalCheckedRef.current = true
+        try {
+          const { data } = await supabase.from('calls').select('*')
+            .eq('agora_channel_name', call.agora_channel_name)
+          if (data) { current = data; setLegs(data) }
+        } catch { /* fall back to the rows already held */ }
+      }
+      if (cancelled) return
+      if (shouldLeave(call, current, user?.id)) finish()
+    }
+    decide()
+    return () => { cancelled = true }
+  }, [call?.status, legs, navigate])
 
   // ── Cleanup on unmount — always release the media tracks ────────────────
   useEffect(() => {
-    return () => { leaveChannel(); stopNativeCallAudio() }
+    return () => {
+      leaveChannel(); stopNativeCallAudio()
+      clearTimeout(goHomeTimerRef.current); clearTimeout(noticeTimerRef.current)
+    }
   }, [])
+
+  // ── Conference: the other rows of this call's channel ───────────────────
+  const channelName = call?.agora_channel_name
+  useEffect(() => {
+    if (!channelName || !user?.id) return
+    let cancelled = false
+    const merge = (row) => setLegs(prev => {
+      const i = prev.findIndex(l => l.id === row.id)
+      if (i === -1) return [...prev, row]
+      const next = prev.slice(); next[i] = row; return next
+    })
+    supabase.from('calls').select('*').eq('agora_channel_name', channelName)
+      .then(({ data }) => { if (!cancelled && data) setLegs(data) })
+    const ch = supabase
+      .channel(`callchan:${channelName}:${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls',
+        filter: `agora_channel_name=eq.${channelName}` }, (p) => { if (!cancelled && p.new) merge(p.new) })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'calls',
+        filter: `agora_channel_name=eq.${channelName}` }, (p) => { if (!cancelled && p.new) merge(p.new) })
+      .subscribe()
+    return () => { cancelled = true; supabase.removeChannel(ch) }
+  }, [channelName, user?.id])
+
+  // ── Conference: who is in the call ──────────────────────────────────────
+  // A person only sees their own rows, so who else joined through somebody
+  // else comes from the server. Refreshed on a timer and whenever Agora
+  // reports someone arriving or leaving.
+  useEffect(() => {
+    if (!call?.id || clock.status !== 'accepted' || !confSupported) return
+    let cancelled = false
+    const load = async () => {
+      const { data, error } = await supabase.rpc('get_call_participants', { p_call_id: call.id })
+      if (cancelled) return
+      if (error) {
+        // The function does not exist: the app is newer than the database.
+        if (error.code === 'PGRST202' || /Could not find the function/i.test(error.message || '')) {
+          setConfSupported(false)
+        }
+        return
+      }
+      const rows = data || []
+      rows.forEach(p => { if (p.participant_name) knownNamesRef.current[p.participant_id] = p.participant_name })
+      setParticipants(rows)
+    }
+    refreshParticipantsRef.current = load
+    load()
+    const timer = setInterval(load, 5000)
+    return () => { cancelled = true; clearInterval(timer); refreshParticipantsRef.current = () => {} }
+  }, [call?.id, clock.status, confSupported])
+
+  const flash = (msg) => {
+    setNotice(msg)
+    clearTimeout(noticeTimerRef.current)
+    noticeTimerRef.current = setTimeout(() => setNotice(''), 4000)
+  }
+  const personName = (id) => nameForRef.current(id, knownNamesRef.current[id]) || t('messages.member')
+
+  // ── Conference: give up on someone I added who does not answer ──────────
+  const ringingLegKey = ringingLegs(call, legs, user?.id).map(l => l.id).join(',')
+  useEffect(() => {
+    if (!ringingLegKey) return
+    const timers = ringingLegs(call, legsRef.current, user?.id).map(l => {
+      const left = Math.max(1000, CALLER_NO_ANSWER_MS - (Date.now() - new Date(l.started_at).getTime()))
+      return setTimeout(() => { supabase.rpc('mark_call_missed', { p_call_id: l.id }) }, left)
+    })
+    return () => timers.forEach(clearTimeout)
+  }, [ringingLegKey]) // the rows themselves are read from legsRef, which always holds the latest
+
+  // ── Conference: tell me when someone I added does not join ──────────────
+  useEffect(() => {
+    const prev = prevLegsRef.current
+    legs.forEach(l => {
+      if (l.caller_id !== user?.id || l.id === call?.id) return
+      if (prev.get(l.id) === 'ringing' && (l.status === 'declined' || l.status === 'missed')) {
+        flash(t('calls.didntJoin', { name: personName(l.callee_id) }))
+      }
+    })
+    prevLegsRef.current = new Map(legs.map(l => [l.id, l.status]))
+  }, [legs])
+
+  // Remote video: one tile per person, so a conference shows everyone. With a
+  // single remote the one tile fills the screen, as before.
+  const layoutRemoteTiles = () => {
+    const box = remoteVideoRef.current
+    if (!box) return
+    const n = remoteTilesRef.current.size
+    box.style.display = 'grid'
+    box.style.gridAutoRows = '1fr'
+    box.style.gridTemplateColumns = n > 2 ? '1fr 1fr' : '1fr'
+  }
+
+  const openAdd = async () => {
+    setShowAdd(true)
+    refreshParticipantsRef.current()
+    if (members.length === 0 && call?.family_id) {
+      const { data } = await supabase.from('family_members')
+        .select('user_id, display_name, avatar_url').eq('family_id', call.family_id)
+      if (data) {
+        data.forEach(m => { if (m.display_name) knownNamesRef.current[m.user_id] = m.display_name })
+        setMembers(data)
+      }
+    }
+  }
+
+  const handlePickPerson = async (personId) => {
+    if (addBusyId || !call) return
+    setAddBusyId(personId)
+    const { data, error } = await supabase.rpc('add_call_participant', { p_call_id: call.id, p_callee_id: personId })
+    setAddBusyId(null)
+    setShowAdd(false)
+    if (error) {
+      console.error('Add to call error:', error.code || error.message)
+      flash(/full/i.test(error.message || '') ? t('calls.callFull') : t('calls.addFailed'))
+      return
+    }
+    if (data?.id) setLegs(prev => prev.some(l => l.id === data.id) ? prev : [...prev, data])
+    refreshParticipantsRef.current()
+  }
 
   const handleAccept = useCallback(async () => {
     const { error } = await supabase.rpc('respond_to_call', { p_call_id: callId, p_action: 'accept' })
@@ -307,7 +489,11 @@ export default function CallPage() {
   const handleEnd = useCallback(async () => {
     if (ending) return
     setEnding(true)
-    const { error } = await supabase.rpc('end_call', { p_call_id: callId })
+    let { error } = await supabase.rpc('leave_call', { p_call_id: callId })
+    // The app is newer than the database (migration not applied yet): hang up the old way.
+    if (error && (error.code === 'PGRST202' || /Could not find the function/i.test(error.message || ''))) {
+      ({ error } = await supabase.rpc('end_call', { p_call_id: callId }))
+    }
     // Let the guard go again on failure. `ending` was the only thing standing
     // between the user and a second attempt, so leaving it set after a failed
     // call left them with a dead End button — and useBackButton routes the
@@ -319,6 +505,7 @@ export default function CallPage() {
   }, [callId, ending])
 
   useBackButton(true, handleEnd)
+  useBackButton(showAdd, () => setShowAdd(false))
 
   const toggleMute = () => {
     const next = !muted
@@ -363,12 +550,22 @@ export default function CallPage() {
     )
   }
 
-  const status = call.status
+  const status = clock.status
+  const others = participants.filter(p => p.participant_id !== user?.id && p.participant_state === 'in')
+  const summary = others.length >= 2
+    ? participantSummary(participants, user?.id, nameFor, t('messages.member')) : ''
+  const ringingNames = ringingLegs(call, legs, user?.id).map(l => personName(l.callee_id))
+  const addable = addableMembers(members, participants, user?.id)
 
   return (
     <div style={styles.page}>
       {isVideo && status === 'accepted' && (
         <div ref={remoteVideoRef} style={styles.remoteVideo} />
+      )}
+
+      {showAdd && (
+        <AddToCallSheet people={addable} busyId={addBusyId} nameFor={nameFor}
+          onPick={handlePickPerson} onClose={() => setShowAdd(false)} />
       )}
 
       <div style={styles.overlayContent}>
@@ -378,7 +575,7 @@ export default function CallPage() {
               ? <img src={otherAvatar} alt={otherName} style={styles.avatarImg} />
               : (otherName?.[0]?.toUpperCase() || '?')}
           </div>
-          <div style={styles.name}>{otherName}</div>
+          <div style={styles.name}>{summary || otherName}</div>
           <div style={styles.status}>
             {status === 'ringing' && isCaller && 'Calling…'}
             {status === 'ringing' && !isCaller && hasPendingAutoAction && 'Connecting…'}
@@ -388,30 +585,41 @@ export default function CallPage() {
             {status === 'missed'   && 'No answer'}
             {status === 'ended'    && 'Call ended'}
           </div>
+          {ringingNames.map((n, i) => (
+            <div key={i} style={styles.chip}>{t('calls.callingName', { name: n })}</div>
+          ))}
+          {notice && <div style={styles.chip}>{notice}</div>}
         </div>
+
+        {status === 'accepted' && confSupported && !isFull(participants) && (
+          <button style={styles.addBtn} onClick={openAdd} aria-label={t('calls.addPerson')}>
+            <UserPlusIcon size={26} />
+          </button>
+        )}
 
         {isVideo && status === 'accepted' && (
           <div ref={localVideoRef} style={styles.localVideo} />
         )}
 
-        <div style={styles.controls}>
+        <div style={status === 'accepted' ? styles.controlsCol : styles.controls}>
           {status === 'ringing' && !isCaller && !hasPendingAutoAction && (
             <>
               <button style={{ ...styles.circleBtn, ...styles.endBtn }} onClick={handleDecline} aria-label="Decline">
-                <PhoneOffIcon />
+                <PhoneOffIcon size={34} />
               </button>
               <button style={{ ...styles.circleBtn, ...styles.acceptBtn }} onClick={handleAccept} aria-label="Accept">
-                <PhoneIcon />
+                <PhoneIcon size={34} />
               </button>
             </>
           )}
           {status === 'ringing' && isCaller && (
             <button style={{ ...styles.circleBtn, ...styles.endBtn }} onClick={handleEnd} aria-label={t('calls.cancelCall')}>
-              <PhoneOffIcon />
+              <PhoneOffIcon size={34} />
             </button>
           )}
           {status === 'accepted' && (
             <>
+              <div style={styles.fnRow}>
               {/* Active state = the feature is OFF (muted / camera off), shown as
                   a solid maroon fill. Idle controls stay translucent so the one
                   thing you've switched off is the one thing that stands out. */}
@@ -420,14 +628,14 @@ export default function CallPage() {
                 onClick={toggleMute}
                 aria-label={muted ? 'Unmute' : 'Mute'}
               >
-                {muted ? <MicOffIcon /> : <MicIcon />}
+                {muted ? <MicOffIcon size={28} /> : <MicIcon size={28} />}
               </button>
               <button
                 style={{ ...styles.smallBtn, ...(!speakerOn ? styles.smallBtnActive : null) }}
                 onClick={toggleSpeaker}
                 aria-label={speakerOn ? 'Speaker off' : 'Speaker on'}
               >
-                {speakerOn ? <SpeakerIcon /> : <SpeakerOffIcon />}
+                {speakerOn ? <SpeakerIcon size={28} /> : <SpeakerOffIcon size={28} />}
               </button>
               {isVideo && (
                 <>
@@ -436,7 +644,7 @@ export default function CallPage() {
                     onClick={toggleCamera}
                     aria-label={cameraOff ? 'Turn camera on' : 'Turn camera off'}
                   >
-                    {cameraOff ? <VideoOffIcon /> : <VideoIcon />}
+                    {cameraOff ? <VideoOffIcon size={28} /> : <VideoIcon size={28} />}
                   </button>
                   <button
                     style={{ ...styles.smallBtn, opacity: flipping ? 0.45 : 1 }}
@@ -444,12 +652,13 @@ export default function CallPage() {
                     disabled={flipping}
                     aria-label={facingMode === 'user' ? 'Switch to back camera' : 'Switch to front camera'}
                   >
-                    <FlipCameraIcon />
+                    <FlipCameraIcon size={28} />
                   </button>
                 </>
               )}
+              </div>
               <button style={{ ...styles.circleBtn, ...styles.endBtn }} onClick={handleEnd} aria-label={t('calls.endCall')}>
-                <PhoneOffIcon />
+                <PhoneOffIcon size={34} />
               </button>
             </>
           )}
@@ -475,6 +684,18 @@ const styles = {
     padding: '60px 24px 48px', position: 'relative', zIndex: 1,
   },
   header: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 },
+  // Short line under the status: who is being called, or who did not join.
+  chip: {
+    fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)',
+    background: 'rgba(255,255,255,0.12)', borderRadius: 999, padding: '5px 12px',
+  },
+  // Top right, where the "add someone" control sits in the phone apps people know.
+  addBtn: {
+    position: 'absolute', top: 44, right: 20, width: 52, height: 52, minWidth: 52, minHeight: 52,
+    boxSizing: 'border-box', padding: 0, borderRadius: '50%', cursor: 'pointer', color: '#fff',
+    border: '1.5px solid rgba(255,255,255,0.28)', background: 'rgba(139,13,61,0.45)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  },
   avatar: {
     width: 88, height: 88, borderRadius: '50%', background: 'rgba(255,255,255,0.15)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -491,13 +712,23 @@ const styles = {
   // screens — a second row beats deformed buttons.
   controls: {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    gap: 12, flexWrap: 'wrap', rowGap: 12,
+    gap: 56,   // Decline and Accept sit well apart so a thumb cannot hit the wrong one
+  },
+  // Answered call: the function buttons in one row, the End button alone
+  // beneath it. Two rows leave room for bigger buttons than one crowded row of
+  // five could, and put the irreversible action where a thumb rests.
+  controlsCol: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 26,
+  },
+  fnRow: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    gap: 16, flexWrap: 'wrap', rowGap: 14,
   },
   // display:flex + centring on every button — an inline SVG does not centre in
   // a round button the way a text glyph did, so this replaces the font-size
   // based alignment the emoji relied on.
   circleBtn: {
-    width: 58, height: 58, minWidth: 58, minHeight: 58, flexShrink: 0,
+    width: 76, height: 76, minWidth: 76, minHeight: 76, flexShrink: 0,
     boxSizing: 'border-box', padding: 0,
     borderRadius: '50%', border: 'none', color: '#fff',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -509,7 +740,7 @@ const styles = {
   acceptBtn: { background: '#16A34A', boxShadow: '0 6px 20px rgba(22,163,74,0.45)' },
   endBtn:    { background: '#DC2626', boxShadow: '0 6px 20px rgba(220,38,38,0.45)' },
   smallBtn: {
-    width: 48, height: 48, minWidth: 48, minHeight: 48, flexShrink: 0,
+    width: 64, height: 64, minWidth: 64, minHeight: 64, flexShrink: 0,
     boxSizing: 'border-box', padding: 0,
     borderRadius: '50%',
     border: '1.5px solid rgba(255,255,255,0.28)',

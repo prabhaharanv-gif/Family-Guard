@@ -36,6 +36,11 @@ final class TokenBroker {
     /** Newline-joined refresh tokens this device has already redeemed. */
     static final String KEY_SPENT        = "spent_refresh_tokens";
 
+    /** What the server sends for a spent token, replayed locally for a known-dead one. */
+    private static final String DEAD_TOKEN_BODY =
+        "{\"code\":400,\"error_code\":\"refresh_token_already_used\","
+        + "\"msg\":\"Invalid Refresh Token: Already Used\"}";
+
     private TokenBroker() {}
 
     /** status is the HTTP code, or 0 when the request never reached the server. */
@@ -116,6 +121,16 @@ final class TokenBroker {
 
     private static Result post(SharedPreferences prefs, String supabaseUrl, String supabaseKey,
                                String token, List<String> spent, long now) {
+        // A token already known to be spent or dead never goes to the server:
+        // it cannot succeed, and each try is one more "possible abuse" on a
+        // session that is already gone. Answer the way the server would, so the
+        // WebView signs out promptly instead of limbo, and the native caller
+        // falls into its re-auth prompt.
+        if (token != null && spent.contains(token)) {
+            Log.w(TAG, "Refresh token is known dead — not sending it again");
+            return new Result(400, DEAD_TOKEN_BODY);
+        }
+
         HttpURLConnection conn = null;
         try {
             JSONObject body = new JSONObject();
@@ -142,6 +157,11 @@ final class TokenBroker {
                 // Passed back untouched, so supabase-js reacts exactly as it would
                 // to the server — a 5xx stays retryable, a dead token stays dead.
                 Log.w(TAG, "Token refresh failed HTTP " + code + " — " + text);
+                if (RefreshPlan.isDeadTokenResponse(code, text)) {
+                    prefs.edit()
+                        .putString(KEY_SPENT, RefreshPlan.joinSpent(RefreshPlan.remember(spent, token)))
+                        .commit();
+                }
                 return new Result(code, text);
             }
 

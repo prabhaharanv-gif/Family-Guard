@@ -22,20 +22,31 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
+// The marker is built as an HTML string, and a member's avatar URL, colour and
+// name are text they can set to anything. Escape every one of them, and only
+// accept an http(s) URL, so a crafted value cannot break out of the attribute
+// and run script in another member's browser.
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const safeUrl = u => (/^https?:\/\//i.test(String(u || '')) ? esc(u) : '')
+// A CSS colour, or a var(--token): nothing else reaches the style attribute.
+const safeColor = c => (/^(#[0-9a-f]{3,8}|[a-z]+|(?:rgb|hsl)a?\([\d\s.,%/-]+\)|var\(--[\w-]+\))$/i.test(String(c || '')) ? String(c) : '#8B0D3D')
+
 // Every avatar wears a maroon ring outside its white edge (same as the phone's
 // pins, pinIcon.js). ring = null draws the plain white-edged pin.
 function createIcon(color, initial, avatarUrl, ring = 'var(--maroon)') {
   const shadow = ring ? `0 0 0 3px ${ring},0 2px 12px rgba(0,0,0,0.25)` : '0 2px 12px rgba(0,0,0,0.25)'
-  const content = avatarUrl
-    ? `<img src="${avatarUrl}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:${shadow};" />`
+  const url = safeUrl(avatarUrl)
+  const bg = safeColor(color)
+  const content = url
+    ? `<img src="${url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:${shadow};" />`
     : `<div style="
         width:44px;height:44px;border-radius:50%;
-        background:${color};border:3px solid #fff;
+        background:${bg};border:3px solid #fff;
         display:flex;align-items:center;justify-content:center;
         font-weight:800;font-size:18px;color:#fff;
         box-shadow:${shadow};
         font-family:Inter,sans-serif;
-      ">${initial}</div>`
+      ">${esc(initial)}</div>`
   return L.divIcon({
     className: '',
     html: content,

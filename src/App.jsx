@@ -14,6 +14,7 @@ import { usePushNotifications }  from './hooks/usePushNotifications'
 import { useLocationService }    from './hooks/useLocationService'
 import { useLocationBroadcast }  from './hooks/useLocationBroadcast'
 import { useDeviceHealth }       from './hooks/useDeviceHealth'
+import { useBatterySync }        from './hooks/useBatterySync'
 import { useHeartbeat }          from './hooks/useHeartbeat'
 import { useSosAlarm }           from './hooks/useSosAlarm'
 import { useCallSignaling }      from './hooks/useCallSignaling'
@@ -112,6 +113,7 @@ export default function App() {
   const { disclosureOpen, acceptDisclosure, declineDisclosure } = useLocationService()
   useLocationBroadcast(user?.id, familyId)
   useDeviceHealth(user?.id)
+  useBatterySync(user?.id)
   const { pingRinging, stopPing } = useDevicePing(user)
 
   // ── One account, one device ──────────────────────────────────────────────

@@ -99,6 +99,37 @@ public class RefreshPlanTest {
         assertTrue(spent.contains("R" + (RefreshPlan.MAX_SPENT + 2)));
     }
 
+    /**
+     * Sudha, 2026-09-29: the WebView woke holding a token 12 rotations old. The
+     * broker remembered only 8, took it for a fresh sign-in, sent it, and the
+     * server revoked the whole session. It must still be recognised as spent
+     * and answered with the current session instead.
+     */
+    @Test public void tokenTwelveRotationsOldIsStillRecognisedAsSpent() {
+        List<String> spent = new ArrayList<>();
+        for (int i = 0; i < 12; i++) spent = RefreshPlan.remember(spent, "R" + i);
+        assertTrue(spent.contains("R0"));
+        assertEquals(Action.HAND_OVER_CURRENT,
+            RefreshPlan.decide("R0", "R12", spent.contains("R0"), "R12", FRESH, NOW));
+    }
+
+    // ── Dead-token responses ────────────────────────────────────────────────
+
+    @Test public void alreadyUsedAndNotFoundAreDeadTokens() {
+        assertTrue(RefreshPlan.isDeadTokenResponse(400,
+            "{\"error_code\":\"refresh_token_already_used\",\"msg\":\"Invalid Refresh Token: Already Used\"}"));
+        assertTrue(RefreshPlan.isDeadTokenResponse(400,
+            "{\"error_code\":\"refresh_token_not_found\",\"msg\":\"Invalid Refresh Token: Refresh Token Not Found\"}"));
+    }
+
+    @Test public void transientFailuresAreNotDeadTokens() {
+        assertFalse(RefreshPlan.isDeadTokenResponse(503, "upstream"));
+        assertFalse(RefreshPlan.isDeadTokenResponse(429, "rate limit"));
+        assertFalse(RefreshPlan.isDeadTokenResponse(0, null));
+        assertFalse(RefreshPlan.isDeadTokenResponse(400, "{\"msg\":\"captcha protection\"}"));
+        assertFalse(RefreshPlan.isDeadTokenResponse(400, null));
+    }
+
     @Test public void rememberIgnoresDuplicatesAndBlanks() {
         List<String> spent = RefreshPlan.remember(Arrays.asList("R1"), "R1");
         spent = RefreshPlan.remember(spent, "");

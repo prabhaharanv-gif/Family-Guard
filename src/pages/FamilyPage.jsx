@@ -8,6 +8,7 @@ import AnchoredMenu from '../components/AnchoredMenu'
 import LostPhoneSheet from '../components/LostPhoneSheet'
 import Dialog from '../components/Dialog'
 import { useT } from '../i18n'
+import InviteSheet from '../components/InviteSheet'
 import FamilyIllustration from '../components/FamilyIllustration'
 // One colour rule for every screen. The card used to rotate seven maroon shades
 // by list position, so a member looked different here than on the map and in
@@ -352,7 +353,6 @@ export default function FamilyPage() {
   const [showFamilySwitcher, setShowFamilySwitcher] = useState(false)
   const [memberAnchor, setMemberAnchor] = useState(null)
   const [showInviteSheet, setShowInviteSheet]       = useState(false)
-  const [codeCopied, setCodeCopied]                 = useState(false)
   const [newFamilyName, setNewFamilyName]           = useState('')
   const [isOwner, setIsOwner]           = useState(false)      // is current user the family creator?
   const [dialog, setDialog]             = useState(null)
@@ -759,85 +759,7 @@ export default function FamilyPage() {
           screen creates a join_request an admin here must accept, so the code
           alone never grants access. */}
       {showInviteSheet && (
-        <div className="overlay" onClick={() => setShowInviteSheet(false)}>
-          {/* .popup ships 6px/22px/44px padding and .popup-handle another
-              14+24px of margin — about 66px of fixed chrome that dwarfed this
-              sheet's four short rows. Overridden here only; the other sheets
-              have far more content and still want the room. */}
-          <div className="popup" onClick={e => e.stopPropagation()} style={{ padding: '4px 20px 14px' }}>
-            <div className="popup-handle" style={{ margin: '9px auto 13px' }} />
-
-            <div style={{
-              fontSize: 10.5, fontWeight: 700, color: 'var(--maroon)',
-              letterSpacing: 0.2, marginBottom: 8,
-            }}>
-              {t('family.inviteTo', { family: familyName })}
-            </div>
-
-            {/* Plain maroon outline, no fill — the code is the only thing in
-                the box, so the border just frames it rather than decorating. */}
-            <div style={{
-              background: 'transparent',
-              border: '2px solid var(--maroon)',
-              borderRadius: 16,
-              padding: '9px 12px',
-              marginBottom: 9,
-              textAlign: 'center',
-            }}>
-              <div style={{
-                fontSize: 22, fontWeight: 900, letterSpacing: 4,
-                color: 'var(--maroon)', fontFamily: 'Sora, sans-serif', lineHeight: 1.15,
-              }}>
-                {inviteCode}
-              </div>
-            </div>
-
-            <div style={{ fontSize: 11, color: 'var(--muted-soft)', marginBottom: 12, lineHeight: 1.4 }}>
-              {t('family.joinScreenNote')}
-            </div>
-
-            {/* WhatsApp */}
-            <button onClick={() => {
-              const msg = encodeURIComponent(t('family.whatsappMsg', { code: inviteCode }))
-              window.open(`https://wa.me/?text=${msg}`, '_blank')
-            }} style={{
-              width: '100%', padding: '11px 14px', borderRadius: 13,
-              background: '#25D366', border: 'none',
-              color: '#fff', fontWeight: 800, fontSize: 13.5,
-              fontFamily: 'inherit', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
-              marginBottom: 8,
-            }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.553 4.118 1.522 5.852L.057 23.25a.75.75 0 0 0 .916.916l5.404-1.464A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.502-5.17-1.381l-.37-.218-3.835 1.04 1.04-3.834-.218-.371A9.953 9.953 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-              </svg>
-              {t('family.shareWhatsapp')}
-            </button>
-
-            {/* Copy */}
-            <button onClick={() => {
-              // Best-effort: clipboard is unavailable in some WebView configs,
-              // and the code is on screen anyway, so failing is not worth an error.
-              try { navigator.clipboard?.writeText(inviteCode) } catch { /* shown above */ }
-              setCodeCopied(true)
-              setTimeout(() => { setCodeCopied(false); setShowInviteSheet(false) }, 1200)
-            }} style={{
-              width: '100%', padding: '10px 14px', borderRadius: 13,
-              background: codeCopied ? '#D1FAE5' : 'var(--bg2)',
-              border: codeCopied ? '1.5px solid #10B981' : '1.5px solid var(--border)',
-              color: codeCopied ? '#059669' : '#3A1020', fontWeight: 800, fontSize: 13.5,
-              fontFamily: 'inherit', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
-              transition: 'all 0.2s',
-            }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={codeCopied ? '#059669' : 'var(--maroon)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-              </svg>
-              {codeCopied ? t('family.copied') : t('family.copyCode')}
-            </button>
-
-          </div>
-        </div>
+        <InviteSheet familyName={familyName} code={inviteCode} onClose={() => setShowInviteSheet(false)} />
       )}
 
       {/* ── Family Switcher Sheet ── */}
@@ -1366,7 +1288,13 @@ export default function FamilyPage() {
                   display: 'flex', flexDirection: 'column',
                   alignItems: 'center', gap: 3,
                   alignSelf: 'flex-start', paddingTop: 4,
-                  minWidth: 64,
+                  // Fixed, not minWidth: the column used to grow with its text,
+                  // and a card with a distance and ETA under the pin got a wider
+                  // column than one without, so the centred pins sat at
+                  // different x. 88 fits the widest English line ("Reach by
+                  // 05:20 PM", about 85px); longer text overflows evenly on
+                  // both sides.
+                  width: 88,
                 }}>
                   {/* Four distinct location states, because they are different
                       problems with different fixes and used to look the same:

@@ -25,6 +25,7 @@ const FamilyMap = Capacitor.isNativePlatform() ? NativeFamilyMap : LeafletFamily
 // the end is labelled with its time instead, so a phone that went quiet at
 // 2 PM does not claim they are there now.
 const NOW_WINDOW_MS = 15 * 60 * 1000
+const DRIVING_KMH = 10
 // Start and end closer than this (a round trip from home) share one callout,
 // stacked, instead of two boxes drawn over each other.
 const ENDS_TOGETHER_M = 150
@@ -466,70 +467,77 @@ export default function MapAllPage() {
   const renderMemberPopup = (uid, loc, close) => {
     const real = locations[uid] || loc
     const isMe = uid === user?.id
+    // Live = still sharing and heard from within the last 15 minutes (the same
+    // window Find Fam uses); anything older is "Last seen …", never "Live".
+    const ageMs = loc.updatedAt ? Date.now() - new Date(loc.updatedAt) : Infinity
+    const live = loc.isSharing !== false && ageMs < NOW_WINDOW_MS
+    const seenAgo = ageMs < 60_000 ? t('family.justNow')
+      : ageMs < 3_600_000 ? t('family.minutesAgo', { n: Math.floor(ageMs / 60_000) })
+      : ageMs < 86_400_000 ? t('family.hoursAgo', { n: Math.floor(ageMs / 3_600_000) })
+      : t('family.daysAgo', { n: Math.floor(ageMs / 86_400_000) })
+    const dist = !isMe && myLoc ? formatDistance(myLoc.lat, myLoc.lng, real.lat, real.lng) : null
+    const eta = dist && live ? etaLabel(t, haversineKm(myLoc.lat, myLoc.lng, real.lat, real.lng)) : null
+    const kmh = live ? speedKmh(loc) : null
+    // From 10 km/h up the status reads as Driving rather than plain Live.
+    const driving = kmh != null && kmh >= DRIVING_KMH
+    const line = { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
     return (
-    <div style={{ fontFamily: 'Inter, sans-serif' }}>
-      {/* Avatar + name row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingRight: 30, marginBottom: 6 }}>
-        <div style={{ flexShrink: 0 }}>
-          {loc.avatarUrl ? (
-            <img src={loc.avatarUrl} alt={loc.displayName} style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '2px solid var(--maroon)' }} />
-          ) : (
-            <div style={{
-              width: 30, height: 30, borderRadius: '50%',
-              background: loc.avatarColor || 'var(--maroon)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontWeight: 800, fontSize: 13,
-              border: '2px solid var(--maroon)', boxSizing: 'border-box',
-            }}>
-              {loc.displayName?.[0]?.toUpperCase()}
+    <div className="member-card-in" style={{ fontFamily: 'Inter, sans-serif', width: 'max-content', maxWidth: 220, minWidth: 150 }}>
+      {/* Identity: avatar, name, live / last seen. Right padding leaves room
+          for the close button. */}
+      <div style={{ display: 'flex', alignItems: 'center', paddingRight: 30 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ ...line, fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>{loc.displayName}</div>
+          {/* No "Online" line: a plain live member shows nothing here. Only
+              Driving, or how long ago they were last seen, is worth a line. */}
+          {(driving || !live) && (
+            <div style={{ ...line, display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 600, color: live ? 'var(--emerald)' : 'var(--muted)' }}>
+              {live && <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--emerald)', flexShrink: 0 }} />}
+              <span style={line}>{live ? t('map.driving') : t('family.lastSeen', { when: seenAgo })}</span>
             </div>
           )}
         </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--text)', whiteSpace: 'nowrap' }}>{loc.displayName}</div>
-          {/* How far they are from you — the same figure Find Fam shows,
-              measured to their REAL position, not the fanned-out pin. */}
-          {!isMe && myLoc && (() => {
-            const dist = formatDistance(myLoc.lat, myLoc.lng, real.lat, real.lng)
-            const eta = etaLabel(t, haversineKm(myLoc.lat, myLoc.lng, real.lat, real.lng))
-            return dist ? (
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--maroon)', whiteSpace: 'nowrap' }}>{dist}{eta ? ' · ' + eta : ''}</div>
-            ) : null
-          })()}
+      </div>
+      {/* Distance is the headline; arrival time sits beneath it.
+          Each line is left out when its figure does not exist. */}
+      {dist && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ ...line, fontSize: 15, fontWeight: 800, color: 'var(--maroon)' }}>{dist}</div>
+          {eta && <div style={{ ...line, fontSize: 12.5, fontWeight: 600, color: 'var(--text2)', marginTop: 1 }}>{eta}</div>}
         </div>
-      </div>
-      {/* Directions and Timeline side by side, half the card each (they were
-          stacked, which made the card tall enough to cover much of the map).
-          The name is already at the top, so the button just says "Directions". */}
-      <div style={{ display: 'flex', gap: 6 }}>
-      {!isMe && (
-        <a
-          href={`https://www.google.com/maps/dir/?api=1&destination=${real.lat},${real.lng}`}
-          target="_blank" rel="noopener noreferrer"
-          style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-            background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
-            color: '#fff', padding: '6px 10px', borderRadius: 999,
-            fontWeight: 700, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap',
-          }}
-        >
-          <Icon name="navigate" /> {t('map.directions')}
-        </a>
       )}
-      {/* Outline, so Directions stays the main action. */}
-      <button
-        onClick={() => { close?.(); showRoute(uid) }}
-        style={{
-          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-          boxSizing: 'border-box',
-          background: '#FFF8F0', color: 'var(--maroon)',
-          border: '1.5px solid var(--maroon)', padding: '5px 10px', borderRadius: 999,
-          fontWeight: 700, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap',
-        }}
-      >
-        <Icon name="map" /> {t('map.todaysRoute')}
-      </button>
-      </div>
+      {(!isMe || kmh != null) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+          {!isMe && (
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${real.lat},${real.lng}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                height: 34, boxSizing: 'border-box',
+                background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
+                color: '#fff', padding: '0 16px', borderRadius: 999,
+                fontWeight: 700, fontSize: 12.5, textDecoration: 'none', whiteSpace: 'nowrap',
+              }}
+            >
+              <Icon name="navigate" /> {t('map.directions')}
+            </a>
+          )}
+          {/* Speed while moving: an outlined disc beside Directions, centred on
+              the same line. 44px holds "KM/H" at the WebView's 8px font floor. */}
+          {kmh != null && (
+            <div aria-label={`${kmh} km/h`} style={{
+              width: 44, height: 44, borderRadius: '50%', flexShrink: 0, boxSizing: 'border-box',
+              background: '#fff', border: '2px solid var(--maroon)', color: 'var(--maroon)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              lineHeight: 1, marginLeft: isMe ? 0 : 'auto',
+            }}>
+              <span style={{ fontSize: kmh >= 100 ? 13 : 15, fontWeight: 900 }}>{kmh}</span>
+              <span style={{ fontSize: 8, fontWeight: 800, marginTop: 2 }}>KM/H</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
     )
   }
@@ -578,7 +586,7 @@ export default function MapAllPage() {
         </div>
         {/* Find Fam button — styled exactly like Messages' "Clear Chat": the
             solid white pill is the header's primary action on both pages. */}
-        <button
+        {!routeUid && <button
           onClick={() => setShowFindFam(s => !s)}
           aria-label={t('map.findMember')}
           style={{
@@ -596,7 +604,7 @@ export default function MapAllPage() {
             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
           {t('map.findFam')}
-        </button>
+        </button>}
 
         {/* Map layers, where Refresh used to be. Refresh fetched nothing on the
             phone (pins update over realtime, and useLocations now re-fetches
@@ -625,6 +633,70 @@ export default function MapAllPage() {
           </button>
         )}
       </div>
+
+      {/* Map | Timeline tabs. Timeline is the tab whenever a member's history is
+          open (also when reached from a member card); Map closes it. */}
+      <div role="tablist" style={{
+        flexShrink: 0, display: 'flex', background: '#fff',
+        borderBottom: '1.5px solid var(--border)',
+      }}>
+        {[
+          { id: 'map', label: t('map.mapView') },
+          { id: 'timeline', label: t('map.todaysRoute') },
+        ].map(tb => {
+          const on = (tb.id === 'timeline') === !!routeUid
+          return (
+            <button
+              key={tb.id}
+              role="tab"
+              aria-selected={on}
+              onClick={() => {
+                if (on) return
+                if (tb.id === 'map') { hideRoute(); return }
+                const ids = Object.keys(locations)
+                const uid = user?.id && locations[user.id] ? user.id : ids[0]
+                if (uid) showRoute(uid)
+              }}
+              style={{
+                flex: 1, padding: '13px 0', background: 'none', border: 'none',
+                fontFamily: 'inherit', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                color: on ? 'var(--maroon)' : 'var(--muted-soft)',
+                borderBottom: on ? '2.5px solid var(--maroon)' : '2.5px solid transparent',
+                transition: 'all 0.2s',
+              }}
+            >
+              {tb.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Timeline tab: whose history to show. */}
+      {routeUid && (
+        <div style={{
+          flexShrink: 0, display: 'flex', gap: 6, overflowX: 'auto',
+          padding: '8px 12px', background: '#FFF8F0', borderBottom: '1px solid var(--border2)',
+        }}>
+          {Object.entries(locations).map(([uid, m]) => {
+            const on = uid === routeUid
+            return (
+              <button
+                key={uid}
+                onClick={() => { if (!on) showRoute(uid) }}
+                style={{
+                  flexShrink: 0, padding: '5px 12px', borderRadius: 999, whiteSpace: 'nowrap',
+                  border: '1.5px solid var(--maroon)',
+                  background: on ? 'var(--maroon)' : 'transparent',
+                  color: on ? '#FFF8F0' : 'var(--maroon)',
+                  fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+                }}
+              >
+                {m.displayName || t('family.aFamilyMember')}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Permission denied — always show (user must fix it) */}
       {showPermError && (
@@ -905,7 +977,6 @@ export default function MapAllPage() {
               </div>
             ) : (
               Object.entries(locations).map(([uid, loc]) => {
-                const stale = (Date.now() - new Date(loc.updatedAt)) > 15 * 60 * 1000
                 return (
                   <button
                     key={uid}
@@ -944,23 +1015,15 @@ export default function MapAllPage() {
                       )}
                       <SpeedBadge loc={loc} />
                     </div>
-                    {/* Name + distance + last loc time */}
+                    {/* Name and distance only */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                        {loc.displayName}
-                        {myLoc && uid !== user?.id && (() => {
-                          const dist = formatDistance(myLoc.lat, myLoc.lng, loc.lat, loc.lng)
-                          const eta = etaLabel(t, haversineKm(myLoc.lat, myLoc.lng, loc.lat, loc.lng))
-                          return dist ? (
-                            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--maroon)' }}>
-                              ({dist}{eta ? ' · ' + eta : ''})
-                            </span>
-                          ) : null
-                        })()}
-                      </div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: stale ? '#D97706' : 'var(--muted)' }}>
-                        {stale ? <><Icon name="alert" />{' '}</> : ''}{t('map.lastLocTime')} · {formatLocationTime(t, loc.updatedAt)}
-                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{loc.displayName}</div>
+                      {myLoc && uid !== user?.id && (() => {
+                        const dist = formatDistance(myLoc.lat, myLoc.lng, loc.lat, loc.lng)
+                        return dist ? (
+                          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--maroon)', marginTop: 2 }}>{dist}</div>
+                        ) : null
+                      })()}
                     </div>
                     {/* Arrow */}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

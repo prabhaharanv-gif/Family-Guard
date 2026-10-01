@@ -1343,3 +1343,148 @@ html.native-map-open .app-shell {
 @media (prefers-reduced-motion: reduce) {
   .radar-ripple { animation: none; opacity: 0; }
 }
+
+/* ── Invite sheet: the family home ───────────────────────────────────────────
+   The invite code lives in the house itself: a night scene with a two-storey
+   home, and each character of the code is a window that lights up in turn, like
+   the family coming home. A gold heart sits in the gable. Tapping the house
+   is only a picture; the Copy Code and Share buttons below it copy and share
+   and open the door on the family waiting inside. Flat on purpose (no glow, no
+   blur): solid fills and lines in the brand maroon, gold and cream. The code is
+   also in the picture's aria-label.
+   Every loop stops under prefers-reduced-motion and the windows are then lit
+   from the start. */
+.invite-scene {
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #2A0412 0%, #48061F 48%, #6E0A30 100%);
+  border-radius: 22px;
+  padding: 14px 14px 0;
+  margin-bottom: 12px;
+}
+.invite-scene-title {
+  font-size: 16px; font-weight: 800; letter-spacing: 0.2px; line-height: 1.25;
+  color: #FFF8F0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.invite-scene-art {
+  display: block; width: calc(100% + 28px); margin: 4px -14px 0;
+}
+.invite-svg { display: block; width: 100%; height: auto; }
+.invite-scene-note {
+  margin: 0 -14px; padding: 12px 20px 17px;
+  background: #2A0412;
+  font-size: 12px; font-weight: 600; line-height: 1.5;
+  color: rgba(255,248,240,0.9);
+  text-align: center;
+}
+.invite-scene-note div { text-wrap: balance; }
+/* ground strip under the house: Copy under the left window, Share under the
+   right one, the path to the door between them */
+.invite-ground {
+  margin: -1px -14px 0; padding: 8px 14px 0;
+  background: #2A0412;
+  display: grid; grid-template-columns: 1fr calc((100% + 28px) * 0.11765) 1fr; align-items: stretch;
+}
+.inv-spacer { align-self: stretch; }   /* empty middle track: keeps each button under its window */
+/* The two actions under the house. Same height, radius, padding and type, so
+   they read as a pair; the hierarchy comes from colour and weight alone.
+   Primary (share): warm champagne gold, dark maroon text, a thin light rim on
+   the top edge and a soft shadow beneath. Secondary (copy): warm cream with a
+   thin gold border and maroon text, one step quieter. Flat, no glow, no bevel,
+   no gradient beyond a barely-there tonal shift. */
+.inv-act {
+  width: 100%; height: 68px; padding: 8px 10px; border-radius: 16px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  font-family: inherit; font-size: 13px; line-height: 1.2; letter-spacing: 0.2px; text-align: center;
+  transition: transform 0.12s ease-out, filter 0.12s ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+.inv-act:active { transform: scale(0.97); filter: brightness(0.96); }
+.inv-act:focus-visible { outline: 2px solid #FFF8F0; outline-offset: 2px; }
+.inv-act svg { flex-shrink: 0; }
+
+.inv-act-share {
+  font-weight: 800;
+  background: linear-gradient(180deg, #E8CF85 0%, #DDBB5A 100%);
+  border: 1px solid rgba(166,131,42,0.55);
+  color: var(--maroon-darkest);
+  box-shadow: inset 0 1px 0 rgba(255,244,205,0.8), 0 2px 5px rgba(0,0,0,0.28);
+}
+.inv-act-copy {
+  font-weight: 700;
+  background: #F7ECE1;
+  border: 1px solid rgba(212,175,55,0.6);
+  color: var(--maroon);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.22);
+}
+.inv-act-copy.is-copied {        /* brief confirmation: takes the champagne of the primary */
+  background: linear-gradient(180deg, #E8CF85 0%, #DDBB5A 100%);
+  border-color: rgba(166,131,42,0.55);
+  color: var(--maroon-darkest);
+}
+@media (prefers-reduced-motion: reduce) { .inv-act { transition: none; } }
+
+
+/* windows: dark panes that light up in turn, each with its code character */
+.inv-pane {
+  fill: #3B0A1C;
+  animation: inv-light 0.55s ease forwards;
+  animation-delay: calc(var(--i) * 150ms + 300ms);
+}
+.inv-char {
+  opacity: 0;
+  animation: inv-char-in 0.4s ease forwards;
+  animation-delay: calc(var(--i) * 150ms + 420ms);
+}
+.invite-scene.is-open .inv-char { animation: inv-hop 0.5s ease both; animation-delay: calc(var(--i) * 60ms); opacity: 1; }
+
+/* ground-floor windows and the door */
+.inv-gwin { fill: #3B0A1C; transition: fill 0.6s ease 0.25s; }
+.inv-door {
+  transform-box: fill-box; transform-origin: 0 50%;
+  transition: transform 0.9s cubic-bezier(0.5, 0, 0.2, 1);
+}
+.inv-fam { opacity: 0; transition: opacity 0.5s ease 0.4s; }
+.invite-scene.is-open .inv-door { transform: scaleX(0.13); }
+.invite-scene.is-open .inv-fam  { opacity: 1; }
+.invite-scene.is-open .inv-gwin { fill: #D4AF37; }
+.invite-scene.is-open .inv-heart { animation-duration: 0.9s; }
+
+.inv-heart { transform-box: fill-box; transform-origin: 50% 55%; animation: inv-beat 2.4s ease-in-out infinite; }
+.inv-lamp  { animation: inv-flicker 2.8s ease-in-out infinite alternate; }
+.inv-lamp.l2 { animation-delay: 1.1s; }
+.inv-key   { transform-box: view-box; transform-origin: 28px 0; animation: inv-swing 3.4s ease-in-out infinite alternate; }
+.inv-smoke { fill: none; stroke: #FFF8F0; stroke-width: 1.6; opacity: 0; animation: inv-rise 3.8s ease-out infinite; }
+.inv-smoke.s2 { animation-delay: 1.25s; }
+.inv-smoke.s3 { animation-delay: 2.5s; }
+.inv-star  { fill: #D4AF37; animation: inv-twinkle 2.8s ease-in-out infinite; }
+.inv-star.k2 { animation-delay: 0.9s; }
+.inv-star.k3 { animation-delay: 1.8s; }
+.inv-tree  { transform-box: fill-box; transform-origin: 50% 100%; animation: inv-sway 4.6s ease-in-out infinite alternate; }
+
+
+@keyframes inv-light   { to { fill: #D4AF37; } }
+@keyframes inv-char-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+@keyframes inv-hop     { 0%, 100% { transform: none; } 45% { transform: translateY(-3px); } }
+@keyframes inv-beat    { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.18); } 28% { transform: scale(1); } 42% { transform: scale(1.12); } 56% { transform: scale(1); } }
+@keyframes inv-flicker { from { opacity: 0.7; } to { opacity: 1; } }
+@keyframes inv-swing   { from { transform: rotate(-9deg); } to { transform: rotate(9deg); } }
+@keyframes inv-sway    { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+@keyframes inv-rise {
+  0%   { opacity: 0;    transform: translate(0, 0) scale(0.7); }
+  20%  { opacity: 0.6; }
+  100% { opacity: 0;    transform: translate(9px, -26px) scale(1.5); }
+}
+@keyframes inv-twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .inv-heart, .inv-lamp, .inv-key, .inv-smoke, .inv-star, .inv-tree { animation: none; }
+  .inv-smoke { opacity: 0; }
+  .inv-pane { animation: none; fill: #D4AF37; }
+  .inv-char, .invite-scene.is-open .inv-char { animation: none; opacity: 1; }
+  .inv-door, .inv-fam, .inv-gwin { transition: none; }
+}
+
+/* Member card on the Family Map: a quick fade and small rise on open. */
+@keyframes member-card-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.member-card-in { animation: member-card-in 0.18s ease-out; }
+@media (prefers-reduced-motion: reduce) { .member-card-in { animation: none; } }
