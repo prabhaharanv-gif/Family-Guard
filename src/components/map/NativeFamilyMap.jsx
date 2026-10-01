@@ -635,10 +635,10 @@ export default function NativeFamilyMap({
           willChange: 'transform',
           width: 'max-content', maxWidth: 'calc(100% - 16px)',
           zIndex: 1000,
-          background: '#fff', borderRadius: 14,
+          background: '#fff', borderRadius: 18,
           border: '1px solid var(--border)',
-          boxShadow: '0 8px 28px rgba(74,8,32,0.22)',
-          padding: '8px 10px',
+          boxShadow: '0 10px 30px rgba(74,8,32,0.18), 0 2px 6px rgba(74,8,32,0.08)',
+          padding: '12px 14px',
         }}>
           {/* Pointer to the pin: a rotated square sharing the card's border. */}
           <div ref={arrowRef} style={{
@@ -655,12 +655,12 @@ export default function NativeFamilyMap({
             onClick={closeCard}
             aria-label={t('common.close')}
             style={{
-              position: 'absolute', top: 8, right: 8,
-              width: 26, height: 26, borderRadius: '50%', border: 'none',
-              background: 'var(--surface3)', color: 'var(--text2)',
-              fontSize: 14, lineHeight: '26px', padding: 0,
+              position: 'absolute', top: 4, right: 4,
+              width: 34, height: 34, borderRadius: '50%', border: 'none',
+              background: 'transparent', color: 'var(--muted)',
+              fontSize: 20, lineHeight: '34px', padding: 0,
               fontFamily: 'inherit', cursor: 'pointer',
-            }}>x</button>
+            }}>×</button>
         </div>
       )}
     </>

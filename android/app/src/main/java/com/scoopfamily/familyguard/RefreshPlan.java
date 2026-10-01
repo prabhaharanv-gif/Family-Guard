@@ -43,8 +43,28 @@ final class RefreshPlan {
      */
     static final long MIN_HANDOVER_LIFE_SEC = 120;
 
-    /** How many spent tokens to remember. Rotation is roughly hourly. */
-    static final int MAX_SPENT = 8;
+    /**
+     * How many spent tokens to remember. Rotation is roughly hourly, and the
+     * WebView can sit on a stale copy for a day: with the old cap of 8 a token
+     * 12 rotations old was forgotten, taken for a fresh sign-in, sent to the
+     * server, and the whole session revoked (Sudha, 2026-09-29, token 2849).
+     * A spent token is never valid again, so remembering many costs only a few
+     * KB of prefs (~13 bytes each); 500 is weeks of hourly rotation.
+     */
+    static final int MAX_SPENT = 500;
+
+    /**
+     * True when the server's answer to a refresh means this token can never
+     * work: already used (session revoked) or unknown (session deleted). Such a
+     * token is remembered as spent so it is not sent again — retrying it on
+     * every location fix produced 617 rejected calls from one phone in 95 min.
+     */
+    static boolean isDeadTokenResponse(int status, String body) {
+        if (status != 400 || body == null) return false;
+        return body.contains("refresh_token_already_used")
+            || body.contains("refresh_token_not_found")
+            || body.contains("Invalid Refresh Token");
+    }
 
     /**
      * @param presented         the token the caller wants redeemed; null for a

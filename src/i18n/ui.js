@@ -289,7 +289,7 @@ export const UI = {
       removeMember: 'Remove Member',
       removeMemberMsg: 'Remove "{name}" from the family? They will need a new invite to rejoin.',
       inviteTo: 'Invite to {family}',
-      joinScreenNote: 'They enter this on the Join Family screen — you approve first.',
+      joinScreenNote: 'Share this code with your family member.\nThey enter it on Join Family, then you approve the request.',
       shareWhatsapp: 'Share via WhatsApp',
       whatsappMsg: "Join our family on Famora! Enter the code *{code}* on the Join Family screen and I'll approve you. 🛡️",
       copied: 'Copied!',
@@ -443,6 +443,20 @@ export const UI = {
       clearHistoryMsg: 'The selected calls will be removed for everyone in this family.',
       cancelCall: 'Cancel call',
       endCall: 'End call',
+
+      addPerson: 'Add person',
+
+      addToCall: 'Add to call',
+
+      callingName: 'Calling {name}…',
+
+      didntJoin: "{name} didn't join",
+
+      everyoneInCall: 'Everyone from this family is already in the call.',
+
+      callFull: 'This call is full.',
+
+      addFailed: 'Could not add them. Try again.',
       // Kept short: the whole line is nowrap + ellipsis so every history row
       // stays exactly one line, which a long phrase would truncate.
       incoming: 'Incoming',
@@ -476,6 +490,7 @@ export const UI = {
       timelineNoticeTitle: "New: Timeline",
       timelineNoticeBody: "Your family can now see where you have been over the last 7 days on the Map, and you can see theirs. Location history is deleted automatically after 7 days. You can turn location sharing off at any time in Profile.",
       todaysRoute: 'Timeline',
+      driving: 'Driving',
       timelineRoute: 'Route',
       timelineTimes: 'Times',
       timelineKm: '{km} km travelled',
@@ -1167,7 +1182,7 @@ export const UI = {
       removeMember: 'உறுப்பினரை நீக்கு',
       removeMemberMsg: '"{name}" ஐக் குடும்பத்திலிருந்து நீக்கவா? மீண்டும் சேர அவருக்குப் புதிய அழைப்பு தேவைப்படும்.',
       inviteTo: '{family} க்கு அழைப்பு',
-      joinScreenNote: 'அவர்கள் இதை "குடும்பத்தில் இணை" திரையில் உள்ளிட வேண்டும் — நீங்கள் ஒப்புதல் அளித்த பிறகே இணைவார்கள்.',
+      joinScreenNote: 'இந்தக் குறியீட்டை உங்கள் குடும்ப உறுப்பினருடன் பகிருங்கள்.\nஅவர்கள் அதை "குடும்பத்தில் இணை" திரையில் உள்ளிடுவார்கள்; பிறகு நீங்கள் கோரிக்கைக்கு ஒப்புதல் அளிப்பீர்கள்.',
       shareWhatsapp: 'WhatsApp வழியாகப் பகிர்',
       whatsappMsg: 'Famora-வில் எங்கள் குடும்பத்தில் இணையுங்கள்! "குடும்பத்தில் இணை" திரையில் *{code}* என்ற குறியீட்டை உள்ளிடுங்கள், நான் ஒப்புதல் அளிக்கிறேன். 🛡️',
       copied: 'நகலெடுக்கப்பட்டது!',
@@ -1314,6 +1329,20 @@ export const UI = {
       clearHistoryMsg: 'தேர்ந்தெடுத்த அழைப்புகள் இந்தக் குடும்பத்தில் உள்ள அனைவருக்கும் நீக்கப்படும்.',
       cancelCall: 'அழைப்பை ரத்து செய்',
       endCall: 'அழைப்பை முடி',
+
+      addPerson: 'நபரைச் சேர்',
+
+      addToCall: 'அழைப்பில் சேர்',
+
+      callingName: '{name}-ஐ அழைக்கிறது…',
+
+      didntJoin: '{name} சேரவில்லை',
+
+      everyoneInCall: 'இந்தக் குடும்பத்தில் உள்ள அனைவரும் ஏற்கெனவே அழைப்பில் உள்ளனர்.',
+
+      callFull: 'இந்த அழைப்பு நிரம்பியுள்ளது.',
+
+      addFailed: 'சேர்க்க முடியவில்லை. மீண்டும் முயலவும்.',
       // Deliberately terse. The row is nowrap + ellipsis so every entry stays
       // one line, and the literal translations ("உள்வரும்" /
       // "வெளிச்செல்லும்" / "நிராகரித்தது") pushed the status and the duration
@@ -1350,6 +1379,7 @@ export const UI = {
       timelineNoticeTitle: "புதியது: காலவரிசை",
       timelineNoticeBody: "கடந்த 7 நாட்களில் நீங்கள் எங்கெல்லாம் சென்றீர்கள் என்பதை உங்கள் குடும்பம் இப்போது வரைபடத்தில் பார்க்கலாம்; நீங்களும் அவர்களுடையதைப் பார்க்கலாம். இருப்பிட வரலாறு 7 நாட்களுக்குப் பிறகு தானாக நீக்கப்படும். சுயவிவரத்தில் எப்போது வேண்டுமானாலும் இருப்பிடப் பகிர்வை நிறுத்தலாம்.",
       todaysRoute: 'காலவரிசை',
+      driving: 'வாகனத்தில்',
       timelineRoute: 'பாதை',
       timelineTimes: 'நேரம்',
       timelineKm: '{km} கி.மீ. பயணம்',
@@ -1953,7 +1983,7 @@ export const UI = {
       removeMember: 'सदस्य हटाएँ',
       removeMemberMsg: '"{name}" को परिवार से हटाएँ? दोबारा जुड़ने के लिए उन्हें नया आमंत्रण चाहिए होगा।',
       inviteTo: '{family} में आमंत्रित करें',
-      joinScreenNote: 'वे इसे "परिवार से जुड़ें" स्क्रीन पर डालते हैं — मंज़ूरी पहले आप देते हैं।',
+      joinScreenNote: 'यह कोड अपने परिवार के सदस्य के साथ साझा करें।\nवे इसे "परिवार से जुड़ें" पर दर्ज करेंगे, फिर आप अनुरोध को मंज़ूरी देंगे।',
       shareWhatsapp: 'WhatsApp पर साझा करें',
       whatsappMsg: 'Famora पर हमारे परिवार से जुड़ें! "परिवार से जुड़ें" स्क्रीन पर *{code}* कोड डालें, मैं मंज़ूरी दे दूँगा। 🛡️',
       copied: 'कॉपी हो गया!',
@@ -2103,6 +2133,20 @@ export const UI = {
       clearHistoryMsg: 'चुनी गई कॉल इस परिवार के सभी लोगों के लिए हट जाएँगी।',
       cancelCall: 'कॉल रद्द करें',
       endCall: 'कॉल समाप्त करें',
+
+      addPerson: 'व्यक्ति जोड़ें',
+
+      addToCall: 'कॉल में जोड़ें',
+
+      callingName: '{name} को कॉल किया जा रहा है…',
+
+      didntJoin: '{name} जुड़ा नहीं',
+
+      everyoneInCall: 'इस परिवार के सभी लोग पहले से कॉल में हैं।',
+
+      callFull: 'यह कॉल भर चुकी है।',
+
+      addFailed: 'जोड़ा नहीं जा सका। फिर कोशिश करें।',
       // Kept short: the whole line is nowrap + ellipsis so every history row
       // stays exactly one line, which a long phrase would truncate.
       incoming: 'इनकमिंग',
@@ -2136,6 +2180,7 @@ export const UI = {
       timelineNoticeTitle: "नया: टाइमलाइन",
       timelineNoticeBody: "अब आपका परिवार मैप पर देख सकता है कि पिछले 7 दिनों में आप कहाँ-कहाँ गए, और आप उनका देख सकते हैं। लोकेशन इतिहास 7 दिन बाद अपने-आप मिट जाता है। आप प्रोफ़ाइल में कभी भी लोकेशन साझा करना बंद कर सकते हैं।",
       todaysRoute: 'टाइमलाइन',
+      driving: 'ड्राइविंग',
       timelineRoute: 'रास्ता',
       timelineTimes: 'समय',
       timelineKm: '{km} कि.मी. सफ़र',
@@ -2740,7 +2785,7 @@ export const UI = {
       removeMember: 'సభ్యుడిని తొలగించు',
       removeMemberMsg: '"{name}" ను కుటుంబం నుండి తొలగించాలా? మళ్లీ చేరడానికి వారికి కొత్త ఆహ్వానం అవసరం.',
       inviteTo: '{family} కు ఆహ్వానించు',
-      joinScreenNote: 'వారు దీన్ని "కుటుంబంలో చేరు" స్క్రీన్‌లో నమోదు చేస్తారు — ముందుగా మీరు ఆమోదిస్తారు.',
+      joinScreenNote: 'ఈ కోడ్‌ను మీ కుటుంబ సభ్యునితో పంచుకోండి.\nవారు దీన్ని "కుటుంబంలో చేరు"లో నమోదు చేస్తారు, ఆ తర్వాత మీరు అభ్యర్థనను ఆమోదిస్తారు.',
       shareWhatsapp: 'WhatsApp ద్వారా షేర్ చేయి',
       whatsappMsg: 'Famora లో మా కుటుంబంలో చేరండి! "కుటుంబంలో చేరు" స్క్రీన్‌లో *{code}* కోడ్ నమోదు చేయండి, నేను ఆమోదిస్తాను. 🛡️',
       copied: 'కాపీ అయింది!',
@@ -2890,6 +2935,20 @@ export const UI = {
       clearHistoryMsg: 'ఎంచుకున్న కాల్‌లు ఈ కుటుంబంలోని అందరికీ తొలగించబడతాయి.',
       cancelCall: 'కాల్ రద్దు చేయి',
       endCall: 'కాల్ ముగించు',
+
+      addPerson: 'వ్యక్తిని జోడించు',
+
+      addToCall: 'కాల్‌కు జోడించు',
+
+      callingName: '{name}కు కాల్ చేస్తోంది…',
+
+      didntJoin: '{name} చేరలేదు',
+
+      everyoneInCall: 'ఈ కుటుంబంలోని అందరూ ఇప్పటికే కాల్‌లో ఉన్నారు.',
+
+      callFull: 'ఈ కాల్ నిండిపోయింది.',
+
+      addFailed: 'జోడించడం సాధ్యం కాలేదు. మళ్లీ ప్రయత్నించండి.',
       // Kept short: the whole line is nowrap + ellipsis so every history row
       // stays exactly one line, which a long phrase would truncate.
       incoming: 'ఇన్‌కమింగ్',
@@ -2923,6 +2982,7 @@ export const UI = {
       timelineNoticeTitle: "కొత్తది: టైమ్‌లైన్",
       timelineNoticeBody: "గత 7 రోజుల్లో మీరు ఎక్కడెక్కడ ఉన్నారో మీ కుటుంబం ఇప్పుడు మ్యాప్‌లో చూడగలదు, మీరు వారిదీ చూడగలరు. లొకేషన్ చరిత్ర 7 రోజుల తర్వాత దానంతట అదే తొలగిపోతుంది. ప్రొఫైల్‌లో ఎప్పుడైనా లొకేషన్ షేరింగ్ ఆపవచ్చు.",
       todaysRoute: 'టైమ్‌లైన్',
+      driving: 'డ్రైవింగ్‌లో',
       timelineRoute: 'మార్గం',
       timelineTimes: 'సమయం',
       timelineKm: '{km} కి.మీ. ప్రయాణం',
@@ -3527,7 +3587,7 @@ export const UI = {
       removeMember: 'ಸದಸ್ಯರನ್ನು ತೆಗೆದುಹಾಕಿ',
       removeMemberMsg: '"{name}" ಅವರನ್ನು ಕುಟುಂಬದಿಂದ ತೆಗೆದುಹಾಕಬೇಕೇ? ಮತ್ತೆ ಸೇರಲು ಅವರಿಗೆ ಹೊಸ ಆಹ್ವಾನ ಬೇಕಾಗುತ್ತದೆ.',
       inviteTo: '{family} ಗೆ ಆಹ್ವಾನಿಸಿ',
-      joinScreenNote: 'ಅವರು ಇದನ್ನು "ಕುಟುಂಬ ಸೇರಿ" ಪರದೆಯಲ್ಲಿ ನಮೂದಿಸುತ್ತಾರೆ — ಮೊದಲು ನೀವು ಅನುಮೋದಿಸುತ್ತೀರಿ.',
+      joinScreenNote: 'ಈ ಕೋಡ್ ಅನ್ನು ನಿಮ್ಮ ಕುಟುಂಬದ ಸದಸ್ಯರೊಂದಿಗೆ ಹಂಚಿಕೊಳ್ಳಿ.\nಅವರು ಇದನ್ನು "ಕುಟುಂಬ ಸೇರಿ"ಯಲ್ಲಿ ನಮೂದಿಸುತ್ತಾರೆ, ನಂತರ ನೀವು ವಿನಂತಿಯನ್ನು ಅನುಮೋದಿಸುತ್ತೀರಿ.',
       shareWhatsapp: 'WhatsApp ಮೂಲಕ ಹಂಚಿಕೊಳ್ಳಿ',
       whatsappMsg: 'Famora ದಲ್ಲಿ ನಮ್ಮ ಕುಟುಂಬ ಸೇರಿ! "ಕುಟುಂಬ ಸೇರಿ" ಪರದೆಯಲ್ಲಿ *{code}* ಕೋಡ್ ನಮೂದಿಸಿ, ನಾನು ಅನುಮೋದಿಸುತ್ತೇನೆ. 🛡️',
       copied: 'ನಕಲಾಗಿದೆ!',
@@ -3677,6 +3737,20 @@ export const UI = {
       clearHistoryMsg: 'ಆಯ್ದ ಕರೆಗಳು ಈ ಕುಟುಂಬದ ಎಲ್ಲರಿಗೂ ತೆಗೆದುಹಾಕಲ್ಪಡುತ್ತವೆ.',
       cancelCall: 'ಕರೆ ರದ್ದುಗೊಳಿಸಿ',
       endCall: 'ಕರೆ ಮುಗಿಸಿ',
+
+      addPerson: 'ವ್ಯಕ್ತಿಯನ್ನು ಸೇರಿಸಿ',
+
+      addToCall: 'ಕರೆಗೆ ಸೇರಿಸಿ',
+
+      callingName: '{name} ಅವರಿಗೆ ಕರೆ ಮಾಡಲಾಗುತ್ತಿದೆ…',
+
+      didntJoin: '{name} ಸೇರಲಿಲ್ಲ',
+
+      everyoneInCall: 'ಈ ಕುಟುಂಬದ ಎಲ್ಲರೂ ಈಗಾಗಲೇ ಕರೆಯಲ್ಲಿದ್ದಾರೆ.',
+
+      callFull: 'ಈ ಕರೆ ತುಂಬಿದೆ.',
+
+      addFailed: 'ಸೇರಿಸಲು ಆಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
       // Kept short: the whole line is nowrap + ellipsis so every history row
       // stays exactly one line, which a long phrase would truncate.
       incoming: 'ಒಳಬರುವ',
@@ -3710,6 +3784,7 @@ export const UI = {
       timelineNoticeTitle: "ಹೊಸದು: ಟೈಮ್‌ಲೈನ್",
       timelineNoticeBody: "ಕಳೆದ 7 ದಿನಗಳಲ್ಲಿ ನೀವು ಎಲ್ಲೆಲ್ಲಿ ಇದ್ದಿರಿ ಎಂಬುದನ್ನು ನಿಮ್ಮ ಕುಟುಂಬ ಈಗ ನಕ್ಷೆಯಲ್ಲಿ ನೋಡಬಹುದು, ನೀವೂ ಅವರದನ್ನು ನೋಡಬಹುದು. ಸ್ಥಳ ಇತಿಹಾಸ 7 ದಿನಗಳ ನಂತರ ತಾನಾಗಿ ಅಳಿಸಲ್ಪಡುತ್ತದೆ. ಪ್ರೊಫೈಲ್‌ನಲ್ಲಿ ಯಾವಾಗ ಬೇಕಾದರೂ ಸ್ಥಳ ಹಂಚಿಕೆ ನಿಲ್ಲಿಸಬಹುದು.",
       todaysRoute: 'ಟೈಮ್‌ಲೈನ್',
+      driving: 'ಚಾಲನೆಯಲ್ಲಿ',
       timelineRoute: 'ಮಾರ್ಗ',
       timelineTimes: 'ಸಮಯ',
       timelineKm: '{km} ಕಿ.ಮೀ. ಪ್ರಯಾಣ',
@@ -4314,7 +4389,7 @@ export const UI = {
       removeMember: 'അംഗത്തെ നീക്കം ചെയ്യുക',
       removeMemberMsg: '"{name}" നെ കുടുംബത്തിൽ നിന്ന് നീക്കണോ? വീണ്ടും ചേരാൻ അവർക്ക് പുതിയ ക്ഷണം വേണ്ടിവരും.',
       inviteTo: '{family} ലേക്ക് ക്ഷണിക്കുക',
-      joinScreenNote: 'അവർ ഇത് "കുടുംബത്തിൽ ചേരുക" സ്ക്രീനിൽ നൽകും — ആദ്യം നിങ്ങൾ അംഗീകരിക്കും.',
+      joinScreenNote: 'ഈ കോഡ് നിങ്ങളുടെ കുടുംബാംഗവുമായി പങ്കിടുക.\nഅവർ ഇത് "കുടുംബത്തിൽ ചേരുക" എന്നതിൽ നൽകും, തുടർന്ന് നിങ്ങൾ അഭ്യർത്ഥന അംഗീകരിക്കും.',
       shareWhatsapp: 'WhatsApp വഴി പങ്കിടുക',
       whatsappMsg: 'Famora യിൽ ഞങ്ങളുടെ കുടുംബത്തിൽ ചേരുക! "കുടുംബത്തിൽ ചേരുക" സ്ക്രീനിൽ *{code}* കോഡ് നൽകുക, ഞാൻ അംഗീകരിക്കാം. 🛡️',
       copied: 'പകർത്തി!',
@@ -4464,6 +4539,20 @@ export const UI = {
       clearHistoryMsg: 'തിരഞ്ഞെടുത്ത കോളുകൾ ഈ കുടുംബത്തിലെ എല്ലാവർക്കും നീക്കം ചെയ്യപ്പെടും.',
       cancelCall: 'കോൾ റദ്ദാക്കുക',
       endCall: 'കോൾ അവസാനിപ്പിക്കുക',
+
+      addPerson: 'ആളെ ചേർക്കുക',
+
+      addToCall: 'കോളിലേക്ക് ചേർക്കുക',
+
+      callingName: '{name}-നെ വിളിക്കുന്നു…',
+
+      didntJoin: '{name} ചേർന്നില്ല',
+
+      everyoneInCall: 'ഈ കുടുംബത്തിലെ എല്ലാവരും ഇതിനകം കോളിലുണ്ട്.',
+
+      callFull: 'ഈ കോൾ നിറഞ്ഞു.',
+
+      addFailed: 'ചേർക്കാൻ കഴിഞ്ഞില്ല. വീണ്ടും ശ്രമിക്കുക.',
       // Kept short: the whole line is nowrap + ellipsis so every history row
       // stays exactly one line, which a long phrase would truncate.
       incoming: 'ഇൻകമിംഗ്',
@@ -4497,6 +4586,7 @@ export const UI = {
       timelineNoticeTitle: "പുതിയത്: ടൈംലൈൻ",
       timelineNoticeBody: "കഴിഞ്ഞ 7 ദിവസം നിങ്ങൾ എവിടെയെല്ലാം ആയിരുന്നു എന്ന് നിങ്ങളുടെ കുടുംബത്തിന് ഇപ്പോൾ മാപ്പിൽ കാണാം, നിങ്ങൾക്ക് അവരുടേതും കാണാം. ലൊക്കേഷൻ ചരിത്രം 7 ദിവസത്തിനു ശേഷം സ്വയം ഇല്ലാതാകും. പ്രൊഫൈലിൽ എപ്പോൾ വേണമെങ്കിലും ലൊക്കേഷൻ പങ്കിടൽ നിർത്താം.",
       todaysRoute: 'ടൈംലൈൻ',
+      driving: 'ഡ്രൈവിങ്ങിൽ',
       timelineRoute: 'വഴി',
       timelineTimes: 'സമയം',
       timelineKm: '{km} കി.മീ. യാത്ര',
