@@ -1,3 +1,4 @@
+import { formatKm } from '../lib/numberFormat'
 import { useState, useEffect } from 'react'
 import Icon from './Icon'
 import { createPortal } from 'react-dom'
@@ -150,7 +151,7 @@ function TripsSheet({ onClose }) {
                         )}
                       </div>
                       <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 14, fontWeight: 700, color: 'var(--text)', flexWrap: 'wrap' }}>
-                        <span>{km.toFixed(1)} km</span>
+                        <span>{formatKm(km)} km</span>
                         <span>{fmtDuration(sec)}</span>
                         <span>{t('trips.avg')} {avg} km/h</span>
                         <span>{t('trips.top')} {x.top_kmh} km/h</span>

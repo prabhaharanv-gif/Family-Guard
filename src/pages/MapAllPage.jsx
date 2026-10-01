@@ -14,7 +14,9 @@ import NativeFamilyMap from '../components/map/NativeFamilyMap'
 import TimelinePanel from '../components/map/TimelinePanel'
 import { buildRoute, clockLabel, dateLabel, daysBetween, distanceM, outwardDir, positionAt, rowsOnDay, timelineSince } from '../lib/route'
 import { fetchLocationHistory } from '../lib/locationHistory'
-import { etaLabel, haversineKm, roadKm } from '../lib/eta'
+import { useTravelTimes, arrivalLabel } from '../lib/travelTimes'
+import { formatKm } from '../lib/numberFormat'
+import { estimateArrival, arrivalTextAt, haversineKm } from '../lib/eta'
 
 // Google's native map in the Android app (free to display); Leaflet +
 // OpenStreetMap in the browser, so the web never uses the billed Google Maps
@@ -103,6 +105,14 @@ function offsetOverlapping(locations) {
 }
 
 // Haversine distance between two lat/lng points — returns human-readable string
+// Google's road distance, in km already.
+function formatKmAway(km) {
+  if (km == null) return null
+  if (km < 0.05) return 'Nearby'
+  if (km < 1)    return `${Math.round(km * 1000)} m away`
+  return `${formatKm(km)} km away`
+}
+
 function formatDistance(lat1, lng1, lat2, lng2) {
   if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return null
   const R = 6371000
@@ -114,7 +124,7 @@ function formatDistance(lat1, lng1, lat2, lng2) {
   const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   if (dist < 50)   return 'Nearby'
   if (dist < 1000) return `${Math.round(dist)} m away`
-  return `${(dist / 1000).toFixed(1)} km away`
+  return `${formatKm(dist / 1000)} km away`
 }
 
 // Below this, a reading is GPS noise rather than movement — a phone sitting on
@@ -468,15 +478,24 @@ export default function MapAllPage() {
     const real = locations[uid] || loc
     const isMe = uid === user?.id
     // Live = still sharing and heard from within the last 15 minutes (the same
-    // window Find Fam uses); anything older is "Last seen …", never "Live".
+    // window Find Fam uses); anything older shows "Last Loc: …", never "Live".
     const ageMs = loc.updatedAt ? Date.now() - new Date(loc.updatedAt) : Infinity
     const live = loc.isSharing !== false && ageMs < NOW_WINDOW_MS
-    const seenAgo = ageMs < 60_000 ? t('family.justNow')
-      : ageMs < 3_600_000 ? t('family.minutesAgo', { n: Math.floor(ageMs / 60_000) })
-      : ageMs < 86_400_000 ? t('family.hoursAgo', { n: Math.floor(ageMs / 3_600_000) })
-      : t('family.daysAgo', { n: Math.floor(ageMs / 86_400_000) })
-    const dist = !isMe && myLoc ? formatDistance(myLoc.lat, myLoc.lng, real.lat, real.lng) : null
-    const eta = dist && live ? etaLabel(t, haversineKm(myLoc.lat, myLoc.lng, real.lat, real.lng)) : null
+    // An exact day and time, not "36m ago": it is the time of the last location
+    // fix, and the family card beside it counts from when the app was last open.
+    const lastLoc = t('map.lastLoc', { when: formatLocationTime(t, loc.updatedAt) })
+    // Road distance and arrival from Google, in the mode picked on this member's Family
+    // card. Until Google has answered, or where it knows no route, the straight-line
+    // distance and a rough "~" estimate (see estimateArrival).
+    const tr = !isMe && live ? travel.for(uid) : null
+    const dist = !isMe && myLoc
+      ? (tr?.km != null ? formatKmAway(tr.km) : formatDistance(myLoc.lat, myLoc.lng, real.lat, real.lng))
+      : null
+    // Google's arrival when it has one; otherwise, if it has not answered at all,
+    // a rough estimate marked with a "~".
+    const est = dist && !tr && live ? estimateArrival(haversineKm(myLoc.lat, myLoc.lng, real.lat, real.lng)) : null
+    const eta = dist && tr?.arriveAt ? t('map.destReachBy', { time: arrivalLabel(tr) })
+      : est ? t('map.destReachBy', { time: '~' + arrivalTextAt(est.arriveAt) }) : null
     const kmh = live ? speedKmh(loc) : null
     // From 10 km/h up the status reads as Driving rather than plain Live.
     const driving = kmh != null && kmh >= DRIVING_KMH
@@ -485,15 +504,15 @@ export default function MapAllPage() {
     <div className="member-card-in" style={{ fontFamily: 'Inter, sans-serif', width: 'max-content', maxWidth: 220, minWidth: 150 }}>
       {/* Identity: avatar, name, live / last seen. Right padding leaves room
           for the close button. */}
-      <div style={{ display: 'flex', alignItems: 'center', paddingRight: 30 }}>
+      <div style={{ display: 'flex', alignItems: 'center', paddingRight: 38 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ ...line, fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>{loc.displayName}</div>
           {/* No "Online" line: a plain live member shows nothing here. Only
-              Driving, or how long ago they were last seen, is worth a line. */}
+              Driving, or the time of their last location, is worth a line. */}
           {(driving || !live) && (
             <div style={{ ...line, display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 600, color: live ? 'var(--emerald)' : 'var(--muted)' }}>
               {live && <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--emerald)', flexShrink: 0 }} />}
-              <span style={line}>{live ? t('map.driving') : t('family.lastSeen', { when: seenAgo })}</span>
+              <span style={line}>{live ? t('map.driving') : lastLoc}</span>
             </div>
           )}
         </div>
@@ -545,7 +564,7 @@ export default function MapAllPage() {
   // What tapping a dot, a box or the avatar on the Timeline shows: directions
   // to that spot and nothing else.
   const renderSpotPopup = spot => (
-    <div style={{ fontFamily: 'Inter, sans-serif', paddingRight: 30 }}>
+    <div style={{ fontFamily: 'Inter, sans-serif', paddingRight: 38 }}>
       <a
         href={`https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}`}
         target="_blank" rel="noopener noreferrer"
@@ -564,6 +583,17 @@ export default function MapAllPage() {
   const memberCount = Object.keys(locations).length
   // Current user's own location — used to calculate distance to other members
   const myLoc = user?.id ? locations[user.id] : null
+
+  // Real travel times to the other members (shared with the Family card), and from the
+  // followed member to the long-pressed destination, both from Google Maps.
+  const travelTargets = useMemo(() => !myLoc ? [] : Object.entries(locations)
+    .filter(([uid, l]) => uid !== user?.id && l?.lat && l?.lng && !(l.lat === 0 && l.lng === 0))
+    .map(([uid, l]) => ({ id: uid, lat: l.lat, lng: l.lng })), [locations, user?.id, myLoc])
+  const travel = useTravelTimes(myLoc ? { lat: myLoc.lat, lng: myLoc.lng } : null, travelTargets)
+  const followWho = followUid ? locations[followUid] : null
+  const destTargets = useMemo(() => followWho && dest ? [{ id: 'dest', lat: dest.lat, lng: dest.lng }] : [],
+    [followWho, dest])
+  const destTravel = useTravelTimes(followWho && dest ? { lat: followWho.lat, lng: followWho.lng } : null, destTargets)
 
   // Only show the GPS error banner when the map is empty AND we have an error.
   // If locations are already visible, the GPS error is a background update
@@ -855,10 +885,19 @@ export default function MapAllPage() {
             it back in one tap without reopening Find Fam. */}
         {followUid && locations[followUid] && dest && (() => {
           const who = locations[followUid]
-          const km = haversineKm(who.lat, who.lng, dest.lat, dest.lng)
-          const road = roadKm(km)
-          const eta = etaLabel(t, km)
-          const far = road == null ? '' : road < 1 ? `${Math.round(road * 10) * 100} m` : `${road.toFixed(1)} km`
+          // Google's route from the followed member to the spot, by the first mode it
+          // offers (car where there is a road). No route, or no answer yet: just the name.
+          // Until Google answers (or where it has no route, or the lookup fails) the
+          // straight line stretched to a rough road length, with a "~" on the arrival,
+          // so the chip always shows a distance.
+          const tr = destTravel.for('dest')
+          const line = haversineKm(who.lat, who.lng, dest.lat, dest.lng)
+          const est = tr?.km == null ? estimateArrival(line) : null
+          const eta = tr?.arriveAt ? t('map.destReachBy', { time: arrivalLabel(tr) })
+            : est ? t('map.destReachBy', { time: '~' + arrivalTextAt(est.arriveAt) }) : null
+          const road = tr?.km != null ? tr.km : line == null ? null : line * (line > 25 ? 1.2 : 1.3)
+          const km = tr?.km != null ? road : line
+          const far = road == null ? '…' : road < 1 ? `${Math.round(road * 10) * 100} m` : `${formatKm(road)} km`
           return (
             <div style={{
               position: 'absolute', left: '50%', bottom: 72, transform: 'translateX(-50%)',

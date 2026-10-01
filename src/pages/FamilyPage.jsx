@@ -9,7 +9,11 @@ import LostPhoneSheet from '../components/LostPhoneSheet'
 import Dialog from '../components/Dialog'
 import { useT } from '../i18n'
 import InviteSheet from '../components/InviteSheet'
-import FamilyIllustration from '../components/FamilyIllustration'
+import FamilyDoodles from '../components/FamilyDoodles'
+import FamilyScene from '../components/FamilyScene'
+import { useFamilyBackground } from '../hooks/useFamilyBackground'
+import WeatherSheet from '../components/WeatherSheet'
+import { formatKm } from '../lib/numberFormat'
 // One colour rule for every screen. The card used to rotate seven maroon shades
 // by list position, so a member looked different here than on the map and in
 // chat, and changed colour whenever someone joined or left.
@@ -20,7 +24,7 @@ import { setNicknameLocally, useNicknames } from '../hooks/useNicknames'
 import Icon from '../components/Icon'
 import { useMemberWeather } from '../hooks/useMemberWeather'
 import { weatherView, cellKey } from '../lib/weather'
-import { etaLabel } from '../lib/eta'
+import { useTravelTimes } from '../lib/travelTimes'
 
 
 // Takes the translator rather than reading the store directly, so these stay
@@ -96,13 +100,28 @@ const LOCATION_STALE_MS = 15 * 60 * 1000
 const SIGNAL_STALE_MS = 5 * 60 * 1000
 
 /**
- * A position fresh enough to put weather beside. An old position says nothing
- * about the weather where the member is now, so the card shows none for it.
+ * A position recent enough to put weather beside. Weather changes slowly, so the place
+ * somebody was at a little while ago still says something true about their day; this
+ * used to be the same 15 minutes as "Live", which hid the weather the moment a phone
+ * went quiet for a quarter of an hour (a screen-off phone does that routinely). Past
+ * three hours the person may be somewhere else entirely, so the card shows none.
  */
+const WEATHER_FRESH_MS = 3 * 60 * 60 * 1000
 function isFreshLoc(l) {
   return !!l && l.isSharing !== false && l.locEnabled !== false
     && Number(l.lat) !== 0 && Number(l.lng) !== 0 && l.lat != null && l.lng != null
-    && !!l.updatedAt && (Date.now() - new Date(l.updatedAt)) < LOCATION_STALE_MS
+    && !!l.updatedAt && (Date.now() - new Date(l.updatedAt)) < WEATHER_FRESH_MS
+}
+
+/**
+ * Any known position for a member who has not switched sharing off. The card
+ * shows the weather at the last place they were even when that is old or their
+ * location is off, in a muted colour (see isFreshLoc for the bright case), so
+ * the weather does not vanish the moment a phone goes quiet.
+ */
+function hasPosition(l) {
+  return !!l && l.isSharing !== false
+    && l.lat != null && l.lng != null && Number(l.lat) !== 0 && Number(l.lng) !== 0
 }
 
 /**
@@ -273,8 +292,7 @@ function formatDistance(t, km) {
   if (km == null) return null
   if (km < 0.1) return t('family.nearby')
   if (km < 1) return t('family.metersAway', { n: Math.round(km * 1000) })
-  if (km < 10) return t('family.kmAway', { n: km.toFixed(1) })
-  return t('family.kmAway', { n: Math.round(km) })
+  return t('family.kmAway', { n: formatKm(km) })
 }
 
 // ── Long-press action sheet: Edit Name + Remove ──
@@ -342,7 +360,7 @@ export default function FamilyPage() {
   const [locations, setLocations]       = useState({})
   // Weather for members with a fresh position (member-weather edge function).
   const weatherPoints = useMemo(
-    () => Object.values(locations).filter(isFreshLoc).map(l => ({ lat: l.lat, lng: l.lng })),
+    () => Object.values(locations).filter(hasPosition).map(l => ({ lat: l.lat, lng: l.lng })),
     [locations])
   const weather = useMemberWeather(weatherPoints)
   const [joinRequests, setJoinRequests] = useState([])
@@ -354,11 +372,13 @@ export default function FamilyPage() {
   const [memberAnchor, setMemberAnchor] = useState(null)
   const [showInviteSheet, setShowInviteSheet]       = useState(false)
   const [newFamilyName, setNewFamilyName]           = useState('')
+  const { background: familyBg } = useFamilyBackground(familyId)
   const [isOwner, setIsOwner]           = useState(false)      // is current user the family creator?
   const [dialog, setDialog]             = useState(null)
   // Phones marked lost in this family (user_id → row), and the sheet that marks one.
   const [lostMap, setLostMap]     = useState({})
   const [lostSheet, setLostSheet] = useState(null)
+  const [weatherFor, setWeatherFor] = useState(null)   // { name, lat, lng, fresh }: the open weather sheet
   const [lostBusy, setLostBusy]   = useState(false)
   const longPressTimer = useRef(null)
   const didLongPress = useRef(false)
@@ -387,6 +407,14 @@ export default function FamilyPage() {
   // My own location (used as the reference point for distance calc)
   const myLoc = user ? locations[user.id] : null
   const myHasCoords = myLoc && myLoc.lat && myLoc.lng && !(myLoc.lat === 0 && myLoc.lng === 0)
+
+  // Real road distance and travel times to everyone else, from Google Maps. Which
+  // modes a card offers depends on what Google found for THAT member: someone in a
+  // place with no bus service gets no bus icon.
+  const travelTargets = useMemo(() => !myHasCoords ? [] : Object.entries(locations)
+    .filter(([uid, l]) => uid !== user?.id && l?.isSharing && l.lat && l.lng && !(l.lat === 0 && l.lng === 0))
+    .map(([uid, l]) => ({ id: uid, lat: l.lat, lng: l.lng })), [locations, user?.id, myHasCoords])
+  const travel = useTravelTimes(myHasCoords ? { lat: myLoc.lat, lng: myLoc.lng } : null, travelTargets)
 
   // Name to show for a member: MY private nickname if I set one, else their real name.
   // Nicknames are private — they never change what other people see.
@@ -995,6 +1023,25 @@ export default function FamilyPage() {
       </div>
 
       <PullToRefresh onRefresh={loadData}>
+      {/* Tiny outline doodles (family, house, fence, hearts, map, chat) behind the
+          whole page: an absolute layer the size of the visible area, so it fills the
+          empty space however short the member list is. The content sits above it. */}
+      <div aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, pointerEvents: 'none',
+        // Quiet behind the member cards (the first screenful), full strength lower down.
+        WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0, rgba(0,0,0,0.2) 150px, #000 340px)',
+        maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0, rgba(0,0,0,0.2) 150px, #000 340px)' }}>
+        {!familyBg && <FamilyDoodles />}
+      </div>
+      {/* The family's own picture, when one has been set up (Profile → My families), in
+          place of the doodles: anchored to the bottom, faded out towards the top so the
+          member cards above it stay clear. */}
+      {familyBg && (
+        <div aria-hidden="true" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 0, pointerEvents: 'none',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0, #000 38%)',
+          maskImage: 'linear-gradient(to bottom, transparent 0, #000 38%)' }}>
+          <FamilyScene members={familyBg.members} scene={familyBg.scene} />
+        </div>
+      )}
       {/* minHeight 100% + flex column so the decorative illustration at the
           bottom can take the leftover space with marginTop:auto. With a long
           member list there is no leftover space and it simply follows the
@@ -1003,7 +1050,7 @@ export default function FamilyPage() {
         className="page-content-inner"
         style={{
           padding: '18px 16px', minHeight: '100%', boxSizing: 'border-box',
-          display: 'flex', flexDirection: 'column',
+          display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1,
         }}
       >
 
@@ -1104,6 +1151,144 @@ export default function FamilyPage() {
             // show_last_seen was written to the database by the privacy toggle
             // and then never read here, so turning it off changed nothing on
             // screen. Mirrors how show_online is handled directly above.
+
+            // The location state used to be a big pin in the card's right column. It now
+            // sits on the status row, right after the weather, as a small pin and a word.
+            // The states and their colours are unchanged:
+            /* Four distinct location states, because they are different
+                problems with different fixes and used to look the same:
+                  sharing + GPS on   → green pin, "Live"
+                  sharing + GPS off  → RED pin,   "No GPS"
+                  sharing turned off → grey pin + red X, "Off"
+                  nothing reported yet → grey pin, "Waiting"
+
+                That last one is why somebody who had only just joined
+                showed a red X and "Off" while their location was on: a
+                member has no locations row until their phone lands its
+                first fix, and an absent row was read as "switched off".
+                RLS hides a non-sharing member's row from everyone else,
+                so the row cannot tell the two apart — show_location can,
+                and it travels on the member record itself.
+
+                gpsOff is only meaningful while sharing is on: with
+                sharing off the device stops reporting the flag at all. */
+            // Distance and arrival to this member, from Google (see lib/travelTimes).
+            const trip = (() => {
+              // Distance from me to this member — never shown for myself,
+              // and unavailable until both of us have a fix.
+              //
+              // The row is rendered even when there is nothing to say,
+              // holding a non-breaking space. Returning null collapsed it
+              // and made that member's card a line shorter than the rest,
+              // which is why the list looked ragged.
+              let label = null
+              let tr = null        // Google's answer for this member (road distance)
+              if (m.user_id !== user?.id && myHasCoords && loc?.isSharing
+                  && loc.lat && loc.lng && !(loc.lat === 0 && loc.lng === 0)) {
+                const km = distanceKm(myLoc.lat, myLoc.lng, loc.lat, loc.lng)
+                tr = travel.for(m.user_id)
+                // Google's road distance for the chosen mode once it has answered;
+                // until then, or where it knows no route, the straight line.
+                label = formatDistance(t, tr?.km ?? km)
+              }
+
+              // When a member has gone quiet, this line stops being about
+              // distance and starts being about why. Their phone reported
+              // its own setup while it was still working, so the likely
+              // reason is already known — showing it here is what turns
+              // "she is not updating" into something someone can act on.
+              //
+              // Only while stale, and only for a reported false: NULL means
+              // the device has not reported yet (older build, or not opened
+              // since the update) and must not be read as a fault.
+              const reason = m.user_id !== user?.id && locStale
+                ? (loc?.batteryOptIgnored === false ? t('family.healthBatteryOpt')
+                  : loc?.bgLocation === false ? t('family.healthNoBgLocation')
+                  : null)
+                : null
+              if (reason) { label = reason; tr = null }
+              // Both lines are always rendered (a non-breaking space when
+              // empty) so every card keeps the same height.
+              return { label, tr }
+            })()
+            const gps = (() => {
+                const sharingOff = m.show_location === false
+                const sharing    = !sharingOff && !!loc?.isSharing
+                // A row on its own is not a position: the privacy toggle
+                // seeds one at 0,0 (sync_location_sharing_all_families) as
+                // a placeholder, and calling that "Live" would be worse
+                // than saying nothing.
+                const hasFix = hasLocationRow && !!loc.lat && !!loc.lng
+                  && !(loc.lat === 0 && loc.lng === 0)
+                // A fresh position outranks the flag. location_enabled is
+                // stored per family, and until the 20260918070000 migration
+                // the all-families writer never cleared it — so a member who
+                // had location off once kept showing "No GPS" in her other
+                // families while her pin moved. A position that arrived
+                // minutes ago is proof the phone has location on.
+                const gpsOff = sharing && loc?.locEnabled === false
+                  && !(hasFix && !locStale)
+                const waiting = !sharingOff && !gpsOff && !hasFix
+                // Fifth state: sharing is on, GPS is on, a position exists —
+                // and none of it has been refreshed for a long time. Every
+                // flag above says "fine", so without this the card reports a
+                // hours-old position as Live with a confident distance,
+                // which is worse than reporting nothing. The age replaces
+                // the "Live" label, so it sits directly above the distance
+                // and qualifies it.
+                const stale = !sharingOff && !gpsOff && hasFix && locStale
+                // Traffic-light colours, so a glance reads right:
+                //   green = Live, amber = on but not updating,
+                //   red   = location switched off on their phone.
+                // "No GPS" used to be --muted, a dark mauve that read as the
+                // app's own maroon (buttons, headers) rather than as a
+                // problem. Off (sharing turned off in Famora) and Waiting
+                // stay neutral: neither is something going wrong.
+                const pinFill = sharingOff || waiting ? 'var(--muted3)'
+                  : gpsOff ? '#DC2626'
+                  : stale ? '#F59E0B'
+                  : '#10B981'
+                const label   = sharingOff ? t('family.gpsOff')
+                  : gpsOff ? t('family.gpsNoFix')
+                  : waiting ? t('family.gpsWaiting')
+                  : stale ? formatLastSeen(t, loc.updatedAt)
+                  : t('family.gpsLive')
+                // Label follows its pin. Red and amber labels are a shade
+                // darker than the pin so 9px text stays readable on white.
+                const labelColor = waiting ? 'var(--muted-soft)'
+                  : sharingOff ? 'var(--muted)'
+                  : gpsOff ? '#B91C1C'
+                  : stale ? '#B45309'
+                  : '#10B981'
+
+              return { sharingOff, pinFill, label, labelColor }
+            })()
+            const gpsChip = (
+              <span role="img" aria-label={gps.label} style={{
+                display: 'flex', alignItems: 'center', gap: 2, color: gps.labelColor,
+                fontSize: 9, fontWeight: 700, letterSpacing: 0.2, whiteSpace: 'nowrap',
+              }}>
+                <span style={{ position: 'relative', width: 16, height: 16, display: 'flex', flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill={gps.pinFill} />
+                    <circle cx="12" cy="9" r="2.5" fill="#fff" />
+                  </svg>
+                  {/* Strike-through only when sharing was deliberately switched off. */}
+                  {gps.sharingOff && (
+                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0 }}>
+                      <line x1="4" y1="4" x2="20" y2="20" stroke="var(--muted)" strokeWidth="2.5" strokeLinecap="round" />
+                      <line x1="20" y1="4" x2="4" y2="20" stroke="var(--muted)" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                  )}
+                </span>
+                {gps.label}
+              </span>
+            )
+            // Others show their distance from you; your own card says so with "You".
+            const distText = m.user_id === user?.id ? t('common.you') : trip.label
+            const distChip = distText ? (
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text2)', whiteSpace: 'nowrap' }}>{distText}</span>
+            ) : null
             const sharesLastSeen = m.show_last_seen !== false
             const lastSeen = sharesLastSeen ? formatLastSeen(t, m.last_active) : null
             // Falls back to when they joined, which is the only thing known
@@ -1145,8 +1330,39 @@ export default function FamilyPage() {
                     transition: 'all 0.3s',
                   }} />
                 </div>
+                {/* Weather chip, top-right corner: tap for the full weather. It stops the
+                    touch and the click here so the card's own tap (the call menu) and
+                    its long press (edit or remove) do not fire as well. */}
+                {(() => {
+                  if (!hasPosition(loc)) return null
+                  const v = weatherView(weather[cellKey(loc.lat, loc.lng)])
+                  if (!v) return null
+                  const fresh = isFreshLoc(loc)
+                  const text = t('weather.at', { label: t('weather.' + v.key) + ', ' + v.temp + '°' })
+                  const stop = e => e.stopPropagation()
+                  return (
+                    <button type="button" aria-label={text} title={text}
+                      onClick={e => { e.stopPropagation(); setWeatherFor({ name: nameFor(m), lat: loc.lat, lng: loc.lng, fresh, self: m.user_id === user?.id }) }}
+                      onMouseDown={stop} onMouseUp={stop} onTouchStart={stop} onTouchEnd={stop}
+                      style={{
+                        // Above .member-info (z-index 2), which spans the whole card and would otherwise
+                        // sit on top of the chip and take its taps.
+                        position: 'absolute', top: 10, right: 10, zIndex: 3,
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        padding: '5px 10px 5px 8px', borderRadius: 999, cursor: 'pointer',
+                        background: '#FBEFF3', border: '1.5px solid var(--maroon)', fontFamily: 'inherit',
+                        color: 'var(--maroon)',
+                        fontSize: 13, fontWeight: v.severe ? 900 : 700,
+                      }}>
+                      <Icon name={v.icon} size={16} strokeWidth={v.severe ? 2.3 : 2} />
+                      {v.temp}°
+                    </button>
+                  )
+                })()}
+                {/* Only the name and status lines keep clear of the weather chip in the
+                    corner; the battery / signal / GPS row below runs the full width. */}
                 <div className="member-info">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, paddingRight: hasPosition(loc) ? 62 : 0 }}>
                     <div className="member-name" style={{ color: 'var(--text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nameFor(m)}</div>
                     {lostMap[m.user_id] && (
                       <span style={{
@@ -1162,7 +1378,7 @@ export default function FamilyPage() {
                         : 'family.notSignedIn')}
                     />
                   </div>
-                  <div className="member-meta" style={{ color: 'var(--muted2)' }}>
+                  <div className="member-meta" style={{ color: 'var(--muted2)', paddingRight: hasPosition(loc) ? 62 : 0 }}>
                     {online ? (
                       <span style={{ color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
@@ -1197,10 +1413,9 @@ export default function FamilyPage() {
                   // Battery has been collected and stored since the location
                   // service landed, but was never surfaced anywhere.
                   const pct = loc?.battery
-                  if (pct == null || Number.isNaN(pct)) {
-                    return <div style={{ fontSize: 11, lineHeight: '13px', marginTop: 5.5 }}>&nbsp;</div>
-                  }
-                  const level = Math.max(0, Math.min(100, Math.round(pct)))
+                  // No reading: the row still shows the GPS state and the distance.
+                  const hasBattery = !(pct == null || Number.isNaN(pct))
+                  const level = hasBattery ? Math.max(0, Math.min(100, Math.round(pct))) : 0
                   const charging = !!loc?.isCharging
                   // The app's muted rose, already used for secondary text
                   // elsewhere on this screen. Full maroon was too heavy for a
@@ -1216,11 +1431,21 @@ export default function FamilyPage() {
                   const stale = loc?.updatedAt
                     ? (Date.now() - new Date(loc.updatedAt)) > LOCATION_STALE_MS
                     : true
+                  // One divider between neighbours, drawn as the left border of every item
+                  // after the first. The wrapper clips the first item's border, and the same
+                  // happens at the start of any line the row wraps onto, so a divider never
+                  // dangles at a line's end or start. Items never shrink: squeezed by a long
+                  // row, the old layout shrank the 1.5px dividers and the battery icon to
+                  // nothing, which is what made them vanish.
+                  const item = {
+                    display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
+                    marginLeft: 5, paddingLeft: 5, borderLeft: '1.5px solid var(--muted-soft)',
+                  }
                   return (
                     <span
                       title={stale ? 'Last known battery — this member has not reported recently' : undefined}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 4,
+                        display: 'block', overflow: 'hidden',
                         fontSize: 11, fontWeight: 800, color, whiteSpace: 'nowrap',
                         // 5.5, not 3: the icons on this row (bolt, battery,
                         // bars) stand taller than text, so the same 3px gap
@@ -1228,223 +1453,56 @@ export default function FamilyPage() {
                         // and the status line. This evens the two out.
                         marginTop: 5.5,
                       }}>
-                      {/* Signal first, then battery. */}
-                      <SignalIcon loc={loc} color={color} t={t} />
-                      {loc?.networkType && <span aria-hidden="true" style={{ width: 1.5, height: 14, borderRadius: 1, background: 'currentColor', opacity: 0.6, margin: '0 3px' }} />}
-                      <svg width="21" height="12" viewBox="0 0 26 14" fill="none" aria-hidden="true">
-                        <rect x="1" y="1" width="21" height="12" rx="3"
-                          stroke={color} strokeWidth="2" />
-                        {/* Minimum 2px of fill so a nearly-flat battery still
-                            reads as "some charge" rather than an empty shell.
-                            While charging the width is animated from this
-                            level up to full; --bat-w hands the keyframe each
-                            member's own starting point. */}
-                        <rect
-                          className={charging ? 'battery-fill-charging' : undefined}
-                          x="3.5" y="3.5"
-                          width={Math.max(2, (level / 100) * 16)}
-                          height="7" rx="1.5" fill={color}
-                          style={charging ? { '--bat-w': `${Math.max(2, (level / 100) * 16)}px` } : undefined}
-                        />
-                        <path d="M24 5 v4" stroke={color} strokeWidth="3" strokeLinecap="round" />
-                        {/* Bolt inside the battery. SVG, not the ⚡ emoji, so it
-                            can be tinted; the white outline keeps it readable
-                            over both the filled and the empty part. */}
-                        {charging && (
-                          <path transform="translate(8.6 2.4) scale(0.76)"
-                            d="M4.6 0 0 6.6h2.7L2.2 12 7.4 5.1H4.4L4.6 0z"
-                            fill="var(--maroon-ink)" stroke="#fff" strokeWidth="1"
-                            strokeLinejoin="round" paintOrder="stroke" />
-                        )}
-                      </svg>
-                      {level}%
-                      {/* Weather sits right after the battery reading, behind a divider. */}
-                      {(() => {
-                        if (!isFreshLoc(loc)) return null
-                        const v = weatherView(weather[cellKey(loc.lat, loc.lng)])
-                        if (!v) return null
-                        const c = v.severe ? 'var(--maroon)' : color
-                        const label = t('weather.at', { label: t('weather.' + v.key) + ', ' + v.temp + '°' })
-                        return (
-                          <>
-                          <span aria-hidden="true" style={{ width: 1.5, height: 14, borderRadius: 1, background: 'currentColor', opacity: 0.6, margin: '0 3px' }} />
-                          <span role="img" aria-label={label} title={label} style={{
-                            display: 'flex', alignItems: 'center', gap: 2, color: c,
-                          }}>
-                            <Icon name={v.icon} size={14} strokeWidth={v.severe ? 2.3 : 2} />
-                            {v.temp}°
+                      <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', rowGap: 4, marginLeft: -11.5 }}>
+                        {/* Signal first, then battery. */}
+                        {loc?.networkType && <span style={item}><SignalIcon loc={loc} color={color} t={t} /></span>}
+                        {hasBattery && (
+                          <span style={item}>
+                            <svg width="21" height="12" viewBox="0 0 26 14" fill="none" aria-hidden="true">
+                              <rect x="1" y="1" width="21" height="12" rx="3"
+                                stroke={color} strokeWidth="2" />
+                              {/* Minimum 2px of fill so a nearly-flat battery still
+                                  reads as "some charge" rather than an empty shell.
+                                  While charging the width is animated from this
+                                  level up to full; --bat-w hands the keyframe each
+                                  member's own starting point. */}
+                              <rect
+                                className={charging ? 'battery-fill-charging' : undefined}
+                                x="3.5" y="3.5"
+                                width={Math.max(2, (level / 100) * 16)}
+                                height="7" rx="1.5" fill={color}
+                                style={charging ? { '--bat-w': `${Math.max(2, (level / 100) * 16)}px` } : undefined}
+                              />
+                              <path d="M24 5 v4" stroke={color} strokeWidth="3" strokeLinecap="round" />
+                              {/* Bolt inside the battery. SVG, not the ⚡ emoji, so it
+                                  can be tinted; the white outline keeps it readable
+                                  over both the filled and the empty part. */}
+                              {charging && (
+                                <path transform="translate(8.6 2.4) scale(0.76)"
+                                  d="M4.6 0 0 6.6h2.7L2.2 12 7.4 5.1H4.4L4.6 0z"
+                                  fill="var(--maroon-ink)" stroke="#fff" strokeWidth="1"
+                                  strokeLinejoin="round" paintOrder="stroke" />
+                              )}
+                            </svg>
+                            {level}%
                           </span>
-                          </>
-                        )
-                      })()}
+                        )}
+                        {/* GPS and its distance are one item: they stay side by side, and
+                            if the row is too long they move to the next line together. */}
+                        <span style={item}>
+                          {gpsChip}
+                          {distChip && (
+                            <>
+                              <span aria-hidden="true" style={{ width: 1.5, height: 12, borderRadius: 1, background: 'var(--muted-soft)', margin: '0 1px' }} />
+                              {distChip}
+                            </>
+                          )}
+                        </span>
+                      </span>
                     </span>
                   )
                 })()}
-                </div>
 
-                {/* Location sharing indicator — right side */}
-                <div style={{
-                  marginLeft: 'auto', flexShrink: 0,
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', gap: 3,
-                  alignSelf: 'flex-start', paddingTop: 4,
-                  // Fixed, not minWidth: the column used to grow with its text,
-                  // and a card with a distance and ETA under the pin got a wider
-                  // column than one without, so the centred pins sat at
-                  // different x. 88 fits the widest English line ("Reach by
-                  // 05:20 PM", about 85px); longer text overflows evenly on
-                  // both sides.
-                  width: 88,
-                }}>
-                  {/* Four distinct location states, because they are different
-                      problems with different fixes and used to look the same:
-                        sharing + GPS on   → green pin, "Live"
-                        sharing + GPS off  → RED pin,   "No GPS"
-                        sharing turned off → grey pin + red X, "Off"
-                        nothing reported yet → grey pin, "Waiting"
-
-                      That last one is why somebody who had only just joined
-                      showed a red X and "Off" while their location was on: a
-                      member has no locations row until their phone lands its
-                      first fix, and an absent row was read as "switched off".
-                      RLS hides a non-sharing member's row from everyone else,
-                      so the row cannot tell the two apart — show_location can,
-                      and it travels on the member record itself.
-
-                      gpsOff is only meaningful while sharing is on: with
-                      sharing off the device stops reporting the flag at all. */}
-                  {(() => {
-                    const sharingOff = m.show_location === false
-                    const sharing    = !sharingOff && !!loc?.isSharing
-                    // A row on its own is not a position: the privacy toggle
-                    // seeds one at 0,0 (sync_location_sharing_all_families) as
-                    // a placeholder, and calling that "Live" would be worse
-                    // than saying nothing.
-                    const hasFix = hasLocationRow && !!loc.lat && !!loc.lng
-                      && !(loc.lat === 0 && loc.lng === 0)
-                    // A fresh position outranks the flag. location_enabled is
-                    // stored per family, and until the 20260918070000 migration
-                    // the all-families writer never cleared it — so a member who
-                    // had location off once kept showing "No GPS" in her other
-                    // families while her pin moved. A position that arrived
-                    // minutes ago is proof the phone has location on.
-                    const gpsOff = sharing && loc?.locEnabled === false
-                      && !(hasFix && !locStale)
-                    const waiting = !sharingOff && !gpsOff && !hasFix
-                    // Fifth state: sharing is on, GPS is on, a position exists —
-                    // and none of it has been refreshed for a long time. Every
-                    // flag above says "fine", so without this the card reports a
-                    // hours-old position as Live with a confident distance,
-                    // which is worse than reporting nothing. The age replaces
-                    // the "Live" label, so it sits directly above the distance
-                    // and qualifies it.
-                    const stale = !sharingOff && !gpsOff && hasFix && locStale
-                    // Traffic-light colours, so a glance reads right:
-                    //   green = Live, amber = on but not updating,
-                    //   red   = location switched off on their phone.
-                    // "No GPS" used to be --muted, a dark mauve that read as the
-                    // app's own maroon (buttons, headers) rather than as a
-                    // problem. Off (sharing turned off in Famora) and Waiting
-                    // stay neutral: neither is something going wrong.
-                    const pinFill = sharingOff || waiting ? 'var(--muted3)'
-                      : gpsOff ? '#DC2626'
-                      : stale ? '#F59E0B'
-                      : '#10B981'
-                    const label   = sharingOff ? t('family.gpsOff')
-                      : gpsOff ? t('family.gpsNoFix')
-                      : waiting ? t('family.gpsWaiting')
-                      : stale ? formatLastSeen(t, loc.updatedAt)
-                      : t('family.gpsLive')
-                    // Label follows its pin. Red and amber labels are a shade
-                    // darker than the pin so 9px text stays readable on white.
-                    const labelColor = waiting ? 'var(--muted-soft)'
-                      : sharingOff ? 'var(--muted)'
-                      : gpsOff ? '#B91C1C'
-                      : stale ? '#B45309'
-                      : '#10B981'
-                    return (
-                      <>
-                        <div style={{ position: 'relative', width: 28, height: 28 }}>
-                          {/* Map pin SVG */}
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
-                              fill={pinFill} />
-                            <circle cx="12" cy="9" r="2.5" fill="#fff" />
-                          </svg>
-                          {/* Strike-through X overlay only when sharing was
-                              deliberately switched off. A member who simply
-                              has not reported yet gets a plain grey pin. */}
-                          {sharingOff && (
-                            <svg width="28" height="28" viewBox="0 0 24 24"
-                              style={{ position: 'absolute', top: 0, left: 0 }}>
-                              <line x1="4" y1="4" x2="20" y2="20"
-                                stroke="var(--muted)" strokeWidth="2.5" strokeLinecap="round" />
-                              <line x1="20" y1="4" x2="4" y2="20"
-                                stroke="var(--muted)" strokeWidth="2.5" strokeLinecap="round" />
-                            </svg>
-                          )}
-                        </div>
-                        <span style={{
-                          fontSize: 9, fontWeight: 700, letterSpacing: 0.2,
-                          color: labelColor,
-                        }}>
-                          {label}
-                        </span>
-                      </>
-                    )
-                  })()}
-                  {(() => {
-                    // Distance from me to this member — never shown for myself,
-                    // and unavailable until both of us have a fix.
-                    //
-                    // The row is rendered even when there is nothing to say,
-                    // holding a non-breaking space. Returning null collapsed it
-                    // and made that member's card a line shorter than the rest,
-                    // which is why the list looked ragged.
-                    let label = null
-                    let etaText = null   // rough arrival time, on its own line under the distance
-                    if (m.user_id !== user?.id && myHasCoords && loc?.isSharing
-                        && loc.lat && loc.lng && !(loc.lat === 0 && loc.lng === 0)) {
-                      const km = distanceKm(myLoc.lat, myLoc.lng, loc.lat, loc.lng)
-                      const eta = etaLabel(t, km)
-                      label = formatDistance(t, km)
-                      etaText = eta
-                    }
-
-                    // When a member has gone quiet, this line stops being about
-                    // distance and starts being about why. Their phone reported
-                    // its own setup while it was still working, so the likely
-                    // reason is already known — showing it here is what turns
-                    // "she is not updating" into something someone can act on.
-                    //
-                    // Only while stale, and only for a reported false: NULL means
-                    // the device has not reported yet (older build, or not opened
-                    // since the update) and must not be read as a fault.
-                    const reason = m.user_id !== user?.id && locStale
-                      ? (loc?.batteryOptIgnored === false ? t('family.healthBatteryOpt')
-                        : loc?.bgLocation === false ? t('family.healthNoBgLocation')
-                        : null)
-                      : null
-                    if (reason) { label = reason; etaText = null }
-                    // Both lines are always rendered (a non-breaking space when
-                    // empty) so every card keeps the same height.
-                    return (
-                      <>
-                        <span style={{
-                          fontSize: 9, fontWeight: 600, color: 'var(--muted)',
-                          marginTop: 1, whiteSpace: 'nowrap',
-                        }}>
-                          {label || ' '}
-                        </span>
-                        <span style={{
-                          fontSize: 9, fontWeight: 600, color: 'var(--muted)',
-                          whiteSpace: 'nowrap',
-                        }}>
-                          {etaText || ' '}
-                        </span>
-                      </>
-                    )
-                  })()}
                 </div>
 
               </div>
@@ -1452,18 +1510,13 @@ export default function FamilyPage() {
           })
         )}
 
-        {/* Decorative filler for the empty space below a short member list */}
-        {/* paddingBottom clears the invite FAB, which sits 18px up and is 56px
-            tall. Without it the button lands on the right-hand parent figure and
-            the artwork reads as damaged rather than decorative. */}
-        <div style={{
-          marginTop: 'auto', paddingTop: 30, paddingBottom: 84,
-          display: 'flex', justifyContent: 'center', flexShrink: 0,
-        }}>
-          <FamilyIllustration />
-        </div>
       </div>
       </PullToRefresh>
+
+      {weatherFor && (
+        <WeatherSheet name={weatherFor.name} lat={weatherFor.lat} lng={weatherFor.lng}
+          fresh={weatherFor.fresh} self={weatherFor.self} onClose={() => setWeatherFor(null)} />
+      )}
 
       {lostSheet && (
         <LostPhoneSheet name={nameFor(lostSheet)} busy={lostBusy}
@@ -1529,7 +1582,8 @@ export default function FamilyPage() {
             background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
             border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 6px 20px rgba(139,13,61,0.42)',
+            // No coloured halo: it read as a glow. A tight neutral shadow only.
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
             padding: 0,
           }}
         >

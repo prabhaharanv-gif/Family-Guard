@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { withCaptcha, prefetchCaptchaToken } from '../lib/captcha'
+import { withCaptcha, prefetchCaptchaToken, cancelCaptchaPrefetch } from '../lib/captcha'
 import { useNavigate } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
 import { useT } from '../i18n'
@@ -239,7 +239,7 @@ function WebDeleteFlow() {
 }
 
 export default function DeleteAccountPage() {
-  useEffect(() => { prefetchCaptchaToken(1) }, [])
+  useEffect(() => { prefetchCaptchaToken(1); return cancelCaptchaPrefetch }, [])
   const navigate = useNavigate()
   const t = useT()
 

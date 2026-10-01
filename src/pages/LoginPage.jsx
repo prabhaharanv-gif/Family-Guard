@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { withCaptcha, prefetchCaptchaToken } from '../lib/captcha'
+import { withCaptcha, prefetchCaptchaToken, cancelCaptchaPrefetch } from '../lib/captcha'
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { useT } from '../i18n'
 import AuthLanguagePicker from '../components/AuthLanguagePicker'
@@ -24,7 +24,7 @@ function EyeIcon({ open }) {
 }
 
 function ForgotPasswordModal({ onClose }) {
-  useEffect(() => { prefetchCaptchaToken(1) }, [])
+  useEffect(() => { prefetchCaptchaToken(1); return cancelCaptchaPrefetch }, [])
   const t = useT()
   const [mobile, setMobile]             = useState('')
   const [otp, setOtp]                   = useState('')
@@ -250,7 +250,7 @@ function ForgotPasswordModal({ onClose }) {
 }
 
 export default function LoginPage() {
-  useEffect(() => { prefetchCaptchaToken(2) }, [])
+  useEffect(() => { prefetchCaptchaToken(2); return cancelCaptchaPrefetch }, [])
   const t = useT()
   const [mobile, setMobile]             = useState('')
   const [password, setPassword]         = useState('')

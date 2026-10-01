@@ -38,3 +38,42 @@ describe('captcha with a site key', () => {
     expect(captchaEnabled()).toBe(true)
   })
 })
+
+// A challenge box asked for ahead of time must not outlive the page that asked.
+// The tests run without a DOM, so window and document are minimal stand-ins.
+describe('cancelCaptchaPrefetch', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('removes a challenge box that is still waiting, so it cannot cover another screen', async () => {
+    const boxes = new Set()
+    const removed = []
+    const turnstile = {
+      render: (box, opts) => { opts['before-interactive-callback'](); return 7 },
+      remove: id => removed.push(id),
+    }
+    vi.stubGlobal('window', { turnstile })
+    vi.stubGlobal('document', {
+      head: { appendChild: () => {} },
+      body: { appendChild: box => boxes.add(box) },
+      createElement: () => {
+        const box = { style: {}, setAttribute: () => {}, remove() { boxes.delete(box) } }
+        return box
+      },
+    })
+    const { prefetchCaptchaToken, cancelCaptchaPrefetch } = await loadWithKey('0xTESTKEY')
+
+    prefetchCaptchaToken(1)
+    await new Promise(r => setTimeout(r, 0))
+    expect(boxes.size).toBe(1)
+
+    cancelCaptchaPrefetch()
+
+    expect(boxes.size).toBe(0)
+    expect(removed).toEqual([7])
+  })
+
+  it('is harmless when nothing is pending', async () => {
+    const { cancelCaptchaPrefetch } = await loadWithKey('')
+    expect(() => cancelCaptchaPrefetch()).not.toThrow()
+  })
+})

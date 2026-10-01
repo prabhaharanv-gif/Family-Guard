@@ -61,6 +61,9 @@ const PATHS = {
   wStorm:      <><path d="M6 16.33A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.97" /><path d="m13 12-3 5h4l-3 5" /></>,
   wHeat:       <><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" /><path d="M12 14v-4" /></>,
   wWind:       <><path d="M12.8 19.6A2 2 0 1 0 14 16H2M17.5 8a2.5 2.5 0 1 1 2 4H2M9.8 4.4A2 2 0 1 1 11 8H2" /></>,
+  wDrop:       <path d="M12 3s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.2 12 3 12 3z" />,
+  wUmbrella:   <><path d="M3 12a9 9 0 0 1 18 0z" /><path d="M12 12v6a2 2 0 0 0 4 0" /></>,
+  wLeaf:       <><path d="M5 19c0-9 6-14 15-14 0 9-5 15-14 15" /><path d="M5 19c2-4 5-7 9-9" /></>,
 }
 
 export default function Icon({ name, size = '1.1em', strokeWidth = 2, color = 'currentColor', style }) {

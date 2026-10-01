@@ -33,10 +33,8 @@ function resolveColor(color) {
   return getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() || fallback
 }
 
-// Every avatar on the map wears a maroon ring outside its white edge, so it
-// stands off the map tiles in the brand colour. ring = null draws the plain
-// white-edged pin.
-const RING_COLOR = 'var(--maroon)'
+// Every avatar on the map wears a white edge. ring is the edge colour; null is white too.
+const RING_COLOR = '#fff'
 function paint(drawAvatar, ring = RING_COLOR) {
   const size = devicePixels()
   const canvas = document.createElement('canvas')
@@ -48,7 +46,7 @@ function paint(drawAvatar, ring = RING_COLOR) {
   const c = PIN_SIZE / 2
   const r = AVATAR / 2
 
-  // Outer disc with the shadow: white, or the ring colour with white inside.
+  // Outer disc with the shadow: the ring colour, or white when there is no ring.
   g.save()
   g.shadowColor = 'rgba(0,0,0,0.25)'
   g.shadowBlur = 8
@@ -58,14 +56,7 @@ function paint(drawAvatar, ring = RING_COLOR) {
   g.fillStyle = ring ? resolveColor(ring) : '#fff'
   g.fill()
   g.restore()
-  let inner = r - RING
-  if (ring) {
-    g.beginPath()
-    g.arc(c, c, r - RING, 0, Math.PI * 2)
-    g.fillStyle = '#fff'
-    g.fill()
-    inner = r - RING - 2
-  }
+  const inner = r - RING
 
   // Avatar, clipped to the circle inside the ring.
   g.save()
@@ -78,11 +69,31 @@ function paint(drawAvatar, ring = RING_COLOR) {
   return canvas.toDataURL('image/png')
 }
 
+/**
+ * CSS's `box-shadow: inset dx dy blur color` on a disc: the shadow of everything outside
+ * the circle, cast inward. Canvas shadows ignore the transform, so the sizes are scaled by k.
+ */
+function insetShadow(g, c, r, k, dx, dy, blur, color) {
+  g.save()
+  g.beginPath(); g.arc(c, c, r, 0, Math.PI * 2); g.clip()
+  g.shadowColor = color; g.shadowBlur = blur * k
+  g.shadowOffsetX = dx * k; g.shadowOffsetY = dy * k
+  g.beginPath()
+  g.rect(c - r - 50, c - r - 50, (r + 50) * 2, (r + 50) * 2)
+  g.moveTo(c + r, c); g.arc(c, c, r, 0, Math.PI * 2, true)
+  g.fillStyle = '#000'; g.fill('evenodd')
+  g.restore()
+}
+
 /** Coloured disc with the member's initial. Synchronous, so a pin can go up at once. */
 export function initialPin(color, initial, ring = RING_COLOR) {
   return paint((g, c, r) => {
     g.fillStyle = resolveColor(color)
     g.fillRect(c - r, c - r, r * 2, r * 2)
+    // Puffy, drawn the same as the browser map's CSS (two inset shadows).
+    const k = g.getTransform().a
+    insetShadow(g, c, r, k, 0, 2, 4, 'rgba(255,255,255,0.35)')
+    insetShadow(g, c, r, k, 0, -3, 6, 'rgba(0,0,0,0.14)')
     g.fillStyle = '#fff'
     g.font = '800 18px Inter, sans-serif'
     g.textAlign = 'center'
@@ -293,9 +304,19 @@ export const helperDot = () => dot('helperFound', HELPER_DOT, (g, c) => {
 
 // ── Long-press destination ──────────────────────────────────────────────────
 // The spot held on the map while following someone ("how far is their trip to
-// here?"). A bigger maroon disc with a white core, so it reads as a target and
-// not as a Timeline stay dot.
-export const DEST_PIN = 26
-export const destPin = () => dot('destination', DEST_PIN, (g, c, maroon) => {
-  disc(g, c, c - 0.5, '#fff'); disc(g, c, c - 3, maroon); disc(g, c, c - 9, '#fff'); disc(g, c, c - 11.5, maroon)
+// here?"): a maroon flag on a pole with a white edge, so it reads as a place to
+// reach and not as a Timeline stay dot. The foot of the pole is the spot itself,
+// so the maps anchor the icon there (DEST_ANCHOR), not at its centre.
+export const DEST_PIN = 34
+export const DEST_ANCHOR = { x: 10, y: 31 }
+export const destPin = () => dot('destinationFlag', DEST_PIN, (g, _c, maroon) => {
+  g.lineCap = 'round'; g.lineJoin = 'round'
+  const flag = () => { g.beginPath(); g.moveTo(10, 3.5); g.lineTo(29, 10); g.lineTo(10, 16.5); g.closePath() }
+  const pole = () => { g.beginPath(); g.moveTo(10, 3.5); g.lineTo(10, 31); }
+  // White edge first, so the flag stays readable on any map colour.
+  g.strokeStyle = '#fff'; g.lineWidth = 5.5; pole(); g.stroke(); flag(); g.stroke()
+  g.beginPath(); g.arc(10, 31, 3.6, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill()
+  g.strokeStyle = maroon; g.lineWidth = 2.2; pole(); g.stroke()
+  g.fillStyle = maroon; flag(); g.fill()
+  g.beginPath(); g.arc(10, 31, 2, 0, Math.PI * 2); g.fillStyle = maroon; g.fill()
 })

@@ -937,9 +937,9 @@ export default function SOSPage() {
         />
       )}
 
-      {/* Fixed height: the right-hand control differs per tab (switch, Clear
-          Resolved, nothing), and the bar used to resize with it. */}
-      <div className="top-bar" style={{ boxSizing: 'border-box', height: 68 }}>
+      {/* The shared .top-bar height keeps this bar the same size whatever the
+          right-hand control is (switch, Clear Resolved, nothing). */}
+      <div className="top-bar">
         <div>
           <div className="top-bar-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

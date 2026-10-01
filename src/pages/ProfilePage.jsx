@@ -3,7 +3,7 @@ import { registerPlugin, Capacitor } from '@capacitor/core'
 const LocationService = registerPlugin('LocationService')
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { withCaptcha, prefetchCaptchaToken } from '../lib/captcha'
+import { withCaptcha, prefetchCaptchaToken, cancelCaptchaPrefetch } from '../lib/captcha'
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { avatarColor } from '../lib/avatarColor'
 import { useAuthStore } from '../store/authStore'
@@ -17,7 +17,6 @@ import ShakeSosCard from '../components/ShakeSosCard'
 import SosTileCard from '../components/SosTileCard'
 import WeatherAlertsCard from '../components/WeatherAlertsCard'
 import OverspeedAlertCard from '../components/OverspeedAlertCard'
-import DrivingTripsCard from '../components/DrivingTripsCard'
 import CrashDetectionCard from '../components/CrashDetectionCard'
 import LostPhoneCard from '../components/LostPhoneCard'
 import SosVoiceClipCard from '../components/SosVoiceClipCard'
@@ -174,7 +173,7 @@ function familyInitial(name) {
 }
 
 function ChangePasswordModal({ onClose, userPhone }) {
-  useEffect(() => { prefetchCaptchaToken(2) }, [])   // current-password check + the SMS
+  useEffect(() => { prefetchCaptchaToken(2); return cancelCaptchaPrefetch }, [])   // current-password check + the SMS
   const t = useT()
   const [oldPw, setOldPw]       = useState('')
   const [pw, setPw]             = useState('')
@@ -1432,7 +1431,6 @@ export default function ProfilePage() {
           open={openGroup === "driving"} onOpen={() => setOpenGroup("driving")} onBack={() => setOpenGroup(null)}
         >
           <OverspeedAlertCard Toggle={Toggle} />
-          <DrivingTripsCard Toggle={Toggle} />
           <CrashDetectionCard Toggle={Toggle} />
         </Group>
 

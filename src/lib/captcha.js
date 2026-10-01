@@ -32,6 +32,8 @@ const INTERACTIVE_TIMEOUT_MS = 90_000
 export const captchaEnabled = () => !!SITE_KEY
 
 let scriptPromise = null
+/** Dismiss callbacks for every widget currently on the go. */
+const live = new Set()
 
 function loadScript() {
   if (typeof window === 'undefined') return Promise.reject(new Error('no window'))
@@ -70,11 +72,14 @@ async function requestToken() {
     const finish = token => {
       if (done) return
       done = true
+      live.delete(cancel)
       clearTimeout(timer)
       try { if (widgetId != null) window.turnstile.remove(widgetId) } catch { /* already gone */ }
       box.remove()
       resolve(token || undefined)
     }
+    const cancel = () => finish(undefined)
+    live.add(cancel)
     const arm = ms => { clearTimeout(timer); timer = setTimeout(() => finish(undefined), ms) }
     arm(SILENT_TIMEOUT_MS)
 
@@ -110,6 +115,17 @@ export function prefetchCaptchaToken(count = 1) {
   if (!SITE_KEY) return
   pool = pool.filter(e => Date.now() - e.at < TOKEN_TTL_MS)
   while (pool.length < count) pool.push({ at: Date.now(), promise: requestToken() })
+}
+
+/**
+ * Drop every token still being fetched and every unused one, taking down any
+ * challenge box with them. A page calls this when it closes: tokens are asked for
+ * ahead of time, so one still waiting for a tap would otherwise sit over
+ * whichever screen the person had moved on to (it showed over the map).
+ */
+export function cancelCaptchaPrefetch() {
+  pool = []
+  for (const c of [...live]) c()
 }
 
 /** A single-use token: a ready one if there is one, else a new request. */
