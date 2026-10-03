@@ -1,7 +1,7 @@
 // Single source for the colour behind an initial-letter avatar.
 //
 // `family_members.avatar_color` still defaults to the old blue (#4F8EF7) in
-// the database, so every member created before the Famora rebrand — and every
+// the database, so every member created before the Kinest rebrand — and every
 // member created since, unless someone picked a colour by hand — carries that
 // blue. The Family list already treated it as "unset" and painted maroon;
 // this makes the rest of the app agree instead of each screen re-deciding.

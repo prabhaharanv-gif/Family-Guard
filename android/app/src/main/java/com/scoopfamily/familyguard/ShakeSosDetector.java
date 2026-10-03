@@ -184,7 +184,7 @@ final class ShakeSosDetector implements SensorEventListener {
     private void holdAwake() {
         try {
             if (listenLock == null) {
-                listenLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Famora::ShakeListen");
+                listenLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Kinest::ShakeListen");
                 listenLock.setReferenceCounted(false);
             }
             listenLock.acquire(LISTEN_AFTER_MOTION_MS);

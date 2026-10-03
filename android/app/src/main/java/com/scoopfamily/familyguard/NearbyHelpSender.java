@@ -12,7 +12,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Raw REST calls for the "Famora Social" nearby-help RPCs — accept_nearby_help,
+ * Raw REST calls for the "Kinest Social" nearby-help RPCs — accept_nearby_help,
  * decline_nearby_help, get_nearby_help_location.
  *
  * Reached from NearbyHelpActionReceiver, a BroadcastReceiver fired from a

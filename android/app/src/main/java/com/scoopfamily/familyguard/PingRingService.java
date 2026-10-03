@@ -162,7 +162,7 @@ public class PingRingService extends Service {
             if (pm == null) return;
             wakeLock = pm.newWakeLock(
                 PowerManager.PARTIAL_WAKE_LOCK,
-                "Famora::PingRingWakeLock"
+                "Kinest::PingRingWakeLock"
             );
             wakeLock.setReferenceCounted(false);
             wakeLock.acquire(RING_DURATION_MS + 5_000L);
@@ -190,7 +190,7 @@ public class PingRingService extends Service {
                 PowerManager.SCREEN_BRIGHT_WAKE_LOCK
                     | PowerManager.ACQUIRE_CAUSES_WAKEUP
                     | PowerManager.ON_AFTER_RELEASE,
-                "Famora::PingScreenWakeLock"
+                "Kinest::PingScreenWakeLock"
             );
             screenWakeLock.setReferenceCounted(false);
             screenWakeLock.acquire(10_000L);

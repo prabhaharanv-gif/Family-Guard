@@ -46,7 +46,7 @@ export default function BackgroundLocationDisclosure({ open, onAccept, onDecline
         </div>
 
         <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.65, marginBottom: 16 }}>
-          Famora collects location data to show your position to your family
+          Kinest collects location data to show your position to your family
           group on a shared map, and to include it in SOS alerts —{' '}
           <strong style={{ color: 'var(--text)' }}>
             even when the app is closed or not in use

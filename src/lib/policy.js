@@ -32,7 +32,7 @@
  * ── 27 September 2026: a position is an estimate ─────────────────────────
  * One line under How We Use It says the location shown is an estimate — GPS,
  * Wi-Fi and mobile-network accuracy, and where the phone is, decide how far a
- * pin can be off — and that Famora keeps the last reliable position rather
+ * pin can be off — and that Kinest keeps the last reliable position rather
  * than showing one that looks wrong. It is there because the map no longer
  * draws an accuracy circle, so nothing else tells a member a pin can be off.
  *
@@ -108,15 +108,15 @@ export const SECTION_META = [
 const CONTENT = {
   // ──────────────────────────────────────────────────────────────── English ──
   en: {
-    lastUpdated: '27 September 2026',
+    lastUpdated: '3 October 2026',
     pageTitle: 'Privacy Policy',
     consentTitle: 'Privacy Policy & Terms of Use',
     lastUpdatedLabel: 'Last updated',
-    promiseLead: 'Famora is built on a simple promise:',
+    promiseLead: 'Kinest is built on a simple promise:',
     promiseStrong: 'your data belongs to you and your family — nobody else.',
     promiseTail: 'We collect only what is necessary to keep your family safe and connected.',
     intro:
-      'Famora helps families stay connected and reach each other quickly in an ' +
+      'Kinest helps families stay connected and reach each other quickly in an ' +
       'emergency. It shares your location, messages and calls only with the family ' +
       'group you choose to join — and, if you switch on offline SMS alerts, with one ' +
       'extra number you pick yourself. This page explains exactly what is collected, ' +
@@ -143,13 +143,14 @@ const CONTENT = {
           'Motion sensor readings, only while Shake for SOS is switched on — they are judged on your phone and never sent anywhere',
           'The extra phone number you enter for offline SMS alerts, if you use that feature',
           'Crash and diagnostic reports, if the app stops working — see below',
-          "If you switch on Driving trips: the start and end time, distance, average and top speed of each drive, and the number of hard brakes and hard accelerations — worked out from the location fixes above, with no extra sensor",
           "Your saved places (a name and a position) and the speed limit you set for Overspeed alert, if you use them — saved places are visible only to you",
           "If Phone lost is used on your phone: the fact that it is marked lost, who marked it, any short message they typed, and the phone's position every few seconds while it is lost",
           "Your network type (Wi-Fi or mobile data) and signal strength, shown to your family on your card",
           "When you arrive at or leave a place you saved (such as Home or Office): the place name, whether you arrived or left, and the time. Your family is told this, but never the exact position of the place",
           "If you switch on Voice clip with my SOS: up to 15 seconds of audio recorded by your phone after you send an SOS from the app, and a photo from your camera if you choose to add one",
           "If you opt in to Nearby Help: your approximate position, so people who send an SOS near you can be matched with you; a blurred, anonymous dot on the nearby-people map; and your answers to help requests",
+          "Photos, videos, audio files, documents and voice messages you attach in chat, up to 50 MB each",
+          "Whether you are online, when you were last active and whether you are signed in on your phone, shown to your family unless you hide them in Profile → Privacy",
         ],
       },
       use: {
@@ -162,16 +163,18 @@ const CONTENT = {
           'Call and video content is never recorded or stored by us',
           'We do not read your messages, and we do not sell your data',
           'We do not use your data for advertising or profiling',
-          "Overspeed alert and Driving trips are off unless you switch them on. Once on, your family group can see your trips and is told when you drive above the limit you chose, and you get a warning on your own phone too",
+          "Overspeed alert is off unless you switch it on. Once on, your family group is told when you drive above the limit you chose, and you get a warning on your own phone too",
           "Severe-weather alerts warn only you, about your own saved places. Only an approximate area of each place (rounded to about 11 km) is sent, by our server, to OpenWeatherMap",
           "Crash detection is off unless you switch it on. It never sends anything by itself: a recognised crash only starts a 20-second countdown, and an SOS goes out only if you do not cancel",
           "Phone lost is off unless you switch on \"Allow Phone lost\" in Profile → Safety. Only then can an admin of one of your families mark your phone lost. While it is, the phone reports its position every few seconds, rings every 2 minutes and shows the message on the lock screen, and every member of the family can see that it is marked lost. It stops after 12 hours or when it is marked found",
           "Your family is told when your phone battery falls to 15% or 5% while not charging, when your phone has sent no update for about 45 minutes (phone off, or no network), and when it reports again. These alerts carry the battery level and how long the phone was silent. Turning location sharing off in Profile → Privacy stops them. Offline alerts are held back from 11 PM to 6 AM, India time",
           "A voice clip or photo attached to an SOS goes only to the families that SOS was sent to. It is stored privately, is never shown to Nearby Help helpers, and is deleted after 7 days",
           "Nearby Help is off unless you opt in. When an SOS may reach a family too far away to help, the closest opted-in people (first within 2 km, then 5 km, then 10 km) are asked to phone the right emergency number for the sender. They see only the approximate area and the kind of help needed, never a name or phone number; the exact position is shown only to the one person who accepts. Nobody is asked to travel to the spot",
-          "Because of Nearby Help, when you send an SOS that has a position, the approximate area of the SOS and the kind of help needed may be sent to opted-in Famora users near it. They never receive your name, phone number, messages, voice clip or photo",
+          "Because of Nearby Help, when you send an SOS that has a position, the approximate area of the SOS and the kind of help needed may be sent to opted-in Kinest users near it. They never receive your name, phone number, messages, voice clip or photo",
           "Arrival and leaving notices for your saved places go to your family group; the exact position of a place stays with you",
-          "The locations shown in Famora are estimates. How exact a position is depends on GPS signal, Wi-Fi and the mobile network, and on where the phone is (indoors and between tall buildings are the hardest). A pin can be tens of metres off, and in poor conditions a few hundred metres, and it can lag behind real movement. Famora only shows a position after checking it: when a new reading looks unreliable it keeps the last reliable one instead. Do not rely on it for an exact position, and in an emergency call the emergency services",
+          "The locations shown in Kinest are estimates. How exact a position is depends on GPS signal, Wi-Fi and the mobile network, and on where the phone is (indoors and between tall buildings are the hardest). A pin can be tens of metres off, and in poor conditions a few hundred metres, and it can lag behind real movement. Kinest only shows a position after checking it: when a new reading looks unreliable it keeps the last reliable one instead. Do not rely on it for an exact position, and in an emergency call the emergency services",
+          "While your own SOS is active, Kinest uses Android's Do Not Disturb access to put your phone on silent so nothing gives you away. Your sound settings are restored when the SOS is resolved. Nothing is sent anywhere",
+          "Kinest is not designed for children and is not directed at them. Use it only if you are old enough to accept this policy yourself. A parent or guardian is responsible for any account they set up for someone else",
         ],
       },
       calls: {
@@ -182,6 +185,7 @@ const CONTENT = {
           'Only call records are stored — never the conversation itself',
           'Microphone is used during a call; camera only during a video call',
           'Any family member can clear the call history for the family',
+          "Up to 6 family members can be in one call. Anyone in the call can add another family member, who is then rung. Group calls are not recorded either; only the call record is kept",
         ],
       },
       sms: {
@@ -206,6 +210,7 @@ const CONTENT = {
           'Your nicknames for other members, and your language choice, are stored on your phone for you alone',
           'Everything in this section is removed when you uninstall the app',
           "Crash detection reads the motion sensor only while it is switched on and you are travelling fast. The readings are judged on your phone and never uploaded",
+          "If you pick an alert sound from your phone, only a reference to it is kept, on your phone. The sound file is never uploaded",
         ],
       },
       crash: {
@@ -251,11 +256,11 @@ const CONTENT = {
           'Unused device notification tokens are removed after 60 days',
           'Deleting your account removes your data from these records',
           'Settings kept on your phone — fake call details, offline SMS numbers, nicknames — go when you uninstall the app',
-          "Driving trips are deleted automatically after 30 days, and at once when you turn Driving trips off",
           "Phone lost records are deleted when lost mode ends, and in any case after 12 hours",
           "SOS voice clips and photos are deleted automatically after 7 days",
           "Nearby Help requests and answers are deleted together with the SOS they belong to, 30 days after it is resolved",
           "Place arrival and leaving notices, and battery and phone-offline alerts, are kept until you delete your account, and are then removed",
+          "Files attached in chat are deleted automatically within about a day after their message is deleted, including when it reaches 90 days. Your profile photo is deleted within about a day of you deleting your account",
         ],
       },
       choices: {
@@ -267,9 +272,9 @@ const CONTENT = {
           'Turn Shake for SOS off at any time in Profile',
           'Turn offline SMS alerts off at any time in Profile, and remove the extra number',
           'Clear message and call history from their respective screens',
-          'Delete your account and its data from Profile → Delete My Account, or from the Delete Account page on the Famora website without the app',
+          'Delete your account and its data from Profile → Delete My Account, or from the Delete Account page on the Kinest website without the app',
           'Withdraw camera, microphone, location, SMS or notification access in Android settings',
-          "Turn Overspeed alert, Driving trips and Crash detection on or off at any time in Profile → Driving safety, and Weather alerts in Profile → Safety",
+          "Turn Overspeed alert and Crash detection on or off at any time in Profile → Driving safety, and Weather alerts in Profile → Safety",
           "Turn \"Allow Phone lost\" on or off at any time in Profile → Safety",
           "Turn Voice clip with my SOS on or off at any time in Profile → Safety",
           "Opt in or out of Nearby Help at any time from the SOS page, and hide entries from your own Nearby Help history",
@@ -282,15 +287,15 @@ const CONTENT = {
   // ────────────────────────────────────────────────────────────────── Tamil ──
   // See the NOT REVIEWED BY A LAWYER note at the top of this file.
   ta: {
-    lastUpdated: '27 செப்டம்பர் 2026',
+    lastUpdated: '3 அக்டோபர் 2026',
     pageTitle: 'தனியுரிமைக் கொள்கை',
     consentTitle: 'தனியுரிமைக் கொள்கை & பயன்பாட்டு விதிமுறைகள்',
     lastUpdatedLabel: 'கடைசியாகப் புதுப்பிக்கப்பட்டது',
-    promiseLead: 'Famora ஒரு எளிய உறுதிமொழியின் மீது கட்டப்பட்டுள்ளது:',
+    promiseLead: 'Kinest ஒரு எளிய உறுதிமொழியின் மீது கட்டப்பட்டுள்ளது:',
     promiseStrong: 'உங்கள் தரவு உங்களுக்கும் உங்கள் குடும்பத்திற்கும் மட்டுமே சொந்தம் — வேறு யாருக்கும் அல்ல.',
     promiseTail: 'உங்கள் குடும்பத்தைப் பாதுகாப்பாகவும் இணைந்தும் வைத்திருக்கத் தேவையானதை மட்டுமே நாங்கள் சேகரிக்கிறோம்.',
     intro:
-      'Famora குடும்பங்கள் இணைந்திருக்கவும், அவசர நேரத்தில் ஒருவரை ஒருவர் விரைவாக ' +
+      'Kinest குடும்பங்கள் இணைந்திருக்கவும், அவசர நேரத்தில் ஒருவரை ஒருவர் விரைவாக ' +
       'அடையவும் உதவுகிறது. நீங்கள் இணையத் தேர்ந்தெடுக்கும் குடும்பக் குழுவுடன் மட்டுமே ' +
       'உங்கள் இருப்பிடம், செய்திகள் மற்றும் அழைப்புகள் பகிரப்படுகின்றன — மேலும், "இணையம் இல்லாதபோது SMS" இயக்கினால், நீங்களே தேர்ந்தெடுக்கும் ஒரு கூடுதல் எண்ணுடனும். என்ன ' +
       'சேகரிக்கப்படுகிறது, ஏன், யாருடன் பகிரப்படுகிறது, எவ்வளவு காலம் வைக்கப்படுகிறது ' +
@@ -317,13 +322,14 @@ const CONTENT = {
 'இயக்க உணரி அளவீடுகள், "குலுக்கினால் SOS" இயக்கத்தில் இருக்கும்போது மட்டும் — அவை உங்கள் கைபேசியிலேயே ஆராயப்படுகின்றன, எங்கும் அனுப்பப்படுவதில்லை',
           '"இணையம் இல்லாதபோது SMS" பயன்படுத்தினால், அதற்காக நீங்கள் உள்ளிடும் கூடுதல் தொலைபேசி எண்',
           'செயலி வேலை செய்யாமல் நின்றால், செயலிழப்பு மற்றும் கண்டறிதல் அறிக்கைகள் — கீழே காண்க',
-          "நீங்கள் \"ஓட்டப் பயணங்கள்\" இயக்கினால்: ஒவ்வொரு பயணத்தின் தொடக்க, முடிவு நேரம், தூரம், சராசரி மற்றும் அதிகபட்ச வேகம், திடீர் பிரேக் மற்றும் திடீர் வேகமெடுப்பின் எண்ணிக்கை — மேலே உள்ள இருப்பிடத் தரவிலிருந்தே கணக்கிடப்படுகிறது, கூடுதல் சென்சார் இல்லை",
           "நீங்கள் சேமித்த இடங்கள் (பெயர் மற்றும் இடம்) மற்றும் \"அதிவேக எச்சரிக்கை\"க்கு நீங்கள் அமைத்த வேக வரம்பு — சேமித்த இடங்கள் உங்களுக்கு மட்டுமே தெரியும்",
           "உங்கள் ஃபோனில் \"தொலைந்த ஃபோன்\" பயன்படுத்தப்பட்டால்: அது தொலைந்ததாகக் குறிக்கப்பட்ட தகவல், யார் குறித்தார், அவர் தட்டச்சு செய்த குறுஞ்செய்தி, தொலைந்த நிலையில் சில வினாடிகளுக்கு ஒருமுறை ஃபோனின் இருப்பிடம்",
           "உங்கள் நெட்வொர்க் வகை (Wi-Fi அல்லது மொபைல் டேட்டா) மற்றும் சிக்னல் வலிமை, உங்கள் குடும்பத்துக்கு உங்கள் அட்டையில் காட்டப்படும்",
           "நீங்கள் சேமித்த இடத்துக்கு (வீடு, அலுவலகம் போன்றவை) வரும்போது அல்லது அங்கிருந்து புறப்படும்போது: இடத்தின் பெயர், வந்தீர்களா புறப்பட்டீர்களா, நேரம். இது உங்கள் குடும்பத்துக்குத் தெரிவிக்கப்படும்; அந்த இடத்தின் சரியான இருப்பிடம் ஒருபோதும் தெரிவிக்கப்படாது",
           "\"என் SOS-உடன் குரல் பதிவு\" இயக்கினால்: செயலியிலிருந்து SOS அனுப்பிய பிறகு உங்கள் ஃபோன் பதிவு செய்யும் 15 வினாடி வரை ஒலி, மேலும் நீங்கள் சேர்க்க விரும்பினால் கேமராவிலிருந்து ஒரு படம்",
           "\"அருகிலுள்ள உதவி\"யில் சேர்ந்தால்: உங்கள் தோராயமான இருப்பிடம் (உங்களுக்கு அருகில் SOS அனுப்புபவர்களுடன் பொருத்த), அருகிலுள்ளவர்கள் வரைபடத்தில் மங்கலான அடையாளமற்ற புள்ளி, மற்றும் உதவிக் கோரிக்கைகளுக்கு நீங்கள் அளிக்கும் பதில்கள்",
+          "அரட்டையில் நீங்கள் இணைக்கும் புகைப்படங்கள், வீடியோக்கள், ஒலிக் கோப்புகள், ஆவணங்கள் மற்றும் குரல் செய்திகள் (ஒவ்வொன்றும் 50 MB வரை)",
+          "நீங்கள் ஆன்லைனில் உள்ளீர்களா, கடைசியாக எப்போது செயலில் இருந்தீர்கள், உங்கள் கைபேசியில் உள்நுழைந்துள்ளீர்களா என்பது — சுயவிவரம் → தனியுரிமையில் மறைக்காவிட்டால் உங்கள் குடும்பத்திற்குக் காட்டப்படும்",
         ],
       },
       use: {
@@ -336,16 +342,18 @@ const CONTENT = {
           'அழைப்பு மற்றும் வீடியோ உள்ளடக்கம் எங்களால் ஒருபோதும் பதிவு செய்யப்படுவதோ சேமிக்கப்படுவதோ இல்லை',
           'உங்கள் செய்திகளை நாங்கள் படிப்பதில்லை, உங்கள் தரவை விற்பதுமில்லை',
           'விளம்பரத்திற்கோ சுயவிவரத் தொகுப்பிற்கோ உங்கள் தரவை நாங்கள் பயன்படுத்துவதில்லை',
-          "\"அதிவேக எச்சரிக்கை\" மற்றும் \"ஓட்டப் பயணங்கள்\" நீங்கள் இயக்கும் வரை அணைந்தே இருக்கும். இயக்கிய பிறகு, உங்கள் குடும்பக் குழு உங்கள் பயணங்களைப் பார்க்கலாம்; நீங்கள் தேர்ந்தெடுத்த வரம்பைத் தாண்டினால் அவர்களுக்குத் தெரிவிக்கப்படும்; உங்கள் ஃபோனிலும் எச்சரிக்கை வரும்",
+          "\"அதிவேக எச்சரிக்கை\" நீங்கள் இயக்கும் வரை அணைந்தே இருக்கும். இயக்கிய பிறகு, நீங்கள் தேர்ந்தெடுத்த வரம்பைத் தாண்டினால் உங்கள் குடும்பக் குழுவுக்குத் தெரிவிக்கப்படும்; உங்கள் ஃபோனிலும் எச்சரிக்கை வரும்",
           "கடுமையான வானிலை எச்சரிக்கைகள் உங்களுக்கு மட்டுமே, உங்கள் சேமித்த இடங்களுக்காக வரும். ஒவ்வொரு இடத்தின் தோராயமான பகுதி மட்டுமே (சுமார் 11 கி.மீ-க்கு வட்டமாக்கப்பட்டது) எங்கள் சர்வரிலிருந்து OpenWeatherMap-க்கு அனுப்பப்படுகிறது",
           "\"விபத்து கண்டறிதல்\" நீங்கள் இயக்கும் வரை அணைந்தே இருக்கும். அது தானாக எதையும் அனுப்பாது: விபத்து என அடையாளம் கண்டால் 20 வினாடி கவுண்ட்டவுன் மட்டுமே தொடங்கும்; நீங்கள் ரத்து செய்யாவிட்டால் மட்டுமே SOS செல்லும்",
           "Profile → Safety-இல் \"தொலைந்த ஃபோன் அனுமதி\"யை நீங்கள் இயக்கும் வரை அது அணைந்தே இருக்கும். இயக்கிய பிறகே உங்கள் குடும்பங்களில் ஒன்றின் நிர்வாகி உங்கள் ஃபோனைத் தொலைந்ததாகக் குறிக்க முடியும். அப்போது ஃபோன் சில வினாடிகளுக்கு ஒருமுறை இருப்பிடத்தைத் தெரிவிக்கும், 2 நிமிடத்துக்கு ஒருமுறை ஒலிக்கும், பூட்டுத் திரையில் செய்தியைக் காட்டும்; குடும்பத்தின் ஒவ்வொருவரும் அது தொலைந்ததாகக் குறிக்கப்பட்டிருப்பதைப் பார்க்கலாம். 12 மணி நேரத்துக்குப் பிறகு அல்லது கிடைத்ததாகக் குறிக்கும்போது நிற்கும்",
           "உங்கள் ஃபோன் பேட்டரி சார்ஜ் ஆகாத நிலையில் 15% அல்லது 5%-க்கு குறையும்போது, சுமார் 45 நிமிடங்களாக ஃபோன் எந்தத் தகவலும் அனுப்பாதபோது (ஃபோன் அணைந்திருக்கலாம் அல்லது நெட்வொர்க் இல்லை), மீண்டும் தகவல் அனுப்பும்போது உங்கள் குடும்பத்துக்குத் தெரிவிக்கப்படும். இந்த எச்சரிக்கைகளில் பேட்டரி அளவும் ஃபோன் எவ்வளவு நேரம் அமைதியாக இருந்தது என்பதும் இருக்கும். Profile → தனியுரிமையில் இருப்பிடப் பகிர்வை அணைத்தால் இவை நின்றுவிடும். ஆஃப்லைன் எச்சரிக்கைகள் இந்திய நேரம் இரவு 11 முதல் காலை 6 வரை நிறுத்தி வைக்கப்படும்",
           "SOS-உடன் இணைக்கப்படும் குரல் பதிவு அல்லது படம் அந்த SOS அனுப்பப்பட்ட குடும்பங்களுக்கு மட்டுமே செல்லும். அது தனிப்பட்ட முறையில் சேமிக்கப்படும், அருகிலுள்ள உதவியாளர்களுக்கு ஒருபோதும் காட்டப்படாது, 7 நாட்களுக்குப் பிறகு நீக்கப்படும்",
           "\"அருகிலுள்ள உதவி\" நீங்கள் சேரும் வரை அணைந்தே இருக்கும். உதவ முடியாத தூரத்தில் உள்ள குடும்பத்துக்கு SOS சென்றடையக்கூடும்போது, மிக அருகிலுள்ள சேர்ந்தவர்களிடம் (முதலில் 2 கி.மீ-க்குள், பிறகு 5 கி.மீ, பிறகு 10 கி.மீ) அனுப்புநருக்காக சரியான அவசர எண்ணை அழைக்கக் கேட்கப்படும். அவர்கள் தோராயமான பகுதியையும் தேவைப்படும் உதவி வகையையும் மட்டுமே பார்ப்பார்கள், பெயரையோ ஃபோன் எண்ணையோ அல்ல; ஏற்றுக்கொள்ளும் ஒருவருக்கு மட்டுமே சரியான இருப்பிடம் காட்டப்படும். யாரும் அந்த இடத்துக்குப் பயணிக்கக் கேட்கப்பட மாட்டார்கள்",
-          "\"அருகிலுள்ள உதவி\" காரணமாக, இருப்பிடத்துடன் நீங்கள் SOS அனுப்பும்போது, அந்த SOS-இன் தோராயமான பகுதியும் தேவைப்படும் உதவி வகையும் அதற்கு அருகில் உள்ள, சேர்ந்த Famora பயனர்களுக்கு அனுப்பப்படலாம். உங்கள் பெயர், ஃபோன் எண், செய்திகள், குரல் பதிவு அல்லது படம் அவர்களுக்குக் கிடைக்காது",
+          "\"அருகிலுள்ள உதவி\" காரணமாக, இருப்பிடத்துடன் நீங்கள் SOS அனுப்பும்போது, அந்த SOS-இன் தோராயமான பகுதியும் தேவைப்படும் உதவி வகையும் அதற்கு அருகில் உள்ள, சேர்ந்த Kinest பயனர்களுக்கு அனுப்பப்படலாம். உங்கள் பெயர், ஃபோன் எண், செய்திகள், குரல் பதிவு அல்லது படம் அவர்களுக்குக் கிடைக்காது",
           "நீங்கள் சேமித்த இடங்களுக்கு வருகை/புறப்பாடு அறிவிப்புகள் உங்கள் குடும்பக் குழுவுக்குச் செல்லும்; இடத்தின் சரியான இருப்பிடம் உங்களிடமே இருக்கும்",
-          "Famora-வில் காட்டப்படும் இருப்பிடங்கள் மதிப்பீடுகளே. ஒரு இடம் எவ்வளவு துல்லியம் என்பது GPS சிக்னல், Wi-Fi, மொபைல் நெட்வொர்க் மற்றும் ஃபோன் இருக்கும் இடத்தைப் பொறுத்தது (கட்டிடத்துக்குள்ளும் உயரமான கட்டிடங்களுக்கு இடையிலும் மிகக் கடினம்). பின் சில பத்து மீட்டர் தள்ளியும், மோசமான நிலையில் சில நூறு மீட்டர் தள்ளியும் காட்டலாம்; உண்மையான நகர்வை விடச் சற்றுப் பின்தங்கவும் செய்யலாம். புதிய பதிவு நம்பகமற்றதாகத் தெரிந்தால் Famora கடைசி நம்பகமான இடத்தையே வைத்திருக்கும். துல்லியமான இடத்திற்கு இதை நம்ப வேண்டாம்; அவசரத்தில் அவசர சேவைகளை அழைக்கவும்",
+          "Kinest-வில் காட்டப்படும் இருப்பிடங்கள் மதிப்பீடுகளே. ஒரு இடம் எவ்வளவு துல்லியம் என்பது GPS சிக்னல், Wi-Fi, மொபைல் நெட்வொர்க் மற்றும் ஃபோன் இருக்கும் இடத்தைப் பொறுத்தது (கட்டிடத்துக்குள்ளும் உயரமான கட்டிடங்களுக்கு இடையிலும் மிகக் கடினம்). பின் சில பத்து மீட்டர் தள்ளியும், மோசமான நிலையில் சில நூறு மீட்டர் தள்ளியும் காட்டலாம்; உண்மையான நகர்வை விடச் சற்றுப் பின்தங்கவும் செய்யலாம். புதிய பதிவு நம்பகமற்றதாகத் தெரிந்தால் Kinest கடைசி நம்பகமான இடத்தையே வைத்திருக்கும். துல்லியமான இடத்திற்கு இதை நம்ப வேண்டாம்; அவசரத்தில் அவசர சேவைகளை அழைக்கவும்",
+          "உங்கள் சொந்த SOS செயலில் இருக்கும்போது, எதுவும் உங்களைக் காட்டிக்கொடுக்காதபடி உங்கள் கைபேசியை அமைதி நிலையில் வைக்க Kinest Android இன் தொந்தரவு செய்யாதே அணுகலைப் பயன்படுத்துகிறது. SOS தீர்க்கப்பட்டதும் உங்கள் ஒலி அமைப்புகள் மீட்டமைக்கப்படும். எதுவும் எங்கும் அனுப்பப்படாது",
+          "Kinest குழந்தைகளுக்காக வடிவமைக்கப்படவில்லை, அவர்களை நோக்கியதும் அல்ல. இந்தக் கொள்கையை நீங்களே ஏற்கும் வயதில் இருந்தால் மட்டும் பயன்படுத்துங்கள். வேறொருவருக்காக அமைக்கும் கணக்கிற்கு பெற்றோர் அல்லது பாதுகாவலரே பொறுப்பு",
         ],
       },
       calls: {
@@ -356,6 +364,7 @@ const CONTENT = {
           'அழைப்புப் பதிவுகள் மட்டுமே சேமிக்கப்படுகின்றன — உரையாடல் ஒருபோதும் அல்ல',
           'அழைப்பின் போது ஒலிவாங்கி பயன்படுத்தப்படுகிறது; வீடியோ அழைப்பின் போது மட்டும் கேமரா',
           'எந்தக் குடும்ப உறுப்பினரும் குடும்பத்தின் அழைப்பு வரலாற்றை நீக்க முடியும்',
+          "ஒரே அழைப்பில் 6 குடும்ப உறுப்பினர்கள் வரை இருக்கலாம். அழைப்பில் உள்ள எவரும் மற்றொரு குடும்ப உறுப்பினரைச் சேர்க்கலாம்; அவருக்கு அழைப்பு ஒலிக்கும். குழு அழைப்புகளும் பதிவு செய்யப்படுவதில்லை; அழைப்புப் பதிவு மட்டுமே வைக்கப்படும்",
         ],
       },
       sms: {
@@ -380,6 +389,7 @@ const CONTENT = {
           'மற்ற உறுப்பினர்களுக்கு நீங்கள் வைக்கும் செல்லப்பெயர்களும், உங்கள் மொழித் தேர்வும் உங்களுக்காக மட்டும் கைபேசியில் சேமிக்கப்படுகின்றன',
           'இந்தப் பகுதியில் உள்ள அனைத்தும் செயலியை நீக்கும்போது அகற்றப்படும்',
           "\"விபத்து கண்டறிதல்\" இயக்கத்தில் இருந்து நீங்கள் வேகமாகப் பயணிக்கும்போது மட்டுமே இயக்க சென்சாரைப் படிக்கும். அளவீடுகள் உங்கள் ஃபோனிலேயே மதிப்பிடப்படும், பதிவேற்றப்படாது",
+          "உங்கள் கைபேசியிலிருந்து ஒரு எச்சரிக்கை ஒலியைத் தேர்ந்தெடுத்தால், அதற்கான குறிப்பு மட்டுமே உங்கள் கைபேசியில் வைக்கப்படும். ஒலிக் கோப்பு ஒருபோதும் பதிவேற்றப்படாது",
         ],
       },
       crash: {
@@ -425,11 +435,11 @@ const CONTENT = {
           'பயன்படுத்தப்படாத சாதன அறிவிப்பு டோக்கன்கள் 60 நாட்களுக்குப் பிறகு அகற்றப்படும்',
           'உங்கள் கணக்கை நீக்கினால், இந்தப் பதிவுகளிலிருந்து உங்கள் தரவு அகற்றப்படும்',
 'உங்கள் கைபேசியில் சேமிக்கப்படும் அமைப்புகள் — போலி அழைப்பு விவரங்கள், "இணையம் இல்லாதபோது SMS" எண்கள், செல்லப்பெயர்கள் — செயலியை நீக்கும்போது போய்விடும்',
-          "ஓட்டப் பயணங்கள் 30 நாட்களுக்குப் பிறகு தானாக நீக்கப்படும்; \"ஓட்டப் பயணங்கள்\" அணைத்தால் உடனே நீக்கப்படும்",
           "தொலைந்த ஃபோன் பதிவுகள் அந்த நிலை முடிந்ததும், எப்படியிருந்தாலும் 12 மணி நேரத்துக்குப் பிறகும் நீக்கப்படும்",
           "SOS குரல் பதிவுகளும் படங்களும் 7 நாட்களுக்குப் பிறகு தானாக நீக்கப்படும்",
           "\"அருகிலுள்ள உதவி\" கோரிக்கைகளும் பதில்களும் அவை சார்ந்த SOS தீர்க்கப்பட்ட 30 நாட்களுக்குப் பிறகு அதனுடன் சேர்ந்து நீக்கப்படும்",
           "இட வருகை/புறப்பாடு அறிவிப்புகள், பேட்டரி மற்றும் ஃபோன் ஆஃப்லைன் எச்சரிக்கைகள் நீங்கள் கணக்கை நீக்கும் வரை வைக்கப்பட்டு, பின்னர் நீக்கப்படும்",
+          "அரட்டையில் இணைக்கப்பட்ட கோப்புகள், அவற்றின் செய்தி நீக்கப்பட்ட (அல்லது 90 நாட்களை எட்டிய) சுமார் ஒரு நாளுக்குள் தானாக நீக்கப்படும். உங்கள் சுயவிவரப் படம், உங்கள் கணக்கை நீக்கிய சுமார் ஒரு நாளுக்குள் நீக்கப்படும்",
         ],
       },
       choices: {
@@ -441,9 +451,9 @@ const CONTENT = {
 '"சுயவிவரம்"-இல் எப்போது வேண்டுமானாலும் "குலுக்கினால் SOS"-ஐ நிறுத்தலாம்',
           '"சுயவிவரம்"-இல் எப்போது வேண்டுமானாலும் "இணையம் இல்லாதபோது SMS"-ஐ நிறுத்தி, கூடுதல் எண்ணை அகற்றலாம்',
           'செய்தி மற்றும் அழைப்பு வரலாற்றை அந்தந்தத் திரைகளிலிருந்து நீக்கலாம்',
-          '"சுயவிவரம்" → "என் கணக்கை நீக்கு" மூலம், அல்லது செயலி இல்லாமல் Famora இணையதளத்தின் "Delete Account" பக்கத்தின் மூலம் உங்கள் கணக்கையும் அதன் தரவையும் நீக்கலாம்',
+          '"சுயவிவரம்" → "என் கணக்கை நீக்கு" மூலம், அல்லது செயலி இல்லாமல் Kinest இணையதளத்தின் "Delete Account" பக்கத்தின் மூலம் உங்கள் கணக்கையும் அதன் தரவையும் நீக்கலாம்',
           'Android அமைப்புகளில் கேமரா, ஒலிவாங்கி, இருப்பிடம், SMS அல்லது அறிவிப்பு அனுமதிகளைத் திரும்பப் பெறலாம்',
-          "Profile → ஓட்டுநர் பாதுகாப்பு-இல் எப்போது வேண்டுமானாலும் \"அதிவேக எச்சரிக்கை\", \"ஓட்டப் பயணங்கள்\", \"விபத்து கண்டறிதல்\" ஆகியவற்றையும், Profile → Safety-இல் \"வானிலை எச்சரிக்கைகள்\" என்பதையும் இயக்கலாம் அல்லது அணைக்கலாம்",
+          "Profile → ஓட்டுநர் பாதுகாப்பு-இல் எப்போது வேண்டுமானாலும் \"அதிவேக எச்சரிக்கை\", \"விபத்து கண்டறிதல்\" ஆகியவற்றையும், Profile → Safety-இல் \"வானிலை எச்சரிக்கைகள்\" என்பதையும் இயக்கலாம் அல்லது அணைக்கலாம்",
           "Profile → Safety-இல் எப்போது வேண்டுமானாலும் \"தொலைந்த ஃபோன் அனுமதி\"யை இயக்கலாம் அல்லது அணைக்கலாம்",
           "Profile → Safety-இல் எப்போது வேண்டுமானாலும் \"என் SOS-உடன் குரல் பதிவு\" இயக்கலாம் அல்லது அணைக்கலாம்",
           "SOS பக்கத்திலிருந்து எப்போது வேண்டுமானாலும் \"அருகிலுள்ள உதவி\"யில் சேரலாம் அல்லது விலகலாம், உங்கள் வரலாற்றிலிருந்து பதிவுகளை மறைக்கலாம்",
@@ -456,15 +466,15 @@ const CONTENT = {
   // ────────────────────────────────────────────────────────────────── Hindi ──
   // See the NOT REVIEWED BY A LAWYER note at the top of this file.
   hi: {
-    lastUpdated: '27 सितंबर 2026',
+    lastUpdated: '3 अक्टूबर 2026',
     pageTitle: 'गोपनीयता नीति',
     consentTitle: 'गोपनीयता नीति और उपयोग की शर्तें',
     lastUpdatedLabel: 'आख़िरी बार अपडेट किया गया',
-    promiseLead: 'Famora एक सीधे वादे पर बना है:',
+    promiseLead: 'Kinest एक सीधे वादे पर बना है:',
     promiseStrong: 'आपका डेटा आपका और आपके परिवार का है — किसी और का नहीं।',
     promiseTail: 'हम केवल वही इकट्ठा करते हैं जो आपके परिवार को सुरक्षित और जुड़ा रखने के लिए ज़रूरी है।',
     intro:
-      'Famora परिवारों को आपस में जुड़े रहने और आपात स्थिति में एक-दूसरे तक तेज़ी से ' +
+      'Kinest परिवारों को आपस में जुड़े रहने और आपात स्थिति में एक-दूसरे तक तेज़ी से ' +
       'पहुँचने में मदद करता है। यह आपकी लोकेशन, संदेश और कॉल केवल उसी परिवार समूह के ' +
       'साथ साझा करता है जिसमें आप ख़ुद शामिल होना चुनते हैं — और, यदि आप "इंटरनेट न होने पर SMS" चालू करते हैं, तो आपके ख़ुद चुने हुए एक अतिरिक्त नंबर के साथ भी। इस पृष्ठ पर ठीक-ठीक बताया ' +
       'गया है कि क्या इकट्ठा किया जाता है, क्यों, किसके साथ साझा होता है और कितने समय ' +
@@ -491,13 +501,14 @@ const CONTENT = {
 'मोशन सेंसर की रीडिंग, केवल तब जब "हिलाकर SOS" चालू हो — इन्हें आपके फ़ोन पर ही परखा जाता है, कहीं भेजा नहीं जाता',
           '"इंटरनेट न होने पर SMS" इस्तेमाल करने पर, उसके लिए आपका दिया हुआ अतिरिक्त फ़ोन नंबर',
           'ऐप के काम करना बंद कर देने पर क्रैश और डायग्नोस्टिक रिपोर्ट — नीचे देखें',
-          "अगर आप ड्राइविंग ट्रिप चालू करते हैं: हर ड्राइव का शुरू और खत्म होने का समय, दूरी, औसत और अधिकतम रफ़्तार, और अचानक ब्रेक व तेज़ शुरुआत की गिनती — ऊपर दिए लोकेशन डेटा से ही निकाली जाती है, कोई अतिरिक्त सेंसर नहीं",
           "आपकी सहेजी हुई जगहें (नाम और स्थान) और अधिक रफ़्तार अलर्ट के लिए आपकी तय की हुई सीमा — सहेजी हुई जगहें सिर्फ़ आपको दिखती हैं",
           "अगर आपके फ़ोन पर \"फ़ोन खोया\" इस्तेमाल होता है: यह कि वह खोया हुआ चिह्नित है, किसने चिह्नित किया, उसका लिखा छोटा संदेश, और खोए रहने के दौरान हर कुछ सेकंड में फ़ोन की लोकेशन",
           "आपका नेटवर्क प्रकार (Wi-Fi या मोबाइल डेटा) और सिग्नल की ताकत, जो आपके परिवार को आपके कार्ड पर दिखती है",
           "जब आप अपनी सहेजी हुई जगह (जैसे घर या ऑफ़िस) पर पहुँचते या वहाँ से निकलते हैं: जगह का नाम, पहुँचे या निकले, और समय। यह आपके परिवार को बताया जाता है, पर उस जगह की सटीक लोकेशन कभी नहीं",
           "अगर आप \"मेरे SOS के साथ वॉइस क्लिप\" चालू करते हैं: ऐप से SOS भेजने के बाद आपका फ़ोन 15 सेकंड तक की आवाज़ रिकॉर्ड करता है, और चाहें तो कैमरे से एक फ़ोटो",
           "अगर आप \"नज़दीकी मदद\" में शामिल होते हैं: आपकी अनुमानित लोकेशन (ताकि आपके पास SOS भेजने वालों से मिलान हो सके), नज़दीकी लोगों के नक्शे पर एक धुँधला, बेनाम बिंदु, और मदद के अनुरोधों पर आपके जवाब",
+          "चैट में आप जो फ़ोटो, वीडियो, ऑडियो फ़ाइलें, दस्तावेज़ और वॉइस संदेश जोड़ते हैं (प्रत्येक 50 MB तक)",
+          "आप ऑनलाइन हैं या नहीं, आख़िरी बार कब सक्रिय थे और आपके फ़ोन में साइन इन हैं या नहीं — प्रोफ़ाइल → गोपनीयता में छिपाए बिना यह आपके परिवार को दिखता है",
         ],
       },
       use: {
@@ -510,16 +521,18 @@ const CONTENT = {
           'कॉल और वीडियो की सामग्री हमारे द्वारा कभी रिकॉर्ड या संग्रहीत नहीं की जाती',
           'हम आपके संदेश नहीं पढ़ते, और हम आपका डेटा नहीं बेचते',
           'हम आपके डेटा का उपयोग विज्ञापन या प्रोफ़ाइलिंग के लिए नहीं करते',
-          "अधिक रफ़्तार अलर्ट और ड्राइविंग ट्रिप तब तक बंद रहते हैं जब तक आप उन्हें चालू न करें। चालू होने पर आपका परिवार समूह आपकी ट्रिप देख सकता है और आपकी चुनी सीमा से तेज़ चलाने पर उसे बताया जाता है, और आपके अपने फ़ोन पर भी चेतावनी आती है",
+          "अधिक रफ़्तार अलर्ट तब तक बंद रहता है जब तक आप उसे चालू न करें। चालू होने पर आपकी चुनी सीमा से तेज़ चलाने पर आपके परिवार समूह को बताया जाता है, और आपके अपने फ़ोन पर भी चेतावनी आती है",
           "गंभीर मौसम अलर्ट सिर्फ़ आपको, आपकी अपनी सहेजी हुई जगहों के लिए चेतावनी देते हैं। हर जगह का सिर्फ़ अनुमानित क्षेत्र (करीब 11 किमी तक गोल किया हुआ) हमारे सर्वर से OpenWeatherMap को भेजा जाता है",
           "दुर्घटना पहचान तब तक बंद रहती है जब तक आप उसे चालू न करें। यह खुद कुछ नहीं भेजती: दुर्घटना पहचानने पर सिर्फ़ 20 सेकंड का काउंटडाउन शुरू होता है, और आप रद्द न करें तभी SOS जाता है",
           "\"फ़ोन खोया\" तब तक बंद रहता है जब तक आप Profile → Safety में \"फ़ोन खोया की अनुमति\" चालू न करें। तभी आपके किसी परिवार का एडमिन आपका फ़ोन खोया हुआ चिह्नित कर सकता है। तब फ़ोन हर कुछ सेकंड में लोकेशन भेजता है, हर 2 मिनट में बजता है और लॉक स्क्रीन पर संदेश दिखाता है, और परिवार का हर सदस्य देख सकता है कि वह खोया चिह्नित है। यह 12 घंटे बाद या \"मिल गया\" चिह्नित करने पर रुक जाता है",
           "आपके परिवार को बताया जाता है जब आपके फ़ोन की बैटरी चार्जिंग न होने पर 15% या 5% तक गिरती है, जब फ़ोन ने लगभग 45 मिनट से कोई अपडेट नहीं भेजा (फ़ोन बंद या नेटवर्क नहीं), और जब वह फिर रिपोर्ट करता है। इन अलर्ट में बैटरी स्तर और फ़ोन कितनी देर चुप रहा यह होता है। Profile → गोपनीयता में लोकेशन साझा करना बंद करने से ये रुक जाते हैं। ऑफ़लाइन अलर्ट भारतीय समय रात 11 से सुबह 6 बजे तक रोके जाते हैं",
           "SOS के साथ जुड़ी वॉइस क्लिप या फ़ोटो सिर्फ़ उन्हीं परिवारों को जाती है जिन्हें वह SOS भेजा गया। वह निजी तौर पर रखी जाती है, नज़दीकी मददगारों को कभी नहीं दिखाई जाती, और 7 दिन बाद हटा दी जाती है",
           "\"नज़दीकी मदद\" तब तक बंद रहती है जब तक आप शामिल न हों। जब कोई SOS ऐसे परिवार तक पहुँच सकता है जो मदद के लिए बहुत दूर है, तो सबसे नज़दीकी शामिल लोगों (पहले 2 किमी, फिर 5 किमी, फिर 10 किमी) से भेजने वाले की ओर से सही आपातकालीन नंबर पर फ़ोन करने को कहा जाता है। उन्हें सिर्फ़ अनुमानित इलाका और ज़रूरत का प्रकार दिखता है, कोई नाम या फ़ोन नंबर नहीं; सटीक लोकेशन सिर्फ़ उस एक व्यक्ति को दिखती है जो स्वीकार करता है। किसी से मौके पर जाने को नहीं कहा जाता",
-          "\"नज़दीकी मदद\" के कारण, जब आप लोकेशन वाला SOS भेजते हैं, तो उस SOS का अनुमानित इलाका और ज़रूरत का प्रकार उसके पास मौजूद, शामिल Famora उपयोगकर्ताओं को भेजा जा सकता है। उन्हें आपका नाम, फ़ोन नंबर, संदेश, वॉइस क्लिप या फ़ोटो कभी नहीं मिलता",
+          "\"नज़दीकी मदद\" के कारण, जब आप लोकेशन वाला SOS भेजते हैं, तो उस SOS का अनुमानित इलाका और ज़रूरत का प्रकार उसके पास मौजूद, शामिल Kinest उपयोगकर्ताओं को भेजा जा सकता है। उन्हें आपका नाम, फ़ोन नंबर, संदेश, वॉइस क्लिप या फ़ोटो कभी नहीं मिलता",
           "आपकी सहेजी हुई जगहों पर पहुँचने और निकलने की सूचनाएँ आपके परिवार समूह को जाती हैं; जगह की सटीक लोकेशन आपके पास ही रहती है",
-          "Famora में दिखने वाली लोकेशन अनुमान होती हैं। लोकेशन कितनी सटीक है, यह GPS सिग्नल, Wi-Fi, मोबाइल नेटवर्क और फ़ोन कहाँ है इस पर निर्भर करता है (घर के अंदर और ऊँची इमारतों के बीच सबसे मुश्किल होता है)। पिन कुछ दसियों मीटर, और ख़राब हालात में कुछ सौ मीटर तक ग़लत हो सकता है, और असली गति से थोड़ा पीछे भी रह सकता है। नई रीडिंग भरोसेमंद न लगे तो Famora आख़िरी भरोसेमंद लोकेशन ही रखता है। सटीक जगह के लिए इस पर निर्भर न रहें, और आपात स्थिति में आपातकालीन सेवाओं को कॉल करें",
+          "Kinest में दिखने वाली लोकेशन अनुमान होती हैं। लोकेशन कितनी सटीक है, यह GPS सिग्नल, Wi-Fi, मोबाइल नेटवर्क और फ़ोन कहाँ है इस पर निर्भर करता है (घर के अंदर और ऊँची इमारतों के बीच सबसे मुश्किल होता है)। पिन कुछ दसियों मीटर, और ख़राब हालात में कुछ सौ मीटर तक ग़लत हो सकता है, और असली गति से थोड़ा पीछे भी रह सकता है। नई रीडिंग भरोसेमंद न लगे तो Kinest आख़िरी भरोसेमंद लोकेशन ही रखता है। सटीक जगह के लिए इस पर निर्भर न रहें, और आपात स्थिति में आपातकालीन सेवाओं को कॉल करें",
+          "आपका अपना SOS चालू रहने पर, Kinest Android की 'परेशान न करें' पहुँच से आपके फ़ोन को साइलेंट कर देता है ताकि कुछ भी आपको उजागर न करे। SOS समाप्त होने पर आपकी ध्वनि सेटिंग वापस आ जाती हैं। कुछ भी कहीं नहीं भेजा जाता",
+          "Kinest बच्चों के लिए नहीं बना है और उन्हें लक्षित नहीं करता। इसका उपयोग तभी करें जब आप इस नीति को स्वयं स्वीकार करने की आयु के हों। किसी और के लिए बनाए गए खाते की ज़िम्मेदारी माता-पिता या अभिभावक की है",
         ],
       },
       calls: {
@@ -530,6 +543,7 @@ const CONTENT = {
           'केवल कॉल रिकॉर्ड संग्रहीत होते हैं — बातचीत कभी नहीं',
           'कॉल के दौरान माइक्रोफ़ोन का उपयोग होता है; कैमरा केवल वीडियो कॉल के दौरान',
           'परिवार का कोई भी सदस्य पूरे परिवार के लिए कॉल इतिहास हटा सकता है',
+          "एक कॉल में 6 तक परिवार के सदस्य हो सकते हैं। कॉल में मौजूद कोई भी दूसरे सदस्य को जोड़ सकता है, जिसे फिर रिंग किया जाता है। ग्रुप कॉल भी रिकॉर्ड नहीं होते; केवल कॉल रिकॉर्ड रखा जाता है",
         ],
       },
       sms: {
@@ -554,6 +568,7 @@ const CONTENT = {
           'दूसरे सदस्यों के लिए रखे आपके उपनाम और आपकी भाषा का चुनाव सिर्फ़ आपके लिए फ़ोन पर रखे जाते हैं',
           'इस भाग की हर चीज़ ऐप अनइंस्टॉल करने पर हट जाती है',
           "दुर्घटना पहचान मोशन सेंसर तभी पढ़ती है जब वह चालू हो और आप तेज़ सफ़र में हों। रीडिंग आपके फ़ोन पर ही जाँची जाती हैं और कभी अपलोड नहीं होतीं",
+          "यदि आप अपने फ़ोन से कोई अलर्ट ध्वनि चुनते हैं, तो उसका केवल संदर्भ आपके फ़ोन में रखा जाता है। ध्वनि फ़ाइल कभी अपलोड नहीं होती",
         ],
       },
       crash: {
@@ -599,11 +614,11 @@ const CONTENT = {
           'उपयोग में न आने वाले डिवाइस नोटिफ़िकेशन टोकन 60 दिनों बाद हटा दिए जाते हैं',
           'खाता हटाने पर इन रिकॉर्ड से आपका डेटा हट जाता है',
 'आपके फ़ोन पर रखी सेटिंग्स — नकली कॉल का विवरण, "इंटरनेट न होने पर SMS" के नंबर, उपनाम — ऐप अनइंस्टॉल करने पर चली जाती हैं',
-          "ड्राइविंग ट्रिप 30 दिन बाद अपने आप हटा दी जाती हैं, और ड्राइविंग ट्रिप बंद करते ही तुरंत हट जाती हैं",
           "\"फ़ोन खोया\" के रिकॉर्ड मोड खत्म होने पर, और हर हाल में 12 घंटे बाद हटा दिए जाते हैं",
           "SOS की वॉइस क्लिप और फ़ोटो 7 दिन बाद अपने आप हटा दी जाती हैं",
           "\"नज़दीकी मदद\" के अनुरोध और जवाब उस SOS के साथ, उसके हल होने के 30 दिन बाद हटा दिए जाते हैं",
           "जगह पर पहुँचने/निकलने की सूचनाएँ तथा बैटरी और फ़ोन-ऑफ़लाइन अलर्ट आपके खाता हटाने तक रखे जाते हैं, फिर हटा दिए जाते हैं",
+          "चैट में जोड़ी गई फ़ाइलें, उनका संदेश हटने (या 90 दिन पूरे होने) के लगभग एक दिन के भीतर अपने आप हटा दी जाती हैं। आपकी प्रोफ़ाइल फ़ोटो आपका खाता हटाने के लगभग एक दिन के भीतर हटा दी जाती है",
         ],
       },
       choices: {
@@ -615,9 +630,9 @@ const CONTENT = {
 'प्रोफ़ाइल में कभी भी "हिलाकर SOS" बंद करें',
           'प्रोफ़ाइल में कभी भी "इंटरनेट न होने पर SMS" बंद करें और अतिरिक्त नंबर हटाएँ',
           'संदेश और कॉल इतिहास उनकी अपनी स्क्रीन से हटाएँ',
-          'अपना खाता और उसका डेटा प्रोफ़ाइल → मेरा खाता हटाएँ से, या ऐप के बिना Famora वेबसाइट के "Delete Account" पेज से हटाएँ',
+          'अपना खाता और उसका डेटा प्रोफ़ाइल → मेरा खाता हटाएँ से, या ऐप के बिना Kinest वेबसाइट के "Delete Account" पेज से हटाएँ',
           'कैमरा, माइक्रोफ़ोन, लोकेशन, SMS या नोटिफ़िकेशन की अनुमति Android सेटिंग्स में वापस लें',
-          "Profile → ड्राइविंग सुरक्षा में कभी भी अधिक रफ़्तार अलर्ट, ड्राइविंग ट्रिप और दुर्घटना पहचान, तथा Profile → Safety में मौसम अलर्ट चालू या बंद करें",
+          "Profile → ड्राइविंग सुरक्षा में कभी भी अधिक रफ़्तार अलर्ट और दुर्घटना पहचान, तथा Profile → Safety में मौसम अलर्ट चालू या बंद करें",
           "Profile → Safety में कभी भी \"फ़ोन खोया की अनुमति\" चालू या बंद करें",
           "Profile → Safety में कभी भी \"मेरे SOS के साथ वॉइस क्लिप\" चालू या बंद करें",
           "SOS पेज से कभी भी \"नज़दीकी मदद\" में शामिल हों या हटें, और अपने इतिहास से प्रविष्टियाँ छिपाएँ",
@@ -630,16 +645,16 @@ const CONTENT = {
   // ───────────────────────────────────────────────────────────────── Telugu ──
   // See the NOT REVIEWED BY A LAWYER note at the top of this file.
   te: {
-    lastUpdated: '27 సెప్టెంబర్ 2026',
+    lastUpdated: '3 అక్టోబర్ 2026',
     pageTitle: 'గోప్యతా విధానం',
     consentTitle: 'గోప్యతా విధానం & వినియోగ నిబంధనలు',
     lastUpdatedLabel: 'చివరిగా నవీకరించినది',
-    promiseLead: 'Famora ఒక సరళమైన వాగ్దానంపై నిర్మించబడింది:',
+    promiseLead: 'Kinest ఒక సరళమైన వాగ్దానంపై నిర్మించబడింది:',
     promiseStrong: 'మీ డేటా మీది, మీ కుటుంబానిది — ఇంకెవరిదీ కాదు.',
     promiseTail: 'మీ కుటుంబాన్ని సురక్షితంగా, అనుసంధానంగా ఉంచడానికి అవసరమైనది మాత్రమే మేము సేకరిస్తాము.',
     intro:
       'కుటుంబాలు అనుసంధానంగా ఉండటానికి, అత్యవసర సమయంలో ఒకరినొకరు వేగంగా ' +
-      'చేరుకోవడానికి Famora సహాయపడుతుంది. మీరు చేరాలని ఎంచుకున్న కుటుంబ గ్రూప్‌తో ' +
+      'చేరుకోవడానికి Kinest సహాయపడుతుంది. మీరు చేరాలని ఎంచుకున్న కుటుంబ గ్రూప్‌తో ' +
       'మాత్రమే ఇది మీ లొకేషన్, సందేశాలు, కాల్‌లను షేర్ చేస్తుంది — అలాగే, "ఇంటర్నెట్ లేనప్పుడు SMS" ఆన్ చేస్తే, మీరే ఎంచుకున్న ఒక అదనపు నంబర్‌తో కూడా. ఏమి సేకరిస్తారు, ' +
       'ఎందుకు, ఎవరితో షేర్ చేస్తారు, ఎంతకాలం ఉంచుతారు అనేది ఈ పేజీలో ఖచ్చితంగా ' +
       'వివరించబడింది.',
@@ -665,13 +680,14 @@ const CONTENT = {
 'మోషన్ సెన్సార్ రీడింగ్‌లు, "ఊపితే SOS" ఆన్‌లో ఉన్నప్పుడు మాత్రమే — అవి మీ ఫోన్‌లోనే పరిశీలించబడతాయి, ఎక్కడికీ పంపబడవు',
           '"ఇంటర్నెట్ లేనప్పుడు SMS" వాడితే, దాని కోసం మీరు ఇచ్చే అదనపు ఫోన్ నంబర్',
           'యాప్ పనిచేయడం ఆగిపోతే క్రాష్, డయాగ్నొస్టిక్ నివేదికలు — కింద చూడండి',
-          "మీరు డ్రైవింగ్ ట్రిప్‌లను ఆన్ చేస్తే: ప్రతి డ్రైవ్ ప్రారంభ, ముగింపు సమయం, దూరం, సగటు మరియు గరిష్ఠ వేగం, అకస్మాత్తు బ్రేక్‌లు మరియు వేగవంతమైన ప్రారంభాల సంఖ్య — పై లొకేషన్ డేటా నుండే లెక్కిస్తారు, అదనపు సెన్సార్ లేదు",
           "మీరు సేవ్ చేసిన ప్రదేశాలు (పేరు మరియు స్థానం) మరియు అధిక వేగ హెచ్చరిక కోసం మీరు పెట్టిన పరిమితి — సేవ్ చేసిన ప్రదేశాలు మీకు మాత్రమే కనిపిస్తాయి",
           "మీ ఫోన్‌లో \"ఫోన్ పోయింది\" వాడితే: అది పోయినట్లు గుర్తించబడిన వాస్తవం, ఎవరు గుర్తించారు, వారు టైప్ చేసిన చిన్న సందేశం, మరియు పోయిన స్థితిలో ప్రతి కొన్ని సెకన్లకు ఫోన్ స్థానం",
           "మీ నెట్‌వర్క్ రకం (Wi-Fi లేదా మొబైల్ డేటా) మరియు సిగ్నల్ బలం, మీ కార్డ్‌పై మీ కుటుంబానికి చూపబడతాయి",
           "మీరు సేవ్ చేసిన ప్రదేశానికి (ఇల్లు, ఆఫీస్ వంటివి) చేరినప్పుడు లేదా అక్కడి నుండి బయలుదేరినప్పుడు: ప్రదేశం పేరు, చేరారా బయలుదేరారా, సమయం. ఇది మీ కుటుంబానికి తెలియజేయబడుతుంది, కానీ ఆ ప్రదేశం యొక్క ఖచ్చితమైన స్థానం ఎప్పుడూ కాదు",
           "మీరు \"నా SOSతో వాయిస్ క్లిప్\"ను ఆన్ చేస్తే: యాప్ నుండి SOS పంపిన తర్వాత మీ ఫోన్ రికార్డ్ చేసే 15 సెకన్ల వరకు ఆడియో, మరియు మీరు జోడించాలనుకుంటే కెమెరా నుండి ఒక ఫోటో",
           "మీరు \"సమీప సహాయం\"లో చేరితే: మీ సుమారు స్థానం (మీ దగ్గర SOS పంపేవారితో సరిపోల్చడానికి), సమీపంలోని వ్యక్తుల మ్యాప్‌లో అస్పష్టమైన, పేరులేని చుక్క, మరియు సహాయ అభ్యర్థనలకు మీ సమాధానాలు",
+          "చాట్‌లో మీరు జత చేసే ఫోటోలు, వీడియోలు, ఆడియో ఫైళ్లు, పత్రాలు మరియు వాయిస్ సందేశాలు (ఒక్కొక్కటి 50 MB వరకు)",
+          "మీరు ఆన్‌లైన్‌లో ఉన్నారా, చివరిగా ఎప్పుడు యాక్టివ్‌గా ఉన్నారు, మీ ఫోన్‌లో సైన్ ఇన్ అయ్యారా అనేది — ప్రొఫైల్ → గోప్యతలో దాచకపోతే మీ కుటుంబానికి కనిపిస్తుంది",
         ],
       },
       use: {
@@ -684,16 +700,18 @@ const CONTENT = {
           'కాల్, వీడియో కంటెంట్‌ను మేము ఎప్పుడూ రికార్డ్ చేయము లేదా నిల్వ చేయము',
           'మేము మీ సందేశాలను చదవము, మీ డేటాను అమ్మము',
           'ప్రకటనలు లేదా ప్రొఫైలింగ్ కోసం మీ డేటాను మేము ఉపయోగించము',
-          "అధిక వేగ హెచ్చరిక మరియు డ్రైవింగ్ ట్రిప్‌లు మీరు ఆన్ చేసే వరకు ఆఫ్‌లోనే ఉంటాయి. ఆన్ చేశాక మీ కుటుంబ గ్రూప్ మీ ట్రిప్‌లను చూడగలదు, మీరు ఎంచుకున్న పరిమితి దాటితే వారికి తెలియజేస్తారు, మీ ఫోన్‌లో కూడా హెచ్చరిక వస్తుంది",
+          "అధిక వేగ హెచ్చరిక మీరు ఆన్ చేసే వరకు ఆఫ్‌లోనే ఉంటుంది. ఆన్ చేశాక మీరు ఎంచుకున్న పరిమితి దాటితే మీ కుటుంబ గ్రూప్‌కు తెలియజేస్తారు, మీ ఫోన్‌లో కూడా హెచ్చరిక వస్తుంది",
           "తీవ్ర వాతావరణ హెచ్చరికలు మీకు మాత్రమే, మీరు సేవ్ చేసిన ప్రదేశాల గురించి వస్తాయి. ప్రతి ప్రదేశం యొక్క సుమారు ప్రాంతం మాత్రమే (సుమారు 11 కి.మీ వరకు గుండ్రం చేసినది) మా సర్వర్ నుండి OpenWeatherMap కు పంపబడుతుంది",
           "ప్రమాద గుర్తింపు మీరు ఆన్ చేసే వరకు ఆఫ్‌లోనే ఉంటుంది. అది ఏదీ తనంతట తాను పంపదు: ప్రమాదం గుర్తిస్తే 20 సెకన్ల కౌంట్‌డౌన్ మాత్రమే మొదలవుతుంది, మీరు రద్దు చేయకపోతేనే SOS వెళ్తుంది",
           "Profile → Safety లో \"ఫోన్ పోయింది అనుమతి\"ని మీరు ఆన్ చేసే వరకు అది ఆఫ్‌లోనే ఉంటుంది. ఆ తర్వాతే మీ కుటుంబాల్లో ఒకదాని అడ్మిన్ మీ ఫోన్‌ను పోయినట్లు గుర్తించగలరు. అప్పుడు ఫోన్ ప్రతి కొన్ని సెకన్లకు స్థానం తెలియజేస్తుంది, ప్రతి 2 నిమిషాలకు మోగుతుంది, లాక్ స్క్రీన్‌పై సందేశం చూపుతుంది, మరియు కుటుంబంలోని ప్రతి ఒక్కరూ అది పోయినట్లు గుర్తించబడిందని చూడగలరు. 12 గంటల తర్వాత లేదా దొరికినట్లు గుర్తించినప్పుడు ఆగుతుంది",
           "మీ ఫోన్ బ్యాటరీ ఛార్జ్ అవ్వనప్పుడు 15% లేదా 5%కి పడిపోయినప్పుడు, ఫోన్ సుమారు 45 నిమిషాలుగా ఏ అప్‌డేట్ పంపనప్పుడు (ఫోన్ ఆఫ్ లేదా నెట్‌వర్క్ లేదు), మరియు అది మళ్లీ రిపోర్ట్ చేసినప్పుడు మీ కుటుంబానికి తెలియజేయబడుతుంది. ఈ హెచ్చరికలలో బ్యాటరీ స్థాయి మరియు ఫోన్ ఎంతసేపు నిశ్శబ్దంగా ఉందో ఉంటుంది. Profile → గోప్యత లో లొకేషన్ షేరింగ్ ఆఫ్ చేస్తే ఇవి ఆగుతాయి. ఆఫ్‌లైన్ హెచ్చరికలు భారత సమయం రాత్రి 11 నుండి ఉదయం 6 వరకు ఆపబడతాయి",
           "SOSకి జోడించిన వాయిస్ క్లిప్ లేదా ఫోటో ఆ SOS పంపబడిన కుటుంబాలకు మాత్రమే వెళ్తుంది. అది ప్రైవేట్‌గా నిల్వ చేయబడుతుంది, సమీప సహాయకులకు ఎప్పుడూ చూపబడదు, 7 రోజుల తర్వాత తొలగించబడుతుంది",
           "\"సమీప సహాయం\" మీరు చేరే వరకు ఆఫ్‌లోనే ఉంటుంది. సహాయం చేయలేనంత దూరంలో ఉన్న కుటుంబానికి SOS చేరవచ్చు అనుకున్నప్పుడు, అత్యంత సమీపంలోని చేరిన వ్యక్తులను (మొదట 2 కి.మీ లోపు, తర్వాత 5 కి.మీ, తర్వాత 10 కి.మీ) పంపినవారి తరఫున సరైన అత్యవసర నంబర్‌కు ఫోన్ చేయమని అడుగుతారు. వారు సుమారు ప్రాంతం మరియు అవసరమైన సహాయ రకం మాత్రమే చూస్తారు, పేరు లేదా ఫోన్ నంబర్ కాదు; అంగీకరించే ఒక్కరికి మాత్రమే ఖచ్చితమైన స్థానం చూపబడుతుంది. ఎవరినీ ఆ ప్రదేశానికి వెళ్లమని అడగరు",
-          "\"సమీప సహాయం\" కారణంగా, స్థానంతో మీరు SOS పంపినప్పుడు, ఆ SOS యొక్క సుమారు ప్రాంతం మరియు అవసరమైన సహాయ రకం దాని దగ్గర ఉన్న, చేరిన Famora వినియోగదారులకు పంపబడవచ్చు. వారికి మీ పేరు, ఫోన్ నంబర్, సందేశాలు, వాయిస్ క్లిప్ లేదా ఫోటో ఎప్పుడూ అందవు",
+          "\"సమీప సహాయం\" కారణంగా, స్థానంతో మీరు SOS పంపినప్పుడు, ఆ SOS యొక్క సుమారు ప్రాంతం మరియు అవసరమైన సహాయ రకం దాని దగ్గర ఉన్న, చేరిన Kinest వినియోగదారులకు పంపబడవచ్చు. వారికి మీ పేరు, ఫోన్ నంబర్, సందేశాలు, వాయిస్ క్లిప్ లేదా ఫోటో ఎప్పుడూ అందవు",
           "మీరు సేవ్ చేసిన ప్రదేశాలకు చేరడం/బయలుదేరడం నోటీసులు మీ కుటుంబ గ్రూప్‌కు వెళ్తాయి; ప్రదేశం యొక్క ఖచ్చితమైన స్థానం మీ వద్దే ఉంటుంది",
-          "Famora లో కనిపించే లొకేషన్లు అంచనాలు మాత్రమే. ఒక స్థానం ఎంత కచ్చితమో అది GPS సిగ్నల్, Wi-Fi, మొబైల్ నెట్‌వర్క్, ఫోన్ ఎక్కడ ఉందనే దానిపై ఆధారపడి ఉంటుంది (ఇంటి లోపల, ఎత్తైన భవనాల మధ్య చాలా కష్టం). పిన్ కొన్ని పదుల మీటర్లు, చెడ్డ పరిస్థితుల్లో కొన్ని వందల మీటర్లు తప్పవచ్చు, నిజమైన కదలిక కంటే కొంచెం వెనుకబడవచ్చు. కొత్త రీడింగ్ నమ్మదగనిదిగా అనిపిస్తే Famora చివరి నమ్మదగిన స్థానాన్నే ఉంచుతుంది. కచ్చితమైన స్థానం కోసం దీనిపై ఆధారపడకండి, అత్యవసర పరిస్థితిలో అత్యవసర సేవలకు కాల్ చేయండి",
+          "Kinest లో కనిపించే లొకేషన్లు అంచనాలు మాత్రమే. ఒక స్థానం ఎంత కచ్చితమో అది GPS సిగ్నల్, Wi-Fi, మొబైల్ నెట్‌వర్క్, ఫోన్ ఎక్కడ ఉందనే దానిపై ఆధారపడి ఉంటుంది (ఇంటి లోపల, ఎత్తైన భవనాల మధ్య చాలా కష్టం). పిన్ కొన్ని పదుల మీటర్లు, చెడ్డ పరిస్థితుల్లో కొన్ని వందల మీటర్లు తప్పవచ్చు, నిజమైన కదలిక కంటే కొంచెం వెనుకబడవచ్చు. కొత్త రీడింగ్ నమ్మదగనిదిగా అనిపిస్తే Kinest చివరి నమ్మదగిన స్థానాన్నే ఉంచుతుంది. కచ్చితమైన స్థానం కోసం దీనిపై ఆధారపడకండి, అత్యవసర పరిస్థితిలో అత్యవసర సేవలకు కాల్ చేయండి",
+          "మీ స్వంత SOS యాక్టివ్‌గా ఉన్నప్పుడు, ఏదీ మిమ్మల్ని బయటపెట్టకుండా మీ ఫోన్‌ను సైలెంట్‌లో ఉంచడానికి Kinest Android యొక్క డిస్టర్బ్ చేయవద్దు యాక్సెస్‌ను ఉపయోగిస్తుంది. SOS ముగిశాక మీ సౌండ్ సెట్టింగ్‌లు తిరిగి వస్తాయి. ఏదీ ఎక్కడికీ పంపబడదు",
+          "Kinest పిల్లల కోసం రూపొందించబడలేదు, వారిని లక్ష్యంగా చేసుకున్నది కూడా కాదు. ఈ విధానాన్ని మీరే అంగీకరించే వయస్సులో ఉంటేనే ఉపయోగించండి. మరొకరి కోసం ఖాతా ఏర్పాటు చేస్తే దానికి తల్లిదండ్రులు లేదా సంరక్షకులే బాధ్యులు",
         ],
       },
       calls: {
@@ -704,6 +722,7 @@ const CONTENT = {
           'కాల్ రికార్డులు మాత్రమే నిల్వ చేయబడతాయి — సంభాషణ ఎప్పటికీ కాదు',
           'కాల్ సమయంలో మైక్రోఫోన్ వాడతారు; కెమెరా వీడియో కాల్ సమయంలో మాత్రమే',
           'ఏ కుటుంబ సభ్యుడైనా కుటుంబం మొత్తానికి కాల్ చరిత్రను తొలగించవచ్చు',
+          "ఒకే కాల్‌లో 6 మంది వరకు కుటుంబ సభ్యులు ఉండవచ్చు. కాల్‌లో ఉన్న ఎవరైనా మరొక కుటుంబ సభ్యుడిని చేర్చవచ్చు, వారికి రింగ్ అవుతుంది. గ్రూప్ కాల్స్ కూడా రికార్డ్ చేయబడవు; కాల్ రికార్డ్ మాత్రమే ఉంచబడుతుంది",
         ],
       },
       sms: {
@@ -728,6 +747,7 @@ const CONTENT = {
           'ఇతర సభ్యులకు మీరు పెట్టే ముద్దుపేర్లు, మీ భాష ఎంపిక మీ కోసం మాత్రమే ఫోన్‌లో ఉంచబడతాయి',
           'ఈ విభాగంలోని అన్నీ యాప్‌ను అన్‌ఇన్‌స్టాల్ చేసినప్పుడు తొలగిపోతాయి',
           "ప్రమాద గుర్తింపు ఆన్‌లో ఉండి మీరు వేగంగా ప్రయాణిస్తున్నప్పుడు మాత్రమే మోషన్ సెన్సార్‌ను చదువుతుంది. రీడింగ్‌లు మీ ఫోన్‌లోనే పరిశీలించబడతాయి, ఎప్పుడూ అప్‌లోడ్ కావు",
+          "మీ ఫోన్ నుండి అలర్ట్ సౌండ్‌ను ఎంచుకుంటే, దాని సూచిక మాత్రమే మీ ఫోన్‌లో ఉంచబడుతుంది. సౌండ్ ఫైల్ ఎప్పుడూ అప్‌లోడ్ చేయబడదు",
         ],
       },
       crash: {
@@ -773,11 +793,11 @@ const CONTENT = {
           'ఉపయోగించని పరికర నోటిఫికేషన్ టోకెన్‌లు 60 రోజుల తర్వాత తీసివేయబడతాయి',
           'మీ ఖాతాను తొలగిస్తే ఈ రికార్డుల నుండి మీ డేటా తీసివేయబడుతుంది',
 'మీ ఫోన్‌లో ఉంచిన సెట్టింగ్‌లు — నకిలీ కాల్ వివరాలు, "ఇంటర్నెట్ లేనప్పుడు SMS" నంబర్లు, ముద్దుపేర్లు — యాప్‌ను అన్‌ఇన్‌స్టాల్ చేసినప్పుడు పోతాయి',
-          "డ్రైవింగ్ ట్రిప్‌లు 30 రోజుల తర్వాత ఆటోమేటిక్‌గా తొలగించబడతాయి, డ్రైవింగ్ ట్రిప్‌లను ఆఫ్ చేయగానే వెంటనే తొలగించబడతాయి",
           "ఫోన్ పోయింది రికార్డులు ఆ మోడ్ ముగియగానే, ఏ సందర్భంలోనైనా 12 గంటల తర్వాత తొలగించబడతాయి",
           "SOS వాయిస్ క్లిప్‌లు మరియు ఫోటోలు 7 రోజుల తర్వాత ఆటోమేటిక్‌గా తొలగించబడతాయి",
           "\"సమీప సహాయం\" అభ్యర్థనలు మరియు సమాధానాలు అవి చెందిన SOS పరిష్కరించిన 30 రోజుల తర్వాత దానితో పాటు తొలగించబడతాయి",
           "ప్రదేశానికి చేరడం/బయలుదేరడం నోటీసులు, బ్యాటరీ మరియు ఫోన్-ఆఫ్‌లైన్ హెచ్చరికలు మీరు ఖాతాను తొలగించే వరకు ఉంచబడతాయి, తర్వాత తొలగించబడతాయి",
+          "చాట్‌లో జత చేసిన ఫైళ్లు, వాటి సందేశం తొలగించబడిన (లేదా 90 రోజులకు చేరిన) సుమారు ఒక రోజులోపు ఆటోమేటిక్‌గా తొలగించబడతాయి. మీ ప్రొఫైల్ ఫోటో, మీరు ఖాతాను తొలగించిన సుమారు ఒక రోజులోపు తొలగించబడుతుంది",
         ],
       },
       choices: {
@@ -789,9 +809,9 @@ const CONTENT = {
 'ప్రొఫైల్ లో ఎప్పుడైనా "ఊపితే SOS" ఆఫ్ చేయండి',
           'ప్రొఫైల్ లో ఎప్పుడైనా "ఇంటర్నెట్ లేనప్పుడు SMS" ఆఫ్ చేసి, అదనపు నంబర్‌ను తీసివేయండి',
           'సందేశ, కాల్ చరిత్రను వాటి స్క్రీన్‌ల నుండి తొలగించండి',
-          'మీ ఖాతాను, దాని డేటాను ప్రొఫైల్ → నా ఖాతా తొలగించు నుండి, లేదా యాప్ లేకుండా Famora వెబ్‌సైట్‌లోని "Delete Account" పేజీ నుండి తొలగించండి',
+          'మీ ఖాతాను, దాని డేటాను ప్రొఫైల్ → నా ఖాతా తొలగించు నుండి, లేదా యాప్ లేకుండా Kinest వెబ్‌సైట్‌లోని "Delete Account" పేజీ నుండి తొలగించండి',
           'కెమెరా, మైక్రోఫోన్, లొకేషన్, SMS లేదా నోటిఫికేషన్ అనుమతిని Android సెట్టింగ్‌లలో ఉపసంహరించుకోండి',
-          "Profile → డ్రైవింగ్ భద్రత లో ఎప్పుడైనా అధిక వేగ హెచ్చరిక, డ్రైవింగ్ ట్రిప్‌లు, ప్రమాద గుర్తింపు, మరియు Profile → Safety లో వాతావరణ హెచ్చరికలను ఆన్ లేదా ఆఫ్ చేయండి",
+          "Profile → డ్రైవింగ్ భద్రత లో ఎప్పుడైనా అధిక వేగ హెచ్చరిక, ప్రమాద గుర్తింపు, మరియు Profile → Safety లో వాతావరణ హెచ్చరికలను ఆన్ లేదా ఆఫ్ చేయండి",
           "Profile → Safety లో ఎప్పుడైనా \"ఫోన్ పోయింది అనుమతి\"ని ఆన్ లేదా ఆఫ్ చేయండి",
           "Profile → Safety లో ఎప్పుడైనా \"నా SOSతో వాయిస్ క్లిప్\"ను ఆన్ లేదా ఆఫ్ చేయండి",
           "SOS పేజీ నుండి ఎప్పుడైనా \"సమీప సహాయం\"లో చేరండి లేదా వైదొలగండి, మీ చరిత్ర నుండి ఎంట్రీలను దాచండి",
@@ -804,16 +824,16 @@ const CONTENT = {
   // ──────────────────────────────────────────────────────────────── Kannada ──
   // See the NOT REVIEWED BY A LAWYER note at the top of this file.
   kn: {
-    lastUpdated: '27 ಸೆಪ್ಟೆಂಬರ್ 2026',
+    lastUpdated: '3 ಅಕ್ಟೋಬರ್ 2026',
     pageTitle: 'ಗೌಪ್ಯತಾ ನೀತಿ',
     consentTitle: 'ಗೌಪ್ಯತಾ ನೀತಿ ಮತ್ತು ಬಳಕೆಯ ನಿಯಮಗಳು',
     lastUpdatedLabel: 'ಕೊನೆಯ ಬಾರಿ ನವೀಕರಿಸಿದ್ದು',
-    promiseLead: 'Famora ಒಂದು ಸರಳ ಭರವಸೆಯ ಮೇಲೆ ನಿರ್ಮಿತವಾಗಿದೆ:',
+    promiseLead: 'Kinest ಒಂದು ಸರಳ ಭರವಸೆಯ ಮೇಲೆ ನಿರ್ಮಿತವಾಗಿದೆ:',
     promiseStrong: 'ನಿಮ್ಮ ಡೇಟಾ ನಿಮ್ಮದು ಮತ್ತು ನಿಮ್ಮ ಕುಟುಂಬದ್ದು — ಬೇರೆ ಯಾರದ್ದೂ ಅಲ್ಲ.',
     promiseTail: 'ನಿಮ್ಮ ಕುಟುಂಬವನ್ನು ಸುರಕ್ಷಿತವಾಗಿ ಮತ್ತು ಸಂಪರ್ಕದಲ್ಲಿಡಲು ಅಗತ್ಯವಿರುವುದನ್ನು ಮಾತ್ರ ನಾವು ಸಂಗ್ರಹಿಸುತ್ತೇವೆ.',
     intro:
       'ಕುಟುಂಬಗಳು ಸಂಪರ್ಕದಲ್ಲಿರಲು ಮತ್ತು ತುರ್ತು ಸಂದರ್ಭದಲ್ಲಿ ಪರಸ್ಪರ ಬೇಗ ' +
-      'ತಲುಪಲು Famora ಸಹಾಯ ಮಾಡುತ್ತದೆ. ನೀವು ಸೇರಲು ಆಯ್ಕೆ ಮಾಡಿದ ಕುಟುಂಬ ಗುಂಪಿನೊಂದಿಗೆ ' +
+      'ತಲುಪಲು Kinest ಸಹಾಯ ಮಾಡುತ್ತದೆ. ನೀವು ಸೇರಲು ಆಯ್ಕೆ ಮಾಡಿದ ಕುಟುಂಬ ಗುಂಪಿನೊಂದಿಗೆ ' +
       'ಮಾತ್ರ ಇದು ನಿಮ್ಮ ಸ್ಥಳ, ಸಂದೇಶಗಳು ಮತ್ತು ಕರೆಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳುತ್ತದೆ — ಜೊತೆಗೆ, "ಇಂಟರ್ನೆಟ್ ಇಲ್ಲದಾಗ SMS" ಆನ್ ಮಾಡಿದರೆ, ನೀವೇ ಆಯ್ಕೆ ಮಾಡಿದ ಒಂದು ಹೆಚ್ಚುವರಿ ಸಂಖ್ಯೆಯೊಂದಿಗೂ. ಏನನ್ನು ' +
       'ಸಂಗ್ರಹಿಸಲಾಗುತ್ತದೆ, ಏಕೆ, ಯಾರೊಂದಿಗೆ ಹಂಚಿಕೊಳ್ಳಲಾಗುತ್ತದೆ ಮತ್ತು ಎಷ್ಟು ಕಾಲ ' +
       'ಇಡಲಾಗುತ್ತದೆ ಎಂಬುದನ್ನು ಈ ಪುಟ ನಿಖರವಾಗಿ ವಿವರಿಸುತ್ತದೆ.',
@@ -839,13 +859,14 @@ const CONTENT = {
 'ಚಲನೆ ಸಂವೇದಕದ ಓದುವಿಕೆಗಳು, "ಅಲುಗಾಡಿಸಿದರೆ SOS" ಆನ್ ಇರುವಾಗ ಮಾತ್ರ — ಅವು ನಿಮ್ಮ ಫೋನಿನಲ್ಲೇ ಪರಿಶೀಲಿಸಲ್ಪಡುತ್ತವೆ, ಎಲ್ಲಿಗೂ ಕಳುಹಿಸಲ್ಪಡುವುದಿಲ್ಲ',
           '"ಇಂಟರ್ನೆಟ್ ಇಲ್ಲದಾಗ SMS" ಬಳಸಿದರೆ, ಅದಕ್ಕಾಗಿ ನೀವು ನಮೂದಿಸುವ ಹೆಚ್ಚುವರಿ ಫೋನ್ ಸಂಖ್ಯೆ',
           'ಅಪ್ಲಿಕೇಶನ್ ಕೆಲಸ ಮಾಡುವುದನ್ನು ನಿಲ್ಲಿಸಿದರೆ ಕ್ರ್ಯಾಶ್ ಮತ್ತು ರೋಗನಿರ್ಣಯ ವರದಿಗಳು — ಕೆಳಗೆ ನೋಡಿ',
-          "ನೀವು ಡ್ರೈವಿಂಗ್ ಟ್ರಿಪ್‌ಗಳನ್ನು ಆನ್ ಮಾಡಿದರೆ: ಪ್ರತಿ ಡ್ರೈವ್‌ನ ಆರಂಭ ಮತ್ತು ಅಂತ್ಯ ಸಮಯ, ದೂರ, ಸರಾಸರಿ ಮತ್ತು ಗರಿಷ್ಠ ವೇಗ, ಹಠಾತ್ ಬ್ರೇಕ್‌ಗಳು ಮತ್ತು ವೇಗದ ಆರಂಭಗಳ ಸಂಖ್ಯೆ — ಮೇಲಿನ ಸ್ಥಳ ಡೇಟಾದಿಂದಲೇ ಲೆಕ್ಕಹಾಕಲಾಗುತ್ತದೆ, ಹೆಚ್ಚುವರಿ ಸೆನ್ಸರ್ ಇಲ್ಲ",
           "ನೀವು ಉಳಿಸಿದ ಸ್ಥಳಗಳು (ಹೆಸರು ಮತ್ತು ಸ್ಥಾನ) ಮತ್ತು ಅತಿ ವೇಗ ಎಚ್ಚರಿಕೆಗೆ ನೀವು ಹೊಂದಿಸಿದ ಮಿತಿ — ಉಳಿಸಿದ ಸ್ಥಳಗಳು ನಿಮಗೆ ಮಾತ್ರ ಕಾಣುತ್ತವೆ",
           "ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ \"ಫೋನ್ ಕಳೆದುಹೋಗಿದೆ\" ಬಳಸಿದರೆ: ಅದು ಕಳೆದುಹೋಗಿದೆ ಎಂದು ಗುರುತಿಸಲಾದ ಸಂಗತಿ, ಯಾರು ಗುರುತಿಸಿದರು, ಅವರು ಟೈಪ್ ಮಾಡಿದ ಚಿಕ್ಕ ಸಂದೇಶ, ಮತ್ತು ಕಳೆದುಹೋದ ಸ್ಥಿತಿಯಲ್ಲಿ ಪ್ರತಿ ಕೆಲವು ಸೆಕೆಂಡಿಗೆ ಫೋನ್‌ನ ಸ್ಥಾನ",
           "ನಿಮ್ಮ ನೆಟ್‌ವರ್ಕ್ ಪ್ರಕಾರ (Wi-Fi ಅಥವಾ ಮೊಬೈಲ್ ಡೇಟಾ) ಮತ್ತು ಸಿಗ್ನಲ್ ಬಲ, ನಿಮ್ಮ ಕಾರ್ಡ್‌ನಲ್ಲಿ ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕೆ ತೋರಿಸಲಾಗುತ್ತದೆ",
           "ನೀವು ಉಳಿಸಿದ ಸ್ಥಳಕ್ಕೆ (ಮನೆ, ಕಚೇರಿ ಮುಂತಾದವು) ತಲುಪಿದಾಗ ಅಥವಾ ಅಲ್ಲಿಂದ ಹೊರಟಾಗ: ಸ್ಥಳದ ಹೆಸರು, ತಲುಪಿದಿರೋ ಹೊರಟಿರೋ, ಮತ್ತು ಸಮಯ. ಇದನ್ನು ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕೆ ತಿಳಿಸಲಾಗುತ್ತದೆ, ಆದರೆ ಆ ಸ್ಥಳದ ನಿಖರ ಸ್ಥಾನವನ್ನು ಎಂದಿಗೂ ಅಲ್ಲ",
           "ನೀವು \"ನನ್ನ SOS ಜೊತೆ ಧ್ವನಿ ಕ್ಲಿಪ್\" ಆನ್ ಮಾಡಿದರೆ: ಆ್ಯಪ್‌ನಿಂದ SOS ಕಳುಹಿಸಿದ ನಂತರ ನಿಮ್ಮ ಫೋನ್ ರೆಕಾರ್ಡ್ ಮಾಡುವ 15 ಸೆಕೆಂಡ್‌ವರೆಗಿನ ಆಡಿಯೋ, ಮತ್ತು ನೀವು ಸೇರಿಸಲು ಬಯಸಿದರೆ ಕ್ಯಾಮೆರಾದಿಂದ ಒಂದು ಫೋಟೋ",
           "ನೀವು \"ಹತ್ತಿರದ ಸಹಾಯ\"ದಲ್ಲಿ ಸೇರಿದರೆ: ನಿಮ್ಮ ಅಂದಾಜು ಸ್ಥಾನ (ನಿಮ್ಮ ಹತ್ತಿರ SOS ಕಳುಹಿಸುವವರೊಂದಿಗೆ ಹೊಂದಿಸಲು), ಹತ್ತಿರದ ಜನರ ನಕ್ಷೆಯಲ್ಲಿ ಮಸುಕಾದ, ಹೆಸರಿಲ್ಲದ ಚುಕ್ಕೆ, ಮತ್ತು ಸಹಾಯ ವಿನಂತಿಗಳಿಗೆ ನಿಮ್ಮ ಉತ್ತರಗಳು",
+          "ಚಾಟ್‌ನಲ್ಲಿ ನೀವು ಲಗತ್ತಿಸುವ ಫೋಟೋಗಳು, ವೀಡಿಯೊಗಳು, ಆಡಿಯೊ ಫೈಲ್‌ಗಳು, ದಾಖಲೆಗಳು ಮತ್ತು ಧ್ವನಿ ಸಂದೇಶಗಳು (ಪ್ರತಿಯೊಂದು 50 MB ವರೆಗೆ)",
+          "ನೀವು ಆನ್‌ಲೈನ್‌ನಲ್ಲಿದ್ದೀರಾ, ಕೊನೆಯ ಬಾರಿ ಯಾವಾಗ ಸಕ್ರಿಯರಾಗಿದ್ದಿರಿ, ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಸೈನ್ ಇನ್ ಆಗಿದ್ದೀರಾ ಎಂಬುದು — ಪ್ರೊಫೈಲ್ → ಗೌಪ್ಯತೆಯಲ್ಲಿ ಮರೆಮಾಡದಿದ್ದರೆ ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕೆ ಕಾಣಿಸುತ್ತದೆ",
         ],
       },
       use: {
@@ -858,16 +879,18 @@ const CONTENT = {
           'ಕರೆ ಮತ್ತು ವೀಡಿಯೊ ವಿಷಯವನ್ನು ನಾವು ಎಂದಿಗೂ ರೆಕಾರ್ಡ್ ಅಥವಾ ಸಂಗ್ರಹಿಸುವುದಿಲ್ಲ',
           'ನಾವು ನಿಮ್ಮ ಸಂದೇಶಗಳನ್ನು ಓದುವುದಿಲ್ಲ, ನಿಮ್ಮ ಡೇಟಾವನ್ನು ಮಾರುವುದಿಲ್ಲ',
           'ಜಾಹೀರಾತು ಅಥವಾ ಪ್ರೊಫೈಲಿಂಗ್‌ಗೆ ನಿಮ್ಮ ಡೇಟಾವನ್ನು ನಾವು ಬಳಸುವುದಿಲ್ಲ',
-          "ಅತಿ ವೇಗ ಎಚ್ಚರಿಕೆ ಮತ್ತು ಡ್ರೈವಿಂಗ್ ಟ್ರಿಪ್‌ಗಳು ನೀವು ಆನ್ ಮಾಡುವವರೆಗೆ ಆಫ್ ಆಗಿರುತ್ತವೆ. ಆನ್ ಮಾಡಿದ ಮೇಲೆ ನಿಮ್ಮ ಕುಟುಂಬ ಗುಂಪು ನಿಮ್ಮ ಟ್ರಿಪ್‌ಗಳನ್ನು ನೋಡಬಹುದು, ನೀವು ಆರಿಸಿದ ಮಿತಿ ಮೀರಿದರೆ ಅವರಿಗೆ ತಿಳಿಸಲಾಗುತ್ತದೆ, ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲೂ ಎಚ್ಚರಿಕೆ ಬರುತ್ತದೆ",
+          "ಅತಿ ವೇಗ ಎಚ್ಚರಿಕೆ ನೀವು ಆನ್ ಮಾಡುವವರೆಗೆ ಆಫ್ ಆಗಿರುತ್ತದೆ. ಆನ್ ಮಾಡಿದ ಮೇಲೆ ನೀವು ಆರಿಸಿದ ಮಿತಿ ಮೀರಿದರೆ ನಿಮ್ಮ ಕುಟುಂಬ ಗುಂಪಿಗೆ ತಿಳಿಸಲಾಗುತ್ತದೆ, ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲೂ ಎಚ್ಚರಿಕೆ ಬರುತ್ತದೆ",
           "ತೀವ್ರ ಹವಾಮಾನ ಎಚ್ಚರಿಕೆಗಳು ನಿಮಗೆ ಮಾತ್ರ, ನೀವು ಉಳಿಸಿದ ಸ್ಥಳಗಳ ಬಗ್ಗೆ ಬರುತ್ತವೆ. ಪ್ರತಿ ಸ್ಥಳದ ಅಂದಾಜು ಪ್ರದೇಶ ಮಾತ್ರ (ಸುಮಾರು 11 ಕಿ.ಮೀ ವರೆಗೆ ದುಂಡಗಾಗಿಸಿದ್ದು) ನಮ್ಮ ಸರ್ವರ್‌ನಿಂದ OpenWeatherMap ಗೆ ಕಳುಹಿಸಲಾಗುತ್ತದೆ",
           "ಅಪಘಾತ ಪತ್ತೆ ನೀವು ಆನ್ ಮಾಡುವವರೆಗೆ ಆಫ್ ಆಗಿರುತ್ತದೆ. ಅದು ತಾನಾಗಿ ಏನನ್ನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ: ಅಪಘಾತ ಗುರುತಿಸಿದರೆ 20 ಸೆಕೆಂಡ್ ಕೌಂಟ್‌ಡೌನ್ ಮಾತ್ರ ಪ್ರಾರಂಭವಾಗುತ್ತದೆ, ನೀವು ರದ್ದುಮಾಡದಿದ್ದರೆ ಮಾತ್ರ SOS ಹೋಗುತ್ತದೆ",
           "Profile → Safety ನಲ್ಲಿ \"ಫೋನ್ ಕಳೆದುಹೋಗಿದೆ ಅನುಮತಿ\" ಅನ್ನು ನೀವು ಆನ್ ಮಾಡುವವರೆಗೆ ಅದು ಆಫ್ ಆಗಿರುತ್ತದೆ. ಆಗ ಮಾತ್ರ ನಿಮ್ಮ ಕುಟುಂಬಗಳಲ್ಲಿ ಒಂದರ ಅಡ್ಮಿನ್ ನಿಮ್ಮ ಫೋನ್ ಅನ್ನು ಕಳೆದುಹೋಗಿದೆ ಎಂದು ಗುರುತಿಸಬಹುದು. ಆಗ ಫೋನ್ ಪ್ರತಿ ಕೆಲವು ಸೆಕೆಂಡಿಗೆ ಸ್ಥಾನ ತಿಳಿಸುತ್ತದೆ, ಪ್ರತಿ 2 ನಿಮಿಷಕ್ಕೆ ರಿಂಗ್ ಆಗುತ್ತದೆ, ಲಾಕ್ ಸ್ಕ್ರೀನ್‌ನಲ್ಲಿ ಸಂದೇಶ ತೋರಿಸುತ್ತದೆ, ಮತ್ತು ಕುಟುಂಬದ ಪ್ರತಿಯೊಬ್ಬರೂ ಅದನ್ನು ಕಳೆದುಹೋಗಿದೆ ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ ಎಂಬುದನ್ನು ನೋಡಬಹುದು. 12 ಗಂಟೆಗಳ ನಂತರ ಅಥವಾ ಸಿಕ್ಕಿದೆ ಎಂದು ಗುರುತಿಸಿದಾಗ ನಿಲ್ಲುತ್ತದೆ",
           "ನಿಮ್ಮ ಫೋನ್ ಬ್ಯಾಟರಿ ಚಾರ್ಜ್ ಆಗದಿರುವಾಗ 15% ಅಥವಾ 5%ಕ್ಕೆ ಇಳಿದಾಗ, ಫೋನ್ ಸುಮಾರು 45 ನಿಮಿಷಗಳಿಂದ ಯಾವುದೇ ಅಪ್‌ಡೇಟ್ ಕಳುಹಿಸದಿದ್ದಾಗ (ಫೋನ್ ಆಫ್ ಅಥವಾ ನೆಟ್‌ವರ್ಕ್ ಇಲ್ಲ), ಮತ್ತು ಅದು ಮತ್ತೆ ವರದಿ ಮಾಡಿದಾಗ ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕೆ ತಿಳಿಸಲಾಗುತ್ತದೆ. ಈ ಎಚ್ಚರಿಕೆಗಳಲ್ಲಿ ಬ್ಯಾಟರಿ ಮಟ್ಟ ಮತ್ತು ಫೋನ್ ಎಷ್ಟು ಹೊತ್ತು ಮೌನವಾಗಿತ್ತು ಎಂಬುದು ಇರುತ್ತದೆ. Profile → ಗೌಪ್ಯತೆ ನಲ್ಲಿ ಸ್ಥಳ ಹಂಚಿಕೆ ಆಫ್ ಮಾಡಿದರೆ ಇವು ನಿಲ್ಲುತ್ತವೆ. ಆಫ್‌ಲೈನ್ ಎಚ್ಚರಿಕೆಗಳು ಭಾರತೀಯ ಸಮಯ ರಾತ್ರಿ 11 ರಿಂದ ಬೆಳಿಗ್ಗೆ 6 ರವರೆಗೆ ತಡೆಹಿಡಿಯಲ್ಪಡುತ್ತವೆ",
           "SOS ಜೊತೆ ಜೋಡಿಸಿದ ಧ್ವನಿ ಕ್ಲಿಪ್ ಅಥವಾ ಫೋಟೋ ಆ SOS ಕಳುಹಿಸಿದ ಕುಟುಂಬಗಳಿಗೆ ಮಾತ್ರ ಹೋಗುತ್ತದೆ. ಅದನ್ನು ಖಾಸಗಿಯಾಗಿ ಸಂಗ್ರಹಿಸಲಾಗುತ್ತದೆ, ಹತ್ತಿರದ ಸಹಾಯಕರಿಗೆ ಎಂದಿಗೂ ತೋರಿಸಲಾಗುವುದಿಲ್ಲ, ಮತ್ತು 7 ದಿನಗಳ ನಂತರ ಅಳಿಸಲಾಗುತ್ತದೆ",
           "\"ಹತ್ತಿರದ ಸಹಾಯ\" ನೀವು ಸೇರುವವರೆಗೆ ಆಫ್ ಆಗಿರುತ್ತದೆ. ಸಹಾಯ ಮಾಡಲು ತುಂಬಾ ದೂರದಲ್ಲಿರುವ ಕುಟುಂಬಕ್ಕೆ SOS ತಲುಪಬಹುದಾದಾಗ, ಅತ್ಯಂತ ಹತ್ತಿರದ ಸೇರಿದವರನ್ನು (ಮೊದಲು 2 ಕಿ.ಮೀ ಒಳಗೆ, ನಂತರ 5 ಕಿ.ಮೀ, ನಂತರ 10 ಕಿ.ಮೀ) ಕಳುಹಿಸಿದವರ ಪರವಾಗಿ ಸರಿಯಾದ ತುರ್ತು ಸಂಖ್ಯೆಗೆ ಕರೆ ಮಾಡಲು ಕೇಳಲಾಗುತ್ತದೆ. ಅವರು ಅಂದಾಜು ಪ್ರದೇಶ ಮತ್ತು ಬೇಕಾದ ಸಹಾಯದ ಪ್ರಕಾರವನ್ನು ಮಾತ್ರ ನೋಡುತ್ತಾರೆ, ಹೆಸರು ಅಥವಾ ಫೋನ್ ಸಂಖ್ಯೆಯಲ್ಲ; ಒಪ್ಪಿಕೊಳ್ಳುವ ಒಬ್ಬರಿಗೆ ಮಾತ್ರ ನಿಖರ ಸ್ಥಾನ ತೋರಿಸಲಾಗುತ್ತದೆ. ಯಾರನ್ನೂ ಸ್ಥಳಕ್ಕೆ ಪ್ರಯಾಣಿಸಲು ಕೇಳುವುದಿಲ್ಲ",
-          "\"ಹತ್ತಿರದ ಸಹಾಯ\"ದ ಕಾರಣ, ಸ್ಥಾನದೊಂದಿಗೆ ನೀವು SOS ಕಳುಹಿಸಿದಾಗ, ಆ SOS ನ ಅಂದಾಜು ಪ್ರದೇಶ ಮತ್ತು ಬೇಕಾದ ಸಹಾಯದ ಪ್ರಕಾರ ಅದರ ಹತ್ತಿರವಿರುವ, ಸೇರಿದ Famora ಬಳಕೆದಾರರಿಗೆ ಕಳುಹಿಸಲ್ಪಡಬಹುದು. ಅವರಿಗೆ ನಿಮ್ಮ ಹೆಸರು, ಫೋನ್ ಸಂಖ್ಯೆ, ಸಂದೇಶಗಳು, ಧ್ವನಿ ಕ್ಲಿಪ್ ಅಥವಾ ಫೋಟೋ ಎಂದಿಗೂ ಸಿಗುವುದಿಲ್ಲ",
+          "\"ಹತ್ತಿರದ ಸಹಾಯ\"ದ ಕಾರಣ, ಸ್ಥಾನದೊಂದಿಗೆ ನೀವು SOS ಕಳುಹಿಸಿದಾಗ, ಆ SOS ನ ಅಂದಾಜು ಪ್ರದೇಶ ಮತ್ತು ಬೇಕಾದ ಸಹಾಯದ ಪ್ರಕಾರ ಅದರ ಹತ್ತಿರವಿರುವ, ಸೇರಿದ Kinest ಬಳಕೆದಾರರಿಗೆ ಕಳುಹಿಸಲ್ಪಡಬಹುದು. ಅವರಿಗೆ ನಿಮ್ಮ ಹೆಸರು, ಫೋನ್ ಸಂಖ್ಯೆ, ಸಂದೇಶಗಳು, ಧ್ವನಿ ಕ್ಲಿಪ್ ಅಥವಾ ಫೋಟೋ ಎಂದಿಗೂ ಸಿಗುವುದಿಲ್ಲ",
           "ನೀವು ಉಳಿಸಿದ ಸ್ಥಳಗಳಿಗೆ ತಲುಪುವ/ಹೊರಡುವ ಸೂಚನೆಗಳು ನಿಮ್ಮ ಕುಟುಂಬ ಗುಂಪಿಗೆ ಹೋಗುತ್ತವೆ; ಸ್ಥಳದ ನಿಖರ ಸ್ಥಾನ ನಿಮ್ಮ ಬಳಿಯೇ ಇರುತ್ತದೆ",
-          "Famora ನಲ್ಲಿ ತೋರಿಸುವ ಸ್ಥಳಗಳು ಅಂದಾಜುಗಳು ಮಾತ್ರ. ಸ್ಥಳ ಎಷ್ಟು ನಿಖರ ಎಂಬುದು GPS ಸಿಗ್ನಲ್, Wi-Fi, ಮೊಬೈಲ್ ನೆಟ್‌ವರ್ಕ್ ಮತ್ತು ಫೋನ್ ಎಲ್ಲಿದೆ ಎಂಬುದನ್ನು ಅವಲಂಬಿಸಿದೆ (ಮನೆಯೊಳಗೆ ಮತ್ತು ಎತ್ತರದ ಕಟ್ಟಡಗಳ ನಡುವೆ ಕಷ್ಟ). ಪಿನ್ ಹತ್ತಾರು ಮೀಟರ್, ಕೆಟ್ಟ ಪರಿಸ್ಥಿತಿಯಲ್ಲಿ ನೂರಾರು ಮೀಟರ್ ತಪ್ಪಬಹುದು, ನಿಜವಾದ ಚಲನೆಗಿಂತ ಸ್ವಲ್ಪ ಹಿಂದೆ ಉಳಿಯಬಹುದು. ಹೊಸ ಓದು ವಿಶ್ವಾಸಾರ್ಹವಲ್ಲ ಎನಿಸಿದರೆ Famora ಕೊನೆಯ ವಿಶ್ವಾಸಾರ್ಹ ಸ್ಥಳವನ್ನೇ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. ನಿಖರ ಸ್ಥಳಕ್ಕಾಗಿ ಇದನ್ನು ಅವಲಂಬಿಸಬೇಡಿ, ತುರ್ತು ಸಂದರ್ಭದಲ್ಲಿ ತುರ್ತು ಸೇವೆಗಳಿಗೆ ಕರೆ ಮಾಡಿ",
+          "Kinest ನಲ್ಲಿ ತೋರಿಸುವ ಸ್ಥಳಗಳು ಅಂದಾಜುಗಳು ಮಾತ್ರ. ಸ್ಥಳ ಎಷ್ಟು ನಿಖರ ಎಂಬುದು GPS ಸಿಗ್ನಲ್, Wi-Fi, ಮೊಬೈಲ್ ನೆಟ್‌ವರ್ಕ್ ಮತ್ತು ಫೋನ್ ಎಲ್ಲಿದೆ ಎಂಬುದನ್ನು ಅವಲಂಬಿಸಿದೆ (ಮನೆಯೊಳಗೆ ಮತ್ತು ಎತ್ತರದ ಕಟ್ಟಡಗಳ ನಡುವೆ ಕಷ್ಟ). ಪಿನ್ ಹತ್ತಾರು ಮೀಟರ್, ಕೆಟ್ಟ ಪರಿಸ್ಥಿತಿಯಲ್ಲಿ ನೂರಾರು ಮೀಟರ್ ತಪ್ಪಬಹುದು, ನಿಜವಾದ ಚಲನೆಗಿಂತ ಸ್ವಲ್ಪ ಹಿಂದೆ ಉಳಿಯಬಹುದು. ಹೊಸ ಓದು ವಿಶ್ವಾಸಾರ್ಹವಲ್ಲ ಎನಿಸಿದರೆ Kinest ಕೊನೆಯ ವಿಶ್ವಾಸಾರ್ಹ ಸ್ಥಳವನ್ನೇ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. ನಿಖರ ಸ್ಥಳಕ್ಕಾಗಿ ಇದನ್ನು ಅವಲಂಬಿಸಬೇಡಿ, ತುರ್ತು ಸಂದರ್ಭದಲ್ಲಿ ತುರ್ತು ಸೇವೆಗಳಿಗೆ ಕರೆ ಮಾಡಿ",
+          "ನಿಮ್ಮ ಸ್ವಂತ SOS ಸಕ್ರಿಯವಾಗಿರುವಾಗ, ಯಾವುದೂ ನಿಮ್ಮನ್ನು ಬಹಿರಂಗಪಡಿಸದಂತೆ ನಿಮ್ಮ ಫೋನ್ ಅನ್ನು ಮೌನಕ್ಕೆ ಹಾಕಲು Kinest Android ನ ಅಡಚಣೆ ಮಾಡಬೇಡಿ ಪ್ರವೇಶವನ್ನು ಬಳಸುತ್ತದೆ. SOS ಮುಗಿದ ಮೇಲೆ ನಿಮ್ಮ ಧ್ವನಿ ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಮರಳುತ್ತವೆ. ಯಾವುದೂ ಎಲ್ಲಿಯೂ ಕಳುಹಿಸಲ್ಪಡುವುದಿಲ್ಲ",
+          "Kinest ಮಕ್ಕಳಿಗಾಗಿ ರೂಪಿಸಲಾಗಿಲ್ಲ, ಅವರನ್ನು ಉದ್ದೇಶಿಸಿದ್ದೂ ಅಲ್ಲ. ಈ ನೀತಿಯನ್ನು ನೀವೇ ಒಪ್ಪುವ ವಯಸ್ಸಿನವರಾಗಿದ್ದರೆ ಮಾತ್ರ ಬಳಸಿ. ಬೇರೆಯವರಿಗಾಗಿ ಖಾತೆ ರಚಿಸಿದರೆ ಅದಕ್ಕೆ ಪೋಷಕರು ಅಥವಾ ಪಾಲಕರೇ ಜವಾಬ್ದಾರರು",
         ],
       },
       calls: {
@@ -878,6 +901,7 @@ const CONTENT = {
           'ಕರೆ ದಾಖಲೆಗಳನ್ನು ಮಾತ್ರ ಸಂಗ್ರಹಿಸಲಾಗುತ್ತದೆ — ಸಂಭಾಷಣೆಯನ್ನು ಎಂದಿಗೂ ಅಲ್ಲ',
           'ಕರೆಯ ಸಮಯದಲ್ಲಿ ಮೈಕ್ರೊಫೋನ್ ಬಳಸಲಾಗುತ್ತದೆ; ಕ್ಯಾಮೆರಾ ವೀಡಿಯೊ ಕರೆಯ ಸಮಯದಲ್ಲಿ ಮಾತ್ರ',
           'ಯಾವುದೇ ಕುಟುಂಬ ಸದಸ್ಯರು ಕುಟುಂಬಕ್ಕಾಗಿ ಕರೆ ಇತಿಹಾಸವನ್ನು ತೆಗೆದುಹಾಕಬಹುದು',
+          "ಒಂದು ಕರೆಯಲ್ಲಿ 6 ಕುಟುಂಬ ಸದಸ್ಯರವರೆಗೆ ಇರಬಹುದು. ಕರೆಯಲ್ಲಿರುವ ಯಾರಾದರೂ ಇನ್ನೊಬ್ಬ ಸದಸ್ಯರನ್ನು ಸೇರಿಸಬಹುದು, ಅವರಿಗೆ ರಿಂಗ್ ಆಗುತ್ತದೆ. ಗುಂಪು ಕರೆಗಳನ್ನೂ ರೆಕಾರ್ಡ್ ಮಾಡುವುದಿಲ್ಲ; ಕರೆ ದಾಖಲೆ ಮಾತ್ರ ಇಡಲಾಗುತ್ತದೆ",
         ],
       },
       sms: {
@@ -902,6 +926,7 @@ const CONTENT = {
           'ಇತರ ಸದಸ್ಯರಿಗೆ ನೀವು ಇಡುವ ಅಡ್ಡಹೆಸರುಗಳು ಮತ್ತು ನಿಮ್ಮ ಭಾಷೆಯ ಆಯ್ಕೆ ನಿಮಗಾಗಿ ಮಾತ್ರ ಫೋನಿನಲ್ಲಿ ಉಳಿಯುತ್ತವೆ',
           'ಈ ವಿಭಾಗದಲ್ಲಿರುವ ಎಲ್ಲವೂ ಆ್ಯಪ್ ಅನ್ನು ಅನ್‌ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಿದಾಗ ತೆಗೆದುಹಾಕಲ್ಪಡುತ್ತವೆ',
           "ಅಪಘಾತ ಪತ್ತೆ ಆನ್ ಆಗಿದ್ದು ನೀವು ವೇಗವಾಗಿ ಪ್ರಯಾಣಿಸುವಾಗ ಮಾತ್ರ ಚಲನೆ ಸೆನ್ಸರ್ ಅನ್ನು ಓದುತ್ತದೆ. ರೀಡಿಂಗ್‌ಗಳನ್ನು ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲೇ ಪರಿಶೀಲಿಸಲಾಗುತ್ತದೆ, ಎಂದಿಗೂ ಅಪ್‌ಲೋಡ್ ಆಗುವುದಿಲ್ಲ",
+          "ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ ಎಚ್ಚರಿಕೆ ಧ್ವನಿಯನ್ನು ಆರಿಸಿದರೆ, ಅದರ ಉಲ್ಲೇಖ ಮಾತ್ರ ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಇರುತ್ತದೆ. ಧ್ವನಿ ಫೈಲ್ ಎಂದಿಗೂ ಅಪ್‌ಲೋಡ್ ಆಗುವುದಿಲ್ಲ",
         ],
       },
       crash: {
@@ -947,11 +972,11 @@ const CONTENT = {
           'ಬಳಕೆಯಾಗದ ಸಾಧನ ಅಧಿಸೂಚನೆ ಟೋಕನ್‌ಗಳನ್ನು 60 ದಿನಗಳ ನಂತರ ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ',
           'ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಅಳಿಸಿದರೆ ಈ ದಾಖಲೆಗಳಿಂದ ನಿಮ್ಮ ಡೇಟಾ ತೆಗೆದುಹಾಕಲ್ಪಡುತ್ತದೆ',
 'ನಿಮ್ಮ ಫೋನಿನಲ್ಲಿ ಉಳಿಯುವ ಸೆಟ್ಟಿಂಗ್‌ಗಳು — ನಕಲಿ ಕರೆ ವಿವರಗಳು, "ಇಂಟರ್ನೆಟ್ ಇಲ್ಲದಾಗ SMS" ಸಂಖ್ಯೆಗಳು, ಅಡ್ಡಹೆಸರುಗಳು — ಆ್ಯಪ್ ಅನ್‌ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಿದಾಗ ಹೋಗುತ್ತವೆ',
-          "ಡ್ರೈವಿಂಗ್ ಟ್ರಿಪ್‌ಗಳು 30 ದಿನಗಳ ನಂತರ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಅಳಿಸಲ್ಪಡುತ್ತವೆ, ಡ್ರೈವಿಂಗ್ ಟ್ರಿಪ್‌ಗಳನ್ನು ಆಫ್ ಮಾಡಿದ ತಕ್ಷಣ ಅಳಿಸಲ್ಪಡುತ್ತವೆ",
           "ಫೋನ್ ಕಳೆದುಹೋಗಿದೆ ದಾಖಲೆಗಳು ಆ ಮೋಡ್ ಮುಗಿದಾಗ, ಮತ್ತು ಯಾವುದೇ ಸಂದರ್ಭದಲ್ಲಿ 12 ಗಂಟೆಗಳ ನಂತರ ಅಳಿಸಲ್ಪಡುತ್ತವೆ",
           "SOS ಧ್ವನಿ ಕ್ಲಿಪ್‌ಗಳು ಮತ್ತು ಫೋಟೋಗಳು 7 ದಿನಗಳ ನಂತರ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಅಳಿಸಲ್ಪಡುತ್ತವೆ",
           "\"ಹತ್ತಿರದ ಸಹಾಯ\" ವಿನಂತಿಗಳು ಮತ್ತು ಉತ್ತರಗಳು ಅವು ಸೇರಿದ SOS ಪರಿಹಾರವಾದ 30 ದಿನಗಳ ನಂತರ ಅದರೊಂದಿಗೆ ಅಳಿಸಲ್ಪಡುತ್ತವೆ",
           "ಸ್ಥಳಕ್ಕೆ ತಲುಪುವ/ಹೊರಡುವ ಸೂಚನೆಗಳು, ಬ್ಯಾಟರಿ ಮತ್ತು ಫೋನ್-ಆಫ್‌ಲೈನ್ ಎಚ್ಚರಿಕೆಗಳನ್ನು ನೀವು ಖಾತೆ ಅಳಿಸುವವರೆಗೆ ಇಡಲಾಗುತ್ತದೆ, ನಂತರ ಅಳಿಸಲಾಗುತ್ತದೆ",
+          "ಚಾಟ್‌ನಲ್ಲಿ ಲಗತ್ತಿಸಿದ ಫೈಲ್‌ಗಳು, ಅವುಗಳ ಸಂದೇಶ ಅಳಿಸಿದ (ಅಥವಾ 90 ದಿನ ತಲುಪಿದ) ಸುಮಾರು ಒಂದು ದಿನದೊಳಗೆ ತಾನಾಗಿ ಅಳಿಸಲ್ಪಡುತ್ತವೆ. ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಫೋಟೋ, ನೀವು ಖಾತೆಯನ್ನು ಅಳಿಸಿದ ಸುಮಾರು ಒಂದು ದಿನದೊಳಗೆ ಅಳಿಸಲ್ಪಡುತ್ತದೆ",
         ],
       },
       choices: {
@@ -963,9 +988,9 @@ const CONTENT = {
 'ಪ್ರೊಫೈಲ್ ನಲ್ಲಿ ಯಾವಾಗ ಬೇಕಾದರೂ "ಅಲುಗಾಡಿಸಿದರೆ SOS" ಆಫ್ ಮಾಡಿ',
           'ಪ್ರೊಫೈಲ್ ನಲ್ಲಿ ಯಾವಾಗ ಬೇಕಾದರೂ "ಇಂಟರ್ನೆಟ್ ಇಲ್ಲದಾಗ SMS" ಆಫ್ ಮಾಡಿ, ಹೆಚ್ಚುವರಿ ಸಂಖ್ಯೆಯನ್ನು ತೆಗೆದುಹಾಕಿ',
           'ಸಂದೇಶ ಮತ್ತು ಕರೆ ಇತಿಹಾಸವನ್ನು ಆಯಾ ಪರದೆಗಳಿಂದ ತೆಗೆದುಹಾಕಿ',
-          'ನಿಮ್ಮ ಖಾತೆ ಮತ್ತು ಅದರ ಡೇಟಾವನ್ನು ಪ್ರೊಫೈಲ್ → ನನ್ನ ಖಾತೆ ಅಳಿಸಿ ಇಂದ, ಅಥವಾ ಆ್ಯಪ್ ಇಲ್ಲದೆ Famora ವೆಬ್‌ಸೈಟ್‌ನ "Delete Account" ಪುಟದಿಂದ ಅಳಿಸಿ',
+          'ನಿಮ್ಮ ಖಾತೆ ಮತ್ತು ಅದರ ಡೇಟಾವನ್ನು ಪ್ರೊಫೈಲ್ → ನನ್ನ ಖಾತೆ ಅಳಿಸಿ ಇಂದ, ಅಥವಾ ಆ್ಯಪ್ ಇಲ್ಲದೆ Kinest ವೆಬ್‌ಸೈಟ್‌ನ "Delete Account" ಪುಟದಿಂದ ಅಳಿಸಿ',
           'ಕ್ಯಾಮೆರಾ, ಮೈಕ್ರೊಫೋನ್, ಸ್ಥಳ, SMS ಅಥವಾ ಅಧಿಸೂಚನೆ ಅನುಮತಿಯನ್ನು Android ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಹಿಂಪಡೆಯಿರಿ',
-          "Profile → ಡ್ರೈವಿಂಗ್ ಸುರಕ್ಷತೆ ನಲ್ಲಿ ಯಾವಾಗ ಬೇಕಾದರೂ ಅತಿ ವೇಗ ಎಚ್ಚರಿಕೆ, ಡ್ರೈವಿಂಗ್ ಟ್ರಿಪ್‌ಗಳು, ಅಪಘಾತ ಪತ್ತೆ, ಮತ್ತು Profile → Safety ನಲ್ಲಿ ಹವಾಮಾನ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಆನ್ ಅಥವಾ ಆಫ್ ಮಾಡಿ",
+          "Profile → ಡ್ರೈವಿಂಗ್ ಸುರಕ್ಷತೆ ನಲ್ಲಿ ಯಾವಾಗ ಬೇಕಾದರೂ ಅತಿ ವೇಗ ಎಚ್ಚರಿಕೆ, ಅಪಘಾತ ಪತ್ತೆ, ಮತ್ತು Profile → Safety ನಲ್ಲಿ ಹವಾಮಾನ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಆನ್ ಅಥವಾ ಆಫ್ ಮಾಡಿ",
           "Profile → Safety ನಲ್ಲಿ ಯಾವಾಗ ಬೇಕಾದರೂ \"ಫೋನ್ ಕಳೆದುಹೋಗಿದೆ ಅನುಮತಿ\" ಆನ್ ಅಥವಾ ಆಫ್ ಮಾಡಿ",
           "Profile → Safety ನಲ್ಲಿ ಯಾವಾಗ ಬೇಕಾದರೂ \"ನನ್ನ SOS ಜೊತೆ ಧ್ವನಿ ಕ್ಲಿಪ್\" ಆನ್ ಅಥವಾ ಆಫ್ ಮಾಡಿ",
           "SOS ಪುಟದಿಂದ ಯಾವಾಗ ಬೇಕಾದರೂ \"ಹತ್ತಿರದ ಸಹಾಯ\"ದಲ್ಲಿ ಸೇರಿ ಅಥವಾ ಹೊರಬನ್ನಿ, ಮತ್ತು ನಿಮ್ಮ ಇತಿಹಾಸದಿಂದ ನಮೂದುಗಳನ್ನು ಮರೆಮಾಡಿ",
@@ -978,16 +1003,16 @@ const CONTENT = {
   // ────────────────────────────────────────────────────────────── Malayalam ──
   // See the NOT REVIEWED BY A LAWYER note at the top of this file.
   ml: {
-    lastUpdated: '27 സെപ്റ്റംബർ 2026',
+    lastUpdated: '3 ഒക്ടോബർ 2026',
     pageTitle: 'സ്വകാര്യതാ നയം',
     consentTitle: 'സ്വകാര്യതാ നയവും ഉപയോഗ നിബന്ധനകളും',
     lastUpdatedLabel: 'അവസാനം പുതുക്കിയത്',
-    promiseLead: 'Famora ഒരു ലളിതമായ വാഗ്ദാനത്തിലാണ് പണിതിരിക്കുന്നത്:',
+    promiseLead: 'Kinest ഒരു ലളിതമായ വാഗ്ദാനത്തിലാണ് പണിതിരിക്കുന്നത്:',
     promiseStrong: 'നിങ്ങളുടെ ഡാറ്റ നിങ്ങളുടേതും നിങ്ങളുടെ കുടുംബത്തിന്റേതുമാണ് — മറ്റാരുടേതുമല്ല.',
     promiseTail: 'നിങ്ങളുടെ കുടുംബത്തെ സുരക്ഷിതമായും ബന്ധിപ്പിച്ചും നിർത്താൻ ആവശ്യമുള്ളത് മാത്രമേ ഞങ്ങൾ ശേഖരിക്കുന്നുള്ളൂ.',
     intro:
       'കുടുംബങ്ങൾക്ക് പരസ്പരം ബന്ധപ്പെട്ടിരിക്കാനും അടിയന്തര ഘട്ടത്തിൽ വേഗത്തിൽ ' +
-      'പരസ്പരം എത്തിച്ചേരാനും Famora സഹായിക്കുന്നു. നിങ്ങൾ ചേരാൻ തിരഞ്ഞെടുത്ത ' +
+      'പരസ്പരം എത്തിച്ചേരാനും Kinest സഹായിക്കുന്നു. നിങ്ങൾ ചേരാൻ തിരഞ്ഞെടുത്ത ' +
       'കുടുംബ ഗ്രൂപ്പുമായി മാത്രമാണ് ഇത് നിങ്ങളുടെ ലൊക്കേഷനും സന്ദേശങ്ങളും കോളുകളും ' +
       'പങ്കിടുന്നത് — കൂടാതെ, "ഇന്റർനെറ്റ് ഇല്ലാത്തപ്പോൾ SMS" ഓണാക്കിയാൽ, നിങ്ങൾ തന്നെ തിരഞ്ഞെടുക്കുന്ന ഒരു അധിക നമ്പറുമായും. എന്ത് ശേഖരിക്കുന്നു, എന്തിന്, ആരുമായി പങ്കിടുന്നു, എത്ര കാലം ' +
       'സൂക്ഷിക്കുന്നു എന്ന് ഈ പേജ് കൃത്യമായി വിശദീകരിക്കുന്നു.',
@@ -1013,13 +1038,14 @@ const CONTENT = {
 'മോഷൻ സെൻസർ റീഡിംഗുകൾ, "കുലുക്കിയാൽ SOS" ഓണായിരിക്കുമ്പോൾ മാത്രം — അവ നിങ്ങളുടെ ഫോണിൽത്തന്നെ പരിശോധിക്കപ്പെടുന്നു, എങ്ങോട്ടും അയക്കുന്നില്ല',
           '"ഇന്റർനെറ്റ് ഇല്ലാത്തപ്പോൾ SMS" ഉപയോഗിക്കുന്നെങ്കിൽ, അതിനായി നിങ്ങൾ നൽകുന്ന അധിക ഫോൺ നമ്പർ',
           'ആപ്പ് പ്രവർത്തിക്കാതായാൽ ക്രാഷ്, ഡയഗ്നോസ്റ്റിക് റിപ്പോർട്ടുകൾ — താഴെ കാണുക',
-          "നിങ്ങൾ ഡ്രൈവിംഗ് ട്രിപ്പുകൾ ഓണാക്കിയാൽ: ഓരോ യാത്രയുടെയും തുടക്ക, അവസാന സമയം, ദൂരം, ശരാശരി-കൂടിയ വേഗം, പെട്ടെന്നുള്ള ബ്രേക്കുകളുടെയും വേഗത്തിലുള്ള തുടക്കങ്ങളുടെയും എണ്ണം — മുകളിലെ ലൊക്കേഷൻ ഡാറ്റയിൽ നിന്നുതന്നെ കണക്കാക്കുന്നു, അധിക സെൻസർ ഇല്ല",
           "നിങ്ങൾ സേവ് ചെയ്ത സ്ഥലങ്ങൾ (പേരും സ്ഥാനവും), അമിതവേഗ മുന്നറിയിപ്പിനായി നിങ്ങൾ വെച്ച പരിധി — സേവ് ചെയ്ത സ്ഥലങ്ങൾ നിങ്ങൾക്ക് മാത്രമേ കാണാനാകൂ",
           "നിങ്ങളുടെ ഫോണിൽ \"ഫോൺ നഷ്ടപ്പെട്ടു\" ഉപയോഗിച്ചാൽ: അത് നഷ്ടപ്പെട്ടതായി അടയാളപ്പെടുത്തിയ വിവരം, ആര് അടയാളപ്പെടുത്തി, അവർ ടൈപ്പ് ചെയ്ത ചെറിയ സന്ദേശം, നഷ്ടപ്പെട്ട അവസ്ഥയിൽ ഏതാനും സെക്കൻഡിൽ ഒരിക്കൽ ഫോണിന്റെ സ്ഥാനം",
           "നിങ്ങളുടെ നെറ്റ്‌വർക്ക് തരം (Wi-Fi അല്ലെങ്കിൽ മൊബൈൽ ഡാറ്റ) സിഗ്നൽ ശക്തിയും, നിങ്ങളുടെ കാർഡിൽ നിങ്ങളുടെ കുടുംബത്തിന് കാണിക്കും",
           "നിങ്ങൾ സേവ് ചെയ്ത സ്ഥലത്ത് (വീട്, ഓഫീസ് പോലെ) എത്തുമ്പോഴോ അവിടെ നിന്ന് പുറപ്പെടുമ്പോഴോ: സ്ഥലത്തിന്റെ പേര്, എത്തിയോ പുറപ്പെട്ടോ, സമയം. ഇത് നിങ്ങളുടെ കുടുംബത്തെ അറിയിക്കും, പക്ഷേ ആ സ്ഥലത്തിന്റെ കൃത്യമായ സ്ഥാനം ഒരിക്കലും അല്ല",
           "നിങ്ങൾ \"എന്റെ SOS-നൊപ്പം വോയ്‌സ് ക്ലിപ്പ്\" ഓണാക്കിയാൽ: ആപ്പിൽ നിന്ന് SOS അയച്ച ശേഷം നിങ്ങളുടെ ഫോൺ റെക്കോർഡ് ചെയ്യുന്ന 15 സെക്കൻഡ് വരെ ഓഡിയോ, നിങ്ങൾ ചേർക്കാൻ ആഗ്രഹിച്ചാൽ ക്യാമറയിൽ നിന്നുള്ള ഒരു ഫോട്ടോ",
           "നിങ്ങൾ \"അടുത്തുള്ള സഹായം\" തിരഞ്ഞെടുത്താൽ: നിങ്ങളുടെ ഏകദേശ സ്ഥാനം (നിങ്ങളുടെ അടുത്ത് SOS അയയ്ക്കുന്നവരുമായി ചേർക്കാൻ), അടുത്തുള്ള ആളുകളുടെ മാപ്പിൽ മങ്ങിയ, പേരില്ലാത്ത ഒരു ഡോട്ട്, സഹായ അഭ്യർത്ഥനകൾക്കുള്ള നിങ്ങളുടെ മറുപടികൾ",
+          "ചാറ്റിൽ നിങ്ങൾ ചേർക്കുന്ന ഫോട്ടോകൾ, വീഡിയോകൾ, ഓഡിയോ ഫയലുകൾ, രേഖകൾ, ശബ്ദ സന്ദേശങ്ങൾ (ഓരോന്നും 50 MB വരെ)",
+          "നിങ്ങൾ ഓൺലൈനിലാണോ, അവസാനമായി എപ്പോൾ സജീവമായിരുന്നു, നിങ്ങളുടെ ഫോണിൽ സൈൻ ഇൻ ചെയ്തിട്ടുണ്ടോ എന്നത് — പ്രൊഫൈൽ → സ്വകാര്യതയിൽ മറയ്ക്കാത്തപക്ഷം നിങ്ങളുടെ കുടുംബത്തിന് കാണാം",
         ],
       },
       use: {
@@ -1032,16 +1058,18 @@ const CONTENT = {
           'കോൾ, വീഡിയോ ഉള്ളടക്കം ഞങ്ങൾ ഒരിക്കലും റെക്കോർഡ് ചെയ്യുകയോ സൂക്ഷിക്കുകയോ ചെയ്യുന്നില്ല',
           'ഞങ്ങൾ നിങ്ങളുടെ സന്ദേശങ്ങൾ വായിക്കുന്നില്ല, നിങ്ങളുടെ ഡാറ്റ വിൽക്കുന്നുമില്ല',
           'പരസ്യത്തിനോ പ്രൊഫൈലിംഗിനോ നിങ്ങളുടെ ഡാറ്റ ഞങ്ങൾ ഉപയോഗിക്കുന്നില്ല',
-          "അമിതവേഗ മുന്നറിയിപ്പും ഡ്രൈവിംഗ് ട്രിപ്പുകളും നിങ്ങൾ ഓണാക്കുന്നതുവരെ ഓഫ് ആയിരിക്കും. ഓണാക്കിയാൽ നിങ്ങളുടെ കുടുംബ ഗ്രൂപ്പിന് നിങ്ങളുടെ ട്രിപ്പുകൾ കാണാം, നിങ്ങൾ തിരഞ്ഞെടുത്ത പരിധി കടന്നാൽ അവരെ അറിയിക്കും, നിങ്ങളുടെ ഫോണിലും മുന്നറിയിപ്പ് വരും",
+          "അമിതവേഗ മുന്നറിയിപ്പ് നിങ്ങൾ ഓണാക്കുന്നതുവരെ ഓഫ് ആയിരിക്കും. ഓണാക്കിയാൽ നിങ്ങൾ തിരഞ്ഞെടുത്ത പരിധി കടന്നാൽ നിങ്ങളുടെ കുടുംബ ഗ്രൂപ്പിനെ അറിയിക്കും, നിങ്ങളുടെ ഫോണിലും മുന്നറിയിപ്പ് വരും",
           "കടുത്ത കാലാവസ്ഥാ മുന്നറിയിപ്പുകൾ നിങ്ങൾക്ക് മാത്രം, നിങ്ങൾ സേവ് ചെയ്ത സ്ഥലങ്ങളെക്കുറിച്ച് വരും. ഓരോ സ്ഥലത്തിന്റെയും ഏകദേശ പ്രദേശം മാത്രം (ഏകദേശം 11 കി.മീ വരെ റൗണ്ട് ചെയ്തത്) ഞങ്ങളുടെ സെർവറിൽ നിന്ന് OpenWeatherMap ലേക്ക് അയയ്ക്കുന്നു",
           "അപകട കണ്ടെത്തൽ നിങ്ങൾ ഓണാക്കുന്നതുവരെ ഓഫ് ആയിരിക്കും. അത് സ്വയം ഒന്നും അയയ്ക്കില്ല: അപകടം തിരിച്ചറിഞ്ഞാൽ 20 സെക്കൻഡ് കൗണ്ട്ഡൗൺ മാത്രം തുടങ്ങും, നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ മാത്രമേ SOS പോകൂ",
           "Profile → Safety ൽ \"ഫോൺ നഷ്ടപ്പെട്ടു അനുവദിക്കുക\" നിങ്ങൾ ഓണാക്കുന്നതുവരെ അത് ഓഫ് ആയിരിക്കും. അതിനു ശേഷം മാത്രമേ നിങ്ങളുടെ കുടുംബങ്ങളിൽ ഒന്നിന്റെ അഡ്മിന് നിങ്ങളുടെ ഫോൺ നഷ്ടപ്പെട്ടതായി അടയാളപ്പെടുത്താൻ കഴിയൂ. അപ്പോൾ ഫോൺ ഏതാനും സെക്കൻഡിൽ ഒരിക്കൽ സ്ഥാനം അറിയിക്കും, ഓരോ 2 മിനിറ്റിലും റിംഗ് ചെയ്യും, ലോക്ക് സ്ക്രീനിൽ സന്ദേശം കാണിക്കും, കുടുംബത്തിലെ എല്ലാവർക്കും അത് നഷ്ടപ്പെട്ടതായി അടയാളപ്പെടുത്തിയിട്ടുണ്ടെന്ന് കാണാം. 12 മണിക്കൂറിന് ശേഷം അല്ലെങ്കിൽ കണ്ടെത്തി എന്ന് അടയാളപ്പെടുത്തുമ്പോൾ നിലയ്ക്കും",
           "നിങ്ങളുടെ ഫോൺ ബാറ്ററി ചാർജ് ചെയ്യാത്ത അവസ്ഥയിൽ 15% അല്ലെങ്കിൽ 5% ആയി കുറയുമ്പോൾ, ഫോൺ ഏകദേശം 45 മിനിറ്റായി ഒരു അപ്‌ഡേറ്റും അയയ്ക്കാത്തപ്പോൾ (ഫോൺ ഓഫ് അല്ലെങ്കിൽ നെറ്റ്‌വർക്ക് ഇല്ല), അത് വീണ്ടും റിപ്പോർട്ട് ചെയ്യുമ്പോൾ നിങ്ങളുടെ കുടുംബത്തെ അറിയിക്കും. ഈ മുന്നറിയിപ്പുകളിൽ ബാറ്ററി നിലയും ഫോൺ എത്ര സമയം നിശ്ശബ്ദമായിരുന്നു എന്നതും ഉണ്ടാകും. Profile → സ്വകാര്യത ൽ ലൊക്കേഷൻ പങ്കിടൽ ഓഫാക്കിയാൽ ഇവ നിലയ്ക്കും. ഓഫ്‌ലൈൻ മുന്നറിയിപ്പുകൾ ഇന്ത്യൻ സമയം രാത്രി 11 മുതൽ രാവിലെ 6 വരെ തടഞ്ഞുവയ്ക്കും",
           "SOS-നൊപ്പം ചേർത്ത വോയ്‌സ് ക്ലിപ്പോ ഫോട്ടോയോ ആ SOS അയച്ച കുടുംബങ്ങളിലേക്ക് മാത്രം പോകും. അത് സ്വകാര്യമായി സൂക്ഷിക്കും, അടുത്തുള്ള സഹായികളെ ഒരിക്കലും കാണിക്കില്ല, 7 ദിവസത്തിന് ശേഷം ഇല്ലാതാകും",
           "\"അടുത്തുള്ള സഹായം\" നിങ്ങൾ ചേരുന്നതുവരെ ഓഫ് ആയിരിക്കും. സഹായിക്കാൻ കഴിയാത്തത്ര ദൂരെയുള്ള കുടുംബത്തിലേക്ക് SOS എത്താനിടയുള്ളപ്പോൾ, ഏറ്റവും അടുത്തുള്ള ചേർന്നവരോട് (ആദ്യം 2 കി.മീ ഉള്ളിൽ, പിന്നെ 5 കി.മീ, പിന്നെ 10 കി.മീ) അയച്ചയാൾക്കായി ശരിയായ അടിയന്തര നമ്പറിൽ വിളിക്കാൻ ആവശ്യപ്പെടും. അവർ ഏകദേശ പ്രദേശവും ആവശ്യമായ സഹായത്തിന്റെ തരവും മാത്രമേ കാണൂ, പേരോ ഫോൺ നമ്പറോ അല്ല; സ്വീകരിക്കുന്ന ഒരാൾക്ക് മാത്രമേ കൃത്യമായ സ്ഥാനം കാണിക്കൂ. ആരോടും സ്ഥലത്തേക്ക് പോകാൻ ആവശ്യപ്പെടില്ല",
-          "\"അടുത്തുള്ള സഹായം\" കാരണം, സ്ഥാനമുള്ള SOS നിങ്ങൾ അയയ്ക്കുമ്പോൾ, ആ SOS-ന്റെ ഏകദേശ പ്രദേശവും ആവശ്യമായ സഹായത്തിന്റെ തരവും അതിനടുത്തുള്ള, ചേർന്ന Famora ഉപയോക്താക്കൾക്ക് അയച്ചേക്കാം. നിങ്ങളുടെ പേര്, ഫോൺ നമ്പർ, സന്ദേശങ്ങൾ, വോയ്‌സ് ക്ലിപ്പ്, ഫോട്ടോ എന്നിവ അവർക്ക് ഒരിക്കലും ലഭിക്കില്ല",
+          "\"അടുത്തുള്ള സഹായം\" കാരണം, സ്ഥാനമുള്ള SOS നിങ്ങൾ അയയ്ക്കുമ്പോൾ, ആ SOS-ന്റെ ഏകദേശ പ്രദേശവും ആവശ്യമായ സഹായത്തിന്റെ തരവും അതിനടുത്തുള്ള, ചേർന്ന Kinest ഉപയോക്താക്കൾക്ക് അയച്ചേക്കാം. നിങ്ങളുടെ പേര്, ഫോൺ നമ്പർ, സന്ദേശങ്ങൾ, വോയ്‌സ് ക്ലിപ്പ്, ഫോട്ടോ എന്നിവ അവർക്ക് ഒരിക്കലും ലഭിക്കില്ല",
           "നിങ്ങൾ സേവ് ചെയ്ത സ്ഥലങ്ങളിൽ എത്തുന്നതിന്റെയും പുറപ്പെടുന്നതിന്റെയും അറിയിപ്പുകൾ നിങ്ങളുടെ കുടുംബ ഗ്രൂപ്പിലേക്ക് പോകും; സ്ഥലത്തിന്റെ കൃത്യമായ സ്ഥാനം നിങ്ങളുടെ കൈവശം തന്നെ ഇരിക്കും",
-          "Famora-യിൽ കാണിക്കുന്ന ലൊക്കേഷനുകൾ ഏകദേശ കണക്കുകളാണ്. ഒരു സ്ഥാനം എത്ര കൃത്യമാണ് എന്നത് GPS സിഗ്നൽ, Wi-Fi, മൊബൈൽ നെറ്റ്‌വർക്ക്, ഫോൺ എവിടെയാണ് എന്നതിനെ ആശ്രയിക്കുന്നു (വീടിനുള്ളിലും ഉയരമുള്ള കെട്ടിടങ്ങൾക്കിടയിലും ഏറ്റവും ബുദ്ധിമുട്ട്). പിൻ പത്തുകണക്കിന് മീറ്ററും, മോശം സാഹചര്യത്തിൽ നൂറുകണക്കിന് മീറ്ററും തെറ്റിയേക്കാം, യഥാർത്ഥ ചലനത്തിൽ നിന്ന് അൽപ്പം പിന്നിലുമാകാം. പുതിയ റീഡിംഗ് വിശ്വസനീയമല്ലെന്ന് തോന്നിയാൽ Famora അവസാനത്തെ വിശ്വസനീയ സ്ഥാനം തന്നെ നിലനിർത്തും. കൃത്യമായ സ്ഥാനത്തിന് ഇതിനെ ആശ്രയിക്കരുത്, അടിയന്തര ഘട്ടത്തിൽ അടിയന്തര സേവനങ്ങളെ വിളിക്കുക",
+          "Kinest-യിൽ കാണിക്കുന്ന ലൊക്കേഷനുകൾ ഏകദേശ കണക്കുകളാണ്. ഒരു സ്ഥാനം എത്ര കൃത്യമാണ് എന്നത് GPS സിഗ്നൽ, Wi-Fi, മൊബൈൽ നെറ്റ്‌വർക്ക്, ഫോൺ എവിടെയാണ് എന്നതിനെ ആശ്രയിക്കുന്നു (വീടിനുള്ളിലും ഉയരമുള്ള കെട്ടിടങ്ങൾക്കിടയിലും ഏറ്റവും ബുദ്ധിമുട്ട്). പിൻ പത്തുകണക്കിന് മീറ്ററും, മോശം സാഹചര്യത്തിൽ നൂറുകണക്കിന് മീറ്ററും തെറ്റിയേക്കാം, യഥാർത്ഥ ചലനത്തിൽ നിന്ന് അൽപ്പം പിന്നിലുമാകാം. പുതിയ റീഡിംഗ് വിശ്വസനീയമല്ലെന്ന് തോന്നിയാൽ Kinest അവസാനത്തെ വിശ്വസനീയ സ്ഥാനം തന്നെ നിലനിർത്തും. കൃത്യമായ സ്ഥാനത്തിന് ഇതിനെ ആശ്രയിക്കരുത്, അടിയന്തര ഘട്ടത്തിൽ അടിയന്തര സേവനങ്ങളെ വിളിക്കുക",
+          "നിങ്ങളുടെ സ്വന്തം SOS സജീവമായിരിക്കുമ്പോൾ, ഒന്നും നിങ്ങളെ വെളിപ്പെടുത്താതിരിക്കാൻ ഫോൺ നിശ്ശബ്ദമാക്കാൻ Kinest Android-ന്റെ ശല്യപ്പെടുത്തരുത് ആക്‌സസ് ഉപയോഗിക്കുന്നു. SOS അവസാനിച്ചാൽ നിങ്ങളുടെ ശബ്ദ ക്രമീകരണങ്ങൾ തിരികെ വരും. ഒന്നും എവിടേക്കും അയയ്ക്കില്ല",
+          "Kinest കുട്ടികൾക്കായി രൂപകൽപ്പന ചെയ്തതല്ല, അവരെ ലക്ഷ്യമിടുന്നതുമല്ല. ഈ നയം സ്വയം അംഗീകരിക്കാൻ പ്രായമുണ്ടെങ്കിൽ മാത്രം ഉപയോഗിക്കുക. മറ്റൊരാൾക്കായി ഉണ്ടാക്കുന്ന അക്കൗണ്ടിന് രക്ഷിതാവോ സംരക്ഷകനോ ആണ് ഉത്തരവാദി",
         ],
       },
       calls: {
@@ -1052,6 +1080,7 @@ const CONTENT = {
           'കോൾ രേഖകൾ മാത്രമേ സൂക്ഷിക്കുന്നുള്ളൂ — സംഭാഷണം ഒരിക്കലുമില്ല',
           'കോളിനിടെ മൈക്രോഫോൺ ഉപയോഗിക്കുന്നു; ക്യാമറ വീഡിയോ കോളിനിടെ മാത്രം',
           'ഏത് കുടുംബാംഗത്തിനും കുടുംബത്തിനായുള്ള കോൾ ചരിത്രം മായ്ക്കാം',
+          "ഒരു കോളിൽ 6 കുടുംബാംഗങ്ങൾ വരെ ഉണ്ടാകാം. കോളിലുള്ള ആർക്കും മറ്റൊരു കുടുംബാംഗത്തെ ചേർക്കാം, അവർക്ക് റിങ് ചെയ്യും. ഗ്രൂപ്പ് കോളുകളും റെക്കോർഡ് ചെയ്യില്ല; കോൾ രേഖ മാത്രമേ സൂക്ഷിക്കൂ",
         ],
       },
       sms: {
@@ -1076,6 +1105,7 @@ const CONTENT = {
           'മറ്റ് അംഗങ്ങൾക്ക് നിങ്ങൾ നൽകുന്ന വിളിപ്പേരുകളും നിങ്ങളുടെ ഭാഷാ തിരഞ്ഞെടുപ്പും നിങ്ങൾക്കായി മാത്രം ഫോണിൽ സൂക്ഷിക്കുന്നു',
           'ഈ വിഭാഗത്തിലുള്ളതെല്ലാം ആപ്പ് അൺഇൻസ്റ്റാൾ ചെയ്യുമ്പോൾ നീക്കം ചെയ്യപ്പെടും',
           "അപകട കണ്ടെത്തൽ ഓണായിരിക്കുകയും നിങ്ങൾ വേഗത്തിൽ സഞ്ചരിക്കുകയും ചെയ്യുമ്പോൾ മാത്രമേ മോഷൻ സെൻസർ വായിക്കൂ. റീഡിംഗുകൾ നിങ്ങളുടെ ഫോണിൽ തന്നെ വിലയിരുത്തുന്നു, ഒരിക്കലും അപ്‌ലോഡ് ചെയ്യില്ല",
+          "നിങ്ങളുടെ ഫോണിൽ നിന്ന് അലർട്ട് ശബ്ദം തിരഞ്ഞെടുത്താൽ, അതിന്റെ സൂചന മാത്രമേ നിങ്ങളുടെ ഫോണിൽ സൂക്ഷിക്കൂ. ശബ്ദ ഫയൽ ഒരിക്കലും അപ്‌ലോഡ് ചെയ്യില്ല",
         ],
       },
       crash: {
@@ -1121,11 +1151,11 @@ const CONTENT = {
           'ഉപയോഗിക്കാത്ത ഉപകരണ അറിയിപ്പ് ടോക്കണുകൾ 60 ദിവസത്തിന് ശേഷം നീക്കം ചെയ്യുന്നു',
           'നിങ്ങളുടെ അക്കൗണ്ട് ഇല്ലാതാക്കിയാൽ ഈ രേഖകളിൽ നിന്ന് നിങ്ങളുടെ ഡാറ്റ നീക്കം ചെയ്യപ്പെടും',
 'ഫോണിൽ സൂക്ഷിക്കുന്ന ക്രമീകരണങ്ങൾ — വ്യാജ കോൾ വിവരങ്ങൾ, "ഇന്റർനെറ്റ് ഇല്ലാത്തപ്പോൾ SMS" നമ്പറുകൾ, വിളിപ്പേരുകൾ — ആപ്പ് അൺഇൻസ്റ്റാൾ ചെയ്യുമ്പോൾ പോകും',
-          "ഡ്രൈവിംഗ് ട്രിപ്പുകൾ 30 ദിവസത്തിനു ശേഷം സ്വയം ഇല്ലാതാകും, ഡ്രൈവിംഗ് ട്രിപ്പുകൾ ഓഫാക്കുമ്പോൾ ഉടൻ ഇല്ലാതാകും",
           "ഫോൺ നഷ്ടപ്പെട്ടു രേഖകൾ ആ മോഡ് അവസാനിക്കുമ്പോൾ, ഏതായാലും 12 മണിക്കൂറിന് ശേഷം ഇല്ലാതാകും",
           "SOS വോയ്‌സ് ക്ലിപ്പുകളും ഫോട്ടോകളും 7 ദിവസത്തിന് ശേഷം സ്വയം ഇല്ലാതാകും",
           "\"അടുത്തുള്ള സഹായം\" അഭ്യർത്ഥനകളും മറുപടികളും അവ ഉൾപ്പെടുന്ന SOS പരിഹരിച്ച് 30 ദിവസത്തിന് ശേഷം അതിനോടൊപ്പം ഇല്ലാതാകും",
           "സ്ഥലത്ത് എത്തുന്ന/പുറപ്പെടുന്ന അറിയിപ്പുകൾ, ബാറ്ററി, ഫോൺ-ഓഫ്‌ലൈൻ മുന്നറിയിപ്പുകൾ എന്നിവ നിങ്ങൾ അക്കൗണ്ട് ഇല്ലാതാക്കുന്നതുവരെ സൂക്ഷിക്കും, പിന്നീട് നീക്കം ചെയ്യും",
+          "ചാറ്റിൽ ചേർത്ത ഫയലുകൾ, അവയുടെ സന്ദേശം ഇല്ലാതാക്കി (അല്ലെങ്കിൽ 90 ദിവസം തികഞ്ഞ്) ഏകദേശം ഒരു ദിവസത്തിനകം സ്വയം ഇല്ലാതാക്കപ്പെടും. നിങ്ങളുടെ പ്രൊഫൈൽ ഫോട്ടോ, നിങ്ങൾ അക്കൗണ്ട് ഇല്ലാതാക്കി ഏകദേശം ഒരു ദിവസത്തിനകം ഇല്ലാതാക്കപ്പെടും",
         ],
       },
       choices: {
@@ -1137,9 +1167,9 @@ const CONTENT = {
 'പ്രൊഫൈൽ-ൽ എപ്പോൾ വേണമെങ്കിലും "കുലുക്കിയാൽ SOS" ഓഫ് ചെയ്യുക',
           'പ്രൊഫൈൽ-ൽ എപ്പോൾ വേണമെങ്കിലും "ഇന്റർനെറ്റ് ഇല്ലാത്തപ്പോൾ SMS" ഓഫ് ചെയ്ത്, അധിക നമ്പർ നീക്കുക',
           'സന്ദേശ, കോൾ ചരിത്രം അതത് സ്ക്രീനുകളിൽ നിന്ന് മായ്ക്കുക',
-          'നിങ്ങളുടെ അക്കൗണ്ടും അതിന്റെ ഡാറ്റയും പ്രൊഫൈൽ → എന്റെ അക്കൗണ്ട് ഇല്ലാതാക്കുക യിൽ നിന്ന്, അല്ലെങ്കിൽ ആപ്പ് ഇല്ലാതെ Famora വെബ്‌സൈറ്റിലെ "Delete Account" പേജിൽ നിന്ന് ഇല്ലാതാക്കുക',
+          'നിങ്ങളുടെ അക്കൗണ്ടും അതിന്റെ ഡാറ്റയും പ്രൊഫൈൽ → എന്റെ അക്കൗണ്ട് ഇല്ലാതാക്കുക യിൽ നിന്ന്, അല്ലെങ്കിൽ ആപ്പ് ഇല്ലാതെ Kinest വെബ്‌സൈറ്റിലെ "Delete Account" പേജിൽ നിന്ന് ഇല്ലാതാക്കുക',
           'ക്യാമറ, മൈക്രോഫോൺ, ലൊക്കേഷൻ, SMS അല്ലെങ്കിൽ അറിയിപ്പ് അനുമതി Android ക്രമീകരണങ്ങളിൽ പിൻവലിക്കുക',
-          "Profile → ഡ്രൈവിംഗ് സുരക്ഷ ൽ എപ്പോൾ വേണമെങ്കിലും അമിതവേഗ മുന്നറിയിപ്പ്, ഡ്രൈവിംഗ് ട്രിപ്പുകൾ, അപകട കണ്ടെത്തൽ, കൂടാതെ Profile → Safety ൽ കാലാവസ്ഥാ മുന്നറിയിപ്പുകൾ ഓണോ ഓഫോ ആക്കാം",
+          "Profile → ഡ്രൈവിംഗ് സുരക്ഷ ൽ എപ്പോൾ വേണമെങ്കിലും അമിതവേഗ മുന്നറിയിപ്പ്, അപകട കണ്ടെത്തൽ, കൂടാതെ Profile → Safety ൽ കാലാവസ്ഥാ മുന്നറിയിപ്പുകൾ ഓണോ ഓഫോ ആക്കാം",
           "Profile → Safety ൽ എപ്പോൾ വേണമെങ്കിലും \"ഫോൺ നഷ്ടപ്പെട്ടു അനുവദിക്കുക\" ഓണോ ഓഫോ ആക്കാം",
           "Profile → Safety ൽ എപ്പോൾ വേണമെങ്കിലും \"എന്റെ SOS-നൊപ്പം വോയ്‌സ് ക്ലിപ്പ്\" ഓണോ ഓഫോ ആക്കാം",
           "SOS പേജിൽ നിന്ന് എപ്പോൾ വേണമെങ്കിലും \"അടുത്തുള്ള സഹായ\"ത്തിൽ ചേരുകയോ ഒഴിവാകുകയോ ചെയ്യാം, നിങ്ങളുടെ ചരിത്രത്തിൽ നിന്ന് എൻട്രികൾ മറയ്ക്കാം",

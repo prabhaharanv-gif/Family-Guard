@@ -258,7 +258,7 @@ export function MessageActionSheet({ msg, isOwn, anchor, myReaction, onReact, on
     },
     {
       // Photos and videos, sent or received. In the app they go straight into
-      // the gallery (a Famora album) and a toast confirms it; in a browser it
+      // the gallery (a Kinest album) and a toast confirms it; in a browser it
       // is a plain download, so the label says so. A failure is reported by
       // the same toast, so nothing is left to catch here.
       label: Capacitor.isNativePlatform() ? t('messages.saveToGallery') : t('messages.download'),

@@ -4,7 +4,7 @@
  * The public account-deletion route. Google Play requires a way to request
  * deletion from the open web — reachable without installing the app — so this
  * sits outside PrivateRoute, and ConsentGate already lets signed-out visitors
- * through. Someone who has uninstalled Famora can still land here and act.
+ * through. Someone who has uninstalled Kinest can still land here and act.
  *
  * It offers two routes: the in-app Profile → Delete My Account, and deleting
  * right here. The web route proves ownership the only way this app can — an SMS
@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { withCaptcha, prefetchCaptchaToken } from '../lib/captcha'
+import { withCaptcha, prefetchCaptchaToken, cancelCaptchaPrefetch } from '../lib/captcha'
 import { useNavigate } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
 import { useT } from '../i18n'
@@ -239,7 +239,7 @@ function WebDeleteFlow() {
 }
 
 export default function DeleteAccountPage() {
-  useEffect(() => { prefetchCaptchaToken(1) }, [])
+  useEffect(() => { prefetchCaptchaToken(1); return cancelCaptchaPrefetch }, [])
   const navigate = useNavigate()
   const t = useT()
 

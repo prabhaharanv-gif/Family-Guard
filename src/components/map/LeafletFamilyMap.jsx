@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
-import { DEST_PIN, destPin, timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
+import { DEST_PIN, DEST_ANCHOR, destPin, timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
 import SmoothMarker, { GLIDE_MS } from '../SmoothMarker'
 
 /**
@@ -31,20 +31,23 @@ const safeUrl = u => (/^https?:\/\//i.test(String(u || '')) ? esc(u) : '')
 // A CSS colour, or a var(--token): nothing else reaches the style attribute.
 const safeColor = c => (/^(#[0-9a-f]{3,8}|[a-z]+|(?:rgb|hsl)a?\([\d\s.,%/-]+\)|var\(--[\w-]+\))$/i.test(String(c || '')) ? String(c) : '#8B0D3D')
 
-// Every avatar wears a maroon ring outside its white edge (same as the phone's
-// pins, pinIcon.js). ring = null draws the plain white-edged pin.
-function createIcon(color, initial, avatarUrl, ring = 'var(--maroon)') {
-  const shadow = ring ? `0 0 0 3px ${ring},0 2px 12px rgba(0,0,0,0.25)` : '0 2px 12px rgba(0,0,0,0.25)'
+// Every avatar wears a white edge (same as the phone's pins, pinIcon.js). A coloured
+// initial with no photo is puffy like the Family card's avatar: a lit top, a shaded
+// underside and a soft drop shadow.
+function createIcon(color, initial, avatarUrl, ring = '#fff') {
+  const shadow = '0 2px 12px rgba(0,0,0,0.25)'
+  const puffy = 'inset 0 2px 4px rgba(255,255,255,0.35),inset 0 -3px 6px rgba(0,0,0,0.14),0 4px 12px rgba(0,0,0,0.28)'
+  const edge = ring || '#fff'
   const url = safeUrl(avatarUrl)
   const bg = safeColor(color)
   const content = url
-    ? `<img src="${url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:${shadow};" />`
+    ? `<img src="${url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:3px solid ${edge};box-shadow:${shadow};" />`
     : `<div style="
         width:44px;height:44px;border-radius:50%;
-        background:${bg};border:3px solid #fff;
+        background:${bg};border:3px solid ${edge};
         display:flex;align-items:center;justify-content:center;
         font-weight:800;font-size:18px;color:#fff;
-        box-shadow:${shadow};
+        box-shadow:${puffy};
         font-family:Inter,sans-serif;
       ">${esc(initial)}</div>`
   return L.divIcon({
@@ -253,14 +256,14 @@ export default function LeafletFamilyMap({
       {destination && (
         <Marker
           position={[destination.lat, destination.lng]}
-          icon={L.icon({ iconUrl: destPin(), iconSize: [DEST_PIN, DEST_PIN], iconAnchor: [DEST_PIN / 2, DEST_PIN / 2] })}
+          icon={L.icon({ iconUrl: destPin(), iconSize: [DEST_PIN, DEST_PIN], iconAnchor: [DEST_ANCHOR.x, DEST_ANCHOR.y] })}
           interactive={false}
         />
       )}
 
       {Object.entries(pins).map(([uid, loc]) => (
         loc.kind === 'anonDot' ? (
-          // Famora Social's ambient dots (see NearbySearchMap): no avatar,
+          // Kinest Social's ambient dots (see NearbySearchMap): no avatar,
           // no popup, and `interactive={false}` so Leaflet gives them no
           // click handler or hover cursor at all — untappable by construction,
           // not by leaving renderPopup empty. A plain Marker rather than

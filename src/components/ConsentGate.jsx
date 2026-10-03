@@ -16,6 +16,7 @@ import PolicyContent from './PolicyContent'
 import { setCrashReportingEnabled, setCrashUserId } from '../lib/crashReporting'
 import Icon from './Icon'
 import { useT } from '../i18n'
+import { APP_NAME } from '../lib/brand'
 
 export default function ConsentGate({ children }) {
   const { user, loading } = useAuthStore()
@@ -63,7 +64,7 @@ export default function ConsentGate({ children }) {
   if (loading || checking) {
     return (
       <div className="splash">
-        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--maroon)', fontFamily: 'Sora, sans-serif' }}>famora</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--maroon)', fontFamily: 'Sora, sans-serif' }}>{APP_NAME}</div>
       </div>
     )
   }

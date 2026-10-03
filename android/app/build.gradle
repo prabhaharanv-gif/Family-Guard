@@ -18,7 +18,7 @@ android {
         applicationId "com.scoopfamily.familyguard"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 33
+        versionCode 34
         versionName "1.2.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // Google Maps SDK for Android key, read from android/local.properties

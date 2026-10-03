@@ -26,7 +26,25 @@ function isValidUUID(v: unknown): v is string {
   return typeof v === 'string' && UUID_RE.test(v)
 }
 
-serve(async (req) => {
+
+// CORS: the app and the website only, not every origin. Applied to the finished
+// response, so concurrent requests from different origins cannot mix up headers.
+const ALLOWED_ORIGINS = [
+  'https://localhost',          // the Android app (Capacitor)
+  'capacitor://localhost',
+  'http://localhost',
+  'http://localhost:5173',      // local development
+  'https://famora-family.vercel.app',
+]
+function withCors(req: Request, res: Response): Response {
+  const origin = req.headers.get('Origin') || ''
+  const headers = new Headers(res.headers)
+  headers.set('Access-Control-Allow-Origin', ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[4])
+  headers.append('Vary', 'Origin')
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers })
+}
+
+const handle = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -111,4 +129,6 @@ serve(async (req) => {
     JSON.stringify({ token, appId, channelName: call.agora_channel_name, uid }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
-})
+}
+
+serve(async (req) => withCors(req, await handle(req)))

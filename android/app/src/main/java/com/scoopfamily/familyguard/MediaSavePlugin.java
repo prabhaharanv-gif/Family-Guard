@@ -35,7 +35,7 @@ import java.net.URL;
  * it hands this plugin the URL, and the download happens here, straight into
  * the gallery, without ever passing the bytes back across the bridge.
  *
- * Where it lands: Pictures/Famora for photos, Movies/Famora for videos, so a
+ * Where it lands: Pictures/Kinest for photos, Movies/Kinest for videos, so a
  * family's saved media shows up as one album instead of scattered in Camera.
  *
  * Permissions: Android 10+ (API 29) lets an app add its own files to the
@@ -57,7 +57,7 @@ import java.net.URL;
 public class MediaSavePlugin extends Plugin {
 
     private static final String TAG = "FamoraMediaSave";
-    private static final String ALBUM = "Famora";
+    private static final String ALBUM = "Kinest";
 
     @PluginMethod
     public void saveToGallery(PluginCall call) {
@@ -178,12 +178,12 @@ public class MediaSavePlugin extends Plugin {
     /**
      * A file name the gallery will accept. Chat objects are stored as
      * <uuid>.<ext>, so the caller's name is used when given, otherwise a
-     * timestamped Famora_… name; either way it keeps the right extension.
+     * timestamped Kinest_… name; either way it keeps the right extension.
      */
     private static String safeName(String name, String mime) {
         String ext = extFor(mime);
         String base = (name == null || name.trim().isEmpty())
-            ? "Famora_" + System.currentTimeMillis()
+            ? "Kinest_" + System.currentTimeMillis()
             : name.trim().replaceAll("[\\\\/:*?\"<>|]", "_");
         return base.toLowerCase().endsWith("." + ext) ? base : base + "." + ext;
     }

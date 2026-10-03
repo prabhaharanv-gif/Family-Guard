@@ -53,7 +53,7 @@ select 'D. expected cron job missing',
 from unnest(array[
   'close_stale_trips', 'purge_old_trips', 'detect_offline_members',
   'expire_lost_phone', 'place_weather_check', 'purge_place_weather_alerts',
-  'nearby_help_cron_cleanup', 'purge_expired_sos_media', 'purge_expired_unlock_alerts',
+  'nearby_help_cron_cleanup', 'purge_expired_sos_media','purge_orphaned_chat_media','purge_deleted_account_avatars','purge_api_quota', 'purge_expired_unlock_alerts',
   'retention_job_1', 'retention_job_2', 'retention_job_3', 'retention_job_4', 'retention_job_5'
 ]) as j(n)
 where not exists (select 1 from cron.job where jobname = j.n)

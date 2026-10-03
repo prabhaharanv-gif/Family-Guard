@@ -21,7 +21,7 @@ import android.util.Log;
  *      reliability setup). Without it Android refuses SILENT, and VIBRATE is
  *      the closest thing an app is allowed to set.
  *
- *   2. Famora's own sounds that are built to get through a silenced phone
+ *   2. Kinest's own sounds that are built to get through a silenced phone
  *      check isActive() and stay quiet: the find-my-phone ping (USAGE_ALARM at
  *      full volume), the incoming-call ringer and its manual vibration (which
  *      also raises STREAM_RING and can knock the phone out of silent), and

@@ -504,7 +504,11 @@ html.native-map-open .app-shell {
    ══════════════════════════════════════════════════════════════ */
 .top-bar {
   background: var(--grad-hero);
-  padding: 16px 20px 14px;
+  /* One fixed height on every tab, whatever the buttons inside are (it only grows if
+     something taller ever lands in it). */
+  min-height: 60px;
+  box-sizing: border-box;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1488,3 +1492,29 @@ html.native-map-open .app-shell {
 @keyframes member-card-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .member-card-in { animation: member-card-in 0.18s ease-out; }
 @media (prefers-reduced-motion: reduce) { .member-card-in { animation: none; } }
+
+.weather-swipe::-webkit-scrollbar { display: none; }
+
+/* ── Map member card (Leaflet popup) ──
+   A maroon edge like the cards in the app, with the pointer carrying the same edge. The
+   phone's native-map card is styled to match in NativeFamilyMap. */
+.leaflet-popup-content-wrapper {
+  border: 1.5px solid var(--maroon);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(74,8,32,0.22), 0 2px 6px rgba(74,8,32,0.10);
+}
+.leaflet-popup-tip {
+  border-right: 1.5px solid var(--maroon);
+  border-bottom: 1.5px solid var(--maroon);
+  box-shadow: 3px 3px 8px rgba(74,8,32,0.10);
+}
+/* Close button: just a maroon cross, no circle. */
+.leaflet-container a.leaflet-popup-close-button {
+  top: 6px; right: 8px;
+  width: 28px; height: 28px; padding: 0; box-sizing: border-box;
+  background: none; border: none;
+  color: var(--maroon);
+  font: 400 24px/26px Inter, sans-serif; text-align: center;
+}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:active { background: none; color: var(--maroon-deep, var(--maroon)); }

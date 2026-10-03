@@ -1,5 +1,5 @@
 -- ===========================================================================
--- Famora Social: let the sender (and their family) see roughly where an
+-- Kinest Social: let the sender (and their family) see roughly where an
 -- accepted helper is, once one has accepted.
 --
 -- Fuzzy on purpose, and fuzzed around the HELPER's real position (not the

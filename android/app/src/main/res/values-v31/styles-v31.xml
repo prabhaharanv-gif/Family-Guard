@@ -4,7 +4,7 @@
         Android 12+ (API 31+) system splash: plain cream, NO icon.
 
         The app draws its own launch screen (.splash in global.css: the logo on
-        cream with "famora" under it). Any icon here is a SECOND splash in front
+        cream with "Kinest" under it). Any icon here is a SECOND splash in front
         of that one. Tried twice and dropped twice:
           - an old, different shield picture, which morphed into the app's own
             ("the second shield");

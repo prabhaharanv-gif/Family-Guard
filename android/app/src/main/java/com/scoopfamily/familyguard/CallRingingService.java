@@ -319,7 +319,7 @@ public class CallRingingService extends Service {
             if (wakeLock != null && wakeLock.isHeld()) return;
             PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
             if (pm == null) return;
-            wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Famora::CallRingWakeLock");
+            wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Kinest::CallRingWakeLock");
             wakeLock.setReferenceCounted(false);
             wakeLock.acquire(40_000L);
         } catch (Exception e) { e.printStackTrace(); }
@@ -345,7 +345,7 @@ public class CallRingingService extends Service {
                 PowerManager.SCREEN_BRIGHT_WAKE_LOCK
                     | PowerManager.ACQUIRE_CAUSES_WAKEUP
                     | PowerManager.ON_AFTER_RELEASE,
-                "Famora::CallScreenWakeLock"
+                "Kinest::CallScreenWakeLock"
             );
             screenWakeLock.setReferenceCounted(false);
             screenWakeLock.acquire(10_000L);

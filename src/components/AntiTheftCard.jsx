@@ -16,7 +16,7 @@ const CallAlarm = registerPlugin('CallAlarm')
  *
  *  1. Wrong-password alert — after 3 wrong screen-lock attempts the phone tells
  *     the family ADMINS, with where it was last seen. Needs Android's
- *     "device admin" permission, asked for in the system's own dialog; Famora
+ *     "device admin" permission, asked for in the system's own dialog; Kinest
  *     asks for the watch-login policy only (no lock, no wipe).
  *  2. Photo (experimental) — also takes one front-camera photo, readable only
  *     by the owner and those admins. Needs camera and display-over-apps, and

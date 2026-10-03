@@ -1,14 +1,14 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Famora</string>
-    <string name="title_activity_main">Famora</string>
+    <string name="app_name">Kinest</string>
+    <string name="title_activity_main">Kinest</string>
     <string name="package_name">com.scoopfamily.familyguard</string>
     <string name="custom_url_scheme">com.scoopfamily.familyguard</string>
 
     <!--
       Notification channel names and descriptions.
 
-      These are the labels Android itself renders in Settings › Apps › Famora ›
+      These are the labels Android itself renders in Settings › Apps › Kinest ›
       Notifications, so they follow the DEVICE language, not the in-app picker —
       native code cannot read the browser localStorage the picker writes to.
       A Tamil phone gets values-ta automatically.
@@ -40,12 +40,12 @@
     <string name="ch_messages_quiet_desc">Family messages — pop-up muted, sound still plays</string>
 
     <string name="ch_location_name">Location Tracking</string>
-    <string name="ch_location_desc">Shows while Famora is tracking your location</string>
+    <string name="ch_location_desc">Shows while Kinest is tracking your location</string>
 
     <string name="ch_ping_name">Find My Phone</string>
     <string name="ch_ping_desc">Rings this phone when a family member uses Find My Phone</string>
 
-    <!-- Famora Social — nearby-help escalation. ch_nearby_help_* is the
+    <!-- Kinest Social — nearby-help escalation. ch_nearby_help_* is the
          bystander's ring notification; ch_nearby_help_status_* is the
          low-priority fallback shown on the SOS sender's own phone. -->
     <string name="ch_nearby_help_name">Nearby Help Requests</string>
@@ -69,7 +69,7 @@
     <!-- SOSAlertActivity — full-screen alert over the lock screen -->
     <string name="sos_needs_help">%1$s needs help!</string>
     <string name="sos_view_location">View Location</string>
-    <string name="sos_open_app">Open Famora</string>
+    <string name="sos_open_app">Open Kinest</string>
     <string name="sos_stop_alarm">I Understand — Silence Alarm</string>
     <string name="sos_calm_hint">Stay calm. Check where they are, then call or go to them.</string>
     <string name="sos_call">Call %1$s</string>
@@ -98,7 +98,7 @@
 
     <!-- Notifications built natively -->
     <string name="notif_sos_title">🚨 SOS — %1$s needs help!</string>
-    <string name="notif_sos_big">⚠️ %1$s needs help!\n\n%2$s\n\nTap to open Famora.</string>
+    <string name="notif_sos_big">⚠️ %1$s needs help!\n\n%2$s\n\nTap to open Kinest.</string>
     <string name="notif_call_voice_label">Voice call</string>
     <string name="notif_call_video_label">Video call</string>
     <string name="notif_call_title">📞 %1$s from %2$s</string>
@@ -118,13 +118,13 @@
     <string name="notif_location_body">Protecting your family · location active</string>
     <string name="notif_tap_to_open">Tap to open</string>
     <string name="ch_reauth_name">Reconnection needed</string>
-    <string name="ch_reauth_desc">Alerts you when Famora must be reopened to keep sharing your location</string>
+    <string name="ch_reauth_desc">Alerts you when Kinest must be reopened to keep sharing your location</string>
     <string name="notif_reauth_title">Location sharing paused</string>
-    <string name="notif_reauth_body">Open Famora to reconnect. Your family cannot see your location until you do.</string>
+    <string name="notif_reauth_body">Open Kinest to reconnect. Your family cannot see your location until you do.</string>
 
     <!-- Offline SMS. Kept short: every 160 characters is another charge, and
          Indian scripts fit only 70 per part. -->
-    <string name="sms_offline_body">Famora: %1$s has no internet since %2$s. Last known location: %3$s</string>
+    <string name="sms_offline_body">Kinest: %1$s has no internet since %2$s. Last known location: %3$s</string>
     <string name="sms_no_location">no location available</string>
     <string name="sms_test_prefix">[Test]</string>
 
@@ -133,7 +133,7 @@
     <string name="sos_countdown_hint">Tap Cancel if you did not mean to do this.</string>
     <string name="sos_countdown_cancel">Cancel</string>
 
-    <!-- Famora Social — nearby-help bystander notification (NearbyHelpRingService,
+    <!-- Kinest Social — nearby-help bystander notification (NearbyHelpRingService,
          NearbyHelpActionReceiver). "Never asked to go" is repeated in the body
          on purpose — see the plan's safety boundary in §7. -->
     <string name="notif_nearby_help_title">Someone nearby may need help</string>
@@ -152,7 +152,7 @@
     <string name="notif_nearby_help_accepted_title">Location revealed</string>
     <string name="notif_nearby_help_accepted_body">%1$s — call %2$s or open it in Maps.</string>
 
-    <!-- Famora Social — sender-side fallback (MyFirebaseMessagingService).
+    <!-- Kinest Social — sender-side fallback (MyFirebaseMessagingService).
          Count/status only, never a helper's identity — the live case is
          handled by the web layer over Supabase Realtime; this is only shown
          when the app was backgrounded or killed. -->
@@ -212,11 +212,17 @@
     <string name="ch_overspeed_self_name">Speed limit alert</string>
     <string name="ch_overspeed_self_desc">A short sound to warn you when you go over the speed limit you set for yourself</string>
     <string name="unlock_alert_title" formatted="true">Wrong password on %1$s\'s phone</string>
-    <string name="unlock_alert_body" formatted="true">Wrong screen-lock attempts: %1$d. Open Famora to see where the phone was, and a photo if one was taken.</string>
+    <string name="unlock_alert_body" formatted="true">Wrong screen-lock attempts: %1$d. Open Kinest to see where the phone was, and a photo if one was taken.</string>
     <string name="ch_lost_name">Phone lost mode</string>
     <string name="ch_lost_desc">Shown while this phone has been marked lost by your family</string>
     <string name="lost_title">This phone is lost</string>
     <string name="lost_body_default" formatted="true">Please contact %1$s to return it.</string>
     <string name="lost_body_generic">Please return this phone to its owner\'s family.</string>
     <string name="lost_close">Close</string>
+    <!-- Reply from a message notification -->
+    <string name="reply_action">Reply</string>
+    <string name="reply_hint">Type a reply</string>
+    <string name="reply_sent">You: %1$s</string>
+    <string name="reply_failed">Reply not sent. Tap to open Kinest, or try again.</string>
+    <string name="reply_empty">Nothing to send.</string>
 </resources>

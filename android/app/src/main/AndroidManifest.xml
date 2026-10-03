@@ -267,7 +267,7 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
-        <!-- ── Famora Social: "I can help" / "No thanks" notification actions ──
+        <!-- ── Kinest Social: "I can help" / "No thanks" notification actions ──
              NearbyHelpRingService is a plain class, not a Service — it posts
              one notification and relies on the channel's own sound and
              vibration, no continuous playback to justify a foreground
@@ -275,6 +275,12 @@
              only our own PendingIntent may fire this. -->
         <receiver
             android:name=".NearbyHelpActionReceiver"
+            android:exported="false" />
+
+        <!-- Reply typed into a message notification. exported="false": only the
+             explicit PendingIntent built in MessageReplyReceiver can fire it. -->
+        <receiver
+            android:name=".MessageReplyReceiver"
             android:exported="false" />
 
         <!-- Anti-theft (device-admin wrong-password alert and intruder photo) was
@@ -371,7 +377,7 @@
          setStreamVolume(STREAM_ALARM, ...) throws SecurityException while
          Do Not Disturb is on. Both are exactly what an SOS needs to survive a
          silenced phone, and both were failing invisibly. Declaring it only
-         makes the grant POSSIBLE — the user still has to allow Famora under
+         makes the grant POSSIBLE — the user still has to allow Kinest under
          Settings > Do Not Disturb access; SosDnd reads that back. -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 

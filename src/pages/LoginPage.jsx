@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { withCaptcha, prefetchCaptchaToken } from '../lib/captcha'
+import { withCaptcha, prefetchCaptchaToken, cancelCaptchaPrefetch } from '../lib/captcha'
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { useT } from '../i18n'
 import AuthLanguagePicker from '../components/AuthLanguagePicker'
 import Dialog from '../components/Dialog'
 import famoraLogo from '../assets/famora-logo.jpg'
 import Icon from '../components/Icon'
+import { APP_NAME } from '../lib/brand'
 
 function EyeIcon({ open }) {
   return open ? (
@@ -24,7 +25,7 @@ function EyeIcon({ open }) {
 }
 
 function ForgotPasswordModal({ onClose }) {
-  useEffect(() => { prefetchCaptchaToken(1) }, [])
+  useEffect(() => { prefetchCaptchaToken(1); return cancelCaptchaPrefetch }, [])
   const t = useT()
   const [mobile, setMobile]             = useState('')
   const [otp, setOtp]                   = useState('')
@@ -250,7 +251,7 @@ function ForgotPasswordModal({ onClose }) {
 }
 
 export default function LoginPage() {
-  useEffect(() => { prefetchCaptchaToken(2) }, [])
+  useEffect(() => { prefetchCaptchaToken(2); return cancelCaptchaPrefetch }, [])
   const t = useT()
   const [mobile, setMobile]             = useState('')
   const [password, setPassword]         = useState('')
@@ -296,7 +297,7 @@ export default function LoginPage() {
       <div className="auth-card" style={{ borderRadius: 28, padding: "40px 32px" }}>
         {/* Brand icon — same artwork as the launcher icon */}
         <div className="auth-logo auth-logo-brand" style={{ marginBottom: 28 }}>
-          <img src={famoraLogo} alt="famora" width={110} height={110}
+          <img src={famoraLogo} alt={APP_NAME} width={110} height={110}
             style={{ display: 'block', margin: '0 auto', borderRadius: 24 }} />
         </div>
 

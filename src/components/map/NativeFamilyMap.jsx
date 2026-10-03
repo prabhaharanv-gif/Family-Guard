@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { GoogleMap, MapType } from '@capacitor/google-maps'
 import { GLIDE_MS } from '../SmoothMarker'
-import { DEST_PIN, destPin, PIN_SIZE, initialPin, photoPin, timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
+import { DEST_PIN, DEST_ANCHOR, destPin, PIN_SIZE, initialPin, photoPin, timeCallout, stayDot, startDot, endDot, STAY_DOT, END_DOT, anonDot, ANON_DOT, helperDot, HELPER_DOT } from './pinIcon'
 import { useT } from '../../i18n'
 
 /**
@@ -218,7 +218,7 @@ export default function NativeFamilyMap({
 
     for (const [uid, loc] of Object.entries(pins)) {
       if (loc.lat == null || loc.lng == null) continue
-      // Famora Social's ambient dots (kind: 'anonDot') and the accepted
+      // Kinest Social's ambient dots (kind: 'anonDot') and the accepted
       // helper's fuzzy area (kind: 'helperFound', see NearbySearchMap): no
       // identity, no photo, and never registered against a marker id below,
       // so the map's own click listener has nothing to look up for them —
@@ -568,7 +568,7 @@ export default function NativeFamilyMap({
     const idP = retrying('add destination', () => map.addMarker({
       coordinate: { lat: destLat, lng: destLng }, iconUrl: destPin(),
       iconSize: { width: DEST_PIN, height: DEST_PIN },
-      iconAnchor: { x: DEST_PIN / 2, y: DEST_PIN / 2 }, zIndex: 4,
+      iconAnchor: { x: DEST_ANCHOR.x, y: DEST_ANCHOR.y }, zIndex: 4,
     }))
     return () => {
       idP.then(id => id && map.removeMarker(id)).catch(warn('remove destination'))
@@ -636,17 +636,17 @@ export default function NativeFamilyMap({
           width: 'max-content', maxWidth: 'calc(100% - 16px)',
           zIndex: 1000,
           background: '#fff', borderRadius: 18,
-          border: '1px solid var(--border)',
-          boxShadow: '0 10px 30px rgba(74,8,32,0.18), 0 2px 6px rgba(74,8,32,0.08)',
+          border: '1.5px solid var(--maroon)',
+          boxShadow: '0 10px 30px rgba(74,8,32,0.22), 0 2px 6px rgba(74,8,32,0.10)',
           padding: '12px 14px',
         }}>
           {/* Pointer to the pin: a rotated square sharing the card's border. */}
           <div ref={arrowRef} style={{
-            position: 'absolute', bottom: -7, left: '50%',
+            position: 'absolute', bottom: -7.5, left: '50%',
             width: 12, height: 12, marginLeft: -6,
             background: '#fff', transform: 'rotate(45deg)',
-            borderRight: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
-            borderTop: '1px solid transparent', borderLeft: '1px solid transparent',
+            borderRight: '1.5px solid var(--maroon)', borderBottom: '1.5px solid var(--maroon)',
+            borderTop: '1.5px solid transparent', borderLeft: '1.5px solid transparent',
           }} />
           {openLoc
             ? renderPopup(openUid, openLoc, closeCard)
@@ -655,12 +655,16 @@ export default function NativeFamilyMap({
             onClick={closeCard}
             aria-label={t('common.close')}
             style={{
-              position: 'absolute', top: 4, right: 4,
-              width: 34, height: 34, borderRadius: '50%', border: 'none',
-              background: 'transparent', color: 'var(--muted)',
-              fontSize: 20, lineHeight: '34px', padding: 0,
-              fontFamily: 'inherit', cursor: 'pointer',
-            }}>×</button>
+              position: 'absolute', top: 0, right: 0,
+              width: 34, height: 34, border: 'none', background: 'transparent',
+              color: 'var(--maroon)', padding: 0, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       )}
     </>

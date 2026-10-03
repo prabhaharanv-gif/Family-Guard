@@ -1,5 +1,5 @@
 -- =========================================================================
--- phone_registered(): is this number already a completed Famora account?
+-- phone_registered(): is this number already a completed Kinest account?
 -- =========================================================================
 --
 -- Used ONLY by the check-registration edge function, so that Create Account

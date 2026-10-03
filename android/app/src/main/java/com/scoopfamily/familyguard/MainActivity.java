@@ -348,7 +348,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * Cleared in onPause, NOT onStop. Turning the screen off while Famora is
+     * Cleared in onPause, NOT onStop. Turning the screen off while Kinest is
      * the top activity fires onPause but frequently never fires onStop (more
      * so here, since this Activity sets showWhenLocked). Clearing it in
      * onStop therefore left the flag stuck at true with the screen off, and

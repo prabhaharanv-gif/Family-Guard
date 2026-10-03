@@ -278,7 +278,7 @@ public class SOSSirenService extends Service {
             if (pm == null) return;
             wakeLock = pm.newWakeLock(
                 PowerManager.PARTIAL_WAKE_LOCK,
-                "Famora::SOSSirenWakeLock"
+                "Kinest::SOSSirenWakeLock"
             );
             wakeLock.setReferenceCounted(false);
             wakeLock.acquire(65_000L); // 65 s — slightly longer than the 60 s auto-stop
@@ -315,7 +315,7 @@ public class SOSSirenService extends Service {
                 PowerManager.SCREEN_BRIGHT_WAKE_LOCK
                     | PowerManager.ACQUIRE_CAUSES_WAKEUP
                     | PowerManager.ON_AFTER_RELEASE,
-                "Famora::SOSScreenWakeLock"
+                "Kinest::SOSScreenWakeLock"
             );
             screenWakeLock.setReferenceCounted(false);
             screenWakeLock.acquire(10_000L);

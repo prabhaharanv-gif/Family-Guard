@@ -1,20 +1,11 @@
-// Rough arrival time between two people, worked out from the straight-line
-// distance — free, instant, and shown as "Reach by 01:50 PM".
-// Real road time (with traffic) is one tap away in Google Maps.
+// Distance and arrival-time helpers.
 //
-// Longer trips are faster per kilometre (highways, fewer junctions), so the
-// speed grows with distance instead of one city figure for everything. A flat
-// 22 km/h gave 2 h 29 min for a 42 km drive that really takes about 1 h 10 min.
-//
-//   road distance ≈ straight line × 1.3 (× 1.2 beyond 25 km, roads run straighter)
-//   road km  < 0.8   on foot, 5 km/h
-//            < 3     city streets, 15 km/h
-//            < 8     city, 22 km/h
-//            < 20    town and ring roads, 30 km/h
-//            < 45    mixed, 40 km/h
-//            else    highway, 48 km/h
-//
-// Inside 150 m there is no ETA worth showing: they are effectively there.
+// The arrival time itself no longer comes from here. It used to be worked out from the
+// straight-line distance and a table of speeds, which gave answers like a 15-day drive
+// across an ocean, and a bus time for places with no buses. Real times now come from
+// Google Maps (see lib/travelTimes.js and the travel-times edge function). What is left
+// is the straight-line distance, still used for "is this person effectively here" and
+// as the fallback distance, and the formatting of an arrival moment.
 
 export function haversineKm(lat1, lng1, lat2, lng2) {
   if ([lat1, lng1, lat2, lng2].some(v => v == null)) return null
@@ -27,25 +18,36 @@ export function haversineKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-export function etaMinutes(km) {
-  if (km == null || km < 0.15) return null
+/**
+ * An arrival moment as text: just the clock time when it is still today ("01:50 PM"),
+ * with the date in front once it is not ("3 Oct, 01:50 PM"). A bare time on a trip that
+ * ends tomorrow reads as if it were today, which is wrong.
+ */
+export function arrivalTextAt(ts, now = Date.now()) {
+  const at = new Date(ts)
+  const today = new Date(now)
+  const time = at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  if (at.toDateString() === today.toDateString()) return time
+  const date = at.toLocaleDateString([], {
+    day: 'numeric',
+    month: 'short',
+    ...(at.getFullYear() === today.getFullYear() ? {} : { year: 'numeric' }),
+  })
+  return `${date}, ${time}`
+}
+
+/**
+ * A rough arrival time from the straight-line distance, for when Google has not
+ * answered (no route service configured, an outage). It is only a stand-in, so
+ * callers show it with a "~". Road distance is the straight line stretched by
+ * 1.3 (1.2 past 25 km); speed rises with distance, from 5 km/h on foot to
+ * 48 km/h on highways. Beyond 500 km nothing is guessed: a straight line across
+ * that far says nothing about the road. Returns { arriveAt, minutes } or null.
+ */
+export function estimateArrival(km, now = Date.now()) {
+  if (km == null || !Number.isFinite(km) || km < 0.15 || km > 500) return null
   const road = km * (km > 25 ? 1.2 : 1.3)
   const speed = road < 0.8 ? 5 : road < 3 ? 15 : road < 8 ? 22 : road < 20 ? 30 : road < 45 ? 40 : 48
-  const min = (road / speed) * 60
-  // A figure this rough should not look precise: to the nearest 5 minutes
-  // once it is past 10.
-  return min < 10 ? Math.max(1, Math.round(min)) : Math.round(min / 5) * 5
-}
-
-/** "Reach by 01:50 PM" — the clock time of arrival, or null when there is nothing worth saying. */
-export function etaLabel(t, km) {
-  const min = etaMinutes(km)
-  if (min == null) return null
-  const time = new Date(Date.now() + min * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  return t('map.destReachBy', { time })
-}
-
-/** Rough road distance in km from a straight-line one (same factor etaMinutes uses). */
-export function roadKm(km) {
-  return km == null ? null : km * (km > 25 ? 1.2 : 1.3)
+  const minutes = Math.max(1, Math.round((road / speed) * 60))
+  return { arriveAt: now + minutes * 60000, minutes }
 }

@@ -228,7 +228,7 @@ public class SOSAlarmPlugin extends Plugin {
     }
 
     /**
-     * Opens Settings > Do Not Disturb access, where the user allows Famora to
+     * Opens Settings > Do Not Disturb access, where the user allows Kinest to
      * step out of Do Not Disturb for the length of an SOS. It is a Settings
      * toggle, not a runtime permission, so it cannot be requested inline.
      */

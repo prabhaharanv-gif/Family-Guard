@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { withCaptcha, prefetchCaptchaToken } from '../lib/captcha'
+import { withCaptcha, prefetchCaptchaToken, cancelCaptchaPrefetch } from '../lib/captcha'
 import { isNumberRegistered } from '../lib/registrationCheck'
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { useAuthStore } from '../store/authStore'
@@ -9,6 +9,7 @@ import { useT } from '../i18n'
 import AuthLanguagePicker from '../components/AuthLanguagePicker'
 import Dialog from '../components/Dialog'
 import famoraLogo from '../assets/famora-logo.jpg'
+import { APP_NAME } from '../lib/brand'
 
 // Clean open/closed eye icon — no emoji. `open` = password visible.
 function EyeIcon({ open }) {
@@ -46,7 +47,7 @@ export default function RegisterPage() {
 
   // Two tokens are needed on Send code (the already-registered check and the SMS).
   // Getting them now, while the details are typed, is what keeps that tap quick.
-  useEffect(() => { prefetchCaptchaToken(2) }, [])
+  useEffect(() => { prefetchCaptchaToken(2); return cancelCaptchaPrefetch }, [])
 
   // Step 1 → send OTP to the entered mobile number, move to step 2
   const handleSendOtp = async (e) => {
@@ -196,7 +197,7 @@ export default function RegisterPage() {
         {/* Brand icon — same artwork as the login page and the launcher icon.
             Smaller than on login: this card also carries a title and four fields. */}
         <div className="auth-logo auth-logo-brand" style={{ marginBottom: 14 }}>
-          <img src={famoraLogo} alt="famora" width={110} height={110}
+          <img src={famoraLogo} alt={APP_NAME} width={110} height={110}
             style={{ display: 'block', margin: '0 auto', borderRadius: 22 }} />
         </div>
         <h1 className="auth-title" style={{ fontSize: 26, marginBottom: 4, lineHeight: 1.35 }}>{t('register.title')}</h1>

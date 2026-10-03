@@ -73,6 +73,9 @@ export default function CallPage() {
   const [notice, setNotice]               = useState('')
 
   const localVideoRef  = useRef(null)
+  // Where the person has dragged their self-view to. null = the default corner.
+  const [pipPos, setPipPos] = useState(null)
+  const pipDrag = useRef(null)
   const remoteVideoRef = useRef(null)
   const noAnswerTimer  = useRef(null)
   const durationTimer  = useRef(null)
@@ -288,8 +291,8 @@ export default function CallPage() {
         setJoinError(
           denied
             ? (call.call_type === 'video'
-                ? 'Please allow Camera and Microphone access for Famora, then try again'
-                : 'Please allow Microphone access for Famora, then try again')
+                ? 'Please allow Camera and Microphone access for Kinest, then try again'
+                : 'Please allow Microphone access for Kinest, then try again')
             : (call.call_type === 'video'
                 ? 'Could not start camera or microphone'
                 : 'Could not start the microphone')
@@ -556,6 +559,26 @@ export default function CallPage() {
     ? participantSummary(participants, user?.id, nameFor, t('messages.member')) : ''
   const ringingNames = ringingLegs(call, legs, user?.id).map(l => personName(l.callee_id))
   const addable = addableMembers(members, participants, user?.id)
+  const pipDown = e => {
+    const r = e.currentTarget.getBoundingClientRect()
+    pipDrag.current = { dx: e.clientX - r.left, dy: e.clientY - r.top, w: r.width, h: r.height }
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+  }
+  const pipMove = e => {
+    const d = pipDrag.current
+    if (!d) return
+    const m = 8   // keep it fully on screen
+    const x = Math.min(Math.max(e.clientX - d.dx, m), window.innerWidth  - d.w - m)
+    const y = Math.min(Math.max(e.clientY - d.dy, m), window.innerHeight - d.h - m)
+    setPipPos({ x, y })
+  }
+  const pipUp = () => { pipDrag.current = null }
+  const canAdd = confSupported && !isFull(participants)
+  // Up to four buttons keep their full size. A fifth (video call with Add) shrinks
+  // them to fit a 360dp screen in one row rather than wrapping or squashing them.
+  const fnCount = 2 + (isVideo ? 2 : 0) + (canAdd ? 1 : 0)
+  const fnSize = fnCount >= 5 ? 'min(64px, 15vw)' : 64
+  const fnBtn = extra => ({ ...styles.smallBtn, width: fnSize, height: fnSize, minWidth: 0, minHeight: 0, ...extra })
 
   return (
     <div style={styles.page}>
@@ -591,14 +614,12 @@ export default function CallPage() {
           {notice && <div style={styles.chip}>{notice}</div>}
         </div>
 
-        {status === 'accepted' && confSupported && !isFull(participants) && (
-          <button style={styles.addBtn} onClick={openAdd} aria-label={t('calls.addPerson')}>
-            <UserPlusIcon size={26} />
-          </button>
-        )}
-
         {isVideo && status === 'accepted' && (
-          <div ref={localVideoRef} style={styles.localVideo} />
+          <div
+            ref={localVideoRef}
+            style={pipPos ? { ...styles.localVideo, top: pipPos.y, left: pipPos.x, right: 'auto' } : styles.localVideo}
+            onPointerDown={pipDown} onPointerMove={pipMove} onPointerUp={pipUp} onPointerCancel={pipUp}
+          />
         )}
 
         <div style={status === 'accepted' ? styles.controlsCol : styles.controls}>
@@ -624,14 +645,14 @@ export default function CallPage() {
                   a solid maroon fill. Idle controls stay translucent so the one
                   thing you've switched off is the one thing that stands out. */}
               <button
-                style={{ ...styles.smallBtn, ...(muted ? styles.smallBtnActive : null) }}
+                style={fnBtn(muted ? styles.smallBtnActive : null)}
                 onClick={toggleMute}
                 aria-label={muted ? 'Unmute' : 'Mute'}
               >
                 {muted ? <MicOffIcon size={28} /> : <MicIcon size={28} />}
               </button>
               <button
-                style={{ ...styles.smallBtn, ...(!speakerOn ? styles.smallBtnActive : null) }}
+                style={fnBtn(!speakerOn ? styles.smallBtnActive : null)}
                 onClick={toggleSpeaker}
                 aria-label={speakerOn ? 'Speaker off' : 'Speaker on'}
               >
@@ -640,14 +661,14 @@ export default function CallPage() {
               {isVideo && (
                 <>
                   <button
-                    style={{ ...styles.smallBtn, ...(cameraOff ? styles.smallBtnActive : null) }}
+                    style={fnBtn(cameraOff ? styles.smallBtnActive : null)}
                     onClick={toggleCamera}
                     aria-label={cameraOff ? 'Turn camera on' : 'Turn camera off'}
                   >
                     {cameraOff ? <VideoOffIcon size={28} /> : <VideoIcon size={28} />}
                   </button>
                   <button
-                    style={{ ...styles.smallBtn, opacity: flipping ? 0.45 : 1 }}
+                    style={fnBtn({ opacity: flipping ? 0.45 : 1 })}
                     onClick={handleFlipCamera}
                     disabled={flipping}
                     aria-label={facingMode === 'user' ? 'Switch to back camera' : 'Switch to front camera'}
@@ -655,6 +676,11 @@ export default function CallPage() {
                     <FlipCameraIcon size={28} />
                   </button>
                 </>
+              )}
+              {canAdd && (
+                <button style={fnBtn()} onClick={openAdd} aria-label={t('calls.addPerson')}>
+                  <UserPlusIcon size={28} />
+                </button>
               )}
               </div>
               <button style={{ ...styles.circleBtn, ...styles.endBtn }} onClick={handleEnd} aria-label={t('calls.endCall')}>
@@ -676,8 +702,11 @@ const styles = {
   center: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   remoteVideo: { position: 'absolute', inset: 0, background: '#000' },
   localVideo: {
-    position: 'absolute', bottom: 140, right: 20, width: 110, height: 150,
+    // Top right, clear of the button rows. At the bottom right it sat behind them.
+    position: 'absolute', top: 44, right: 16, width: 100, height: 134,
     borderRadius: 16, overflow: 'hidden', background: '#000', border: '2px solid rgba(255,255,255,0.3)',
+    // Draggable: stop the browser reading a drag on it as a page scroll or a text selection.
+    touchAction: 'none', userSelect: 'none', cursor: 'grab', zIndex: 2,
   },
   overlayContent: {
     flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
@@ -688,13 +717,6 @@ const styles = {
   chip: {
     fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)',
     background: 'rgba(255,255,255,0.12)', borderRadius: 999, padding: '5px 12px',
-  },
-  // Top right, where the "add someone" control sits in the phone apps people know.
-  addBtn: {
-    position: 'absolute', top: 44, right: 20, width: 52, height: 52, minWidth: 52, minHeight: 52,
-    boxSizing: 'border-box', padding: 0, borderRadius: '50%', cursor: 'pointer', color: '#fff',
-    border: '1.5px solid rgba(255,255,255,0.28)', background: 'rgba(139,13,61,0.45)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
   avatar: {
     width: 88, height: 88, borderRadius: '50%', background: 'rgba(255,255,255,0.15)',
@@ -722,7 +744,7 @@ const styles = {
   },
   fnRow: {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    gap: 16, flexWrap: 'wrap', rowGap: 14,
+    gap: 10, flexWrap: 'wrap', rowGap: 14,
   },
   // display:flex + centring on every button — an inline SVG does not centre in
   // a round button the way a text glyph did, so this replaces the font-size

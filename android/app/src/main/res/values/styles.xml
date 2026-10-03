@@ -17,7 +17,7 @@
     <!--
         Launch theme (Android < 12, via androidx SplashScreen backport).
         Same as values-v31: plain cream and NO icon, so the app's own launch
-        screen (logo + "famora") is the only splash. See styles-v31.xml.
+        screen (logo + "Kinest") is the only splash. See styles-v31.xml.
     -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
