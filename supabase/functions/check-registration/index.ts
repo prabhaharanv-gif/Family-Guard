@@ -1,5 +1,5 @@
 // check-registration — tells Create Account, BEFORE an SMS code is sent, whether
-// a mobile number already has a Famora account.
+// a mobile number already has a Kinest account.
 //
 // Why a function and not a database call from the app: answering "is this
 // number registered?" to anyone lets them test lists of numbers, which reveals
@@ -37,7 +37,25 @@ const cors = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
-serve(async (req: Request) => {
+
+// CORS: the app and the website only, not every origin. Applied to the finished
+// response, so concurrent requests from different origins cannot mix up headers.
+const ALLOWED_ORIGINS = [
+  'https://localhost',          // the Android app (Capacitor)
+  'capacitor://localhost',
+  'http://localhost',
+  'http://localhost:5173',      // local development
+  'https://famora-family.vercel.app',
+]
+function withCors(req: Request, res: Response): Response {
+  const origin = req.headers.get('Origin') || ''
+  const headers = new Headers(res.headers)
+  headers.set('Access-Control-Allow-Origin', ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[4])
+  headers.append('Vary', 'Origin')
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers })
+}
+
+const handle = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
 
@@ -52,6 +70,21 @@ serve(async (req: Request) => {
   const token = typeof body.captchaToken === 'string' ? body.captchaToken : ''
   if (!/^[0-9]{10}$/.test(phone)) return json({ error: 'bad request' }, 400)
   if (!token) return json({ error: 'captcha required' }, 403)
+
+  // This answers "is this number registered?", so it is the call someone would
+  // loop over a list of numbers. The CAPTCHA already slows a script; this also
+  // caps one address. Fail open: a broken counter must not stop registration.
+  const callerIp = req.headers.get('CF-Connecting-IP') || req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  try {
+    const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    const { data, error } = await sb.rpc('consume_api_quota', {
+      p_key: `ip:${callerIp}`, p_fn: 'check-registration', p_limit: 15, p_window_s: 600,
+    })
+    if (error) console.warn('[check-registration] quota check failed:', error.message)
+    else if (data === false) return json({ error: 'too many requests' }, 429)
+  } catch (e) {
+    console.warn('[check-registration] quota check failed:', (e as Error).message)
+  }
 
   // Cloudflare confirms the token is real, unexpired and unused.
   const form = new URLSearchParams({ secret, response: token })
@@ -83,4 +116,6 @@ serve(async (req: Request) => {
     return json({ error: 'lookup failed' }, 500)
   }
   return json({ registered: data === true })
-})
+}
+
+serve(async (req) => withCors(req, await handle(req)))

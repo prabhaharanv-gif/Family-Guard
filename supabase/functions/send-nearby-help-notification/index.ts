@@ -1,4 +1,4 @@
-// send-nearby-help-notification — FCM push for the Famora Social nearby-help
+// send-nearby-help-notification — FCM push for the Kinest Social nearby-help
 // escalation (nearby_help_notifications INSERT + nearby_help_escalations
 // status-change UPDATE triggers).
 //

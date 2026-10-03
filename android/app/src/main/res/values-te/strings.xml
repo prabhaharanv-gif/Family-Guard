@@ -30,7 +30,7 @@
     <string name="ch_messages_quiet_desc">కుటుంబ సందేశాలు — పాప్-అప్ మ్యూట్, శబ్దం వినిపిస్తుంది</string>
 
     <string name="ch_location_name">లొకేషన్ ట్రాకింగ్</string>
-    <string name="ch_location_desc">Famora మీ లొకేషన్‌ను ట్రాక్ చేస్తున్నప్పుడు కనిపిస్తుంది</string>
+    <string name="ch_location_desc">Kinest మీ లొకేషన్‌ను ట్రాక్ చేస్తున్నప్పుడు కనిపిస్తుంది</string>
 
     <string name="ch_ping_name">నా ఫోన్ కనుగొను</string>
     <string name="ch_ping_desc">కుటుంబ సభ్యుడు ఫోన్ వెతికినప్పుడు ఈ ఫోన్ మోగుతుంది</string>
@@ -41,7 +41,7 @@
     <!-- SOSAlertActivity — లాక్ స్క్రీన్ పైన కనిపించే పూర్తి-స్క్రీన్ హెచ్చరిక -->
     <string name="sos_needs_help">%1$s కు సహాయం కావాలి!</string>
     <string name="sos_view_location">లొకేషన్ చూడు</string>
-    <string name="sos_open_app">Famora తెరువు</string>
+    <string name="sos_open_app">Kinest తెరువు</string>
     <string name="sos_stop_alarm">అర్థమైంది — అలారం నిశ్శబ్దం చేయి</string>
     <string name="sos_calm_hint">ప్రశాంతంగా ఉండండి. వారు ఎక్కడ ఉన్నారో చూసి, కాల్ చేయండి లేదా వారి దగ్గరకు వెళ్ళండి.</string>
     <string name="sos_call">%1$s కి కాల్ చేయండి</string>
@@ -70,7 +70,7 @@
 
     <!-- నోటిఫికేషన్‌లు -->
     <string name="notif_sos_title">🚨 SOS — %1$s కు సహాయం కావాలి!</string>
-    <string name="notif_sos_big">⚠️ %1$s కు సహాయం కావాలి!\n\n%2$s\n\nFamora తెరవడానికి ట్యాప్ చేయండి.</string>
+    <string name="notif_sos_big">⚠️ %1$s కు సహాయం కావాలి!\n\n%2$s\n\nKinest తెరవడానికి ట్యాప్ చేయండి.</string>
     <string name="notif_call_voice_label">వాయిస్ కాల్</string>
     <string name="notif_call_video_label">వీడియో కాల్</string>
     <!-- Telugu puts the caller first: "<name> నుండి <call type>" -->
@@ -84,9 +84,9 @@
     <string name="notif_location_body">మీ కుటుంబాన్ని కాపాడుతోంది · లొకేషన్ ఆన్</string>
     <string name="notif_tap_to_open">తెరవడానికి ట్యాప్ చేయండి</string>
     <string name="ch_reauth_name">మళ్లీ కనెక్ట్ కావాలి</string>
-    <string name="ch_reauth_desc">లొకేషన్ షేరింగ్ కొనసాగించడానికి Famora మళ్లీ తెరవాల్సి వచ్చినప్పుడు తెలియజేస్తుంది</string>
+    <string name="ch_reauth_desc">లొకేషన్ షేరింగ్ కొనసాగించడానికి Kinest మళ్లీ తెరవాల్సి వచ్చినప్పుడు తెలియజేస్తుంది</string>
     <string name="notif_reauth_title">లొకేషన్ షేరింగ్ ఆగిపోయింది</string>
-    <string name="notif_reauth_body">మళ్లీ కనెక్ట్ కావడానికి Famora తెరవండి. అప్పటి వరకు మీ కుటుంబం మీ లొకేషన్‌ను చూడలేరు.</string>
+    <string name="notif_reauth_body">మళ్లీ కనెక్ట్ కావడానికి Kinest తెరవండి. అప్పటి వరకు మీ కుటుంబం మీ లొకేషన్‌ను చూడలేరు.</string>
     <!-- Fake call -->
     <string name="fake_call_default_name">అమ్మ</string>
     <string name="fake_call_scheduled_title">రిమైండర్</string>
@@ -127,11 +127,17 @@
     <string name="ch_overspeed_self_name">వేగ పరిమితి హెచ్చరిక</string>
     <string name="ch_overspeed_self_desc">మీరు నిర్ణయించిన వేగ పరిమితిని మించినప్పుడు చిన్న శబ్దంతో హెచ్చరిస్తుంది</string>
     <string name="unlock_alert_title" formatted="true">%1$s ఫోన్‌లో తప్పు పాస్‌వర్డ్</string>
-    <string name="unlock_alert_body" formatted="true">స్క్రీన్-లాక్‌కు తప్పు ప్రయత్నాలు: %1$d. ఫోన్ ఎక్కడ ఉందో, ఫోటో తీసి ఉంటే అది చూడటానికి Famora తెరవండి.</string>
+    <string name="unlock_alert_body" formatted="true">స్క్రీన్-లాక్‌కు తప్పు ప్రయత్నాలు: %1$d. ఫోన్ ఎక్కడ ఉందో, ఫోటో తీసి ఉంటే అది చూడటానికి Kinest తెరవండి.</string>
     <string name="ch_lost_name">ఫోన్ పోయిన మోడ్</string>
     <string name="ch_lost_desc">మీ కుటుంబం ఈ ఫోన్‌ను పోయినట్లు గుర్తించినప్పుడు చూపబడుతుంది</string>
     <string name="lost_title">ఈ ఫోన్ పోయింది</string>
     <string name="lost_body_default" formatted="true">దీన్ని తిరిగి ఇవ్వడానికి దయచేసి %1$s ను సంప్రదించండి.</string>
     <string name="lost_body_generic">దయచేసి ఈ ఫోన్‌ను దాని యజమాని కుటుంబానికి తిరిగి ఇవ్వండి.</string>
     <string name="lost_close">మూసివేయి</string>
+    <!-- Reply from a message notification -->
+    <string name="reply_action">ప్రత్యుత్తరం</string>
+    <string name="reply_hint">ప్రత్యుత్తరం రాయండి</string>
+    <string name="reply_sent">మీరు: %1$s</string>
+    <string name="reply_failed">ప్రత్యుత్తరం పంపబడలేదు. Kinest తెరవడానికి నొక్కండి లేదా మళ్లీ ప్రయత్నించండి.</string>
+    <string name="reply_empty">పంపడానికి ఏమీ లేదు.</string>
 </resources>

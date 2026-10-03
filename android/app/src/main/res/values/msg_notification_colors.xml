@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The message bubble inside a message notification. The reply box Android draws
+    under it is a pale grey-white, so the bubble carries a soft maroon tint and a
+    maroon sender name to stand clearly apart from it.
+-->
+<resources>
+    <color name="msg_notif_bg">#F7E1E8</color>
+    <color name="msg_notif_title">#8B0D3D</color>
+    <color name="msg_notif_text">#2B1520</color>
+</resources>

@@ -1,6 +1,6 @@
 # Play Console — internal testing launch
 
-Working checklist for getting Famora onto the internal testing track with real
+Working checklist for getting Kinest onto the internal testing track with real
 families. Order matters: signing → build → declarations → testers.
 
 Drafted text below is a starting point written from what the code actually
@@ -62,10 +62,10 @@ These are where a background-location app actually gets stuck. All four apply.
 
 ### 4a. Background location — permission declaration form
 
-Famora requests `ACCESS_BACKGROUND_LOCATION`. Play requires a written
+Kinest requests `ACCESS_BACKGROUND_LOCATION`. Play requires a written
 justification plus a video demo of the in-app flow.
 
-> Famora is a family-safety app. Members of a family group opt in to sharing
+> Kinest is a family-safety app. Members of a family group opt in to sharing
 > their live location with each other so the group can see where everyone is on
 > a shared map, and so that a member who triggers an SOS alert is located
 > immediately by the rest of the family.
@@ -100,7 +100,7 @@ Internal testing bypasses review so this will not block section 6, but it
 blocks closed testing, open testing, and production. It needs a small modal
 before that call, with copy along these lines:
 
-> Famora collects location data to show your position to your family group on a
+> Kinest collects location data to show your position to your family group on a
 > shared map and to include it in SOS alerts, even when the app is closed or
 > not in use. You can stop sharing at any time in Settings.
 

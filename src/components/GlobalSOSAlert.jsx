@@ -51,7 +51,7 @@ export default function GlobalSOSAlert({ alert, onDismiss }) {
             </>
           )}
         </div>
-        {/* Famora Social nearby-help status — the same row useSosAlarm reads
+        {/* Kinest Social nearby-help status — the same row useSosAlarm reads
             for _resolved above, just a different field on it, so this can
             never show a count out of step with what SOSPage's own status
             card says. Count only, never an identity, per the feature's

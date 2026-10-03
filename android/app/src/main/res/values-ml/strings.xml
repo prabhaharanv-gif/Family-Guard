@@ -30,7 +30,7 @@
     <string name="ch_messages_quiet_desc">കുടുംബ സന്ദേശങ്ങൾ — പോപ്പ്-അപ്പ് മ്യൂട്ട്, ശബ്ദം കേൾക്കും</string>
 
     <string name="ch_location_name">ലൊക്കേഷൻ ട്രാക്കിംഗ്</string>
-    <string name="ch_location_desc">Famora നിങ്ങളുടെ ലൊക്കേഷൻ ട്രാക്ക് ചെയ്യുമ്പോൾ കാണിക്കുന്നു</string>
+    <string name="ch_location_desc">Kinest നിങ്ങളുടെ ലൊക്കേഷൻ ട്രാക്ക് ചെയ്യുമ്പോൾ കാണിക്കുന്നു</string>
 
     <string name="ch_ping_name">എന്റെ ഫോൺ കണ്ടെത്തുക</string>
     <string name="ch_ping_desc">കുടുംബാംഗം ഫോൺ തിരയുമ്പോൾ ഈ ഫോൺ റിംഗ് ചെയ്യുന്നു</string>
@@ -41,7 +41,7 @@
     <!-- SOSAlertActivity — ലോക്ക് സ്ക്രീനിന് മുകളിൽ വരുന്ന പൂർണ്ണ-സ്ക്രീൻ മുന്നറിയിപ്പ് -->
     <string name="sos_needs_help">%1$s ന് സഹായം വേണം!</string>
     <string name="sos_view_location">ലൊക്കേഷൻ കാണുക</string>
-    <string name="sos_open_app">Famora തുറക്കുക</string>
+    <string name="sos_open_app">Kinest തുറക്കുക</string>
     <string name="sos_stop_alarm">മനസ്സിലായി — അലാറം നിശബ്ദമാക്കുക</string>
     <string name="sos_calm_hint">ശാന്തരായിരിക്കുക. അവർ എവിടെയാണെന്ന് നോക്കി, വിളിക്കുകയോ അവരുടെ അടുത്തേക്ക് പോകുകയോ ചെയ്യുക.</string>
     <string name="sos_call">%1$s-നെ വിളിക്കുക</string>
@@ -70,7 +70,7 @@
 
     <!-- അറിയിപ്പുകൾ -->
     <string name="notif_sos_title">🚨 SOS — %1$s ന് സഹായം വേണം!</string>
-    <string name="notif_sos_big">⚠️ %1$s ന് സഹായം വേണം!\n\n%2$s\n\nFamora തുറക്കാൻ ടാപ്പ് ചെയ്യുക.</string>
+    <string name="notif_sos_big">⚠️ %1$s ന് സഹായം വേണം!\n\n%2$s\n\nKinest തുറക്കാൻ ടാപ്പ് ചെയ്യുക.</string>
     <string name="notif_call_voice_label">വോയ്‌സ് കോൾ</string>
     <string name="notif_call_video_label">വീഡിയോ കോൾ</string>
     <!-- Malayalam puts the caller first: "<name> ൽ നിന്ന് <call type>" -->
@@ -84,9 +84,9 @@
     <string name="notif_location_body">നിങ്ങളുടെ കുടുംബത്തെ സംരക്ഷിക്കുന്നു · ലൊക്കേഷൻ സജീവം</string>
     <string name="notif_tap_to_open">തുറക്കാൻ ടാപ്പ് ചെയ്യുക</string>
     <string name="ch_reauth_name">വീണ്ടും കണക്ട് ചെയ്യണം</string>
-    <string name="ch_reauth_desc">ലൊക്കേഷൻ പങ്കിടൽ തുടരാൻ Famora വീണ്ടും തുറക്കേണ്ടി വരുമ്പോൾ അറിയിക്കുന്നു</string>
+    <string name="ch_reauth_desc">ലൊക്കേഷൻ പങ്കിടൽ തുടരാൻ Kinest വീണ്ടും തുറക്കേണ്ടി വരുമ്പോൾ അറിയിക്കുന്നു</string>
     <string name="notif_reauth_title">ലൊക്കേഷൻ പങ്കിടൽ നിർത്തി</string>
-    <string name="notif_reauth_body">വീണ്ടും കണക്ട് ചെയ്യാൻ Famora തുറക്കുക. അതുവരെ നിങ്ങളുടെ കുടുംബത്തിന് നിങ്ങളുടെ ലൊക്കേഷൻ കാണാൻ കഴിയില്ല.</string>
+    <string name="notif_reauth_body">വീണ്ടും കണക്ട് ചെയ്യാൻ Kinest തുറക്കുക. അതുവരെ നിങ്ങളുടെ കുടുംബത്തിന് നിങ്ങളുടെ ലൊക്കേഷൻ കാണാൻ കഴിയില്ല.</string>
     <!-- Fake call -->
     <string name="fake_call_default_name">അമ്മ</string>
     <string name="fake_call_scheduled_title">ഓർമ്മപ്പെടുത്തൽ</string>
@@ -127,11 +127,17 @@
     <string name="ch_overspeed_self_name">വേഗപരിധി മുന്നറിയിപ്പ്</string>
     <string name="ch_overspeed_self_desc">നിങ്ങൾ സജ്ജമാക്കിയ വേഗപരിധി കടക്കുമ്പോൾ ചെറിയ ശബ്ദത്തിൽ മുന്നറിയിപ്പ് നൽകുന്നു</string>
     <string name="unlock_alert_title" formatted="true">%1$s ന്റെ ഫോണിൽ തെറ്റായ പാസ്‌വേഡ്</string>
-    <string name="unlock_alert_body" formatted="true">സ്ക്രീൻ-ലോക്കിന് തെറ്റായ ശ്രമങ്ങൾ: %1$d. ഫോൺ എവിടെയായിരുന്നു എന്നും, ഫോട്ടോ എടുത്തിട്ടുണ്ടെങ്കിൽ അതും കാണാൻ Famora തുറക്കുക.</string>
+    <string name="unlock_alert_body" formatted="true">സ്ക്രീൻ-ലോക്കിന് തെറ്റായ ശ്രമങ്ങൾ: %1$d. ഫോൺ എവിടെയായിരുന്നു എന്നും, ഫോട്ടോ എടുത്തിട്ടുണ്ടെങ്കിൽ അതും കാണാൻ Kinest തുറക്കുക.</string>
     <string name="ch_lost_name">ഫോൺ നഷ്ടപ്പെട്ട മോഡ്</string>
     <string name="ch_lost_desc">നിങ്ങളുടെ കുടുംബം ഈ ഫോൺ നഷ്ടപ്പെട്ടതായി അടയാളപ്പെടുത്തിയപ്പോൾ കാണിക്കും</string>
     <string name="lost_title">ഈ ഫോൺ നഷ്ടപ്പെട്ടു</string>
     <string name="lost_body_default" formatted="true">ഇത് തിരികെ നൽകാൻ ദയവായി %1$s നെ ബന്ധപ്പെടുക.</string>
     <string name="lost_body_generic">ദയവായി ഈ ഫോൺ ഉടമയുടെ കുടുംബത്തിന് തിരികെ നൽകുക.</string>
     <string name="lost_close">അടയ്ക്കുക</string>
+    <!-- Reply from a message notification -->
+    <string name="reply_action">മറുപടി</string>
+    <string name="reply_hint">മറുപടി എഴുതുക</string>
+    <string name="reply_sent">നിങ്ങൾ: %1$s</string>
+    <string name="reply_failed">മറുപടി അയച്ചില്ല. Kinest തുറക്കാൻ തൊടുക അല്ലെങ്കിൽ വീണ്ടും ശ്രമിക്കുക.</string>
+    <string name="reply_empty">അയയ്ക്കാൻ ഒന്നുമില്ല.</string>
 </resources>

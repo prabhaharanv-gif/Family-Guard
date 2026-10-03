@@ -1,4 +1,4 @@
--- Baseline schema snapshot for family-guard-web (Famora)
+-- Baseline schema snapshot for family-guard-web (Kinest)
 -- Generated 2026-08-28 via SQL introspection (Supabase Management API) —
 -- Docker was unavailable in the build environment, so this was assembled
 -- from pg_catalog/information_schema queries rather than `supabase db pull`.

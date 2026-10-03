@@ -1,4 +1,4 @@
-# Play Console: Data safety cheat sheet (Famora 1.2.3, versionCode 21)
+# Play Console: Data safety cheat sheet (Kinest 1.2.3, versionCode 21)
 
 Written 2026-09-26 from the privacy policy (`src/lib/policy.js`), the release manifest and the code. Play Console → **App content → Data safety**. Answer it in the order below. The policy and this form must agree, so if you change one, change the other.
 
@@ -17,7 +17,7 @@ If you only want to edit what differs, these are the changes. The rest of the fo
 | 3 | **Add Audio: Voice or sound recordings** | SOS voice clip (up to 15 s), and chat voice messages. |
 | 4 | **Add Photos and videos: Photos and Videos** | SOS photo and chat media (the old form listed only the avatar). |
 | 5 | **Add Files and docs: Files and docs** | Chat attachments (documents). |
-| 6 | **Add App activity: Other actions** | Call records, driving trips, place arrival notices. |
+| 6 | **Add App activity: Other actions** | Call records, place arrival notices. |
 | 7 | **Add App info and performance: Diagnostics** | Battery level, charging state and network type shown to the family, plus crash diagnostics. |
 | 8 | Phone number: no change (Collected, not Shared) | Twilio only delivers the code for you. The extra number for offline SMS stays on the phone and never reaches the server. |
 | 9 | Privacy policy URL, and the **account deletion** answers | See section 5. |
@@ -35,7 +35,7 @@ If you only want to edit what differs, these are the changes. The rest of the fo
 | Do you provide a way for users to request that their data be deleted? | **Yes** |
 | Deletion URL | `https://famora-family.vercel.app/delete-account` (works without the app) |
 | Account creation methods | **Username and password**, and **Phone number** (verified by a one-time code). Do not tick Email or third-party sign-in. |
-| Is your app committed to following the Play Families Policy? | **No.** Famora is not designed for children. |
+| Is your app committed to following the Play Families Policy? | **No.** Kinest is not designed for children. |
 | Independent security review | **No** |
 
 The privacy policy URL, in **App content → Privacy policy**: `https://famora-family.vercel.app/privacy`.
@@ -51,7 +51,7 @@ For each type Play asks: *Collected*, *Shared*, *Processed ephemerally*, *Requir
 | Type | Collected | Shared | Required? | Purposes | What it is |
 |---|---|---|---|---|---|
 | **Approximate location** | Yes | **Yes** | Required | App functionality | Rounded position for weather (about 11 km, to OpenWeatherMap) and the SOS area shown to opted-in Nearby Help helpers |
-| **Precise location** | Yes | **Yes** (see note in section 1) | Required for the core feature; sharing can be switched off | App functionality | Live position (also in the background, with the disclosure screen), the last 7 days of history, saved Places (a name and a position, visible only to the owner), driving trips, and the exact SOS spot |
+| **Precise location** | Yes | **Yes** (see note in section 1) | Required for the core feature; sharing can be switched off | App functionality | Live position (also in the background, with the disclosure screen), the last 7 days of history, saved Places (a name and a position, visible only to the owner), and the exact SOS spot |
 
 ### Personal info
 
@@ -69,7 +69,7 @@ Leave **Email address**, **Address**, **Race**, **Political or religious beliefs
 |---|---|---|---|---|
 | **Other in-app messages** | Yes | No | Required | App functionality (family and one-to-one chat). We do not read them. |
 
-**Do not** tick *Emails* or *SMS or MMS*: Famora never reads SMS. It only *sends* one when offline alerts are on. That is covered by the SMS permission declaration, not by this form.
+**Do not** tick *Emails* or *SMS or MMS*: Kinest never reads SMS. It only *sends* one when offline alerts are on. That is covered by the SMS permission declaration, not by this form.
 
 ### Photos and videos, Audio, Files
 
@@ -120,7 +120,7 @@ Health info and Fitness info (crash detection and shake read the motion sensor o
 | Why full-screen intent and display over other apps? | An incoming call or SOS must wake the screen. Already declared. |
 | Why microphone and camera? | Voice and video calls, the SOS voice clip and photo. Runtime permissions, requested when used. |
 | Data sold or used for ads? | **No.** Policy: "we do not sell your data" and no advertising or profiling. |
-| Data kept how long? | Messages 90 days, resolved SOS 30 days, location history 7 days, trips 30 days, SOS voice clips and photos 7 days, notification tokens 60 days. Policy section "How Long We Keep It". |
+| Data kept how long? | Messages 90 days, resolved SOS 30 days, location history 7 days, chat attachments deleted about a day after their message, profile photos about a day after account deletion, SOS voice clips and photos 7 days, notification tokens 60 days. Policy section "How Long We Keep It". |
 | Anti-theft or device admin? | Removed. The release manifest declares neither a device-admin receiver nor the capture activity. |
 | Children? | Not designed for children. |
 
@@ -128,7 +128,7 @@ Health info and Fitness info (crash detection and shake read the motion sensor o
 
 ## 5. Before you submit
 
-- [ ] The **privacy policy URL** in the store listing is `https://famora-family.vercel.app/privacy`, and it is the deployed version (26 September 2026, lists Twilio and the map providers).
+- [ ] The **privacy policy URL** in the store listing is `https://famora-family.vercel.app/privacy`, and it is the deployed version (3 October 2026, adds chat attachments, online status, Do Not Disturb, group calls and an age statement).
 - [ ] The **Data safety** answers above match the policy sections "Information We Collect" and "Who Else Is Involved". If a reviewer finds a mismatch, that alone can fail the review.
 - [ ] Account deletion works both **in the app** (Profile → Delete My Account) and **on the web** (`/delete-account`). Play checks the web route.
 - [ ] After saving, Play shows a preview of the "Data safety" section as users will see it. Read it once: "Data shared" should list *Approximate location* and *Precise location* only, and "Data collected" everything else in section 3.

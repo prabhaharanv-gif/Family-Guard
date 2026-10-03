@@ -14,12 +14,12 @@ index c0bc416..94d9996 100644
      private val circles = HashMap<String, CapacitorGoogleMapsCircle>()
      private val polylines = HashMap<String, CapacitorGoogleMapPolyline>()        
      private val markerIcons = HashMap<String, Bitmap>()
-+    // Famora patch: one running glide per marker, so a new position cancels the
++    // Kinest patch: one running glide per marker, so a new position cancels the
 +    // old glide instead of two animators fighting over the same marker.
 +    private val markerAnimators = HashMap<String, android.animation.ValueAnimator>()
      private var clusterManager: ClusterManager<CapacitorGoogleMapMarker>? = null
  
-+    // Famora patch: report ONE marker's on-screen position (CSS px, relative to
++    // Kinest patch: report ONE marker's on-screen position (CSS px, relative to
 +    // the map view) every frame it changes, so the app can hold an HTML card
 +    // over it. Per frame rather than on camera events because a pin moves for
 +    // three reasons — finger drags, animated camera pans, and its own glide
@@ -57,7 +57,7 @@ index c0bc416..94d9996 100644
 +        }
 +    }
 +
-+    /** Famora patch: start tracking markerId's screen position, or stop with null. */
++    /** Kinest patch: start tracking markerId's screen position, or stop with null. */
 +    fun trackMarker(markerId: String?) {
 +        CoroutineScope(Dispatchers.Main).launch {
 +            android.view.Choreographer.getInstance().removeFrameCallback(trackFrame)
@@ -74,7 +74,7 @@ index c0bc416..94d9996 100644
      }
  
      fun destroy() {
-+        trackedMarkerId = null  // Famora patch: the frame callback stops itself
++        trackedMarkerId = null  // Kinest patch: the frame callback stops itself
          runBlocking {
              val job =
                      CoroutineScope(Dispatchers.Main).launch {
@@ -82,7 +82,7 @@ index c0bc416..94d9996 100644
          }
      }
  
-+    // ── Famora patch (patches/@capacitor+google-maps+8.0.1.patch) ─────────────
++    // ── Kinest patch (patches/@capacitor+google-maps+8.0.1.patch) ─────────────
 +    //
 +    // The stock plugin can only add or remove a marker, so a pin could only
 +    // teleport. Family members' pins glide between location fixes, and doing
@@ -165,7 +165,7 @@ index c0bc416..94d9996 100644
 +    }
 +
 +    // Loads (and caches) a marker picture. Adds data: URLs to the stock https:
-+    // and bundled-asset sources, because Famora draws each avatar pin — photo or
++    // and bundled-asset sources, because Kinest draws each avatar pin — photo or
 +    // initial, white ring, shadow — on a canvas in the app and hands it over as
 +    // a PNG data URL; there is no file or web address for it to point at.
 +    private fun loadIconBitmap(iconUrl: String): Bitmap? {
@@ -195,7 +195,7 @@ index c0bc416..94d9996 100644
 +            null
 +        }
 +    }
-+    // ── end Famora patch ─────────────────────────────────────────────────────
++    // ── end Kinest patch ─────────────────────────────────────────────────────
 +
      fun addPolygons(newPolygons: List<CapacitorGoogleMapsPolygon>, callback: (ids: Result<List<String>>) -> Unit) {
          try {
@@ -204,7 +204,7 @@ index c0bc416..94d9996 100644
                      clusterManager?.cluster()
                  }
  
-+                markerAnimators.remove(id)?.cancel()  // Famora patch
++                markerAnimators.remove(id)?.cancel()  // Kinest patch
                  marker.googleMapMarker?.remove()
                  markers.remove(id)
  
@@ -213,7 +213,7 @@ index c0bc416..94d9996 100644
  
                  if (animate) {
 -                    googleMap?.animateCamera(CameraUpdateFactory.newCameraPosition(updatedPosition))
-+                    // Famora patch: honour animationDuration. Stock Android parses
++                    // Kinest patch: honour animationDuration. Stock Android parses
 +                    // it and then ignores it, so every pan ran at Google's default
 +                    // speed — and a map following a member must pan over exactly
 +                    // the marker's glide time, or it arrives first and the pin
@@ -232,7 +232,7 @@ index c0bc416..94d9996 100644
          polylineOptions.clickable(line.clickable)
          polylineOptions.zIndex(line.zIndex)
          polylineOptions.geodesic(line.geodesic)
-+        // Famora: dash sizes in dp so they look the same at every zoom level.
++        // Kinest: dash sizes in dp so they look the same at every zoom level.
 +        if (line.dashed) {
 +            val dpr = this.config.devicePixelRatio
 +            polylineOptions.pattern(listOf(Dash(10f * dpr), Gap(7f * dpr)))
@@ -270,7 +270,7 @@ index c0bc416..94d9996 100644
 -                    )
 -                }
 -            }
-+            // Famora patch: one loader for https:, bundled assets and data: URLs.
++            // Kinest patch: one loader for https:, bundled assets and data: URLs.
 +            val bitmap = loadIconBitmap(marker.iconUrl!!)
 +            if (bitmap != null) markerOptions.icon(getResizedIcon(bitmap, marker))
          } else {
@@ -280,7 +280,7 @@ index c0bc416..94d9996 100644
          runBlocking {
              googleMap = map
  
-+            // Famora patch:
++            // Kinest patch:
 +            //  - Rotation ON (2026-09-21, on request), tilt OFF. The app's own
 +            //    compass overlay follows the bearing via onBearingChange below
 +            //    and taps back to north, so it never claims "north is up" while
@@ -309,7 +309,7 @@ index c0bc416..94d9996 100644
          delegate.notify("onMapClick", data)
      }
  
-+    // Famora: a held finger on empty map, streamed as 'onMapLongClick' (no JS
++    // Kinest: a held finger on empty map, streamed as 'onMapLongClick' (no JS
 +    // wrapper; the app listens through Capacitor.Plugins.CapacitorGoogleMaps).
 +    override fun onMapLongClick(point: LatLng) {
 +        val data = JSObject()
@@ -327,7 +327,7 @@ index c0bc416..94d9996 100644
          data.put("snippet", marker.snippet)
          delegate.notify("onMarkerClick", data)
 -        return false
-+        // Famora patch: true = "handled". False let Google also recentre the
++        // Kinest patch: true = "handled". False let Google also recentre the
 +        // camera on the pin, which yanked the map out from under a follow and
 +        // fought the app's own member card.
 +        return true
@@ -338,7 +338,7 @@ index c0bc416..94d9996 100644
          data.put("zoom", this@CapacitorGoogleMap.googleMap?.cameraPosition?.zoom)
          delegate.notify("onCameraIdle", data)
          delegate.notify("onBoundsChanged", data)
-+        // Famora patch: settle the compass on the exact final bearing.
++        // Kinest patch: settle the compass on the exact final bearing.
 +        googleMap?.cameraPosition?.bearing?.let { b ->
 +            lastSentBearing = b
 +            val bd = JSObject()
@@ -353,12 +353,12 @@ index c0bc416..94d9996 100644
          delegate.notify("onInfoWindowClick", data)
      }
  
-+    // Famora patch: last bearing sent, so a camera move that does not rotate
++    // Kinest patch: last bearing sent, so a camera move that does not rotate
 +    // (every pan and zoom) sends nothing.
 +    private var lastSentBearing = 0f
 +
      override fun onCameraMove() {
-+        // Famora patch: stream the map's rotation while it changes, so the
++        // Kinest patch: stream the map's rotation while it changes, so the
 +        // app's compass turns with a two-finger twist rather than only after.
 +        googleMap?.cameraPosition?.bearing?.let { b ->
 +            var d = Math.abs(b - lastSentBearing)
@@ -382,7 +382,7 @@ index ab89355..0a714db 100644
      var geodesic: Boolean
      var zIndex: Float = 0.00f
      var tag: String = ""
-+    // Famora: draw as dashes (the "travelling" parts of Today's route). The
++    // Kinest: draw as dashes (the "travelling" parts of Today's route). The
 +    // stock plugin had no pattern option at all.
 +    var dashed: Boolean = false
      var googleMapsPolyline: Polyline? = null
@@ -404,7 +404,7 @@ index 06ecab2..0762241 100644
          }
      }
  
-+    // ── Famora patch: see CapacitorGoogleMap.animateMarker / setMarkerIcon ──
++    // ── Kinest patch: see CapacitorGoogleMap.animateMarker / setMarkerIcon ──
 +    // Called from the app as Capacitor.Plugins.CapacitorGoogleMaps.animateMarker(
 +    // { id, markerId, lat, lng, duration }) — there is no JS wrapper for these.
 +    @PluginMethod
@@ -436,7 +436,7 @@ index 06ecab2..0762241 100644
 +        }
 +    }
 +
-+    // Famora patch: Capacitor.Plugins.CapacitorGoogleMaps.trackMarker({ id, markerId })
++    // Kinest patch: Capacitor.Plugins.CapacitorGoogleMaps.trackMarker({ id, markerId })
 +    // streams "onTrackedMarkerMove" { x, y } in CSS px; markerId null stops it.
 +    @PluginMethod
 +    fun trackMarker(call: PluginCall) {
@@ -480,7 +480,7 @@ index 06ecab2..0762241 100644
 +            handleError(call, e)
 +        }
 +    }
-+    // ── end Famora patch ─────────────────────────────────────────────────────
++    // ── end Kinest patch ─────────────────────────────────────────────────────
 +
      @PluginMethod
      fun removeMarkers(call: PluginCall) {

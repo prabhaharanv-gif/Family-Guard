@@ -28,7 +28,7 @@ const noop = () => {}
  * implementations of the same read-only view.
  *
  * Shows, centred on the sender's own alert position:
- *  - every opted-in Famora Social dot nearby (list_famora_social_dots,
+ *  - every opted-in Kinest Social dot nearby (list_famora_social_dots,
  *    centred on the SENDER's location — every viewer of this map sees the
  *    same dots, not dots centred on wherever they themselves are standing);
  *  - a radar-ripple overlay while `status` is 'searching';

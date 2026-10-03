@@ -1,7 +1,7 @@
 /**
  * ui.nearby.js
  *
- * Translations for the Nearby Help / Famora Social screens, the SOS voice clip
+ * Translations for the Nearby Help / Kinest Social screens, the SOS voice clip
  * and photo messages, and the estimated-time labels, in the five non-English
  * languages. Kept in its own file because it was added in one pass after those
  * features shipped in English only, and it is merged into UI at the bottom of
@@ -52,7 +52,7 @@ export const NEARBY_UI = {
       consentOn: 'இயக்கு',
     },
     famoraSocial: {
-      title: 'Famora Social',
+      title: 'Kinest Social',
       toggleTitle: 'அருகிலுள்ள உதவியாளராக இருங்கள்',
       toggleBody: 'அடையாளம் தெரியாது. அருகில் உள்ள ஒருவருக்காக அழைக்கச் சொல்லப்படலாம் — அவர்களிடம் செல்லச் சொல்லப்படமாட்டீர்கள்.',
       onTitle: 'நீங்கள் அருகிலுள்ள உதவியாளர்',
@@ -162,7 +162,7 @@ export const NEARBY_UI = {
       consentOn: 'चालू करें',
     },
     famoraSocial: {
-      title: 'Famora Social',
+      title: 'Kinest Social',
       toggleTitle: 'आस-पास के मददगार बनें',
       toggleBody: 'गुमनाम। आपसे आस-पास किसी के लिए कॉल करने को कहा जा सकता है — उनके पास जाने को कभी नहीं।',
       onTitle: 'आप आस-पास के मददगार हैं',
@@ -272,7 +272,7 @@ export const NEARBY_UI = {
       consentOn: 'ఆన్ చేయండి',
     },
     famoraSocial: {
-      title: 'Famora Social',
+      title: 'Kinest Social',
       toggleTitle: 'సమీప సహాయకులు అవ్వండి',
       toggleBody: 'అజ్ఞాతంగా. సమీపంలో ఉన్నవారి కోసం కాల్ చేయమని మిమ్మల్ని అడగవచ్చు — వారి దగ్గరకు వెళ్లమని ఎప్పుడూ అడగరు.',
       onTitle: 'మీరు సమీప సహాయకులు',
@@ -382,7 +382,7 @@ export const NEARBY_UI = {
       consentOn: 'ಆನ್ ಮಾಡಿ',
     },
     famoraSocial: {
-      title: 'Famora Social',
+      title: 'Kinest Social',
       toggleTitle: 'ಹತ್ತಿರದ ಸಹಾಯಕರಾಗಿ',
       toggleBody: 'ಅನಾಮಧೇಯ. ಹತ್ತಿರದಲ್ಲಿರುವವರಿಗಾಗಿ ಕರೆ ಮಾಡಲು ನಿಮ್ಮನ್ನು ಕೇಳಬಹುದು — ಅವರ ಬಳಿಗೆ ಹೋಗಲು ಎಂದಿಗೂ ಕೇಳುವುದಿಲ್ಲ.',
       onTitle: 'ನೀವು ಹತ್ತಿರದ ಸಹಾಯಕರು',
@@ -492,7 +492,7 @@ export const NEARBY_UI = {
       consentOn: 'ഓൺ ചെയ്യുക',
     },
     famoraSocial: {
-      title: 'Famora Social',
+      title: 'Kinest Social',
       toggleTitle: 'സമീപത്തെ സഹായിയാകൂ',
       toggleBody: 'അജ്ഞാതമായി. സമീപത്തുള്ള ഒരാൾക്കായി വിളിക്കാൻ നിങ്ങളോട് ആവശ്യപ്പെട്ടേക്കാം — അവരുടെ അടുത്തേക്ക് പോകാൻ ഒരിക്കലും ആവശ്യപ്പെടില്ല.',
       onTitle: 'നിങ്ങൾ സമീപത്തെ സഹായിയാണ്',

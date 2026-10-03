@@ -42,7 +42,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     public  static final int    SOS_NOTIFICATION_ID = 911;
 
     /**
-     * The SOS channel actually in use, which depends on whether Famora held Do
+     * The SOS channel actually in use, which depends on whether Kinest held Do
      * Not Disturb access when the channel was created.
      *
      * setBypassDnd(true) below is not a request the system merely honours or
@@ -314,7 +314,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
             String sender  = data.containsKey("sender")  ? data.get("sender")  : "Family";
             String content = data.containsKey("content") ? data.get("content") : "New message";
-            showMessageNotification(appCtx, sender, content, muteLevel);
+            showMessageNotification(appCtx, sender, content, muteLevel, data);
 
         } else if ("place_enter".equals(type) || "place_exit".equals(type)) {
             // Plain notification, same shape as "message" above — no foreground
@@ -365,7 +365,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 parseIntOr(data.get("attempts"), 3));
 
         } else if ("nearby_help_request".equals(type)) {
-            // Famora Social: this phone's owner is one of the closest opted-in
+            // Kinest Social: this phone's owner is one of the closest opted-in
             // strangers to an unanswered SOS. Only the fuzzy area is carried —
             // the real coordinates are never sent until accept_nearby_help
             // succeeds (see NearbyHelpActionReceiver).
@@ -1094,7 +1094,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         try { nm.deleteNotificationChannel("family_messages_v2"); } catch (Exception ignored) {}
     }
 
-    private void showMessageNotification(Context appCtx, String senderName, String content, int muteLevel) {
+    private void showMessageNotification(Context appCtx, String senderName, String content, int muteLevel,
+                                         Map<String, String> data) {
         ensureMessageChannelStatic(appCtx);
 
         NotificationManager nm =
@@ -1147,7 +1148,21 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             .setAutoCancel(true)
             .setContentIntent(pi);
 
-        nm.notify((int) System.currentTimeMillis(), b.build());
+        // The message as a tinted bubble, so it stands apart from the reply box
+        // Android draws under it.
+        MessageNotificationViews.apply(appCtx, b, "💬 " + senderName, content);
+
+        // Reply without opening the app. The id is kept so the receiver can
+        // rewrite this same notification with the outcome. Left off when the
+        // push does not say who to answer (an older server, for a private
+        // message): a Reply that cannot be addressed would only fail.
+        int notifId = (int) System.currentTimeMillis();
+        androidx.core.app.NotificationCompat.Action reply = MessageReplyReceiver.buildAction(
+            appCtx, notifId, channelId,
+            data.get("family_id"), "1".equals(data.get("dm")), data.get("sender_id"), senderName);
+        if (reply != null) b.addAction(reply);
+
+        nm.notify(notifId, b.build());
     }
 
     /**

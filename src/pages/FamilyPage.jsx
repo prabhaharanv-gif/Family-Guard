@@ -1242,7 +1242,7 @@ export default function FamilyPage() {
                 //   red   = location switched off on their phone.
                 // "No GPS" used to be --muted, a dark mauve that read as the
                 // app's own maroon (buttons, headers) rather than as a
-                // problem. Off (sharing turned off in Famora) and Waiting
+                // problem. Off (sharing turned off in Kinest) and Waiting
                 // stay neutral: neither is something going wrong.
                 const pinFill = sharingOff || waiting ? 'var(--muted3)'
                   : gpsOff ? '#DC2626'

@@ -1,4 +1,4 @@
-// What an SOS needs, for Famora Social's nearby helpers. The server derives
+// What an SOS needs, for Kinest Social's nearby helpers. The server derives
 // help_kind from the stored English tile label (see _nearby_help_kind in
 // supabase/migrations/20260924120000_nearby_help_kind.sql); this mirrors it so
 // the family overlay, which reads sos_alerts.message directly, agrees.

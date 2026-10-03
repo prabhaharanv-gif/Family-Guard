@@ -64,7 +64,7 @@ with checks(kind, name, ok) as (
     select 1 from cron.job where jobname = j and active)
   from unnest(array[
     'close_stale_trips','detect_offline_members','expire_lost_phone',
-    'nearby_help_cron_cleanup','place_weather_check','purge_expired_sos_media',
+    'nearby_help_cron_cleanup','place_weather_check','purge_expired_sos_media','purge_orphaned_chat_media','purge_deleted_account_avatars','purge_api_quota',
     'purge_expired_unlock_alerts','purge_old_trips','purge_place_weather_alerts'
   ]) as j
 

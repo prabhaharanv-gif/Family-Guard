@@ -204,7 +204,7 @@ function mimeOfPath(path, kind) {
 }
 
 /**
- * In the app: straight into the gallery (Pictures/Famora or Movies/Famora) by
+ * In the app: straight into the gallery (Pictures/Kinest or Movies/Kinest) by
  * MediaSavePlugin, which downloads the signed URL itself and shows a toast.
  * In a browser: an ordinary file download. Resolves true when saved.
  */
@@ -228,7 +228,7 @@ export async function saveChatMedia(msg, t) {
   const blob = await (await fetch(url)).blob()
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = msg.media_name || `Famora_${Date.now()}.${MIME_EXT[mime] || 'jpg'}`
+  a.download = msg.media_name || `Kinest_${Date.now()}.${MIME_EXT[mime] || 'jpg'}`
   document.body.appendChild(a)
   a.click()
   a.remove()

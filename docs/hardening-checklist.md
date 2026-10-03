@@ -1,4 +1,4 @@
-# Famora hardening checklist
+# Kinest hardening checklist
 
 Written 2026-09-26 from a review of this codebase and the earlier security audits. Ordered by how much risk each item removes per hour spent. Tick items off as you go.
 
@@ -85,6 +85,19 @@ Sign-up is open and the OTP step is what proves a phone number, so this is the c
 - [ ] Run `npm audit fix` and rebuild. Upgrade `@capacitor/cli` only in a separate, tested step because it is a major-version change.
 - [ ] Run `npm audit` before every Play upload.
 
+### 9. Abuse controls **[code + dashboard]**
+Code side (migration `20261003150000_abuse_rate_limits.sql`, run by hand, plus a redeploy of `member-weather`, `travel-times`, `generate-agora-token` and `check-registration`):
+- SOS: a second SOS within 10 seconds of the last is refused, and 10 separate SOS events in 10 minutes is the cap. Chat and private messages: 30 a minute. Calls (and people added to a call): 10 a minute.
+- `member-weather` and `travel-times`: 40 requests per user per 10 minutes. `check-registration`: 15 per address per 10 minutes.
+- Edge functions answer only the app and the website, not every origin.
+
+Dashboard side, which no code can do:
+- [ ] **Supabase → Authentication → Attack Protection:** turn on CAPTCHA (Turnstile) for sign-up and sign-in, and lower the rate limits for SMS sent per hour and sign-ups and sign-ins per IP.
+- [ ] **Twilio → Messaging → Geo permissions:** allow SMS to India only. **Billing:** set a monthly spend cap and a usage alert, so SMS pumping cannot run up a bill.
+- [ ] **Google Cloud → the Routes server key:** restrict it to the Routes API only, set a daily quota cap on that API, and add a budget alert.
+- [ ] **OpenWeatherMap:** stay on a plan with a hard daily call limit, so a runaway cannot become a bill.
+- [ ] After running the migration, test it: send two SOS alerts a second apart from one phone. The second should fail.
+
 ---
 
 ## Ongoing
@@ -94,6 +107,7 @@ Sign-up is open and the OTP step is what proves a phone number, so this is the c
 - [ ] Any new edge function that a trigger calls must check the service token, and its secrets belong in Vault or function secrets, never in a trigger or a file.
 - [ ] Keep the service-role key out of the client, out of logs and out of chat.
 - [ ] Turn on Supabase log alerts for repeated 401/403 spikes and for a sudden rise in OTP requests.
+- [ ] Before every Play upload, and after any dashboard change, run `docs/security-verify-followup.sql`. Internal functions became callable by signed-in users again once with no known cause (2026-10-03), so an empty result there is a release condition, not a one-off.
 - [ ] Re-run the full audit (`docs/security-sweep.sql`) after each release, and before any large user-acquisition push.
 
 ## Deliberate choices, not to re-flag

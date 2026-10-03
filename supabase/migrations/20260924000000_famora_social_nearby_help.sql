@@ -1,8 +1,8 @@
 -- ===========================================================================
--- Famora Social: nearby-help escalation for SOS
+-- Kinest Social: nearby-help escalation for SOS
 --
 -- When a family is too far away to help in person, this finds the 10 closest
--- opted-in Famora users near the SOS location and asks them, and only them,
+-- opted-in Kinest users near the SOS location and asks them, and only them,
 -- to call local emergency services (112) on the senders behalf. It never
 -- asks anyone to travel to the location themselves. Escalates radius and
 -- wait time in three tiers (2km/1min, 5km/2min, 10km/3min) if nobody

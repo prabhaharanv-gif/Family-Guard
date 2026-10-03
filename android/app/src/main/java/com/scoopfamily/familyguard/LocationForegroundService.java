@@ -1621,7 +1621,7 @@ public class LocationForegroundService extends Service {
         NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_notify)
             .setColor(android.graphics.Color.parseColor("#951345"))
-            .setContentTitle("🛡️ Famora")
+            .setContentTitle("🛡️ Kinest")
             .setContentText(ctx.getString(R.string.notif_location_body))
             .setSubText(ctx.getString(R.string.notif_tap_to_open))
             .setPriority(NotificationCompat.PRIORITY_LOW)

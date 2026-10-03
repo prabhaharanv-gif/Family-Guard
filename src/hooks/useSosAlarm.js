@@ -203,7 +203,7 @@ export function useSosAlarm(user, familyIds) {
     return () => channels.forEach(c => supabase.removeChannel(c))
   }, [user, familyKey, stopAllAlarms])
 
-  // Famora Social: nearby-help status for the alert currently on screen,
+  // Kinest Social: nearby-help status for the alert currently on screen,
   // written onto the SAME in-memory sosAlert object _resolved already uses
   // above (matched by id, same pattern) — never separate state, so this can
   // never desync from which alert GlobalSOSAlert is actually showing.

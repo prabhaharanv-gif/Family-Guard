@@ -24,7 +24,7 @@ const withTimeout = (promise, ms) => new Promise((resolve, reject) => {
   )
 })
 
-// Famora Social's opt-in: shared by SOSPage's own Send tab below (where the
+// Kinest Social's opt-in: shared by SOSPage's own Send tab below (where the
 // switch now lives) and read by GlobalSOSAlert / NearbySearchMap wherever an
 // alert reads it back. Kept here rather than a separate page — see the old
 // FamoraSocialPage, removed in favour of this — because opting in belongs
@@ -367,7 +367,7 @@ function SOSSentScreen({ msg, onDismiss, onSafe, resolved, nearbyStatus, sentLoc
           {[
             { icon: 'pin',  label: t('sos.locationShared') },
             { icon: 'bell', label: t(resolved ? 'sos.familyToldSafe' : 'sos.familyAlerted') },
-            // Famora Social: a nearby stranger accepted and is calling 112 on
+            // Kinest Social: a nearby stranger accepted and is calling 112 on
             // this sender's behalf. Count only, never who — see
             // useSosAlarm's _nearbyHelpStatus and the plan's safety boundary.
             // Only added once there is something to report; "exhausted" gets
@@ -395,7 +395,7 @@ function SOSSentScreen({ msg, onDismiss, onSafe, resolved, nearbyStatus, sentLoc
           ))}
         </div>
 
-        {/* Famora Social found no one nearby within its ~6-minute search —
+        {/* Kinest Social found no one nearby within its ~6-minute search —
             an action to take, not a completed step, so it gets its own button
             rather than another row in the checklist above. Same tel: dialing
             mechanism ConfirmSheet already uses elsewhere on this page:
@@ -415,7 +415,7 @@ function SOSSentScreen({ msg, onDismiss, onSafe, resolved, nearbyStatus, sentLoc
           </button>
         )}
 
-        {/* Famora Social: the sender's own read-only view of the search — the
+        {/* Kinest Social: the sender's own read-only view of the search — the
             same map GlobalSOSAlert shows every other family member. Additive
             reassurance next to the "1 person nearby is helping" row above,
             not a replacement for it. Hidden once resolved, like the rest of
@@ -493,7 +493,7 @@ export default function SOSPage() {
   const [sentMsg, setSentMsg]           = useState(null)  // msg successfully sent → show sent screen
   const [sentResolved, setSentResolved] = useState(false) // "I'm Safe" succeeded → sent screen shows resolved
   const [dialog, setDialog]             = useState(null)
-  // The id `send_sos` returns, and the Famora Social nearby-help status for
+  // The id `send_sos` returns, and the Kinest Social nearby-help status for
   // it — 'searching' | 'helper_found' | 'exhausted' | 'resolved' | null
   // (null = no escalation row yet, e.g. a GPS-failed SOS at 0,0). See the
   // realtime subscription below and useSosAlarm.js's parallel one for the
@@ -506,7 +506,7 @@ export default function SOSPage() {
   const [sentLoc, setSentLoc]                     = useState(null)
   const [nearbyEscalationId, setNearbyEscalationId] = useState(null)
 
-  // Famora Social opt-in — moved here from the old FamoraSocialPage, next to
+  // Kinest Social opt-in — moved here from the old FamoraSocialPage, next to
   // the Send tab it now lives on.
   const [socialOptedIn, setSocialOptedIn]   = useState(false)
   const [socialOptInReady, setSocialOptInReady] = useState(false)
@@ -533,7 +533,7 @@ export default function SOSPage() {
     return () => alarmRef.current?.stop()
   }, [])
 
-  // Famora Social opt-in — same read/upsert/delete against user_consents the
+  // Kinest Social opt-in — same read/upsert/delete against user_consents the
   // old FamoraSocialPage used, carried over unchanged.
   useEffect(() => {
     if (!user?.id) return
@@ -800,7 +800,7 @@ export default function SOSPage() {
       // owner is hiding; "I'm Safe" gives the ringer back.
       enterSosSilence()
       setSentResolved(false)
-      // The alert's id, for the Famora Social nearby-help subscription below.
+      // The alert's id, for the Kinest Social nearby-help subscription below.
       // send_sos returns it as a plain uuid; tolerate a row/array shape too
       // rather than assume one, since nothing here can change the RPC itself.
       const newAlertId = typeof sosData === 'string'
@@ -859,7 +859,7 @@ export default function SOSPage() {
     setSentResolved(true)
   }
 
-  // Famora Social: nearby-help status for the alert just sent. Subscribes
+  // Kinest Social: nearby-help status for the alert just sent. Subscribes
   // once sentAlertId is known and reads the row's current status straight
   // away too — the escalation is inserted synchronously by a trigger on
   // sos_alerts, so it usually already exists by the time this effect's
@@ -1100,7 +1100,7 @@ export default function SOSPage() {
         </PullToRefresh>
       )}
 
-      {/* NEARBY HELP TAB — Famora Social: opt-in, requests addressed to this
+      {/* NEARBY HELP TAB — Kinest Social: opt-in, requests addressed to this
           user, and their own history of them. */}
       {activeTab === 'social' && (
         <>

@@ -212,6 +212,8 @@ serve(async (req) => {
         content:   preview,
         family_id: String(record.family_id),
         dm:        '1',
+        // Who to answer: a reply from the notification is a private message back to them.
+        sender_id: String(record.sender_id),
       },
       android: {
         priority: 'high',

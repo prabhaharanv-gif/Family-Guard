@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="msg_notif_bg">#4A1F2E</color>
+    <color name="msg_notif_title">#FFB3C9</color>
+    <color name="msg_notif_text">#FBEFF3</color>
+</resources>

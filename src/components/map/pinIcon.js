@@ -274,7 +274,7 @@ export const endDot = () => dot('end', END_DOT, (g, c, maroon) => {
   disc(g, c, c - 0.5, '#fff'); disc(g, c, c - 3.5, maroon)
 })
 
-// ── Famora Social — ambient dot ─────────────────────────────────────────────
+// ── Kinest Social — ambient dot ─────────────────────────────────────────────
 // One shape for every opted-in stranger shown on the nearby-help map: small,
 // neutral slate, no initial, no ring. Deliberately NOT the family maroon
 // (avatar pins above) or the SOS red (used elsewhere in the app) — this is
@@ -287,7 +287,7 @@ export const anonDot = () => dot('anonSocial', ANON_DOT, (g, c) => {
   disc(g, c, c - 0.5, '#fff'); disc(g, c, c - 3, ANON_DOT_COLOR)
 })
 
-// ── Famora Social — accepted helper ─────────────────────────────────────────
+// ── Kinest Social — accepted helper ─────────────────────────────────────────
 // The one dot on the nearby-help map that means "found": the fuzzy area of the
 // stranger who accepted, once nearby_help_escalations.status is
 // 'helper_found'. Slightly bigger than the ambient dots so it reads as the

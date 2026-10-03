@@ -291,8 +291,8 @@ export default function CallPage() {
         setJoinError(
           denied
             ? (call.call_type === 'video'
-                ? 'Please allow Camera and Microphone access for Famora, then try again'
-                : 'Please allow Microphone access for Famora, then try again')
+                ? 'Please allow Camera and Microphone access for Kinest, then try again'
+                : 'Please allow Microphone access for Kinest, then try again')
             : (call.call_type === 'video'
                 ? 'Could not start camera or microphone'
                 : 'Could not start the microphone')

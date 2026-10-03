@@ -133,7 +133,7 @@ export default function SettingsPage() {
             {t('settings.about')}
           </div>
           {[
-            { label: t('settings.app'), value: 'Famora' },
+            { label: t('settings.app'), value: 'Kinest' },
             { label: t('settings.version'), value: import.meta.env.VITE_APP_VERSION || '1.1.0' },
             { label: t('settings.platform'), value: t('settings.platformValue') },
           ].map(item => (

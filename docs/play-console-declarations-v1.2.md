@@ -15,7 +15,7 @@ reason these forms come back.
 | Fake incoming call | `FakeCallService` (`mediaPlayback|specialUse`), full-screen intent, QS tile | **Foreground service permissions** and **Full-screen intent** — both already filed, both need their text updated |
 | Shake for SOS | none — the accelerometer needs no permission at 100 Hz | none, but it belongs in the `location` foreground-service justification |
 
-All of these are filed from **Play Console → Famora → Monitor and improve → App
+All of these are filed from **Play Console → Kinest → Monitor and improve → App
 content** (shown under "Policy" in some account layouts — the same page):
 *Sensitive app permissions* for SMS, *Foreground service permissions*,
 *Full-screen intent permission*, *Data safety*. Videos go in as unlisted YouTube
@@ -30,7 +30,7 @@ into review for nothing.
 ## 1. SMS and Call Log permissions declaration — the blocking one
 
 Play restricts `SEND_SMS` to a fixed list of core-functionality exceptions. The
-one Famora claims is, verbatim from the policy table:
+one Kinest claims is, verbatim from the policy table:
 
 > **Physical safety/emergency alerts to send SMS** — apps that send SMS alerts
 > in emergency situations
@@ -46,7 +46,7 @@ can be removed, not merely rejected.
 
 ### Description of the core functionality
 
-> Famora is a family-safety app. Members of a family group share their live
+> Kinest is a family-safety app. Members of a family group share their live
 > location with each other and can raise an SOS alert that reaches every other
 > member. All of that travels over the internet.
 >
@@ -69,7 +69,7 @@ can be removed, not merely rejected.
 > joined, plus one additional number the member types in. The app never reads
 > the device's contacts, never reads, receives or intercepts SMS, and never
 > texts a number the user has not chosen. The message is a single line:
-> "Famora: <name> has no internet since <HH:MM>. Last known location:
+> "Kinest: <name> has no internet since <HH:MM>. Last known location:
 > <Google Maps link>".
 >
 > Sending is rate-limited in code so the permission cannot become a nuisance or
@@ -107,7 +107,7 @@ description field at all. What it asks for:
 
 - **Core functionalities** (checkboxes): tick **only** "Physical safety /
   emergency alert apps (e.g., senior safety)". "Default SMS handler" is ticked
-  by default on a fresh form — untick it. Famora is not the default SMS
+  by default on a fresh form — untick it. Kinest is not the default SMS
   handler, and declaring it would be checked against the manifest and fail.
   Leave "Anti-SMS Phishing" and everything else empty; each extra tick is
   another justification to defend.
@@ -156,7 +156,7 @@ launch (it backgrounded the app on API 34+), so the only route to granting it is
 the `SosReliabilitySetup` card, which most users never open.
 
 **Set it to "Making and receiving calls."** That is accurate, not convenient:
-Famora makes and receives voice and video calls between family members —
+Kinest makes and receives voice and video calls between family members —
 `useCallSignaling.js` drives them, `CallRingingService` rings, and
 `CallRingingActivity` is the full-screen incoming-call screen the permission
 exists for. Play defines core functionality as the app's main purpose and allows
@@ -187,7 +187,7 @@ and cannot be paused or restarted, so all three points have to be answered.
 Sentences 1–3 must match the manifest's `PROPERTY_SPECIAL_USE_FGS_SUBTYPE`
 strings — copy them rather than retyping:
 
-> Famora is a family-safety app. Three foreground services require
+> Kinest is a family-safety app. Three foreground services require
 > FOREGROUND_SERVICE_SPECIAL_USE, each because it must show a full-screen alert
 > over the lock screen — a task no other foreground service type covers.
 >

@@ -389,7 +389,7 @@ public class FakeCallService extends Service {
         try {
             release(cpuLock);
             PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-            cpuLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Famora::FakeCall");
+            cpuLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Kinest::FakeCall");
             cpuLock.setReferenceCounted(false);
             cpuLock.acquire(timeoutMs);
         } catch (Exception e) {
@@ -404,7 +404,7 @@ public class FakeCallService extends Service {
             PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
             screenLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK
                 | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE,
-                "Famora::FakeCallScreen");
+                "Kinest::FakeCallScreen");
             screenLock.setReferenceCounted(false);
             screenLock.acquire(10_000);
         } catch (Exception e) {

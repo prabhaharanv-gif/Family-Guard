@@ -4,7 +4,7 @@
  * The public account-deletion route. Google Play requires a way to request
  * deletion from the open web — reachable without installing the app — so this
  * sits outside PrivateRoute, and ConsentGate already lets signed-out visitors
- * through. Someone who has uninstalled Famora can still land here and act.
+ * through. Someone who has uninstalled Kinest can still land here and act.
  *
  * It offers two routes: the in-app Profile → Delete My Account, and deleting
  * right here. The web route proves ownership the only way this app can — an SMS

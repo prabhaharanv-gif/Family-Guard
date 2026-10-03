@@ -6,6 +6,7 @@ import { useT } from '../i18n'
 import { KeyIcon } from '../components/AuthIcons'
 import famoraLogo from '../assets/famora-logo.jpg'
 import Icon from '../components/Icon'
+import { APP_NAME } from '../lib/brand'
 
 export default function OnboardingPage() {
   const t = useT()
@@ -99,7 +100,7 @@ export default function OnboardingPage() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-logo auth-logo-brand">
-          <img src={famoraLogo} alt="famora" width={110} height={110}
+          <img src={famoraLogo} alt={APP_NAME} width={110} height={110}
             style={{ display: 'block', margin: '0 auto', borderRadius: 22 }} />
         </div>
         <h1 className="auth-title">{t('onboarding.welcome')}</h1>

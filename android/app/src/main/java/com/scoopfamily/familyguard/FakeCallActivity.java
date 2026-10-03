@@ -351,7 +351,7 @@ public class FakeCallActivity extends Activity {
             PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
             if (pm != null && pm.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
                 proximityLock = pm.newWakeLock(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK,
-                    "Famora::FakeCallProximity");
+                    "Kinest::FakeCallProximity");
                 proximityLock.acquire(60 * 60 * 1000L);
             }
         } catch (Exception e) {

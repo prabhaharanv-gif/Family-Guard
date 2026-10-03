@@ -30,7 +30,7 @@
     <string name="ch_messages_quiet_desc">ಕುಟುಂಬ ಸಂದೇಶಗಳು — ಪಾಪ್-ಅಪ್ ಮ್ಯೂಟ್, ಧ್ವನಿ ಕೇಳಿಸುತ್ತದೆ</string>
 
     <string name="ch_location_name">ಸ್ಥಳ ಟ್ರ್ಯಾಕಿಂಗ್</string>
-    <string name="ch_location_desc">Famora ನಿಮ್ಮ ಸ್ಥಳವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡುತ್ತಿರುವಾಗ ಕಾಣಿಸುತ್ತದೆ</string>
+    <string name="ch_location_desc">Kinest ನಿಮ್ಮ ಸ್ಥಳವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡುತ್ತಿರುವಾಗ ಕಾಣಿಸುತ್ತದೆ</string>
 
     <string name="ch_ping_name">ನನ್ನ ಫೋನ್ ಹುಡುಕಿ</string>
     <string name="ch_ping_desc">ಕುಟುಂಬ ಸದಸ್ಯರು ಫೋನ್ ಹುಡುಕಿದಾಗ ಈ ಫೋನ್ ರಿಂಗ್ ಆಗುತ್ತದೆ</string>
@@ -41,7 +41,7 @@
     <!-- SOSAlertActivity — ಲಾಕ್ ಪರದೆಯ ಮೇಲೆ ಕಾಣುವ ಪೂರ್ಣ-ಪರದೆ ಎಚ್ಚರಿಕೆ -->
     <string name="sos_needs_help">%1$s ಅವರಿಗೆ ಸಹಾಯ ಬೇಕು!</string>
     <string name="sos_view_location">ಸ್ಥಳ ನೋಡಿ</string>
-    <string name="sos_open_app">Famora ತೆರೆಯಿರಿ</string>
+    <string name="sos_open_app">Kinest ತೆರೆಯಿರಿ</string>
     <string name="sos_stop_alarm">ಅರ್ಥವಾಯಿತು — ಅಲಾರಂ ಮೌನಗೊಳಿಸಿ</string>
     <string name="sos_calm_hint">ಶಾಂತವಾಗಿರಿ. ಅವರು ಎಲ್ಲಿದ್ದಾರೆ ಎಂದು ನೋಡಿ, ನಂತರ ಕರೆ ಮಾಡಿ ಅಥವಾ ಅವರ ಬಳಿ ಹೋಗಿ.</string>
     <string name="sos_call">%1$s ಅವರಿಗೆ ಕರೆ ಮಾಡಿ</string>
@@ -70,7 +70,7 @@
 
     <!-- ಅಧಿಸೂಚನೆಗಳು -->
     <string name="notif_sos_title">🚨 SOS — %1$s ಅವರಿಗೆ ಸಹಾಯ ಬೇಕು!</string>
-    <string name="notif_sos_big">⚠️ %1$s ಅವರಿಗೆ ಸಹಾಯ ಬೇಕು!\n\n%2$s\n\nFamora ತೆರೆಯಲು ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
+    <string name="notif_sos_big">⚠️ %1$s ಅವರಿಗೆ ಸಹಾಯ ಬೇಕು!\n\n%2$s\n\nKinest ತೆರೆಯಲು ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
     <string name="notif_call_voice_label">ಧ್ವನಿ ಕರೆ</string>
     <string name="notif_call_video_label">ವೀಡಿಯೊ ಕರೆ</string>
     <!-- Kannada puts the caller first: "<name> ಇಂದ <call type>" -->
@@ -84,9 +84,9 @@
     <string name="notif_location_body">ನಿಮ್ಮ ಕುಟುಂಬವನ್ನು ರಕ್ಷಿಸುತ್ತಿದೆ · ಸ್ಥಳ ಸಕ್ರಿಯ</string>
     <string name="notif_tap_to_open">ತೆರೆಯಲು ಟ್ಯಾಪ್ ಮಾಡಿ</string>
     <string name="ch_reauth_name">ಮತ್ತೆ ಸಂಪರ್ಕ ಬೇಕು</string>
-    <string name="ch_reauth_desc">ಸ್ಥಳ ಹಂಚಿಕೆ ಮುಂದುವರಿಸಲು Famora ಅನ್ನು ಮತ್ತೆ ತೆರೆಯಬೇಕಾದಾಗ ತಿಳಿಸುತ್ತದೆ</string>
+    <string name="ch_reauth_desc">ಸ್ಥಳ ಹಂಚಿಕೆ ಮುಂದುವರಿಸಲು Kinest ಅನ್ನು ಮತ್ತೆ ತೆರೆಯಬೇಕಾದಾಗ ತಿಳಿಸುತ್ತದೆ</string>
     <string name="notif_reauth_title">ಸ್ಥಳ ಹಂಚಿಕೆ ನಿಂತಿದೆ</string>
-    <string name="notif_reauth_body">ಮತ್ತೆ ಸಂಪರ್ಕಿಸಲು Famora ತೆರೆಯಿರಿ. ಅಲ್ಲಿಯವರೆಗೆ ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕೆ ನಿಮ್ಮ ಸ್ಥಳ ಕಾಣಿಸುವುದಿಲ್ಲ.</string>
+    <string name="notif_reauth_body">ಮತ್ತೆ ಸಂಪರ್ಕಿಸಲು Kinest ತೆರೆಯಿರಿ. ಅಲ್ಲಿಯವರೆಗೆ ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕೆ ನಿಮ್ಮ ಸ್ಥಳ ಕಾಣಿಸುವುದಿಲ್ಲ.</string>
     <!-- Fake call -->
     <string name="fake_call_default_name">ಅಮ್ಮ</string>
     <string name="fake_call_scheduled_title">ಜ್ಞಾಪನೆ</string>
@@ -127,11 +127,17 @@
     <string name="ch_overspeed_self_name">ವೇಗ ಮಿತಿ ಎಚ್ಚರಿಕೆ</string>
     <string name="ch_overspeed_self_desc">ನೀವು ನಿಗದಿಪಡಿಸಿದ ವೇಗ ಮಿತಿ ಮೀರಿದಾಗ ಚಿಕ್ಕ ಶಬ್ದದೊಂದಿಗೆ ಎಚ್ಚರಿಸುತ್ತದೆ</string>
     <string name="unlock_alert_title" formatted="true">%1$s ಅವರ ಫೋನ್‌ನಲ್ಲಿ ತಪ್ಪು ಪಾಸ್‌ವರ್ಡ್</string>
-    <string name="unlock_alert_body" formatted="true">ಸ್ಕ್ರೀನ್-ಲಾಕ್‌ಗೆ ತಪ್ಪು ಪ್ರಯತ್ನಗಳು: %1$d. ಫೋನ್ ಎಲ್ಲಿತ್ತು, ಮತ್ತು ಫೋಟೋ ತೆಗೆದಿದ್ದರೆ ಅದನ್ನು ನೋಡಲು Famora ತೆರೆಯಿರಿ.</string>
+    <string name="unlock_alert_body" formatted="true">ಸ್ಕ್ರೀನ್-ಲಾಕ್‌ಗೆ ತಪ್ಪು ಪ್ರಯತ್ನಗಳು: %1$d. ಫೋನ್ ಎಲ್ಲಿತ್ತು, ಮತ್ತು ಫೋಟೋ ತೆಗೆದಿದ್ದರೆ ಅದನ್ನು ನೋಡಲು Kinest ತೆರೆಯಿರಿ.</string>
     <string name="ch_lost_name">ಫೋನ್ ಕಳೆದುಹೋದ ಮೋಡ್</string>
     <string name="ch_lost_desc">ನಿಮ್ಮ ಕುಟುಂಬ ಈ ಫೋನ್ ಅನ್ನು ಕಳೆದುಹೋಗಿದೆ ಎಂದು ಗುರುತಿಸಿದಾಗ ತೋರಿಸಲಾಗುತ್ತದೆ</string>
     <string name="lost_title">ಈ ಫೋನ್ ಕಳೆದುಹೋಗಿದೆ</string>
     <string name="lost_body_default" formatted="true">ಇದನ್ನು ಹಿಂತಿರುಗಿಸಲು ದಯವಿಟ್ಟು %1$s ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.</string>
     <string name="lost_body_generic">ದಯವಿಟ್ಟು ಈ ಫೋನ್ ಅನ್ನು ಅದರ ಮಾಲೀಕರ ಕುಟುಂಬಕ್ಕೆ ಹಿಂತಿರುಗಿಸಿ.</string>
     <string name="lost_close">ಮುಚ್ಚಿ</string>
+    <!-- Reply from a message notification -->
+    <string name="reply_action">ಉತ್ತರಿಸಿ</string>
+    <string name="reply_hint">ಉತ್ತರ ಬರೆಯಿರಿ</string>
+    <string name="reply_sent">ನೀವು: %1$s</string>
+    <string name="reply_failed">ಉತ್ತರ ಕಳುಹಿಸಲಾಗಲಿಲ್ಲ. Kinest ತೆರೆಯಲು ಟ್ಯಾಪ್ ಮಾಡಿ ಅಥವಾ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="reply_empty">ಕಳುಹಿಸಲು ಏನೂ ಇಲ್ಲ.</string>
 </resources>

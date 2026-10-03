@@ -218,7 +218,7 @@ export default function NativeFamilyMap({
 
     for (const [uid, loc] of Object.entries(pins)) {
       if (loc.lat == null || loc.lng == null) continue
-      // Famora Social's ambient dots (kind: 'anonDot') and the accepted
+      // Kinest Social's ambient dots (kind: 'anonDot') and the accepted
       // helper's fuzzy area (kind: 'helperFound', see NearbySearchMap): no
       // identity, no photo, and never registered against a marker id below,
       // so the map's own click listener has nothing to look up for them —

@@ -60,7 +60,7 @@ final class SosDnd {
             MyFirebaseMessagingService.PREF_NAME, Context.MODE_PRIVATE);
     }
 
-    /** True when the user has allowed Famora under Settings > Do Not Disturb access. */
+    /** True when the user has allowed Kinest under Settings > Do Not Disturb access. */
     static boolean hasAccess(Context ctx) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true;
         try {

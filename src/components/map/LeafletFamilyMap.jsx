@@ -263,7 +263,7 @@ export default function LeafletFamilyMap({
 
       {Object.entries(pins).map(([uid, loc]) => (
         loc.kind === 'anonDot' ? (
-          // Famora Social's ambient dots (see NearbySearchMap): no avatar,
+          // Kinest Social's ambient dots (see NearbySearchMap): no avatar,
           // no popup, and `interactive={false}` so Leaflet gives them no
           // click handler or hover cursor at all — untappable by construction,
           // not by leaving renderPopup empty. A plain Marker rather than

@@ -30,6 +30,7 @@
 // already see them on their own Family screen.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const MAX_POINTS = 20
 const CACHE_MS   = 15 * 60 * 1000
@@ -186,10 +187,60 @@ async function fetchDetail(key: string, lat: number, lng: number): Promise<Detai
   }
 }
 
-serve(async (req) => {
+
+// CORS: the app and the website only, not every origin. Applied to the finished
+// response, so concurrent requests from different origins cannot mix up headers.
+const ALLOWED_ORIGINS = [
+  'https://localhost',          // the Android app (Capacitor)
+  'capacitor://localhost',
+  'http://localhost',
+  'http://localhost:5173',      // local development
+  'https://famora-family.vercel.app',
+]
+function withCors(req: Request, res: Response): Response {
+  const origin = req.headers.get('Origin') || ''
+  const headers = new Headers(res.headers)
+  headers.set('Access-Control-Allow-Origin', ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[4])
+  headers.append('Vary', 'Origin')
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers })
+}
+
+// Per-user cap on paid lookups: any account can sign in, and each call spends
+// quota on a third-party API. Counted in the database (consume_api_quota), so it
+// holds across isolates. If the check itself fails the request is allowed: a
+// broken counter must not take weather or travel times down.
+const QUOTA_LIMIT    = 40
+const QUOTA_WINDOW_S = 600
+function userIdOf(req: Request): string | null {
+  const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim()
+  try {
+    let b64 = (token.split('.')[1] || '').replace(/-/g, '+').replace(/_/g, '/')
+    while (b64.length % 4) b64 += '='
+    const sub = JSON.parse(atob(b64))?.sub
+    return typeof sub === 'string' ? sub : null
+  } catch { return null }
+}
+async function overQuota(req: Request): Promise<boolean> {
+  const uid = userIdOf(req)
+  if (!uid) return false
+  try {
+    const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    const { data, error } = await sb.rpc('consume_api_quota', {
+      p_key: uid, p_fn: 'member-weather', p_limit: QUOTA_LIMIT, p_window_s: QUOTA_WINDOW_S,
+    })
+    if (error) { console.warn('[member-weather] quota check failed:', error.message); return false }
+    return data === false
+  } catch (e) {
+    console.warn('[member-weather] quota check failed:', (e as Error).message)
+    return false
+  }
+}
+
+const handle = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST')    return json({ error: 'POST only' }, 405)
   if (!isSignedInUser(req))     return json({ error: 'Sign in required' }, 401)
+  if (await overQuota(req))     return json({ error: 'Too many requests' }, 429)
 
   let points: { lat: number; lng: number }[]
   let wantDetail: { lat: number; lng: number } | null = null
@@ -274,4 +325,6 @@ serve(async (req) => {
   }
 
   return json({ weather: result })
-})
+}
+
+serve(async (req) => withCors(req, await handle(req)))

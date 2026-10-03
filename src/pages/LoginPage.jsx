@@ -8,6 +8,7 @@ import AuthLanguagePicker from '../components/AuthLanguagePicker'
 import Dialog from '../components/Dialog'
 import famoraLogo from '../assets/famora-logo.jpg'
 import Icon from '../components/Icon'
+import { APP_NAME } from '../lib/brand'
 
 function EyeIcon({ open }) {
   return open ? (
@@ -296,7 +297,7 @@ export default function LoginPage() {
       <div className="auth-card" style={{ borderRadius: 28, padding: "40px 32px" }}>
         {/* Brand icon — same artwork as the launcher icon */}
         <div className="auth-logo auth-logo-brand" style={{ marginBottom: 28 }}>
-          <img src={famoraLogo} alt="famora" width={110} height={110}
+          <img src={famoraLogo} alt={APP_NAME} width={110} height={110}
             style={{ display: 'block', margin: '0 auto', borderRadius: 24 }} />
         </div>
 

@@ -474,7 +474,7 @@ public class LocationPlugin extends Plugin {
         call.resolve();
     }
 
-    /** Opens Android's own dialog asking the owner to make Famora a device admin. */
+    /** Opens Android's own dialog asking the owner to make Kinest a device admin. */
     @PluginMethod
     public void requestAntiTheftAdmin(PluginCall call) {
         try {
@@ -483,7 +483,7 @@ public class LocationPlugin extends Plugin {
             i.putExtra(android.app.admin.DevicePolicyManager.EXTRA_DEVICE_ADMIN,
                 AntiTheft.adminComponent(getContext()));
             i.putExtra(android.app.admin.DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                "Famora only asks to be told when the screen-lock password is entered wrongly. "
+                "Kinest only asks to be told when the screen-lock password is entered wrongly. "
                 + "It cannot lock, wipe or change your phone.");
             getActivity().startActivity(i);
             call.resolve();

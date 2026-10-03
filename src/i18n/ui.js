@@ -78,7 +78,7 @@ export const UI = {
 
     register: {
       title: 'Create Account',
-      sub: 'Join Famora to keep your family safe',
+      sub: 'Join Kinest to keep your family safe',
       otpSub: 'Enter the code sent to +91 {mobile}',
       yourName: 'Your name',
       confirmPassword: 'Confirm password',
@@ -94,7 +94,7 @@ export const UI = {
       sendCode: 'Send Verification Code',
       agreeLead: 'I have read and agree to the',
       agreeLink: 'Privacy Policy & Terms',
-      agreeTail: 'of Famora',
+      agreeTail: 'of Kinest',
       enterName: 'Please enter your name',
       acceptTerms: 'Please accept the Privacy Policy & Terms to continue',
       alreadyRegistered: 'This mobile number is already registered. Please sign in.',
@@ -183,7 +183,7 @@ export const UI = {
       userGuideSub: 'How every feature works',
       privacyPolicy: 'Privacy Policy',
       signOut: 'Sign Out',
-      signOutConfirm: 'Are you sure you want to sign out of Famora?',
+      signOutConfirm: 'Are you sure you want to sign out of Kinest?',
       language: 'Language',
       languageSub: 'Language for the whole app',
     },
@@ -249,7 +249,7 @@ export const UI = {
       family: 'Family',
       today: 'Today {time}',
       yesterday: 'Yesterday {time}',
-      // Famora Social nearby-help status, shown on the sender's own Sent
+      // Kinest Social nearby-help status, shown on the sender's own Sent
       // screen once the alert has actually gone out. Count is always 0 or 1
       // and never an identity — see nearby_help_escalations.status.
       nearbyHelping: '1 person nearby is helping',
@@ -291,7 +291,7 @@ export const UI = {
       inviteTo: 'Invite to {family}',
       joinScreenNote: 'Share this code with your family member.\nThey enter it on Join Family, then you approve the request.',
       shareWhatsapp: 'Share via WhatsApp',
-      whatsappMsg: "Join our family on Famora! Enter the code *{code}* on the Join Family screen and I'll approve you. 🛡️",
+      whatsappMsg: "Join our family on Kinest! Enter the code *{code}* on the Join Family screen and I'll approve you. 🛡️",
       copied: 'Copied!',
       copyCode: 'Copy Code',
       switchFamily: 'Switch Family',
@@ -338,7 +338,7 @@ export const UI = {
       usingApp: 'Using the app',
       notSignedIn: 'Not signed in yet',
       signedOut: 'Signed out',
-      // Famora Social nearby-help status on the family's SOS overlay — the
+      // Kinest Social nearby-help status on the family's SOS overlay — the
       // same underlying row SOSPage's own status card reads, never a second,
       // independently-computed count.
       nearbyHelping: "1 nearby person is helping — they're calling for help",
@@ -476,14 +476,14 @@ export const UI = {
     },
     consent: {
       title: 'Before You Continue',
-      body: 'We\'ve updated our Privacy Policy. Please review and accept it to continue using Famora.',
+      body: 'We\'ve updated our Privacy Policy. Please review and accept it to continue using Kinest.',
       location: 'Your location is shared only with your own family group',
       messages: 'Messages are visible only to your family members',
       noSell: 'We never sell or share your data with anyone',
       deleteAnytime: 'You can delete your account and all data anytime',
       readFull: 'Read Full Privacy Policy',
       agree: 'I Agree — Continue',
-      agreeFamora: 'I Agree — Continue to Famora',
+      agreeFamora: 'I Agree — Continue to Kinest',
     },
     map: {
       // Timeline — a member's last 24 h or 7 days on the Map (popup button and panel).
@@ -523,7 +523,7 @@ export const UI = {
       findMember: 'Find family member',
       findMemberTitle: 'Find Family Member',
       locationFailed: 'Couldn\'t get location — check GPS is on and tap Refresh.',
-      permissionRequired: 'Location permission is required. Allow it in Android Settings → Apps → Famora → Permissions.',
+      permissionRequired: 'Location permission is required. Allow it in Android Settings → Apps → Kinest → Permissions.',
       findFam: 'Find Fam',
       refresh: 'Refresh map',
       recenter: 'Recentre',
@@ -562,8 +562,8 @@ export const UI = {
 
     reliability: {
       title: 'Make sure alerts reach you',
-      intro: '{oem} phones can restrict apps from working in the background. Turning on {switches} helps Famora deliver urgent alerts reliably, even when the app is running in the background or your phone is locked.',
-      introPlain: 'A silenced or locked phone can miss an alert. Turning on {switches} helps Famora sound the alarm and take over the screen when it matters.',
+      intro: '{oem} phones can restrict apps from working in the background. Turning on {switches} helps Kinest deliver urgent alerts reliably, even when the app is running in the background or your phone is locked.',
+      introPlain: 'A silenced or locked phone can miss an alert. Turning on {switches} helps Kinest sound the alarm and take over the screen when it matters.',
       oneSwitch: 'one setting',
       someSwitches: '{n} quick settings',
       blocked: 'An alert on this phone showed only as a small banner — the pop-up switch below fixes that.',
@@ -571,11 +571,11 @@ export const UI = {
       done: 'Done',
       notNow: 'Not now',
       autostart: 'Allow background startup',
-      autostartSub: 'Find Famora in the list and switch it on',
+      autostartSub: 'Find Kinest in the list and switch it on',
       popup: 'Show alerts on the lock screen',
-      popupSub: 'Allow Famora to display urgent alerts on your lock screen',
+      popupSub: 'Allow Kinest to display urgent alerts on your lock screen',
       fullscreen: 'Allow full-screen alerts',
-      fullscreenSub: 'Allow urgent Famora alerts to appear prominently over other apps',
+      fullscreenSub: 'Allow urgent Kinest alerts to appear prominently over other apps',
       dnd: 'Allow sound during Do Not Disturb',
       dndSub: 'So important SOS alerts can be heard when your phone is silenced',
       someAndroid: 'Some Android',
@@ -587,28 +587,28 @@ export const UI = {
     // this route sits outside ConsentGate and outside PrivateRoute.
     deletePage: {
       title: 'Delete Your Account',
-      sub: 'How to permanently delete your Famora account and everything in it',
+      sub: 'How to permanently delete your Kinest account and everything in it',
       cannotUndo: 'Deletion is permanent and cannot be undone.',
       optionInApp: 'Delete it yourself, in the app',
-      optionInAppBody: 'Open Famora and go to Profile → Delete My Account. Type DELETE to confirm. Your account and data are removed straight away.',
+      optionInAppBody: 'Open Kinest and go to Profile → Delete My Account. Type DELETE to confirm. Your account and data are removed straight away.',
       optionWeb: 'Delete it here, without the app',
       optionWebBody: 'Enter the mobile number you registered with. We will text a 6-digit code to prove the number is yours, then you can delete the account straight away.',
       couldNotSend: 'Could not send a code. Use the mobile number you registered with, or try again later.',
       confirmBody: 'Your number is verified. This deletes the account and everything listed below.',
       deleteFailed: 'Could not delete the account. Please try again.',
       deletedTitle: 'Your account has been deleted',
-      deletedBody: 'Your account and its data have been removed. You can uninstall Famora from your phone.',
+      deletedBody: 'Your account and its data have been removed. You can uninstall Kinest from your phone.',
       whatGoes: 'What is deleted',
       whatGoesBody: 'Your sign-in, your name and profile photo, your location and location history, your messages, your SOS alerts, your call records, and your device notification tokens. Any family you created is deleted along with it.',
       whatStays: 'What remains',
       whatStaysBody: 'Nothing that identifies you. Messages you sent are removed for everyone in the family. Crash reports already sent to Firebase Crashlytics carry no name, number or location and cannot be traced back to you.',
-      backToApp: 'Back to Famora',
+      backToApp: 'Back to Kinest',
     },
     // Shown when another device claims the session — see
     // useSingleDevice. One account, one device.
     session: {
       displacedTitle: 'Signed out',
-      displacedBody: 'Your account was opened on another device. Famora can be used on one device at a time.',
+      displacedBody: 'Your account was opened on another device. Kinest can be used on one device at a time.',
       signInAgain: 'Sign in again',
     },
 
@@ -624,7 +624,7 @@ export const UI = {
       testConfirm: 'This sends a real SMS to the family admins and your extra number, and your mobile plan will charge for it. Send it?',
       testSent: 'Test SMS sent to {n} number(s).',
       testFailed: 'Could not send. Check the SMS permission and that the SIM can send messages.',
-      permissionNeeded: 'Android needs permission to send SMS for this. Allow it when asked, or turn it on in Settings → Apps → Famora → Permissions → SMS.',
+      permissionNeeded: 'Android needs permission to send SMS for this. Allow it when asked, or turn it on in Settings → Apps → Kinest → Permissions → SMS.',
     },
     shakeSos: {
       title: 'Shake for SOS',
@@ -726,7 +726,7 @@ export const UI = {
       attempts: "{n} wrong attempts",
       map: "Map",
       continue: "Continue",
-      explainAlert: "If the screen-lock password is entered wrongly 3 times, Famora tells the ADMINS of your families, with where the phone was last seen. Nothing else is sent. Android will now ask you to make Famora a device admin: it only asks to be told about wrong passwords and cannot lock, wipe or change your phone. To remove it later, switch this off here.",
+      explainAlert: "If the screen-lock password is entered wrongly 3 times, Kinest tells the ADMINS of your families, with where the phone was last seen. Nothing else is sent. Android will now ask you to make Kinest a device admin: it only asks to be told about wrong passwords and cannot lock, wipe or change your phone. To remove it later, switch this off here.",
       explainPhoto: "Also takes one front-camera photo after 3 wrong attempts. Only you and the admins of your families can see it, and it is deleted after 7 days. This is experimental and does not work on every phone. Android will ask for camera access and for Display over other apps.",
     },
     lostPhone: {
@@ -770,7 +770,7 @@ export const UI = {
       voice: 'Voice when answered',
       voiceHint: 'A voice speaks in the earpiece, like a real call',
       notificationButton: '"Call me" button',
-      notificationButtonHint: 'On the Famora notification (while location sharing is on) and as a Quick Settings tile. Both work from the lock screen',
+      notificationButtonHint: 'On the Kinest notification (while location sharing is on) and as a Quick Settings tile. Both work from the lock screen',
       callMeIn: 'Call me in',
       seconds: '{n} sec',
       minutes: '{n} min',
@@ -818,12 +818,12 @@ export const UI = {
       consentOn: 'Turn on',
     },
 
-    // Famora Social — the opt-in nearby-help map. When someone's SOS goes
+    // Kinest Social — the opt-in nearby-help map. When someone's SOS goes
     // unanswered by their own family, opted-in strangers nearby are asked
     // only to call for help on their behalf; there is no chat, no identity shown
     // in either direction, and a helper is never asked to go anywhere.
     famoraSocial: {
-      title: 'Famora Social',
+      title: 'Kinest Social',
       toggleTitle: 'Be a nearby helper',
       toggleBody: 'Anonymous. You may be asked to call for someone nearby — never to go to them.',
       onTitle: "You're a nearby helper",
@@ -1044,7 +1044,7 @@ export const UI = {
 
     register: {
       title: 'கணக்கை உருவாக்கு',
-      sub: 'உங்கள் குடும்பத்தைப் பாதுகாக்க Famora-வில் இணையுங்கள்',
+      sub: 'உங்கள் குடும்பத்தைப் பாதுகாக்க Kinest-வில் இணையுங்கள்',
       otpSub: '+91 {mobile} க்கு அனுப்பப்பட்ட குறியீட்டை உள்ளிடவும்',
       yourName: 'உங்கள் பெயர்',
       confirmPassword: 'கடவுச்சொல்லை உறுதிப்படுத்தவும்',
@@ -1063,7 +1063,7 @@ export const UI = {
       sendCode: 'சரிபார்ப்புக் குறியீட்டை அனுப்பு',
       agreeLead: 'நான் படித்து ஏற்றுக்கொள்கிறேன்',
       agreeLink: 'தனியுரிமைக் கொள்கை & விதிமுறைகள்',
-      agreeTail: '— Famora',
+      agreeTail: '— Kinest',
       enterName: 'உங்கள் பெயரை உள்ளிடவும்',
       acceptTerms: 'தொடர, தனியுரிமைக் கொள்கை & விதிமுறைகளை ஏற்கவும்',
       alreadyRegistered: 'இந்த மொபைல் எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது. உள்நுழையவும்.',
@@ -1152,7 +1152,7 @@ export const UI = {
       userGuideSub: 'ஒவ்வொரு அம்சமும் எப்படி வேலை செய்கிறது',
       privacyPolicy: 'தனியுரிமைக் கொள்கை',
       signOut: 'வெளியேறு',
-      signOutConfirm: 'Famora-விலிருந்து வெளியேற விரும்புகிறீர்களா?',
+      signOutConfirm: 'Kinest-விலிருந்து வெளியேற விரும்புகிறீர்களா?',
       language: 'மொழி',
       languageSub: 'முழு செயலிக்குமான மொழி',
     },
@@ -1248,7 +1248,7 @@ export const UI = {
       inviteTo: '{family} க்கு அழைப்பு',
       joinScreenNote: 'இந்தக் குறியீட்டை உங்கள் குடும்ப உறுப்பினருடன் பகிருங்கள்.\nஅவர்கள் அதை "குடும்பத்தில் இணை" திரையில் உள்ளிடுவார்கள்; பிறகு நீங்கள் கோரிக்கைக்கு ஒப்புதல் அளிப்பீர்கள்.',
       shareWhatsapp: 'WhatsApp வழியாகப் பகிர்',
-      whatsappMsg: 'Famora-வில் எங்கள் குடும்பத்தில் இணையுங்கள்! "குடும்பத்தில் இணை" திரையில் *{code}* என்ற குறியீட்டை உள்ளிடுங்கள், நான் ஒப்புதல் அளிக்கிறேன். 🛡️',
+      whatsappMsg: 'Kinest-வில் எங்கள் குடும்பத்தில் இணையுங்கள்! "குடும்பத்தில் இணை" திரையில் *{code}* என்ற குறியீட்டை உள்ளிடுங்கள், நான் ஒப்புதல் அளிக்கிறேன். 🛡️',
       copied: 'நகலெடுக்கப்பட்டது!',
       copyCode: 'குறியீட்டை நகலெடு',
       switchFamily: 'குடும்பத்தை மாற்று',
@@ -1429,14 +1429,14 @@ export const UI = {
     },
     consent: {
       title: 'தொடர்வதற்கு முன்',
-      body: 'எங்கள் தனியுரிமைக் கொள்கையைப் புதுப்பித்துள்ளோம். Famora-வைத் தொடர்ந்து பயன்படுத்த அதைப் படித்து ஏற்றுக்கொள்ளவும்.',
+      body: 'எங்கள் தனியுரிமைக் கொள்கையைப் புதுப்பித்துள்ளோம். Kinest-வைத் தொடர்ந்து பயன்படுத்த அதைப் படித்து ஏற்றுக்கொள்ளவும்.',
       location: 'உங்கள் இருப்பிடம் உங்கள் குடும்பக் குழுவுடன் மட்டுமே பகிரப்படும்',
       messages: 'செய்திகள் உங்கள் குடும்ப உறுப்பினர்களுக்கு மட்டுமே தெரியும்',
       noSell: 'உங்கள் தரவை யாருக்கும் விற்கவோ பகிரவோ மாட்டோம்',
       deleteAnytime: 'உங்கள் கணக்கையும் எல்லா தரவையும் எப்போது வேண்டுமானாலும் நீக்கலாம்',
       readFull: 'முழு தனியுரிமைக் கொள்கையைப் படிக்கவும்',
       agree: 'ஒப்புக்கொள்கிறேன் — தொடரவும்',
-      agreeFamora: 'ஒப்புக்கொள்கிறேன் — Famora-வுக்குத் தொடரவும்',
+      agreeFamora: 'ஒப்புக்கொள்கிறேன் — Kinest-வுக்குத் தொடரவும்',
     },
     map: {
       // Today’s route (Map popup button and chip).
@@ -1476,7 +1476,7 @@ export const UI = {
       findMember: 'குடும்ப உறுப்பினரைக் கண்டுபிடி',
       findMemberTitle: 'குடும்ப உறுப்பினரைக் கண்டுபிடி',
       locationFailed: 'இருப்பிடத்தைப் பெற முடியவில்லை — GPS இயக்கத்தில் உள்ளதா எனப் பார்த்து புதுப்பி என்பதைத் தட்டவும்.',
-      permissionRequired: 'இருப்பிட அனுமதி தேவை. Android அமைப்புகள் → ஆப்ஸ் → Famora → அனுமதிகள் என்பதில் அனுமதிக்கவும்.',
+      permissionRequired: 'இருப்பிட அனுமதி தேவை. Android அமைப்புகள் → ஆப்ஸ் → Kinest → அனுமதிகள் என்பதில் அனுமதிக்கவும்.',
       findFam: 'தேடு',
       refresh: 'வரைபடத்தைப் புதுப்பி',
       recenter: 'மையப்படுத்து',
@@ -1515,8 +1515,8 @@ export const UI = {
 
     reliability: {
       title: 'எச்சரிக்கைகள் உங்களை அடையட்டும்',
-      intro: '{oem} போன்களில் ஆப்ஸ் பின்னணியில் இயங்குவதைத் தடுக்கலாம். {switches} இயக்குவது, ஆப் பின்னணியில் இருந்தாலும் அல்லது போன் பூட்டப்பட்டிருந்தாலும், Famora அவசர எச்சரிக்கைகளை நம்பகமாக வழங்க உதவும்.',
-      introPlain: 'அமைதியாக்கப்பட்ட அல்லது பூட்டப்பட்ட போன் ஒரு எச்சரிக்கையைத் தவறவிடலாம். {switches} இயக்குவது, தேவைப்படும்போது Famora அலாரத்தை ஒலிக்கச் செய்து திரையை எடுத்துக்கொள்ள உதவும்.',
+      intro: '{oem} போன்களில் ஆப்ஸ் பின்னணியில் இயங்குவதைத் தடுக்கலாம். {switches} இயக்குவது, ஆப் பின்னணியில் இருந்தாலும் அல்லது போன் பூட்டப்பட்டிருந்தாலும், Kinest அவசர எச்சரிக்கைகளை நம்பகமாக வழங்க உதவும்.',
+      introPlain: 'அமைதியாக்கப்பட்ட அல்லது பூட்டப்பட்ட போன் ஒரு எச்சரிக்கையைத் தவறவிடலாம். {switches} இயக்குவது, தேவைப்படும்போது Kinest அலாரத்தை ஒலிக்கச் செய்து திரையை எடுத்துக்கொள்ள உதவும்.',
       oneSwitch: 'ஒரு அமைப்பு',
       someSwitches: '{n} விரைவு அமைப்புகள்',
       blocked: 'இந்தப் போனில் ஒரு எச்சரிக்கை சிறிய அறிவிப்பாக மட்டுமே தோன்றியது — கீழே உள்ள பாப்-அப் சுவிட்ச் இதைச் சரிசெய்யும்.',
@@ -1524,11 +1524,11 @@ export const UI = {
       done: 'முடிந்தது',
       notNow: 'இப்போது வேண்டாம்',
       autostart: 'பின்னணி தொடக்கத்தை அனுமதி',
-      autostartSub: 'பட்டியலில் Famora-வைக் கண்டுபிடித்து இயக்கவும்',
+      autostartSub: 'பட்டியலில் Kinest-வைக் கண்டுபிடித்து இயக்கவும்',
       popup: 'பூட்டுத் திரையில் எச்சரிக்கைகளைக் காட்டு',
-      popupSub: 'உங்கள் பூட்டுத் திரையில் அவசர எச்சரிக்கைகளைக் காட்ட Famora-வை அனுமதிக்கவும்',
+      popupSub: 'உங்கள் பூட்டுத் திரையில் அவசர எச்சரிக்கைகளைக் காட்ட Kinest-வை அனுமதிக்கவும்',
       fullscreen: 'முழுத்திரை எச்சரிக்கைகளை அனுமதி',
-      fullscreenSub: 'மற்ற ஆப்ஸ்களுக்கு மேல் Famora-வின் அவசர எச்சரிக்கைகள் தெளிவாகத் தோன்ற அனுமதிக்கவும்',
+      fullscreenSub: 'மற்ற ஆப்ஸ்களுக்கு மேல் Kinest-வின் அவசர எச்சரிக்கைகள் தெளிவாகத் தோன்ற அனுமதிக்கவும்',
       dnd: 'தொந்தரவு வேண்டாம் நிலையிலும் ஒலியை அனுமதி',
       dndSub: 'உங்கள் போன் அமைதியாக்கப்பட்டிருந்தாலும் முக்கியமான SOS எச்சரிக்கைகள் கேட்கும்',
       someAndroid: 'சில Android',
@@ -1537,28 +1537,28 @@ export const UI = {
 
     deletePage: {
       title: 'உங்கள் கணக்கை நீக்கு',
-      sub: 'உங்கள் Famora கணக்கையும் அதிலுள்ள அனைத்தையும் நிரந்தரமாக நீக்குவது எப்படி',
+      sub: 'உங்கள் Kinest கணக்கையும் அதிலுள்ள அனைத்தையும் நிரந்தரமாக நீக்குவது எப்படி',
       cannotUndo: 'நீக்குதல் நிரந்தரமானது, மீட்டெடுக்க முடியாது.',
       optionInApp: 'செயலியிலேயே நீங்களே நீக்கவும்',
-      optionInAppBody: 'Famora-வைத் திறந்து சுயவிவரம் → என் கணக்கை நீக்கு என்பதற்குச் செல்லவும். உறுதிப்படுத்த DELETE எனத் தட்டச்சு செய்யவும். உங்கள் கணக்கும் தரவும் உடனடியாக நீக்கப்படும்.',
+      optionInAppBody: 'Kinest-வைத் திறந்து சுயவிவரம் → என் கணக்கை நீக்கு என்பதற்குச் செல்லவும். உறுதிப்படுத்த DELETE எனத் தட்டச்சு செய்யவும். உங்கள் கணக்கும் தரவும் உடனடியாக நீக்கப்படும்.',
       optionWeb: 'செயலி இல்லாமல் இங்கேயே நீக்குங்கள்',
       optionWebBody: 'நீங்கள் பதிவு செய்த மொபைல் எண்ணை உள்ளிடுங்கள். எண் உங்களுடையது என்பதை உறுதிப்படுத்த 6-இலக்கக் குறியீட்டை SMS மூலம் அனுப்புவோம், பிறகு உடனே கணக்கை நீக்கலாம்.',
       couldNotSend: 'குறியீட்டை அனுப்ப முடியவில்லை. நீங்கள் பதிவு செய்த மொபைல் எண்ணைப் பயன்படுத்தவும், அல்லது பிறகு முயற்சிக்கவும்.',
       confirmBody: 'உங்கள் எண் சரிபார்க்கப்பட்டது. இது கணக்கையும் கீழே பட்டியலிடப்பட்ட அனைத்தையும் நீக்கும்.',
       deleteFailed: 'கணக்கை நீக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.',
       deletedTitle: 'உங்கள் கணக்கு நீக்கப்பட்டது',
-      deletedBody: 'உங்கள் கணக்கும் அதன் தரவும் நீக்கப்பட்டன. உங்கள் கைபேசியிலிருந்து Famora-வை நீக்கலாம்.',
+      deletedBody: 'உங்கள் கணக்கும் அதன் தரவும் நீக்கப்பட்டன. உங்கள் கைபேசியிலிருந்து Kinest-வை நீக்கலாம்.',
       whatGoes: 'எவை நீக்கப்படும்',
       whatGoesBody: 'உங்கள் உள்நுழைவு, உங்கள் பெயர் மற்றும் சுயவிவரப் படம், உங்கள் இருப்பிடம் மற்றும் இருப்பிட வரலாறு, உங்கள் செய்திகள், உங்கள் SOS எச்சரிக்கைகள், உங்கள் அழைப்புப் பதிவுகள், உங்கள் சாதன அறிவிப்புக் குறியீடுகள். நீங்கள் உருவாக்கிய குடும்பமும் அதனுடன் நீக்கப்படும்.',
       whatStays: 'எவை எஞ்சும்',
       whatStaysBody: 'உங்களை அடையாளம் காட்டும் எதுவும் இல்லை. நீங்கள் அனுப்பிய செய்திகள் குடும்பத்தில் உள்ள அனைவருக்கும் நீக்கப்படும். Firebase Crashlytics-க்கு ஏற்கனவே அனுப்பப்பட்ட செயலிழப்பு அறிக்கைகளில் பெயர், எண் அல்லது இருப்பிடம் இல்லை, அவற்றை உங்களுடன் தொடர்புபடுத்த முடியாது.',
-      backToApp: 'Famora-வுக்குத் திரும்பு',
+      backToApp: 'Kinest-வுக்குத் திரும்பு',
     },
     // Shown when another device claims the session — see
     // useSingleDevice. One account, one device.
     session: {
       displacedTitle: 'வெளியேற்றப்பட்டது',
-      displacedBody: 'உங்கள் கணக்கு வேறொரு சாதனத்தில் திறக்கப்பட்டது. Famora ஒரு நேரத்தில் ஒரு சாதனத்தில் மட்டுமே பயன்படுத்த முடியும்.',
+      displacedBody: 'உங்கள் கணக்கு வேறொரு சாதனத்தில் திறக்கப்பட்டது. Kinest ஒரு நேரத்தில் ஒரு சாதனத்தில் மட்டுமே பயன்படுத்த முடியும்.',
       signInAgain: 'மீண்டும் உள்நுழை',
     },
 
@@ -1574,7 +1574,7 @@ export const UI = {
       testConfirm: 'இது குடும்ப நிர்வாகிகளுக்கும் உங்கள் கூடுதல் எண்ணுக்கும் உண்மையான SMS அனுப்பும், உங்கள் மொபைல் திட்டம் கட்டணம் வசூலிக்கும். அனுப்பவா?',
       testSent: '{n} எண்ணுக்கு சோதனை SMS அனுப்பப்பட்டது.',
       testFailed: 'அனுப்ப முடியவில்லை. SMS அனுமதியையும், சிம் செய்தி அனுப்ப முடியுமா என்பதையும் சரிபார்க்கவும்.',
-      permissionNeeded: 'இதற்கு SMS அனுப்ப Android அனுமதி தேவை. கேட்கும்போது அனுமதிக்கவும், அல்லது Settings → Apps → Famora → Permissions → SMS இல் இயக்கவும்.',
+      permissionNeeded: 'இதற்கு SMS அனுப்ப Android அனுமதி தேவை. கேட்கும்போது அனுமதிக்கவும், அல்லது Settings → Apps → Kinest → Permissions → SMS இல் இயக்கவும்.',
     },
     shakeSos: {
       title: 'குலுக்கினால் SOS',
@@ -1676,7 +1676,7 @@ export const UI = {
       attempts: "{n} தவறான முயற்சிகள்",
       map: "வரைபடம்",
       continue: "தொடரவும்",
-      explainAlert: "திரைப்பூட்டு கடவுச்சொல் 3 முறை தவறாக உள்ளிடப்பட்டால், உங்கள் குடும்பங்களின் நிர்வாகிகளுக்கு Famora தெரிவிக்கும் — ஃபோன் கடைசியாக எங்கே இருந்தது என்பதுடன். வேறு எதுவும் அனுப்பப்படாது. Famora-வை சாதன நிர்வாகியாக்க Android இப்போது கேட்கும்: தவறான கடவுச்சொற்களைப் பற்றித் தெரிவிக்கப்பட மட்டுமே அது கேட்கிறது, உங்கள் ஃபோனைப் பூட்டவோ அழிக்கவோ மாற்றவோ முடியாது. பின்னர் நீக்க, இங்கே இதை அணைக்கவும்.",
+      explainAlert: "திரைப்பூட்டு கடவுச்சொல் 3 முறை தவறாக உள்ளிடப்பட்டால், உங்கள் குடும்பங்களின் நிர்வாகிகளுக்கு Kinest தெரிவிக்கும் — ஃபோன் கடைசியாக எங்கே இருந்தது என்பதுடன். வேறு எதுவும் அனுப்பப்படாது. Kinest-வை சாதன நிர்வாகியாக்க Android இப்போது கேட்கும்: தவறான கடவுச்சொற்களைப் பற்றித் தெரிவிக்கப்பட மட்டுமே அது கேட்கிறது, உங்கள் ஃபோனைப் பூட்டவோ அழிக்கவோ மாற்றவோ முடியாது. பின்னர் நீக்க, இங்கே இதை அணைக்கவும்.",
       explainPhoto: "3 தவறான முயற்சிகளுக்குப் பிறகு முன் கேமராவில் ஒரு படமும் எடுக்கும். உங்களுக்கும் உங்கள் குடும்பங்களின் நிர்வாகிகளுக்கும் மட்டுமே தெரியும், 7 நாட்களுக்குப் பிறகு நீக்கப்படும். இது சோதனை நிலையில் உள்ளது, எல்லா ஃபோன்களிலும் வேலை செய்யாது. Android கேமரா அணுகலையும் மற்ற ஆப்ஸ்களின் மேல் காட்டுதலையும் கேட்கும்.",
     },
     lostPhone: {
@@ -1720,7 +1720,7 @@ export const UI = {
       voice: 'பதிலளித்ததும் குரல்',
       voiceHint: 'உண்மையான அழைப்பு போல காதில் ஒரு குரல் பேசும்',
       notificationButton: '"என்னை அழை" பொத்தான்',
-      notificationButtonHint: 'Famora அறிவிப்பில் (இருப்பிடப் பகிர்வு இயக்கத்தில் இருக்கும்போது) மற்றும் Quick Settings டைலாக. இரண்டும் பூட்டுத் திரையிலிருந்தே வேலை செய்யும்',
+      notificationButtonHint: 'Kinest அறிவிப்பில் (இருப்பிடப் பகிர்வு இயக்கத்தில் இருக்கும்போது) மற்றும் Quick Settings டைலாக. இரண்டும் பூட்டுத் திரையிலிருந்தே வேலை செய்யும்',
       callMeIn: 'என்னை அழைக்கவும்',
       seconds: '{n} வினாடி',
       minutes: '{n} நிமிடம்',
@@ -1906,7 +1906,7 @@ export const UI = {
 
     register: {
       title: 'खाता बनाएँ',
-      sub: 'अपने परिवार को सुरक्षित रखने के लिए Famora से जुड़ें',
+      sub: 'अपने परिवार को सुरक्षित रखने के लिए Kinest से जुड़ें',
       otpSub: '+91 {mobile} पर भेजा गया कोड डालें',
       yourName: 'आपका नाम',
       confirmPassword: 'पासवर्ड की पुष्टि करें',
@@ -1923,8 +1923,8 @@ export const UI = {
       sendingCode: 'कोड भेजा जा रहा है...',
       sendCode: 'सत्यापन कोड भेजें',
       // Reads as one sentence in order lead + link + tail:
-      // "मैंने Famora की गोपनीयता नीति और शर्तें पढ़ ली हैं और मैं उनसे सहमत हूँ"
-      agreeLead: 'मैंने Famora की',
+      // "मैंने Kinest की गोपनीयता नीति और शर्तें पढ़ ली हैं और मैं उनसे सहमत हूँ"
+      agreeLead: 'मैंने Kinest की',
       agreeLink: 'गोपनीयता नीति और शर्तें',
       agreeTail: 'पढ़ ली हैं और मैं उनसे सहमत हूँ',
       enterName: 'कृपया अपना नाम डालें',
@@ -2015,7 +2015,7 @@ export const UI = {
       userGuideSub: 'हर सुविधा कैसे काम करती है',
       privacyPolicy: 'गोपनीयता नीति',
       signOut: 'साइन आउट',
-      signOutConfirm: 'क्या आप वाकई Famora से साइन आउट करना चाहते हैं?',
+      signOutConfirm: 'क्या आप वाकई Kinest से साइन आउट करना चाहते हैं?',
       language: 'भाषा',
       languageSub: 'पूरे ऐप के लिए भाषा',
     },
@@ -2113,7 +2113,7 @@ export const UI = {
       inviteTo: '{family} में आमंत्रित करें',
       joinScreenNote: 'यह कोड अपने परिवार के सदस्य के साथ साझा करें।\nवे इसे "परिवार से जुड़ें" पर दर्ज करेंगे, फिर आप अनुरोध को मंज़ूरी देंगे।',
       shareWhatsapp: 'WhatsApp पर साझा करें',
-      whatsappMsg: 'Famora पर हमारे परिवार से जुड़ें! "परिवार से जुड़ें" स्क्रीन पर *{code}* कोड डालें, मैं मंज़ूरी दे दूँगा। 🛡️',
+      whatsappMsg: 'Kinest पर हमारे परिवार से जुड़ें! "परिवार से जुड़ें" स्क्रीन पर *{code}* कोड डालें, मैं मंज़ूरी दे दूँगा। 🛡️',
       copied: 'कॉपी हो गया!',
       copyCode: 'कोड कॉपी करें',
       switchFamily: 'परिवार बदलें',
@@ -2294,14 +2294,14 @@ export const UI = {
     },
     consent: {
       title: 'आगे बढ़ने से पहले',
-      body: 'हमने अपनी गोपनीयता नीति अपडेट की है। Famora का उपयोग जारी रखने के लिए कृपया इसे पढ़ें और स्वीकार करें।',
+      body: 'हमने अपनी गोपनीयता नीति अपडेट की है। Kinest का उपयोग जारी रखने के लिए कृपया इसे पढ़ें और स्वीकार करें।',
       location: 'आपकी लोकेशन केवल आपके अपने परिवार समूह के साथ साझा होती है',
       messages: 'संदेश केवल आपके परिवार के सदस्यों को दिखते हैं',
       noSell: 'हम आपका डेटा कभी किसी को बेचते या साझा नहीं करते',
       deleteAnytime: 'आप कभी भी अपना खाता और सारा डेटा हटा सकते हैं',
       readFull: 'पूरी गोपनीयता नीति पढ़ें',
       agree: 'मैं सहमत हूँ — जारी रखें',
-      agreeFamora: 'मैं सहमत हूँ — Famora पर जारी रखें',
+      agreeFamora: 'मैं सहमत हूँ — Kinest पर जारी रखें',
     },
     map: {
       // Today’s route (Map popup button and chip).
@@ -2341,7 +2341,7 @@ export const UI = {
       findMember: 'परिवार का सदस्य ढूँढें',
       findMemberTitle: 'परिवार का सदस्य ढूँढें',
       locationFailed: 'लोकेशन नहीं मिल सकी — जाँचें कि GPS चालू है और रिफ़्रेश दबाएँ।',
-      permissionRequired: 'लोकेशन अनुमति ज़रूरी है। Android सेटिंग्स → ऐप्स → Famora → अनुमतियाँ में इसे चालू करें।',
+      permissionRequired: 'लोकेशन अनुमति ज़रूरी है। Android सेटिंग्स → ऐप्स → Kinest → अनुमतियाँ में इसे चालू करें।',
       findFam: 'खोजें',
       refresh: 'मानचित्र रीफ़्रेश करें',
       recenter: 'केंद्र में लाएँ',
@@ -2380,8 +2380,8 @@ export const UI = {
 
     reliability: {
       title: 'अलर्ट आप तक ज़रूर पहुँचे',
-      intro: '{oem} फ़ोन ऐप्स को बैकग्राउंड में काम करने से रोक सकते हैं। {switches} चालू करने से Famora ज़रूरी अलर्ट भरोसेमंद तरीक़े से भेज पाएगा, चाहे ऐप बैकग्राउंड में हो या फ़ोन लॉक हो।',
-      introPlain: 'साइलेंट या लॉक फ़ोन पर अलर्ट छूट सकता है। {switches} चालू करने से Famora ज़रूरत पड़ने पर अलार्म बजाकर स्क्रीन ले सकेगा।',
+      intro: '{oem} फ़ोन ऐप्स को बैकग्राउंड में काम करने से रोक सकते हैं। {switches} चालू करने से Kinest ज़रूरी अलर्ट भरोसेमंद तरीक़े से भेज पाएगा, चाहे ऐप बैकग्राउंड में हो या फ़ोन लॉक हो।',
+      introPlain: 'साइलेंट या लॉक फ़ोन पर अलर्ट छूट सकता है। {switches} चालू करने से Kinest ज़रूरत पड़ने पर अलार्म बजाकर स्क्रीन ले सकेगा।',
       oneSwitch: 'एक सेटिंग',
       someSwitches: '{n} छोटी सेटिंग',
       blocked: 'इस फ़ोन पर अलर्ट सिर्फ़ एक छोटे बैनर के रूप में दिखा — नीचे वाला पॉप-अप स्विच इसे ठीक करता है।',
@@ -2389,11 +2389,11 @@ export const UI = {
       done: 'हो गया',
       notNow: 'अभी नहीं',
       autostart: 'बैकग्राउंड में शुरू होने दें',
-      autostartSub: 'सूची में Famora ढूँढकर चालू करें',
+      autostartSub: 'सूची में Kinest ढूँढकर चालू करें',
       popup: 'लॉक स्क्रीन पर अलर्ट दिखाएँ',
-      popupSub: 'Famora को आपकी लॉक स्क्रीन पर ज़रूरी अलर्ट दिखाने दें',
+      popupSub: 'Kinest को आपकी लॉक स्क्रीन पर ज़रूरी अलर्ट दिखाने दें',
       fullscreen: 'फ़ुल-स्क्रीन अलर्ट की अनुमति दें',
-      fullscreenSub: 'Famora के ज़रूरी अलर्ट को दूसरे ऐप्स के ऊपर साफ़ तौर पर दिखने दें',
+      fullscreenSub: 'Kinest के ज़रूरी अलर्ट को दूसरे ऐप्स के ऊपर साफ़ तौर पर दिखने दें',
       dnd: 'डू नॉट डिस्टर्ब में भी आवाज़ की अनुमति दें',
       dndSub: 'ताकि फ़ोन साइलेंट होने पर भी ज़रूरी SOS अलर्ट सुनाई दें',
       someAndroid: 'कुछ Android',
@@ -2402,28 +2402,28 @@ export const UI = {
 
     deletePage: {
       title: 'अपना खाता हटाएँ',
-      sub: 'अपना Famora खाता और उसमें मौजूद सब कुछ हमेशा के लिए कैसे हटाएँ',
+      sub: 'अपना Kinest खाता और उसमें मौजूद सब कुछ हमेशा के लिए कैसे हटाएँ',
       cannotUndo: 'खाता हटाना स्थायी है और इसे वापस नहीं लाया जा सकता।',
       optionInApp: 'ऐप में ख़ुद हटाएँ',
-      optionInAppBody: 'Famora खोलें और प्रोफ़ाइल → मेरा खाता हटाएँ पर जाएँ। पुष्टि के लिए DELETE टाइप करें। आपका खाता और डेटा तुरंत हट जाएगा।',
+      optionInAppBody: 'Kinest खोलें और प्रोफ़ाइल → मेरा खाता हटाएँ पर जाएँ। पुष्टि के लिए DELETE टाइप करें। आपका खाता और डेटा तुरंत हट जाएगा।',
       optionWeb: 'ऐप के बिना यहीं हटाएँ',
       optionWebBody: 'जिस मोबाइल नंबर से आपने पंजीकरण किया था, वह डालें। नंबर आपका है यह पुष्टि करने के लिए हम 6-अंकों का कोड SMS करेंगे, फिर आप तुरंत खाता हटा सकते हैं।',
       couldNotSend: 'कोड नहीं भेजा जा सका। पंजीकरण वाला मोबाइल नंबर डालें, या बाद में फिर कोशिश करें।',
       confirmBody: 'आपका नंबर सत्यापित हो गया। इससे खाता और नीचे बताई गई सारी जानकारी हट जाएगी।',
       deleteFailed: 'खाता नहीं हटाया जा सका। कृपया फिर कोशिश करें।',
       deletedTitle: 'आपका खाता हटा दिया गया है',
-      deletedBody: 'आपका खाता और उसका डेटा हटा दिया गया है। अब आप अपने फ़ोन से Famora अनइंस्टॉल कर सकते हैं।',
+      deletedBody: 'आपका खाता और उसका डेटा हटा दिया गया है। अब आप अपने फ़ोन से Kinest अनइंस्टॉल कर सकते हैं।',
       whatGoes: 'क्या हटाया जाता है',
       whatGoesBody: 'आपका साइन-इन, आपका नाम और प्रोफ़ाइल फ़ोटो, आपकी लोकेशन और लोकेशन इतिहास, आपके संदेश, आपके SOS अलर्ट, आपके कॉल रिकॉर्ड, और आपके डिवाइस नोटिफ़िकेशन टोकन। आपके बनाए गए किसी भी परिवार को भी उसके साथ हटा दिया जाता है।',
       whatStays: 'क्या बचा रहता है',
       whatStaysBody: 'ऐसा कुछ नहीं जो आपकी पहचान बताए। आपके भेजे गए संदेश परिवार के सभी लोगों के लिए हट जाते हैं। Firebase Crashlytics को पहले भेजी जा चुकी क्रैश रिपोर्ट में नाम, नंबर या लोकेशन नहीं होती और उन्हें आपसे नहीं जोड़ा जा सकता।',
-      backToApp: 'Famora पर वापस जाएँ',
+      backToApp: 'Kinest पर वापस जाएँ',
     },
     // Shown when another device claims the session — see
     // useSingleDevice. One account, one device.
     session: {
       displacedTitle: 'साइन आउट कर दिया गया',
-      displacedBody: 'आपका खाता किसी दूसरे डिवाइस पर खोला गया। Famora एक समय में केवल एक ही डिवाइस पर इस्तेमाल किया जा सकता है।',
+      displacedBody: 'आपका खाता किसी दूसरे डिवाइस पर खोला गया। Kinest एक समय में केवल एक ही डिवाइस पर इस्तेमाल किया जा सकता है।',
       signInAgain: 'फिर से साइन इन करें',
     },
 
@@ -2439,7 +2439,7 @@ export const UI = {
       testConfirm: 'यह परिवार के एडमिन और आपके अतिरिक्त नंबर पर असली SMS भेजेगा, और आपके मोबाइल प्लान से शुल्क लगेगा। भेजें?',
       testSent: '{n} नंबर पर टेस्ट SMS भेजा गया।',
       testFailed: 'भेजा नहीं जा सका। SMS अनुमति और सिम से संदेश भेजने की सुविधा जाँचें।',
-      permissionNeeded: 'इसके लिए Android को SMS भेजने की अनुमति चाहिए। पूछे जाने पर अनुमति दें, या Settings → Apps → Famora → Permissions → SMS में चालू करें।',
+      permissionNeeded: 'इसके लिए Android को SMS भेजने की अनुमति चाहिए। पूछे जाने पर अनुमति दें, या Settings → Apps → Kinest → Permissions → SMS में चालू करें।',
     },
     shakeSos: {
       title: 'हिलाकर SOS',
@@ -2541,7 +2541,7 @@ export const UI = {
       attempts: "{n} गलत प्रयास",
       map: "नक्शा",
       continue: "आगे बढ़ें",
-      explainAlert: "अगर स्क्रीन-लॉक का पासवर्ड 3 बार गलत डाला जाता है, तो Famora आपके परिवारों के एडमिन को बताता है, साथ में यह कि फ़ोन आख़िरी बार कहाँ था। और कुछ नहीं भेजा जाता। अब Android आपसे Famora को डिवाइस एडमिन बनाने को कहेगा: यह सिर्फ़ गलत पासवर्ड की सूचना पाने के लिए कहता है और आपका फ़ोन लॉक, वाइप या बदल नहीं सकता। बाद में हटाने के लिए इसे यहाँ बंद करें।",
+      explainAlert: "अगर स्क्रीन-लॉक का पासवर्ड 3 बार गलत डाला जाता है, तो Kinest आपके परिवारों के एडमिन को बताता है, साथ में यह कि फ़ोन आख़िरी बार कहाँ था। और कुछ नहीं भेजा जाता। अब Android आपसे Kinest को डिवाइस एडमिन बनाने को कहेगा: यह सिर्फ़ गलत पासवर्ड की सूचना पाने के लिए कहता है और आपका फ़ोन लॉक, वाइप या बदल नहीं सकता। बाद में हटाने के लिए इसे यहाँ बंद करें।",
       explainPhoto: "3 गलत प्रयासों के बाद फ्रंट कैमरे से एक फ़ोटो भी लेता है। इसे सिर्फ़ आप और आपके परिवारों के एडमिन देख सकते हैं, और यह 7 दिन बाद हट जाती है। यह प्रयोगात्मक है और हर फ़ोन पर काम नहीं करती। Android कैमरा और दूसरे ऐप्स के ऊपर दिखाने की अनुमति माँगेगा।",
     },
     lostPhone: {
@@ -2585,7 +2585,7 @@ export const UI = {
       voice: 'जवाब देने पर आवाज़',
       voiceHint: 'असली कॉल की तरह ईयरपीस में एक आवाज़ बोलेगी',
       notificationButton: '"मुझे कॉल करो" बटन',
-      notificationButtonHint: 'Famora नोटिफ़िकेशन पर (लोकेशन शेयरिंग चालू होने पर) और Quick Settings टाइल के रूप में। दोनों लॉक स्क्रीन से भी काम करते हैं',
+      notificationButtonHint: 'Kinest नोटिफ़िकेशन पर (लोकेशन शेयरिंग चालू होने पर) और Quick Settings टाइल के रूप में। दोनों लॉक स्क्रीन से भी काम करते हैं',
       callMeIn: 'मुझे कॉल करो',
       seconds: '{n} सेकंड',
       minutes: '{n} मिनट',
@@ -2773,7 +2773,7 @@ export const UI = {
 
     register: {
       title: 'ఖాతా సృష్టించండి',
-      sub: 'మీ కుటుంబాన్ని సురక్షితంగా ఉంచడానికి Famora లో చేరండి',
+      sub: 'మీ కుటుంబాన్ని సురక్షితంగా ఉంచడానికి Kinest లో చేరండి',
       otpSub: '+91 {mobile} కు పంపిన కోడ్ నమోదు చేయండి',
       yourName: 'మీ పేరు',
       confirmPassword: 'పాస్‌వర్డ్ నిర్ధారించండి',
@@ -2790,7 +2790,7 @@ export const UI = {
       sendingCode: 'కోడ్ పంపుతోంది...',
       sendCode: 'ధృవీకరణ కోడ్ పంపు',
       // Reads as one sentence in order lead + link + tail.
-      agreeLead: 'నేను Famora యొక్క',
+      agreeLead: 'నేను Kinest యొక్క',
       agreeLink: 'గోప్యతా విధానం & నిబంధనలు',
       agreeTail: 'చదివాను, వాటికి అంగీకరిస్తున్నాను',
       enterName: 'దయచేసి మీ పేరు నమోదు చేయండి',
@@ -2881,7 +2881,7 @@ export const UI = {
       userGuideSub: 'ప్రతి ఫీచర్ ఎలా పనిచేస్తుంది',
       privacyPolicy: 'గోప్యతా విధానం',
       signOut: 'సైన్ అవుట్',
-      signOutConfirm: 'మీరు నిజంగా Famora నుండి సైన్ అవుట్ చేయాలనుకుంటున్నారా?',
+      signOutConfirm: 'మీరు నిజంగా Kinest నుండి సైన్ అవుట్ చేయాలనుకుంటున్నారా?',
       language: 'భాష',
       languageSub: 'యాప్ మొత్తానికి భాష',
     },
@@ -2979,7 +2979,7 @@ export const UI = {
       inviteTo: '{family} కు ఆహ్వానించు',
       joinScreenNote: 'ఈ కోడ్‌ను మీ కుటుంబ సభ్యునితో పంచుకోండి.\nవారు దీన్ని "కుటుంబంలో చేరు"లో నమోదు చేస్తారు, ఆ తర్వాత మీరు అభ్యర్థనను ఆమోదిస్తారు.',
       shareWhatsapp: 'WhatsApp ద్వారా షేర్ చేయి',
-      whatsappMsg: 'Famora లో మా కుటుంబంలో చేరండి! "కుటుంబంలో చేరు" స్క్రీన్‌లో *{code}* కోడ్ నమోదు చేయండి, నేను ఆమోదిస్తాను. 🛡️',
+      whatsappMsg: 'Kinest లో మా కుటుంబంలో చేరండి! "కుటుంబంలో చేరు" స్క్రీన్‌లో *{code}* కోడ్ నమోదు చేయండి, నేను ఆమోదిస్తాను. 🛡️',
       copied: 'కాపీ అయింది!',
       copyCode: 'కోడ్ కాపీ చేయి',
       switchFamily: 'కుటుంబం మార్చు',
@@ -3160,14 +3160,14 @@ export const UI = {
     },
     consent: {
       title: 'కొనసాగించే ముందు',
-      body: 'మేము మా గోప్యతా విధానాన్ని అప్‌డేట్ చేశాము. Famora ని ఉపయోగించడం కొనసాగించడానికి దయచేసి దాన్ని చదివి అంగీకరించండి.',
+      body: 'మేము మా గోప్యతా విధానాన్ని అప్‌డేట్ చేశాము. Kinest ని ఉపయోగించడం కొనసాగించడానికి దయచేసి దాన్ని చదివి అంగీకరించండి.',
       location: 'మీ లొకేషన్ మీ కుటుంబ సమూహంతో మాత్రమే షేర్ అవుతుంది',
       messages: 'సందేశాలు మీ కుటుంబ సభ్యులకు మాత్రమే కనిపిస్తాయి',
       noSell: 'మీ డేటాను మేము ఎవరికీ అమ్మము లేదా షేర్ చేయము',
       deleteAnytime: 'మీ ఖాతాను మరియు మొత్తం డేటాను ఎప్పుడైనా తొలగించవచ్చు',
       readFull: 'పూర్తి గోప్యతా విధానాన్ని చదవండి',
       agree: 'నేను అంగీకరిస్తున్నాను — కొనసాగించండి',
-      agreeFamora: 'నేను అంగీకరిస్తున్నాను — Famora కి కొనసాగించండి',
+      agreeFamora: 'నేను అంగీకరిస్తున్నాను — Kinest కి కొనసాగించండి',
     },
     map: {
       // Today’s route (Map popup button and chip).
@@ -3207,7 +3207,7 @@ export const UI = {
       findMember: 'కుటుంబ సభ్యుడిని కనుగొను',
       findMemberTitle: 'కుటుంబ సభ్యుడిని కనుగొను',
       locationFailed: 'లొకేషన్ పొందలేకపోయాం — GPS ఆన్‌లో ఉందో చూసి రిఫ్రెష్ నొక్కండి.',
-      permissionRequired: 'లొకేషన్ అనుమతి అవసరం. Android సెట్టింగ్‌లు → యాప్‌లు → Famora → అనుమతులు లో అనుమతించండి.',
+      permissionRequired: 'లొకేషన్ అనుమతి అవసరం. Android సెట్టింగ్‌లు → యాప్‌లు → Kinest → అనుమతులు లో అనుమతించండి.',
       findFam: 'వెతుకు',
       refresh: 'మ్యాప్ రిఫ్రెష్ చేయి',
       recenter: 'కేంద్రీకరించు',
@@ -3246,8 +3246,8 @@ export const UI = {
 
     reliability: {
       title: 'అలర్ట్‌లు మిమ్మల్ని ఖచ్చితంగా చేరాలి',
-      intro: '{oem} ఫోన్‌లు యాప్‌లు బ్యాక్‌గ్రౌండ్‌లో పనిచేయకుండా ఆపవచ్చు. {switches} ఆన్ చేయడం వల్ల యాప్ బ్యాక్‌గ్రౌండ్‌లో ఉన్నా లేదా ఫోన్ లాక్ అయినా Famora అత్యవసర అలర్ట్‌లను నమ్మకంగా అందించగలుగుతుంది.',
-      introPlain: 'సైలెంట్‌లో లేదా లాక్‌లో ఉన్న ఫోన్‌లో అలర్ట్ మిస్ కావచ్చు. {switches} ఆన్ చేయడం వల్ల అవసరమైనప్పుడు Famora అలారం మోగించి స్క్రీన్‌ను తీసుకోగలుగుతుంది.',
+      intro: '{oem} ఫోన్‌లు యాప్‌లు బ్యాక్‌గ్రౌండ్‌లో పనిచేయకుండా ఆపవచ్చు. {switches} ఆన్ చేయడం వల్ల యాప్ బ్యాక్‌గ్రౌండ్‌లో ఉన్నా లేదా ఫోన్ లాక్ అయినా Kinest అత్యవసర అలర్ట్‌లను నమ్మకంగా అందించగలుగుతుంది.',
+      introPlain: 'సైలెంట్‌లో లేదా లాక్‌లో ఉన్న ఫోన్‌లో అలర్ట్ మిస్ కావచ్చు. {switches} ఆన్ చేయడం వల్ల అవసరమైనప్పుడు Kinest అలారం మోగించి స్క్రీన్‌ను తీసుకోగలుగుతుంది.',
       oneSwitch: 'ఒక సెట్టింగ్',
       someSwitches: '{n} చిన్న సెట్టింగ్‌లు',
       blocked: 'ఈ ఫోన్‌లో అలర్ట్ చిన్న బ్యానర్‌గా మాత్రమే కనిపించింది — కింద ఉన్న పాప్-అప్ స్విచ్ దీన్ని సరిచేస్తుంది.',
@@ -3255,11 +3255,11 @@ export const UI = {
       done: 'పూర్తయింది',
       notNow: 'ఇప్పుడు వద్దు',
       autostart: 'బ్యాక్‌గ్రౌండ్ స్టార్టప్‌ను అనుమతించు',
-      autostartSub: 'జాబితాలో Famora కనుగొని ఆన్ చేయండి',
+      autostartSub: 'జాబితాలో Kinest కనుగొని ఆన్ చేయండి',
       popup: 'లాక్ స్క్రీన్‌పై అలర్ట్‌లను చూపించు',
-      popupSub: 'మీ లాక్ స్క్రీన్‌పై అత్యవసర అలర్ట్‌లను చూపించడానికి Famora‌ను అనుమతించండి',
+      popupSub: 'మీ లాక్ స్క్రీన్‌పై అత్యవసర అలర్ట్‌లను చూపించడానికి Kinest‌ను అనుమతించండి',
       fullscreen: 'ఫుల్-స్క్రీన్ అలర్ట్‌లను అనుమతించు',
-      fullscreenSub: 'ఇతర యాప్‌ల పైన Famora అత్యవసర అలర్ట్‌లు స్పష్టంగా కనిపించడానికి అనుమతించండి',
+      fullscreenSub: 'ఇతర యాప్‌ల పైన Kinest అత్యవసర అలర్ట్‌లు స్పష్టంగా కనిపించడానికి అనుమతించండి',
       dnd: 'అంతరాయం వద్దు మోడ్‌లోనూ శబ్దాన్ని అనుమతించు',
       dndSub: 'ఫోన్ సైలెంట్‌లో ఉన్నా ముఖ్యమైన SOS అలర్ట్‌లు వినిపించడానికి',
       someAndroid: 'కొన్ని Android',
@@ -3268,28 +3268,28 @@ export const UI = {
 
     deletePage: {
       title: 'మీ ఖాతాను తొలగించండి',
-      sub: 'మీ Famora ఖాతాను, అందులోని అన్నింటినీ శాశ్వతంగా తొలగించడం ఎలా',
+      sub: 'మీ Kinest ఖాతాను, అందులోని అన్నింటినీ శాశ్వతంగా తొలగించడం ఎలా',
       cannotUndo: 'తొలగింపు శాశ్వతం, దీన్ని తిరిగి పొందలేరు.',
       optionInApp: 'యాప్‌లోనే మీరే తొలగించండి',
-      optionInAppBody: 'Famora తెరిచి ప్రొఫైల్ → నా ఖాతా తొలగించు కు వెళ్లండి. నిర్ధారించడానికి DELETE టైప్ చేయండి. మీ ఖాతా, డేటా వెంటనే తొలగించబడతాయి.',
+      optionInAppBody: 'Kinest తెరిచి ప్రొఫైల్ → నా ఖాతా తొలగించు కు వెళ్లండి. నిర్ధారించడానికి DELETE టైప్ చేయండి. మీ ఖాతా, డేటా వెంటనే తొలగించబడతాయి.',
       optionWeb: 'యాప్ లేకుండా ఇక్కడే తొలగించండి',
       optionWebBody: 'మీరు నమోదు చేసిన మొబైల్ నంబర్‌ను నమోదు చేయండి. నంబర్ మీదేనని నిర్ధారించడానికి 6 అంకెల కోడ్‌ను SMS చేస్తాము, తర్వాత వెంటనే ఖాతాను తొలగించవచ్చు.',
       couldNotSend: 'కోడ్ పంపలేకపోయాము. మీరు నమోదు చేసిన మొబైల్ నంబర్ వాడండి, లేదా తర్వాత మళ్లీ ప్రయత్నించండి.',
       confirmBody: 'మీ నంబర్ ధృవీకరించబడింది. ఇది ఖాతాను, కింద జాబితాలో ఉన్నవన్నీ తొలగిస్తుంది.',
       deleteFailed: 'ఖాతాను తొలగించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.',
       deletedTitle: 'మీ ఖాతా తొలగించబడింది',
-      deletedBody: 'మీ ఖాతా, దాని డేటా తొలగించబడ్డాయి. మీ ఫోన్ నుండి Famora ను అన్‌ఇన్‌స్టాల్ చేయవచ్చు.',
+      deletedBody: 'మీ ఖాతా, దాని డేటా తొలగించబడ్డాయి. మీ ఫోన్ నుండి Kinest ను అన్‌ఇన్‌స్టాల్ చేయవచ్చు.',
       whatGoes: 'ఏమి తొలగించబడుతుంది',
       whatGoesBody: 'మీ సైన్-ఇన్, మీ పేరు, ప్రొఫైల్ ఫోటో, మీ లొకేషన్, లొకేషన్ చరిత్ర, మీ సందేశాలు, మీ SOS హెచ్చరికలు, మీ కాల్ రికార్డులు, మీ పరికర నోటిఫికేషన్ టోకెన్‌లు. మీరు సృష్టించిన కుటుంబం కూడా దానితో పాటు తొలగించబడుతుంది.',
       whatStays: 'ఏమి మిగులుతుంది',
       whatStaysBody: 'మిమ్మల్ని గుర్తించే ఏదీ మిగలదు. మీరు పంపిన సందేశాలు కుటుంబంలోని అందరికీ తొలగించబడతాయి. Firebase Crashlytics కు ఇప్పటికే పంపిన క్రాష్ నివేదికల్లో పేరు, నంబర్ లేదా లొకేషన్ ఉండవు, వాటిని మీతో ముడిపెట్టలేరు.',
-      backToApp: 'Famora కు తిరిగి వెళ్లు',
+      backToApp: 'Kinest కు తిరిగి వెళ్లు',
     },
     // Shown when another device claims the session — see
     // useSingleDevice. One account, one device.
     session: {
       displacedTitle: 'సైన్ అవుట్ చేయబడింది',
-      displacedBody: 'మీ ఖాతా వేరే పరికరంలో తెరవబడింది. Famora ఒకేసారి ఒక పరికరంలో మాత్రమే ఉపయోగించవచ్చు.',
+      displacedBody: 'మీ ఖాతా వేరే పరికరంలో తెరవబడింది. Kinest ఒకేసారి ఒక పరికరంలో మాత్రమే ఉపయోగించవచ్చు.',
       signInAgain: 'మళ్లీ సైన్ ఇన్ చేయండి',
     },
 
@@ -3305,7 +3305,7 @@ export const UI = {
       testConfirm: 'ఇది కుటుంబ అడ్మిన్‌లకు మరియు మీ అదనపు నంబర్‌కు నిజమైన SMS పంపుతుంది, మీ మొబైల్ ప్లాన్ ఛార్జ్ చేస్తుంది. పంపాలా?',
       testSent: '{n} నంబర్‌కు టెస్ట్ SMS పంపబడింది.',
       testFailed: 'పంపలేకపోయాం. SMS అనుమతిని, సిమ్ సందేశాలు పంపగలదా అని చూడండి.',
-      permissionNeeded: 'దీనికి SMS పంపడానికి Android అనుమతి కావాలి. అడిగినప్పుడు అనుమతించండి, లేదా Settings → Apps → Famora → Permissions → SMSలో ఆన్ చేయండి.',
+      permissionNeeded: 'దీనికి SMS పంపడానికి Android అనుమతి కావాలి. అడిగినప్పుడు అనుమతించండి, లేదా Settings → Apps → Kinest → Permissions → SMSలో ఆన్ చేయండి.',
     },
     shakeSos: {
       title: 'ఊపితే SOS',
@@ -3407,7 +3407,7 @@ export const UI = {
       attempts: "{n} తప్పు ప్రయత్నాలు",
       map: "మ్యాప్",
       continue: "కొనసాగించండి",
-      explainAlert: "స్క్రీన్-లాక్ పాస్‌వర్డ్ 3 సార్లు తప్పుగా ఎంటర్ చేస్తే, ఫోన్ చివరిగా ఎక్కడ ఉందో తెలుపుతూ Famora మీ కుటుంబాల అడ్మిన్‌లకు తెలియజేస్తుంది. వేరే ఏదీ పంపబడదు. Famoraను డివైస్ అడ్మిన్‌గా చేయమని Android ఇప్పుడు అడుగుతుంది: తప్పు పాస్‌వర్డ్‌ల గురించి తెలుసుకోవడానికి మాత్రమే అది అడుగుతుంది, మీ ఫోన్‌ను లాక్ చేయలేదు, తుడిచివేయలేదు, మార్చలేదు. తర్వాత తొలగించడానికి ఇక్కడ దీన్ని ఆఫ్ చేయండి.",
+      explainAlert: "స్క్రీన్-లాక్ పాస్‌వర్డ్ 3 సార్లు తప్పుగా ఎంటర్ చేస్తే, ఫోన్ చివరిగా ఎక్కడ ఉందో తెలుపుతూ Kinest మీ కుటుంబాల అడ్మిన్‌లకు తెలియజేస్తుంది. వేరే ఏదీ పంపబడదు. Kinestను డివైస్ అడ్మిన్‌గా చేయమని Android ఇప్పుడు అడుగుతుంది: తప్పు పాస్‌వర్డ్‌ల గురించి తెలుసుకోవడానికి మాత్రమే అది అడుగుతుంది, మీ ఫోన్‌ను లాక్ చేయలేదు, తుడిచివేయలేదు, మార్చలేదు. తర్వాత తొలగించడానికి ఇక్కడ దీన్ని ఆఫ్ చేయండి.",
       explainPhoto: "3 తప్పు ప్రయత్నాల తర్వాత ఫ్రంట్ కెమెరాతో ఒక ఫోటో కూడా తీస్తుంది. మీరు మరియు మీ కుటుంబాల అడ్మిన్‌లు మాత్రమే చూడగలరు, 7 రోజుల తర్వాత తొలగించబడుతుంది. ఇది ప్రయోగాత్మకం, అన్ని ఫోన్‌లలో పనిచేయదు. Android కెమెరా యాక్సెస్ మరియు ఇతర యాప్‌ల పై ప్రదర్శన అడుగుతుంది.",
     },
     lostPhone: {
@@ -3451,7 +3451,7 @@ export const UI = {
       voice: 'సమాధానం ఇచ్చాక గొంతు',
       voiceHint: 'నిజమైన కాల్ లాగా ఇయర్‌పీస్‌లో ఒక గొంతు మాట్లాడుతుంది',
       notificationButton: '"నాకు కాల్ చేయి" బటన్',
-      notificationButtonHint: 'Famora నోటిఫికేషన్‌లో (లొకేషన్ షేరింగ్ ఆన్‌లో ఉన్నప్పుడు) మరియు Quick Settings టైల్‌గా. రెండూ లాక్ స్క్రీన్ నుండే పనిచేస్తాయి',
+      notificationButtonHint: 'Kinest నోటిఫికేషన్‌లో (లొకేషన్ షేరింగ్ ఆన్‌లో ఉన్నప్పుడు) మరియు Quick Settings టైల్‌గా. రెండూ లాక్ స్క్రీన్ నుండే పనిచేస్తాయి',
       callMeIn: 'నాకు కాల్ చేయి',
       seconds: '{n} సెకన్లు',
       minutes: '{n} నిమి',
@@ -3639,7 +3639,7 @@ export const UI = {
 
     register: {
       title: 'ಖಾತೆ ರಚಿಸಿ',
-      sub: 'ನಿಮ್ಮ ಕುಟುಂಬವನ್ನು ಸುರಕ್ಷಿತವಾಗಿಡಲು Famora ಸೇರಿ',
+      sub: 'ನಿಮ್ಮ ಕುಟುಂಬವನ್ನು ಸುರಕ್ಷಿತವಾಗಿಡಲು Kinest ಸೇರಿ',
       otpSub: '+91 {mobile} ಗೆ ಕಳುಹಿಸಿದ ಕೋಡ್ ನಮೂದಿಸಿ',
       yourName: 'ನಿಮ್ಮ ಹೆಸರು',
       confirmPassword: 'ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ',
@@ -3656,7 +3656,7 @@ export const UI = {
       sendingCode: 'ಕೋಡ್ ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ...',
       sendCode: 'ದೃಢೀಕರಣ ಕೋಡ್ ಕಳುಹಿಸಿ',
       // Reads as one sentence in order lead + link + tail.
-      agreeLead: 'ನಾನು Famora ದ',
+      agreeLead: 'ನಾನು Kinest ದ',
       agreeLink: 'ಗೌಪ್ಯತಾ ನೀತಿ ಮತ್ತು ನಿಯಮಗಳನ್ನು',
       agreeTail: 'ಓದಿದ್ದೇನೆ ಮತ್ತು ಒಪ್ಪುತ್ತೇನೆ',
       enterName: 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಹೆಸರು ನಮೂದಿಸಿ',
@@ -3747,7 +3747,7 @@ export const UI = {
       userGuideSub: 'ಪ್ರತಿ ವೈಶಿಷ್ಟ್ಯ ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ',
       privacyPolicy: 'ಗೌಪ್ಯತಾ ನೀತಿ',
       signOut: 'ಸೈನ್ ಔಟ್',
-      signOutConfirm: 'ನೀವು ನಿಜವಾಗಿಯೂ Famora ದಿಂದ ಸೈನ್ ಔಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?',
+      signOutConfirm: 'ನೀವು ನಿಜವಾಗಿಯೂ Kinest ದಿಂದ ಸೈನ್ ಔಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?',
       language: 'ಭಾಷೆ',
       languageSub: 'ಇಡೀ ಅಪ್ಲಿಕೇಶನ್‌ಗೆ ಭಾಷೆ',
     },
@@ -3845,7 +3845,7 @@ export const UI = {
       inviteTo: '{family} ಗೆ ಆಹ್ವಾನಿಸಿ',
       joinScreenNote: 'ಈ ಕೋಡ್ ಅನ್ನು ನಿಮ್ಮ ಕುಟುಂಬದ ಸದಸ್ಯರೊಂದಿಗೆ ಹಂಚಿಕೊಳ್ಳಿ.\nಅವರು ಇದನ್ನು "ಕುಟುಂಬ ಸೇರಿ"ಯಲ್ಲಿ ನಮೂದಿಸುತ್ತಾರೆ, ನಂತರ ನೀವು ವಿನಂತಿಯನ್ನು ಅನುಮೋದಿಸುತ್ತೀರಿ.',
       shareWhatsapp: 'WhatsApp ಮೂಲಕ ಹಂಚಿಕೊಳ್ಳಿ',
-      whatsappMsg: 'Famora ದಲ್ಲಿ ನಮ್ಮ ಕುಟುಂಬ ಸೇರಿ! "ಕುಟುಂಬ ಸೇರಿ" ಪರದೆಯಲ್ಲಿ *{code}* ಕೋಡ್ ನಮೂದಿಸಿ, ನಾನು ಅನುಮೋದಿಸುತ್ತೇನೆ. 🛡️',
+      whatsappMsg: 'Kinest ದಲ್ಲಿ ನಮ್ಮ ಕುಟುಂಬ ಸೇರಿ! "ಕುಟುಂಬ ಸೇರಿ" ಪರದೆಯಲ್ಲಿ *{code}* ಕೋಡ್ ನಮೂದಿಸಿ, ನಾನು ಅನುಮೋದಿಸುತ್ತೇನೆ. 🛡️',
       copied: 'ನಕಲಾಗಿದೆ!',
       copyCode: 'ಕೋಡ್ ನಕಲಿಸು',
       switchFamily: 'ಕುಟುಂಬ ಬದಲಾಯಿಸಿ',
@@ -4026,14 +4026,14 @@ export const UI = {
     },
     consent: {
       title: 'ಮುಂದುವರಿಯುವ ಮೊದಲು',
-      body: 'ನಾವು ನಮ್ಮ ಗೌಪ್ಯತಾ ನೀತಿಯನ್ನು ನವೀಕರಿಸಿದ್ದೇವೆ. Famora ಬಳಸುವುದನ್ನು ಮುಂದುವರಿಸಲು ದಯವಿಟ್ಟು ಅದನ್ನು ಓದಿ ಒಪ್ಪಿಕೊಳ್ಳಿ.',
+      body: 'ನಾವು ನಮ್ಮ ಗೌಪ್ಯತಾ ನೀತಿಯನ್ನು ನವೀಕರಿಸಿದ್ದೇವೆ. Kinest ಬಳಸುವುದನ್ನು ಮುಂದುವರಿಸಲು ದಯವಿಟ್ಟು ಅದನ್ನು ಓದಿ ಒಪ್ಪಿಕೊಳ್ಳಿ.',
       location: 'ನಿಮ್ಮ ಸ್ಥಳವನ್ನು ನಿಮ್ಮ ಕುಟುಂಬ ಗುಂಪಿನೊಂದಿಗೆ ಮಾತ್ರ ಹಂಚಿಕೊಳ್ಳಲಾಗುತ್ತದೆ',
       messages: 'ಸಂದೇಶಗಳು ನಿಮ್ಮ ಕುಟುಂಬದ ಸದಸ್ಯರಿಗೆ ಮಾತ್ರ ಕಾಣಿಸುತ್ತವೆ',
       noSell: 'ನಿಮ್ಮ ಡೇಟಾವನ್ನು ನಾವು ಯಾರಿಗೂ ಮಾರುವುದಿಲ್ಲ ಅಥವಾ ಹಂಚುವುದಿಲ್ಲ',
       deleteAnytime: 'ನಿಮ್ಮ ಖಾತೆ ಮತ್ತು ಎಲ್ಲಾ ಡೇಟಾವನ್ನು ಯಾವಾಗ ಬೇಕಾದರೂ ಅಳಿಸಬಹುದು',
       readFull: 'ಪೂರ್ಣ ಗೌಪ್ಯತಾ ನೀತಿಯನ್ನು ಓದಿ',
       agree: 'ನಾನು ಒಪ್ಪುತ್ತೇನೆ — ಮುಂದುವರಿಸಿ',
-      agreeFamora: 'ನಾನು ಒಪ್ಪುತ್ತೇನೆ — Famora ಗೆ ಮುಂದುವರಿಸಿ',
+      agreeFamora: 'ನಾನು ಒಪ್ಪುತ್ತೇನೆ — Kinest ಗೆ ಮುಂದುವರಿಸಿ',
     },
     map: {
       // Today’s route (Map popup button and chip).
@@ -4073,7 +4073,7 @@ export const UI = {
       findMember: 'ಕುಟುಂಬ ಸದಸ್ಯರನ್ನು ಹುಡುಕಿ',
       findMemberTitle: 'ಕುಟುಂಬ ಸದಸ್ಯರನ್ನು ಹುಡುಕಿ',
       locationFailed: 'ಸ್ಥಳ ಪಡೆಯಲಾಗಲಿಲ್ಲ — GPS ಆನ್ ಆಗಿದೆಯೇ ನೋಡಿ ರಿಫ್ರೆಶ್ ಒತ್ತಿ.',
-      permissionRequired: 'ಸ್ಥಳ ಅನುಮತಿ ಅಗತ್ಯವಿದೆ. Android ಸೆಟ್ಟಿಂಗ್‌ಗಳು → ಆ್ಯಪ್‌ಗಳು → Famora → ಅನುಮತಿಗಳು ಇಲ್ಲಿ ಅನುಮತಿಸಿ.',
+      permissionRequired: 'ಸ್ಥಳ ಅನುಮತಿ ಅಗತ್ಯವಿದೆ. Android ಸೆಟ್ಟಿಂಗ್‌ಗಳು → ಆ್ಯಪ್‌ಗಳು → Kinest → ಅನುಮತಿಗಳು ಇಲ್ಲಿ ಅನುಮತಿಸಿ.',
       findFam: 'ಹುಡುಕಿ',
       refresh: 'ನಕ್ಷೆ ರಿಫ್ರೆಶ್ ಮಾಡಿ',
       recenter: 'ಕೇಂದ್ರೀಕರಿಸಿ',
@@ -4112,8 +4112,8 @@ export const UI = {
 
     reliability: {
       title: 'ಎಚ್ಚರಿಕೆಗಳು ನಿಮ್ಮನ್ನು ಖಂಡಿತ ತಲುಪಲಿ',
-      intro: '{oem} ಫೋನ್‌ಗಳು ಆ್ಯಪ್‌ಗಳು ಹಿನ್ನೆಲೆಯಲ್ಲಿ ಕೆಲಸ ಮಾಡುವುದನ್ನು ತಡೆಯಬಹುದು. {switches} ಆನ್ ಮಾಡುವುದರಿಂದ ಆ್ಯಪ್ ಹಿನ್ನೆಲೆಯಲ್ಲಿದ್ದರೂ ಅಥವಾ ಫೋನ್ ಲಾಕ್ ಆಗಿದ್ದರೂ Famora ತುರ್ತು ಎಚ್ಚರಿಕೆಗಳನ್ನು ವಿಶ್ವಾಸಾರ್ಹವಾಗಿ ತಲುಪಿಸಲು ಸಹಾಯವಾಗುತ್ತದೆ.',
-      introPlain: 'ಸೈಲೆಂಟ್ ಅಥವಾ ಲಾಕ್ ಆದ ಫೋನ್‌ನಲ್ಲಿ ಎಚ್ಚರಿಕೆ ತಪ್ಪಿಹೋಗಬಹುದು. {switches} ಆನ್ ಮಾಡುವುದರಿಂದ ಅಗತ್ಯವಿದ್ದಾಗ Famora ಅಲಾರಂ ಮೊಳಗಿಸಿ ಪರದೆಯನ್ನು ತೆಗೆದುಕೊಳ್ಳಲು ಸಹಾಯವಾಗುತ್ತದೆ.',
+      intro: '{oem} ಫೋನ್‌ಗಳು ಆ್ಯಪ್‌ಗಳು ಹಿನ್ನೆಲೆಯಲ್ಲಿ ಕೆಲಸ ಮಾಡುವುದನ್ನು ತಡೆಯಬಹುದು. {switches} ಆನ್ ಮಾಡುವುದರಿಂದ ಆ್ಯಪ್ ಹಿನ್ನೆಲೆಯಲ್ಲಿದ್ದರೂ ಅಥವಾ ಫೋನ್ ಲಾಕ್ ಆಗಿದ್ದರೂ Kinest ತುರ್ತು ಎಚ್ಚರಿಕೆಗಳನ್ನು ವಿಶ್ವಾಸಾರ್ಹವಾಗಿ ತಲುಪಿಸಲು ಸಹಾಯವಾಗುತ್ತದೆ.',
+      introPlain: 'ಸೈಲೆಂಟ್ ಅಥವಾ ಲಾಕ್ ಆದ ಫೋನ್‌ನಲ್ಲಿ ಎಚ್ಚರಿಕೆ ತಪ್ಪಿಹೋಗಬಹುದು. {switches} ಆನ್ ಮಾಡುವುದರಿಂದ ಅಗತ್ಯವಿದ್ದಾಗ Kinest ಅಲಾರಂ ಮೊಳಗಿಸಿ ಪರದೆಯನ್ನು ತೆಗೆದುಕೊಳ್ಳಲು ಸಹಾಯವಾಗುತ್ತದೆ.',
       oneSwitch: 'ಒಂದು ಸೆಟ್ಟಿಂಗ್',
       someSwitches: '{n} ಸಣ್ಣ ಸೆಟ್ಟಿಂಗ್‌ಗಳು',
       blocked: 'ಈ ಫೋನ್‌ನಲ್ಲಿ ಎಚ್ಚರಿಕೆ ಸಣ್ಣ ಬ್ಯಾನರ್ ಆಗಿ ಮಾತ್ರ ಕಾಣಿಸಿತು — ಕೆಳಗಿನ ಪಾಪ್-ಅಪ್ ಸ್ವಿಚ್ ಇದನ್ನು ಸರಿಪಡಿಸುತ್ತದೆ.',
@@ -4121,11 +4121,11 @@ export const UI = {
       done: 'ಮುಗಿದಿದೆ',
       notNow: 'ಈಗ ಬೇಡ',
       autostart: 'ಹಿನ್ನೆಲೆ ಸ್ಟಾರ್ಟಪ್ ಅನ್ನು ಅನುಮತಿಸಿ',
-      autostartSub: 'ಪಟ್ಟಿಯಲ್ಲಿ Famora ಹುಡುಕಿ ಆನ್ ಮಾಡಿ',
+      autostartSub: 'ಪಟ್ಟಿಯಲ್ಲಿ Kinest ಹುಡುಕಿ ಆನ್ ಮಾಡಿ',
       popup: 'ಲಾಕ್ ಸ್ಕ್ರೀನ್‌ನಲ್ಲಿ ಎಚ್ಚರಿಕೆಗಳನ್ನು ತೋರಿಸಿ',
-      popupSub: 'ನಿಮ್ಮ ಲಾಕ್ ಸ್ಕ್ರೀನ್‌ನಲ್ಲಿ ತುರ್ತು ಎಚ್ಚರಿಕೆಗಳನ್ನು ತೋರಿಸಲು Famora ಅನ್ನು ಅನುಮತಿಸಿ',
+      popupSub: 'ನಿಮ್ಮ ಲಾಕ್ ಸ್ಕ್ರೀನ್‌ನಲ್ಲಿ ತುರ್ತು ಎಚ್ಚರಿಕೆಗಳನ್ನು ತೋರಿಸಲು Kinest ಅನ್ನು ಅನುಮತಿಸಿ',
       fullscreen: 'ಪೂರ್ಣ-ಪರದೆ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಅನುಮತಿಸಿ',
-      fullscreenSub: 'ಇತರ ಆ್ಯಪ್‌ಗಳ ಮೇಲೆ Famora ತುರ್ತು ಎಚ್ಚರಿಕೆಗಳು ಸ್ಪಷ್ಟವಾಗಿ ಕಾಣಿಸಲು ಅನುಮತಿಸಿ',
+      fullscreenSub: 'ಇತರ ಆ್ಯಪ್‌ಗಳ ಮೇಲೆ Kinest ತುರ್ತು ಎಚ್ಚರಿಕೆಗಳು ಸ್ಪಷ್ಟವಾಗಿ ಕಾಣಿಸಲು ಅನುಮತಿಸಿ',
       dnd: 'ತೊಂದರೆ ಬೇಡ ಮೋಡ್‌ನಲ್ಲೂ ಶಬ್ದವನ್ನು ಅನುಮತಿಸಿ',
       dndSub: 'ಫೋನ್ ಸೈಲೆಂಟ್‌ನಲ್ಲಿದ್ದರೂ ಮುಖ್ಯವಾದ SOS ಎಚ್ಚರಿಕೆಗಳು ಕೇಳಿಸಲು',
       someAndroid: 'ಕೆಲವು Android',
@@ -4134,28 +4134,28 @@ export const UI = {
 
     deletePage: {
       title: 'ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಅಳಿಸಿ',
-      sub: 'ನಿಮ್ಮ Famora ಖಾತೆ ಮತ್ತು ಅದರಲ್ಲಿರುವ ಎಲ್ಲವನ್ನೂ ಶಾಶ್ವತವಾಗಿ ಅಳಿಸುವುದು ಹೇಗೆ',
+      sub: 'ನಿಮ್ಮ Kinest ಖಾತೆ ಮತ್ತು ಅದರಲ್ಲಿರುವ ಎಲ್ಲವನ್ನೂ ಶಾಶ್ವತವಾಗಿ ಅಳಿಸುವುದು ಹೇಗೆ',
       cannotUndo: 'ಅಳಿಸುವಿಕೆ ಶಾಶ್ವತ, ಇದನ್ನು ಹಿಂಪಡೆಯಲಾಗದು.',
       optionInApp: 'ಅಪ್ಲಿಕೇಶನ್‌ನಲ್ಲಿ ನೀವೇ ಅಳಿಸಿ',
-      optionInAppBody: 'Famora ತೆರೆದು ಪ್ರೊಫೈಲ್ → ನನ್ನ ಖಾತೆ ಅಳಿಸಿ ಗೆ ಹೋಗಿ. ದೃಢೀಕರಿಸಲು DELETE ಟೈಪ್ ಮಾಡಿ. ನಿಮ್ಮ ಖಾತೆ ಮತ್ತು ಡೇಟಾ ತಕ್ಷಣ ತೆಗೆದುಹಾಕಲ್ಪಡುತ್ತವೆ.',
+      optionInAppBody: 'Kinest ತೆರೆದು ಪ್ರೊಫೈಲ್ → ನನ್ನ ಖಾತೆ ಅಳಿಸಿ ಗೆ ಹೋಗಿ. ದೃಢೀಕರಿಸಲು DELETE ಟೈಪ್ ಮಾಡಿ. ನಿಮ್ಮ ಖಾತೆ ಮತ್ತು ಡೇಟಾ ತಕ್ಷಣ ತೆಗೆದುಹಾಕಲ್ಪಡುತ್ತವೆ.',
       optionWeb: 'ಅಪ್ಲಿಕೇಶನ್ ಇಲ್ಲದೆ ಇಲ್ಲಿಯೇ ಅಳಿಸಿ',
       optionWebBody: 'ನೀವು ನೋಂದಾಯಿಸಿದ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ. ಸಂಖ್ಯೆ ನಿಮ್ಮದೇ ಎಂದು ಖಚಿತಪಡಿಸಲು 6-ಅಂಕಿಯ ಕೋಡ್ ಅನ್ನು SMS ಮಾಡುತ್ತೇವೆ, ನಂತರ ತಕ್ಷಣ ಖಾತೆಯನ್ನು ಅಳಿಸಬಹುದು.',
       couldNotSend: 'ಕೋಡ್ ಕಳುಹಿಸಲಾಗಲಿಲ್ಲ. ನೀವು ನೋಂದಾಯಿಸಿದ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ಬಳಸಿ, ಅಥವಾ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
       confirmBody: 'ನಿಮ್ಮ ಸಂಖ್ಯೆ ದೃಢೀಕರಿಸಲಾಗಿದೆ. ಇದು ಖಾತೆಯನ್ನು ಮತ್ತು ಕೆಳಗೆ ಪಟ್ಟಿ ಮಾಡಿದ ಎಲ್ಲವನ್ನೂ ಅಳಿಸುತ್ತದೆ.',
       deleteFailed: 'ಖಾತೆಯನ್ನು ಅಳಿಸಲಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
       deletedTitle: 'ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಅಳಿಸಲಾಗಿದೆ',
-      deletedBody: 'ನಿಮ್ಮ ಖಾತೆ ಮತ್ತು ಅದರ ಡೇಟಾವನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ. ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ Famora ಅನ್‌ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಬಹುದು.',
+      deletedBody: 'ನಿಮ್ಮ ಖಾತೆ ಮತ್ತು ಅದರ ಡೇಟಾವನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ. ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ Kinest ಅನ್‌ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಬಹುದು.',
       whatGoes: 'ಏನು ಅಳಿಸಲ್ಪಡುತ್ತದೆ',
       whatGoesBody: 'ನಿಮ್ಮ ಸೈನ್-ಇನ್, ನಿಮ್ಮ ಹೆಸರು ಮತ್ತು ಪ್ರೊಫೈಲ್ ಫೋಟೋ, ನಿಮ್ಮ ಸ್ಥಳ ಮತ್ತು ಸ್ಥಳ ಇತಿಹಾಸ, ನಿಮ್ಮ ಸಂದೇಶಗಳು, ನಿಮ್ಮ SOS ಎಚ್ಚರಿಕೆಗಳು, ನಿಮ್ಮ ಕರೆ ದಾಖಲೆಗಳು, ಮತ್ತು ನಿಮ್ಮ ಸಾಧನ ಅಧಿಸೂಚನೆ ಟೋಕನ್‌ಗಳು. ನೀವು ರಚಿಸಿದ ಯಾವುದೇ ಕುಟುಂಬವೂ ಅದರೊಂದಿಗೆ ಅಳಿಸಲ್ಪಡುತ್ತದೆ.',
       whatStays: 'ಏನು ಉಳಿಯುತ್ತದೆ',
       whatStaysBody: 'ನಿಮ್ಮನ್ನು ಗುರುತಿಸುವ ಯಾವುದೂ ಉಳಿಯುವುದಿಲ್ಲ. ನೀವು ಕಳುಹಿಸಿದ ಸಂದೇಶಗಳು ಕುಟುಂಬದ ಎಲ್ಲರಿಗೂ ತೆಗೆದುಹಾಕಲ್ಪಡುತ್ತವೆ. Firebase Crashlytics ಗೆ ಈಗಾಗಲೇ ಕಳುಹಿಸಿದ ಕ್ರ್ಯಾಶ್ ವರದಿಗಳಲ್ಲಿ ಹೆಸರು, ಸಂಖ್ಯೆ ಅಥವಾ ಸ್ಥಳ ಇರುವುದಿಲ್ಲ ಮತ್ತು ಅವನ್ನು ನಿಮಗೆ ಜೋಡಿಸಲಾಗದು.',
-      backToApp: 'Famora ಗೆ ಹಿಂತಿರುಗಿ',
+      backToApp: 'Kinest ಗೆ ಹಿಂತಿರುಗಿ',
     },
     // Shown when another device claims the session — see
     // useSingleDevice. One account, one device.
     session: {
       displacedTitle: 'ಸೈನ್ ಔಟ್ ಮಾಡಲಾಗಿದೆ',
-      displacedBody: 'ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಬೇರೊಂದು ಸಾಧನದಲ್ಲಿ ತೆರೆಯಲಾಗಿದೆ. Famora ಒಂದೇ ಸಮಯದಲ್ಲಿ ಒಂದು ಸಾಧನದಲ್ಲಿ ಮಾತ್ರ ಬಳಸಬಹುದು.',
+      displacedBody: 'ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಬೇರೊಂದು ಸಾಧನದಲ್ಲಿ ತೆರೆಯಲಾಗಿದೆ. Kinest ಒಂದೇ ಸಮಯದಲ್ಲಿ ಒಂದು ಸಾಧನದಲ್ಲಿ ಮಾತ್ರ ಬಳಸಬಹುದು.',
       signInAgain: 'ಮತ್ತೆ ಸೈನ್ ಇನ್ ಮಾಡಿ',
     },
 
@@ -4171,7 +4171,7 @@ export const UI = {
       testConfirm: 'ಇದು ಕುಟುಂಬದ ಅಡ್ಮಿನ್‌ಗಳಿಗೆ ಮತ್ತು ನಿಮ್ಮ ಹೆಚ್ಚುವರಿ ಸಂಖ್ಯೆಗೆ ನಿಜವಾದ SMS ಕಳುಹಿಸುತ್ತದೆ, ನಿಮ್ಮ ಮೊಬೈಲ್ ಯೋಜನೆ ಶುಲ್ಕ ವಿಧಿಸುತ್ತದೆ. ಕಳುಹಿಸಬೇಕೇ?',
       testSent: '{n} ಸಂಖ್ಯೆಗೆ ಪರೀಕ್ಷಾ SMS ಕಳುಹಿಸಲಾಗಿದೆ.',
       testFailed: 'ಕಳುಹಿಸಲು ಆಗಲಿಲ್ಲ. SMS ಅನುಮತಿ ಮತ್ತು ಸಿಮ್ ಸಂದೇಶ ಕಳುಹಿಸಬಲ್ಲದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ.',
-      permissionNeeded: 'ಇದಕ್ಕೆ SMS ಕಳುಹಿಸಲು Android ಅನುಮತಿ ಬೇಕು. ಕೇಳಿದಾಗ ಅನುಮತಿಸಿ, ಅಥವಾ Settings → Apps → Famora → Permissions → SMSನಲ್ಲಿ ಆನ್ ಮಾಡಿ.',
+      permissionNeeded: 'ಇದಕ್ಕೆ SMS ಕಳುಹಿಸಲು Android ಅನುಮತಿ ಬೇಕು. ಕೇಳಿದಾಗ ಅನುಮತಿಸಿ, ಅಥವಾ Settings → Apps → Kinest → Permissions → SMSನಲ್ಲಿ ಆನ್ ಮಾಡಿ.',
     },
     shakeSos: {
       title: 'ಅಲುಗಾಡಿಸಿದರೆ SOS',
@@ -4273,7 +4273,7 @@ export const UI = {
       attempts: "{n} ತಪ್ಪು ಪ್ರಯತ್ನಗಳು",
       map: "ನಕ್ಷೆ",
       continue: "ಮುಂದುವರಿಸಿ",
-      explainAlert: "ಸ್ಕ್ರೀನ್-ಲಾಕ್ ಪಾಸ್‌ವರ್ಡ್ 3 ಬಾರಿ ತಪ್ಪಾಗಿ ನಮೂದಿಸಿದರೆ, ಫೋನ್ ಕೊನೆಯದಾಗಿ ಎಲ್ಲಿತ್ತು ಎಂಬುದರೊಂದಿಗೆ Famora ನಿಮ್ಮ ಕುಟುಂಬಗಳ ಅಡ್ಮಿನ್‌ಗಳಿಗೆ ತಿಳಿಸುತ್ತದೆ. ಬೇರೇನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. Famora ಅನ್ನು ಡಿವೈಸ್ ಅಡ್ಮಿನ್ ಮಾಡಲು Android ಈಗ ಕೇಳುತ್ತದೆ: ತಪ್ಪು ಪಾಸ್‌ವರ್ಡ್‌ಗಳ ಬಗ್ಗೆ ತಿಳಿಯಲು ಮಾತ್ರ ಅದು ಕೇಳುತ್ತದೆ, ನಿಮ್ಮ ಫೋನ್ ಅನ್ನು ಲಾಕ್ ಮಾಡಲು, ಅಳಿಸಲು ಅಥವಾ ಬದಲಾಯಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ. ನಂತರ ತೆಗೆಯಲು ಇಲ್ಲಿ ಇದನ್ನು ಆಫ್ ಮಾಡಿ.",
+      explainAlert: "ಸ್ಕ್ರೀನ್-ಲಾಕ್ ಪಾಸ್‌ವರ್ಡ್ 3 ಬಾರಿ ತಪ್ಪಾಗಿ ನಮೂದಿಸಿದರೆ, ಫೋನ್ ಕೊನೆಯದಾಗಿ ಎಲ್ಲಿತ್ತು ಎಂಬುದರೊಂದಿಗೆ Kinest ನಿಮ್ಮ ಕುಟುಂಬಗಳ ಅಡ್ಮಿನ್‌ಗಳಿಗೆ ತಿಳಿಸುತ್ತದೆ. ಬೇರೇನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. Kinest ಅನ್ನು ಡಿವೈಸ್ ಅಡ್ಮಿನ್ ಮಾಡಲು Android ಈಗ ಕೇಳುತ್ತದೆ: ತಪ್ಪು ಪಾಸ್‌ವರ್ಡ್‌ಗಳ ಬಗ್ಗೆ ತಿಳಿಯಲು ಮಾತ್ರ ಅದು ಕೇಳುತ್ತದೆ, ನಿಮ್ಮ ಫೋನ್ ಅನ್ನು ಲಾಕ್ ಮಾಡಲು, ಅಳಿಸಲು ಅಥವಾ ಬದಲಾಯಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ. ನಂತರ ತೆಗೆಯಲು ಇಲ್ಲಿ ಇದನ್ನು ಆಫ್ ಮಾಡಿ.",
       explainPhoto: "3 ತಪ್ಪು ಪ್ರಯತ್ನಗಳ ನಂತರ ಮುಂಭಾಗದ ಕ್ಯಾಮೆರಾದಿಂದ ಒಂದು ಫೋಟೋ ಕೂಡ ತೆಗೆಯುತ್ತದೆ. ನೀವು ಮತ್ತು ನಿಮ್ಮ ಕುಟುಂಬಗಳ ಅಡ್ಮಿನ್‌ಗಳು ಮಾತ್ರ ನೋಡಬಹುದು, 7 ದಿನಗಳ ನಂತರ ಅಳಿಸಲಾಗುತ್ತದೆ. ಇದು ಪ್ರಾಯೋಗಿಕ, ಎಲ್ಲಾ ಫೋನ್‌ಗಳಲ್ಲಿ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. Android ಕ್ಯಾಮೆರಾ ಪ್ರವೇಶ ಮತ್ತು ಇತರ ಆ್ಯಪ್‌ಗಳ ಮೇಲೆ ಪ್ರದರ್ಶನ ಕೇಳುತ್ತದೆ.",
     },
     lostPhone: {
@@ -4317,7 +4317,7 @@ export const UI = {
       voice: 'ಉತ್ತರಿಸಿದಾಗ ಧ್ವನಿ',
       voiceHint: 'ನಿಜವಾದ ಕರೆಯಂತೆ ಇಯರ್‌ಪೀಸ್‌ನಲ್ಲಿ ಒಂದು ಧ್ವನಿ ಮಾತನಾಡುತ್ತದೆ',
       notificationButton: '"ನನಗೆ ಕರೆ ಮಾಡಿ" ಬಟನ್',
-      notificationButtonHint: 'Famora ಅಧಿಸೂಚನೆಯಲ್ಲಿ (ಸ್ಥಳ ಹಂಚಿಕೆ ಆನ್ ಇರುವಾಗ) ಮತ್ತು Quick Settings ಟೈಲ್ ಆಗಿ. ಎರಡೂ ಲಾಕ್ ಸ್ಕ್ರೀನ್‌ನಿಂದಲೇ ಕೆಲಸ ಮಾಡುತ್ತವೆ',
+      notificationButtonHint: 'Kinest ಅಧಿಸೂಚನೆಯಲ್ಲಿ (ಸ್ಥಳ ಹಂಚಿಕೆ ಆನ್ ಇರುವಾಗ) ಮತ್ತು Quick Settings ಟೈಲ್ ಆಗಿ. ಎರಡೂ ಲಾಕ್ ಸ್ಕ್ರೀನ್‌ನಿಂದಲೇ ಕೆಲಸ ಮಾಡುತ್ತವೆ',
       callMeIn: 'ನನಗೆ ಕರೆ ಮಾಡಿ',
       seconds: '{n} ಸೆಕೆಂಡ್',
       minutes: '{n} ನಿಮಿಷ',
@@ -4505,7 +4505,7 @@ export const UI = {
 
     register: {
       title: 'അക്കൗണ്ട് സൃഷ്ടിക്കുക',
-      sub: 'നിങ്ങളുടെ കുടുംബത്തെ സുരക്ഷിതമാക്കാൻ Famora യിൽ ചേരുക',
+      sub: 'നിങ്ങളുടെ കുടുംബത്തെ സുരക്ഷിതമാക്കാൻ Kinest യിൽ ചേരുക',
       otpSub: '+91 {mobile} ലേക്ക് അയച്ച കോഡ് നൽകുക',
       yourName: 'നിങ്ങളുടെ പേര്',
       confirmPassword: 'പാസ്‌വേഡ് സ്ഥിരീകരിക്കുക',
@@ -4522,7 +4522,7 @@ export const UI = {
       sendingCode: 'കോഡ് അയയ്ക്കുന്നു...',
       sendCode: 'സ്ഥിരീകരണ കോഡ് അയയ്ക്കുക',
       // Reads as one sentence in order lead + link + tail.
-      agreeLead: 'ഞാൻ Famora യുടെ',
+      agreeLead: 'ഞാൻ Kinest യുടെ',
       agreeLink: 'സ്വകാര്യതാ നയവും നിബന്ധനകളും',
       agreeTail: 'വായിച്ചു, അവ അംഗീകരിക്കുന്നു',
       enterName: 'ദയവായി നിങ്ങളുടെ പേര് നൽകുക',
@@ -4613,7 +4613,7 @@ export const UI = {
       userGuideSub: 'ഓരോ സവിശേഷതയും എങ്ങനെ പ്രവർത്തിക്കുന്നു',
       privacyPolicy: 'സ്വകാര്യതാ നയം',
       signOut: 'സൈൻ ഔട്ട്',
-      signOutConfirm: 'നിങ്ങൾക്ക് ശരിക്കും Famora യിൽ നിന്ന് സൈൻ ഔട്ട് ചെയ്യണോ?',
+      signOutConfirm: 'നിങ്ങൾക്ക് ശരിക്കും Kinest യിൽ നിന്ന് സൈൻ ഔട്ട് ചെയ്യണോ?',
       language: 'ഭാഷ',
       languageSub: 'ആപ്പിന് മുഴുവൻ ഭാഷ',
     },
@@ -4711,7 +4711,7 @@ export const UI = {
       inviteTo: '{family} ലേക്ക് ക്ഷണിക്കുക',
       joinScreenNote: 'ഈ കോഡ് നിങ്ങളുടെ കുടുംബാംഗവുമായി പങ്കിടുക.\nഅവർ ഇത് "കുടുംബത്തിൽ ചേരുക" എന്നതിൽ നൽകും, തുടർന്ന് നിങ്ങൾ അഭ്യർത്ഥന അംഗീകരിക്കും.',
       shareWhatsapp: 'WhatsApp വഴി പങ്കിടുക',
-      whatsappMsg: 'Famora യിൽ ഞങ്ങളുടെ കുടുംബത്തിൽ ചേരുക! "കുടുംബത്തിൽ ചേരുക" സ്ക്രീനിൽ *{code}* കോഡ് നൽകുക, ഞാൻ അംഗീകരിക്കാം. 🛡️',
+      whatsappMsg: 'Kinest യിൽ ഞങ്ങളുടെ കുടുംബത്തിൽ ചേരുക! "കുടുംബത്തിൽ ചേരുക" സ്ക്രീനിൽ *{code}* കോഡ് നൽകുക, ഞാൻ അംഗീകരിക്കാം. 🛡️',
       copied: 'പകർത്തി!',
       copyCode: 'കോഡ് പകർത്തുക',
       switchFamily: 'കുടുംബം മാറ്റുക',
@@ -4892,14 +4892,14 @@ export const UI = {
     },
     consent: {
       title: 'തുടരുന്നതിന് മുമ്പ്',
-      body: 'ഞങ്ങൾ സ്വകാര്യതാ നയം അപ്ഡേറ്റ് ചെയ്തു. Famora ഉപയോഗിക്കുന്നത് തുടരാൻ ദയവായി അത് വായിച്ച് അംഗീകരിക്കുക.',
+      body: 'ഞങ്ങൾ സ്വകാര്യതാ നയം അപ്ഡേറ്റ് ചെയ്തു. Kinest ഉപയോഗിക്കുന്നത് തുടരാൻ ദയവായി അത് വായിച്ച് അംഗീകരിക്കുക.',
       location: 'നിങ്ങളുടെ ലൊക്കേഷൻ നിങ്ങളുടെ കുടുംബ ഗ്രൂപ്പുമായി മാത്രമേ പങ്കിടൂ',
       messages: 'സന്ദേശങ്ങൾ നിങ്ങളുടെ കുടുംബാംഗങ്ങൾക്ക് മാത്രമേ കാണാനാകൂ',
       noSell: 'നിങ്ങളുടെ ഡാറ്റ ഞങ്ങൾ ആർക്കും വിൽക്കുകയോ പങ്കിടുകയോ ചെയ്യില്ല',
       deleteAnytime: 'നിങ്ങളുടെ അക്കൗണ്ടും എല്ലാ ഡാറ്റയും എപ്പോൾ വേണമെങ്കിലും ഇല്ലാതാക്കാം',
       readFull: 'പൂർണ്ണ സ്വകാര്യതാ നയം വായിക്കുക',
       agree: 'ഞാൻ അംഗീകരിക്കുന്നു — തുടരുക',
-      agreeFamora: 'ഞാൻ അംഗീകരിക്കുന്നു — Famora യിലേക്ക് തുടരുക',
+      agreeFamora: 'ഞാൻ അംഗീകരിക്കുന്നു — Kinest യിലേക്ക് തുടരുക',
     },
     map: {
       // Today’s route (Map popup button and chip).
@@ -4939,7 +4939,7 @@ export const UI = {
       findMember: 'കുടുംബാംഗത്തെ കണ്ടെത്തുക',
       findMemberTitle: 'കുടുംബാംഗത്തെ കണ്ടെത്തുക',
       locationFailed: 'ലൊക്കേഷൻ ലഭിച്ചില്ല — GPS ഓണാണോ എന്ന് നോക്കി പുതുക്കുക അമർത്തുക.',
-      permissionRequired: 'ലൊക്കേഷൻ അനുമതി ആവശ്യമാണ്. Android ക്രമീകരണങ്ങൾ → ആപ്പുകൾ → Famora → അനുമതികൾ എന്നതിൽ അനുവദിക്കുക.',
+      permissionRequired: 'ലൊക്കേഷൻ അനുമതി ആവശ്യമാണ്. Android ക്രമീകരണങ്ങൾ → ആപ്പുകൾ → Kinest → അനുമതികൾ എന്നതിൽ അനുവദിക്കുക.',
       findFam: 'തിരയുക',
       refresh: 'മാപ്പ് പുതുക്കുക',
       recenter: 'കേന്ദ്രീകരിക്കുക',
@@ -4978,8 +4978,8 @@ export const UI = {
 
     reliability: {
       title: 'അലേർട്ടുകൾ നിങ്ങളിലേക്ക് എത്തുന്നുവെന്ന് ഉറപ്പാക്കാം',
-      intro: '{oem} ഫോണുകൾ ആപ്പുകൾ പശ്ചാത്തലത്തിൽ പ്രവർത്തിക്കുന്നത് തടഞ്ഞേക്കാം. {switches} ഓണാക്കുന്നത്, ആപ്പ് പശ്ചാത്തലത്തിലായാലും ഫോൺ ലോക്കായാലും, Famora അടിയന്തര അലേർട്ടുകൾ വിശ്വസനീയമായി എത്തിക്കാൻ സഹായിക്കും.',
-      introPlain: 'സൈലന്റിലോ ലോക്കിലോ ഉള്ള ഫോണിൽ ഒരു അലേർട്ട് നഷ്ടമായേക്കാം. {switches} ഓണാക്കുന്നത് ആവശ്യമുള്ളപ്പോൾ Famora അലാറം മുഴക്കി സ്ക്രീൻ ഏറ്റെടുക്കാൻ സഹായിക്കും.',
+      intro: '{oem} ഫോണുകൾ ആപ്പുകൾ പശ്ചാത്തലത്തിൽ പ്രവർത്തിക്കുന്നത് തടഞ്ഞേക്കാം. {switches} ഓണാക്കുന്നത്, ആപ്പ് പശ്ചാത്തലത്തിലായാലും ഫോൺ ലോക്കായാലും, Kinest അടിയന്തര അലേർട്ടുകൾ വിശ്വസനീയമായി എത്തിക്കാൻ സഹായിക്കും.',
+      introPlain: 'സൈലന്റിലോ ലോക്കിലോ ഉള്ള ഫോണിൽ ഒരു അലേർട്ട് നഷ്ടമായേക്കാം. {switches} ഓണാക്കുന്നത് ആവശ്യമുള്ളപ്പോൾ Kinest അലാറം മുഴക്കി സ്ക്രീൻ ഏറ്റെടുക്കാൻ സഹായിക്കും.',
       oneSwitch: 'ഒരു ക്രമീകരണം',
       someSwitches: '{n} ചെറിയ ക്രമീകരണങ്ങൾ',
       blocked: 'ഈ ഫോണിൽ ഒരു അലേർട്ട് ചെറിയ ബാനറായി മാത്രമേ കാണിച്ചുള്ളൂ — താഴെയുള്ള പോപ്പ്-അപ്പ് സ്വിച്ചാണ് ഇത് ശരിയാക്കുന്നത്.',
@@ -4987,11 +4987,11 @@ export const UI = {
       done: 'പൂർത്തിയായി',
       notNow: 'ഇപ്പോൾ വേണ്ട',
       autostart: 'ബാക്ക്ഗ്രൗണ്ട് സ്റ്റാർട്ടപ്പ് അനുവദിക്കുക',
-      autostartSub: 'പട്ടികയിൽ Famora കണ്ടെത്തി ഓണാക്കുക',
+      autostartSub: 'പട്ടികയിൽ Kinest കണ്ടെത്തി ഓണാക്കുക',
       popup: 'ലോക്ക് സ്ക്രീനിൽ അലേർട്ടുകൾ കാണിക്കുക',
-      popupSub: 'നിങ്ങളുടെ ലോക്ക് സ്ക്രീനിൽ അടിയന്തര അലേർട്ടുകൾ കാണിക്കാൻ Famora-യെ അനുവദിക്കുക',
+      popupSub: 'നിങ്ങളുടെ ലോക്ക് സ്ക്രീനിൽ അടിയന്തര അലേർട്ടുകൾ കാണിക്കാൻ Kinest-യെ അനുവദിക്കുക',
       fullscreen: 'ഫുൾ-സ്ക്രീൻ അലേർട്ടുകൾ അനുവദിക്കുക',
-      fullscreenSub: 'മറ്റ് ആപ്പുകൾക്ക് മുകളിൽ Famora-യുടെ അടിയന്തര അലേർട്ടുകൾ വ്യക്തമായി കാണാൻ അനുവദിക്കുക',
+      fullscreenSub: 'മറ്റ് ആപ്പുകൾക്ക് മുകളിൽ Kinest-യുടെ അടിയന്തര അലേർട്ടുകൾ വ്യക്തമായി കാണാൻ അനുവദിക്കുക',
       dnd: 'ശല്യപ്പെടുത്തരുത് മോഡിലും ശബ്ദം അനുവദിക്കുക',
       dndSub: 'ഫോൺ സൈലന്റിലായാലും പ്രധാനപ്പെട്ട SOS അലേർട്ടുകൾ കേൾക്കാൻ',
       someAndroid: 'ചില Android',
@@ -5000,28 +5000,28 @@ export const UI = {
 
     deletePage: {
       title: 'നിങ്ങളുടെ അക്കൗണ്ട് ഇല്ലാതാക്കുക',
-      sub: 'നിങ്ങളുടെ Famora അക്കൗണ്ടും അതിലുള്ളതെല്ലാം ശാശ്വതമായി ഇല്ലാതാക്കുന്നത് എങ്ങനെ',
+      sub: 'നിങ്ങളുടെ Kinest അക്കൗണ്ടും അതിലുള്ളതെല്ലാം ശാശ്വതമായി ഇല്ലാതാക്കുന്നത് എങ്ങനെ',
       cannotUndo: 'ഇല്ലാതാക്കൽ ശാശ്വതമാണ്, ഇത് പഴയപടിയാക്കാൻ കഴിയില്ല.',
       optionInApp: 'ആപ്പിൽ നിങ്ങൾ തന്നെ ഇല്ലാതാക്കുക',
-      optionInAppBody: 'Famora തുറന്ന് പ്രൊഫൈൽ → എന്റെ അക്കൗണ്ട് ഇല്ലാതാക്കുക എന്നതിലേക്ക് പോകുക. സ്ഥിരീകരിക്കാൻ DELETE ടൈപ്പ് ചെയ്യുക. നിങ്ങളുടെ അക്കൗണ്ടും ഡാറ്റയും ഉടനടി നീക്കം ചെയ്യപ്പെടും.',
+      optionInAppBody: 'Kinest തുറന്ന് പ്രൊഫൈൽ → എന്റെ അക്കൗണ്ട് ഇല്ലാതാക്കുക എന്നതിലേക്ക് പോകുക. സ്ഥിരീകരിക്കാൻ DELETE ടൈപ്പ് ചെയ്യുക. നിങ്ങളുടെ അക്കൗണ്ടും ഡാറ്റയും ഉടനടി നീക്കം ചെയ്യപ്പെടും.',
       optionWeb: 'ആപ്പ് ഇല്ലാതെ ഇവിടെത്തന്നെ ഇല്ലാതാക്കുക',
       optionWebBody: 'നിങ്ങൾ രജിസ്റ്റർ ചെയ്ത മൊബൈൽ നമ്പർ നൽകുക. നമ്പർ നിങ്ങളുടേതാണെന്ന് ഉറപ്പാക്കാൻ 6 അക്ക കോഡ് SMS ചെയ്യും, തുടർന്ന് ഉടൻ അക്കൗണ്ട് ഇല്ലാതാക്കാം.',
       couldNotSend: 'കോഡ് അയയ്ക്കാനായില്ല. രജിസ്റ്റർ ചെയ്ത മൊബൈൽ നമ്പർ ഉപയോഗിക്കുക, അല്ലെങ്കിൽ പിന്നീട് വീണ്ടും ശ്രമിക്കുക.',
       confirmBody: 'നിങ്ങളുടെ നമ്പർ സ്ഥിരീകരിച്ചു. ഇത് അക്കൗണ്ടും താഴെ പറഞ്ഞിരിക്കുന്നതെല്ലാം ഇല്ലാതാക്കും.',
       deleteFailed: 'അക്കൗണ്ട് ഇല്ലാതാക്കാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
       deletedTitle: 'നിങ്ങളുടെ അക്കൗണ്ട് ഇല്ലാതാക്കി',
-      deletedBody: 'നിങ്ങളുടെ അക്കൗണ്ടും അതിന്റെ ഡാറ്റയും നീക്കം ചെയ്തു. ഫോണിൽ നിന്ന് Famora അൺഇൻസ്റ്റാൾ ചെയ്യാം.',
+      deletedBody: 'നിങ്ങളുടെ അക്കൗണ്ടും അതിന്റെ ഡാറ്റയും നീക്കം ചെയ്തു. ഫോണിൽ നിന്ന് Kinest അൺഇൻസ്റ്റാൾ ചെയ്യാം.',
       whatGoes: 'എന്താണ് ഇല്ലാതാകുന്നത്',
       whatGoesBody: 'നിങ്ങളുടെ സൈൻ-ഇൻ, പേരും പ്രൊഫൈൽ ഫോട്ടോയും, ലൊക്കേഷനും ലൊക്കേഷൻ ചരിത്രവും, സന്ദേശങ്ങൾ, SOS മുന്നറിയിപ്പുകൾ, കോൾ രേഖകൾ, ഉപകരണ അറിയിപ്പ് ടോക്കണുകൾ. നിങ്ങൾ സൃഷ്ടിച്ച ഏതു കുടുംബവും അതോടൊപ്പം ഇല്ലാതാകും.',
       whatStays: 'എന്ത് അവശേഷിക്കുന്നു',
       whatStaysBody: 'നിങ്ങളെ തിരിച്ചറിയുന്ന ഒന്നും അവശേഷിക്കുന്നില്ല. നിങ്ങൾ അയച്ച സന്ദേശങ്ങൾ കുടുംബത്തിലെ എല്ലാവർക്കും നീക്കം ചെയ്യപ്പെടും. Firebase Crashlytics ലേക്ക് നേരത്തെ അയച്ച ക്രാഷ് റിപ്പോർട്ടുകളിൽ പേരോ നമ്പറോ ലൊക്കേഷനോ ഇല്ല, അവ നിങ്ങളുമായി ബന്ധിപ്പിക്കാനും കഴിയില്ല.',
-      backToApp: 'Famora ലേക്ക് മടങ്ങുക',
+      backToApp: 'Kinest ലേക്ക് മടങ്ങുക',
     },
     // Shown when another device claims the session — see
     // useSingleDevice. One account, one device.
     session: {
       displacedTitle: 'സൈൻ ഔട്ട് ചെയ്തു',
-      displacedBody: 'നിങ്ങളുടെ അക്കൗണ്ട് മറ്റൊരു ഉപകരണത്തിൽ തുറന്നു. Famora ഒരു സമയത്ത് ഒരു ഉപകരണത്തിൽ മാത്രമേ ഉപയോഗിക്കാനാകൂ.',
+      displacedBody: 'നിങ്ങളുടെ അക്കൗണ്ട് മറ്റൊരു ഉപകരണത്തിൽ തുറന്നു. Kinest ഒരു സമയത്ത് ഒരു ഉപകരണത്തിൽ മാത്രമേ ഉപയോഗിക്കാനാകൂ.',
       signInAgain: 'വീണ്ടും സൈൻ ഇൻ ചെയ്യുക',
     },
 
@@ -5037,7 +5037,7 @@ export const UI = {
       testConfirm: 'ഇത് കുടുംബ അഡ്മിനുകൾക്കും നിങ്ങളുടെ അധിക നമ്പറിലേക്കും യഥാർത്ഥ SMS അയയ്ക്കും, നിങ്ങളുടെ മൊബൈൽ പ്ലാൻ നിരക്ക് ഈടാക്കും. അയയ്ക്കണോ?',
       testSent: '{n} നമ്പറിലേക്ക് ടെസ്റ്റ് SMS അയച്ചു.',
       testFailed: 'അയയ്ക്കാനായില്ല. SMS അനുമതിയും സിം സന്ദേശം അയയ്ക്കാൻ കഴിയുമോ എന്നും പരിശോധിക്കുക.',
-      permissionNeeded: 'ഇതിനായി SMS അയയ്ക്കാൻ Android അനുമതി വേണം. ചോദിക്കുമ്പോൾ അനുവദിക്കുക, അല്ലെങ്കിൽ Settings → Apps → Famora → Permissions → SMS-ൽ ഓണാക്കുക.',
+      permissionNeeded: 'ഇതിനായി SMS അയയ്ക്കാൻ Android അനുമതി വേണം. ചോദിക്കുമ്പോൾ അനുവദിക്കുക, അല്ലെങ്കിൽ Settings → Apps → Kinest → Permissions → SMS-ൽ ഓണാക്കുക.',
     },
     shakeSos: {
       title: 'കുലുക്കിയാൽ SOS',
@@ -5139,7 +5139,7 @@ export const UI = {
       attempts: "{n} തെറ്റായ ശ്രമങ്ങൾ",
       map: "മാപ്പ്",
       continue: "തുടരുക",
-      explainAlert: "സ്ക്രീൻ-ലോക്ക് പാസ്‌വേഡ് 3 തവണ തെറ്റായി നൽകിയാൽ, ഫോൺ അവസാനമായി എവിടെയായിരുന്നു എന്നതോടൊപ്പം Famora നിങ്ങളുടെ കുടുംബങ്ങളുടെ അഡ്മിനുകളെ അറിയിക്കും. മറ്റൊന്നും അയയ്ക്കില്ല. Famoraയെ ഡിവൈസ് അഡ്മിൻ ആക്കാൻ Android ഇപ്പോൾ ചോദിക്കും: തെറ്റായ പാസ്‌വേഡുകളെക്കുറിച്ച് അറിയാൻ മാത്രമാണ് അത് ചോദിക്കുന്നത്, നിങ്ങളുടെ ഫോൺ ലോക്ക് ചെയ്യാനോ മായ്ക്കാനോ മാറ്റാനോ കഴിയില്ല. പിന്നീട് നീക്കാൻ ഇവിടെ ഇത് ഓഫ് ചെയ്യുക.",
+      explainAlert: "സ്ക്രീൻ-ലോക്ക് പാസ്‌വേഡ് 3 തവണ തെറ്റായി നൽകിയാൽ, ഫോൺ അവസാനമായി എവിടെയായിരുന്നു എന്നതോടൊപ്പം Kinest നിങ്ങളുടെ കുടുംബങ്ങളുടെ അഡ്മിനുകളെ അറിയിക്കും. മറ്റൊന്നും അയയ്ക്കില്ല. Kinestയെ ഡിവൈസ് അഡ്മിൻ ആക്കാൻ Android ഇപ്പോൾ ചോദിക്കും: തെറ്റായ പാസ്‌വേഡുകളെക്കുറിച്ച് അറിയാൻ മാത്രമാണ് അത് ചോദിക്കുന്നത്, നിങ്ങളുടെ ഫോൺ ലോക്ക് ചെയ്യാനോ മായ്ക്കാനോ മാറ്റാനോ കഴിയില്ല. പിന്നീട് നീക്കാൻ ഇവിടെ ഇത് ഓഫ് ചെയ്യുക.",
       explainPhoto: "3 തെറ്റായ ശ്രമങ്ങൾക്ക് ശേഷം ഫ്രണ്ട് ക്യാമറയിൽ ഒരു ഫോട്ടോയും എടുക്കും. നിങ്ങൾക്കും നിങ്ങളുടെ കുടുംബങ്ങളുടെ അഡ്മിനുകൾക്കും മാത്രമേ കാണാനാകൂ, 7 ദിവസത്തിന് ശേഷം ഇല്ലാതാകും. ഇത് പരീക്ഷണാത്മകമാണ്, എല്ലാ ഫോണിലും പ്രവർത്തിക്കില്ല. Android ക്യാമറ ആക്സസും മറ്റ് ആപ്പുകൾക്ക് മുകളിൽ പ്രദർശിപ്പിക്കലും ചോദിക്കും.",
     },
     lostPhone: {
@@ -5183,7 +5183,7 @@ export const UI = {
       voice: 'മറുപടി നൽകുമ്പോൾ ശബ്ദം',
       voiceHint: 'യഥാർത്ഥ കോൾ പോലെ ഇയർപീസിൽ ഒരു ശബ്ദം സംസാരിക്കും',
       notificationButton: '"എന്നെ വിളിക്കൂ" ബട്ടൺ',
-      notificationButtonHint: 'Famora അറിയിപ്പിൽ (ലൊക്കേഷൻ പങ്കിടൽ ഓണായിരിക്കുമ്പോൾ) ഒപ്പം Quick Settings ടൈലായും. രണ്ടും ലോക്ക് സ്ക്രീനിൽ നിന്നുതന്നെ പ്രവർത്തിക്കും',
+      notificationButtonHint: 'Kinest അറിയിപ്പിൽ (ലൊക്കേഷൻ പങ്കിടൽ ഓണായിരിക്കുമ്പോൾ) ഒപ്പം Quick Settings ടൈലായും. രണ്ടും ലോക്ക് സ്ക്രീനിൽ നിന്നുതന്നെ പ്രവർത്തിക്കും',
       callMeIn: 'എന്നെ വിളിക്കൂ',
       seconds: '{n} സെക്കൻഡ്',
       minutes: '{n} മിനിറ്റ്',

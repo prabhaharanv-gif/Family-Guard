@@ -9,6 +9,7 @@ import { useT } from '../i18n'
 import AuthLanguagePicker from '../components/AuthLanguagePicker'
 import Dialog from '../components/Dialog'
 import famoraLogo from '../assets/famora-logo.jpg'
+import { APP_NAME } from '../lib/brand'
 
 // Clean open/closed eye icon — no emoji. `open` = password visible.
 function EyeIcon({ open }) {
@@ -196,7 +197,7 @@ export default function RegisterPage() {
         {/* Brand icon — same artwork as the login page and the launcher icon.
             Smaller than on login: this card also carries a title and four fields. */}
         <div className="auth-logo auth-logo-brand" style={{ marginBottom: 14 }}>
-          <img src={famoraLogo} alt="famora" width={110} height={110}
+          <img src={famoraLogo} alt={APP_NAME} width={110} height={110}
             style={{ display: 'block', margin: '0 auto', borderRadius: 22 }} />
         </div>
         <h1 className="auth-title" style={{ fontSize: 26, marginBottom: 4, lineHeight: 1.35 }}>{t('register.title')}</h1>
