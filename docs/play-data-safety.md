@@ -1,4 +1,4 @@
-# Play Console: Data safety cheat sheet (Kinest 1.2.3, versionCode 21)
+# Play Console: Data safety cheat sheet (Kinest 1.2.4, versionCode 34)
 
 Written 2026-09-26 from the privacy policy (`src/lib/policy.js`), the release manifest and the code. Play Console → **App content → Data safety**. Answer it in the order below. The policy and this form must agree, so if you change one, change the other.
 
@@ -33,12 +33,12 @@ If you only want to edit what differs, these are the changes. The rest of the fo
 | Does your app collect or share any of the required user data types? | **Yes** |
 | Is all of the user data collected by your app encrypted in transit? | **Yes** (all traffic is HTTPS/TLS to Supabase, Firebase and Agora) |
 | Do you provide a way for users to request that their data be deleted? | **Yes** |
-| Deletion URL | `https://famora-family.vercel.app/delete-account` (works without the app) |
+| Deletion URL | `https://family-guard-five.vercel.app/delete-account` (works without the app) |
 | Account creation methods | **Username and password**, and **Phone number** (verified by a one-time code). Do not tick Email or third-party sign-in. |
 | Is your app committed to following the Play Families Policy? | **No.** Kinest is not designed for children. |
 | Independent security review | **No** |
 
-The privacy policy URL, in **App content → Privacy policy**: `https://famora-family.vercel.app/privacy`.
+The privacy policy URL, in **App content → Privacy policy**: `https://family-guard-five.vercel.app/privacy`.
 
 ---
 
@@ -88,7 +88,7 @@ Leave **Email address**, **Address**, **Race**, **Political or religious beliefs
 
 | Type | Collected | Shared | Required? | Purposes |
 |---|---|---|---|---|
-| **Other actions** | Yes | No | Required | App functionality (call records: who called whom, when, how long, voice or video; place arrival and leaving notices; battery and offline alerts) |
+| **Other actions** | Yes | No | Required | App functionality (call records: who called whom, when, how long, voice or video; place arrival and leaving notices; battery and offline alerts; online, last-seen and signed-in status shown to the family) |
 
 Leave **App interactions**, **In-app search history**, **Installed apps** and **Web browsing** unticked. Search inside chat runs on the phone.
 
@@ -128,7 +128,7 @@ Health info and Fitness info (crash detection and shake read the motion sensor o
 
 ## 5. Before you submit
 
-- [ ] The **privacy policy URL** in the store listing is `https://famora-family.vercel.app/privacy`, and it is the deployed version (3 October 2026, adds chat attachments, online status, Do Not Disturb, group calls and an age statement).
+- [ ] The **privacy policy URL** in the store listing is `https://family-guard-five.vercel.app/privacy`, and it is the deployed version (3 October 2026, adds chat attachments, online status, Do Not Disturb, group calls and an age statement).
 - [ ] The **Data safety** answers above match the policy sections "Information We Collect" and "Who Else Is Involved". If a reviewer finds a mismatch, that alone can fail the review.
 - [ ] Account deletion works both **in the app** (Profile → Delete My Account) and **on the web** (`/delete-account`). Play checks the web route.
 - [ ] After saving, Play shows a preview of the "Data safety" section as users will see it. Read it once: "Data shared" should list *Approximate location* and *Precise location* only, and "Data collected" everything else in section 3.
