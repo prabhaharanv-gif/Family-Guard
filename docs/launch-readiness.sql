@@ -17,7 +17,7 @@ with checks(kind, name, ok) as (
   from unnest(array[
     'user_alert_prefs','places','place_events','nearby_help_escalations',
     'nearby_help_notifications','device_alerts','lost_phone',
-    'place_weather_alerts','sos_media','trips','unlock_alerts'
+    'place_weather_alerts','sos_media','unlock_alerts'
   ]) as t
 
   union all
@@ -27,7 +27,7 @@ with checks(kind, name, ok) as (
   where n.nspname = 'public' and c.relkind = 'r'
     and c.relname in ('user_alert_prefs','places','place_events','nearby_help_escalations',
       'nearby_help_notifications','device_alerts','lost_phone','place_weather_alerts',
-      'sos_media','trips','unlock_alerts')
+      'sos_media','unlock_alerts')
 
   union all
   -- columns the app reads or writes
@@ -37,7 +37,7 @@ with checks(kind, name, ok) as (
       and table_name = split_part(c, '.', 1))
   from unnest(array[
     'sos_alerts.sos_group_id','user_alert_prefs.overspeed_limit_kmh',
-    'user_alert_prefs.driving_trips','user_alert_prefs.unlock_alert',
+    'user_alert_prefs.unlock_alert',
     'user_alert_prefs.allow_lost_mode','device_alerts.speed_kmh','device_alerts.limit_kmh'
   ]) as c
 
@@ -55,7 +55,7 @@ with checks(kind, name, ok) as (
     'device_alert_notification','lost_phone_notification','nearby_help_notify_tier',
     'nearby_help_status_change','place_notification','trg_device_back_online',
     'trg_device_battery_alert','trg_overspeed_alert','trg_start_nearby_help_escalation',
-    'trg_trip_track','unlock_alert_notification'
+    'unlock_alert_notification'
   ]) as t
 
   union all
@@ -63,9 +63,9 @@ with checks(kind, name, ok) as (
   select 'cron job missing or inactive', j, exists (
     select 1 from cron.job where jobname = j and active)
   from unnest(array[
-    'close_stale_trips','detect_offline_members','expire_lost_phone',
+    'detect_offline_members','expire_lost_phone',
     'nearby_help_cron_cleanup','place_weather_check','purge_expired_sos_media','purge_orphaned_chat_media','purge_deleted_account_avatars','purge_api_quota',
-    'purge_expired_unlock_alerts','purge_old_trips','purge_place_weather_alerts'
+    'purge_expired_unlock_alerts','purge_place_weather_alerts'
   ]) as j
 
   union all

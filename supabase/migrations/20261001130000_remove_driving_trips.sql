@@ -9,17 +9,13 @@
 --
 -- Overspeed alert and Crash detection are separate and are not touched.
 
--- Stop the two scheduled jobs (no error if one was never scheduled).
-do $$
-begin
-  perform cron.unschedule('close_stale_trips');
-exception when others then null;
-end $$;
-do $$
-begin
-  perform cron.unschedule('purge_old_trips');
-exception when others then null;
-end $$;
+-- Stop the two scheduled jobs (nothing happens if one was never scheduled).
+-- Plain statements rather than DO blocks: the dashboard SQL Editor splits
+-- statements naively and breaks dollar-quoted blocks.
+select cron.unschedule('close_stale_trips')
+ where exists (select 1 from cron.job where jobname = 'close_stale_trips');
+select cron.unschedule('purge_old_trips')
+ where exists (select 1 from cron.job where jobname = 'purge_old_trips');
 
 -- Stop recording: the trigger on locations, then the functions it and the jobs called.
 drop trigger  if exists trg_trip_track on public.locations;
