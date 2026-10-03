@@ -10,7 +10,7 @@ export default function PrivacyPolicyPage() {
 
   return (
     <div style={{
-      position: 'fixed', top: 0, bottom: 0, left: 0, right: 0, maxWidth: 430, margin: '0 auto',
+      position: 'fixed', inset: 0,
       display: 'flex', flexDirection: 'column',
       background: 'var(--bg)',
       zIndex: 100,
@@ -22,7 +22,7 @@ export default function PrivacyPolicyPage() {
         flexShrink: 0,
         boxShadow: '0 2px 12px rgba(139,13,61,0.25)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, maxWidth: 760, margin: '0 auto' }}>
           <button onClick={() => navigate(-1)} style={{
             background: 'rgba(255,255,255,0.15)',
             border: '1px solid rgba(255,255,255,0.25)',
@@ -43,7 +43,7 @@ export default function PrivacyPolicyPage() {
       </div>
 
       {/* Scrollable content */}
-      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 16px 40px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px max(16px, calc((100% - 760px) / 2)) 40px' }}>
 
         {/* Intro card */}
         <div style={{

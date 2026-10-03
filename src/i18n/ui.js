@@ -14,6 +14,7 @@
  */
 
 import { NEARBY_UI } from './ui.nearby.js'
+import { LANDING_UI } from './ui.landing.js'
 
 export const UI = {
   // ──────────────────────────────────────────────────────────────── English ──
@@ -5322,3 +5323,5 @@ function mergeMissing(target, source) {
   }
 }
 for (const [lang, extra] of Object.entries(NEARBY_UI)) mergeMissing(UI[lang], extra)
+// Public website text (pages/LandingPage.jsx) lives in ui.landing.js.
+for (const [lang, extra] of Object.entries(LANDING_UI)) mergeMissing(UI[lang], extra)

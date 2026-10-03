@@ -5,6 +5,7 @@ import { withCaptcha, prefetchCaptchaToken, cancelCaptchaPrefetch } from '../lib
 import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { useT } from '../i18n'
 import AuthLanguagePicker from '../components/AuthLanguagePicker'
+import AuthHomeLink from '../components/AuthHomeLink'
 import Dialog from '../components/Dialog'
 import famoraLogo from '../assets/famora-logo.jpg'
 import Icon from '../components/Icon'
@@ -293,6 +294,7 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
+      <AuthHomeLink />
       <AuthLanguagePicker />
       <div className="auth-card" style={{ borderRadius: 28, padding: "40px 32px" }}>
         {/* Brand icon — same artwork as the launcher icon */}
