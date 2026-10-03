@@ -257,7 +257,7 @@ export default function DeleteAccountPage() {
         flexShrink: 0,
         boxShadow: '0 2px 12px rgba(139,13,61,0.25)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, maxWidth: 760, margin: '0 auto' }}>
           {/* Goes to the app root rather than back: this page is usually opened
               from a store listing or an email, where there is no history. */}
           <button onClick={() => navigate('/')} aria-label={t('deletePage.backToApp')} style={{
@@ -282,7 +282,7 @@ export default function DeleteAccountPage() {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px 16px 40px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '16px max(16px, calc((100% - 760px) / 2)) 40px' }}>
 
         {/* Warning — deletion is irreversible, said before the how-to */}
         <div style={{

@@ -7,6 +7,7 @@ import { PASSWORD_MIN_LENGTH } from '../lib/passwordPolicy'
 import { useAuthStore } from '../store/authStore'
 import { useT } from '../i18n'
 import AuthLanguagePicker from '../components/AuthLanguagePicker'
+import AuthHomeLink from '../components/AuthHomeLink'
 import Dialog from '../components/Dialog'
 import famoraLogo from '../assets/famora-logo.jpg'
 import { APP_NAME } from '../lib/brand'
@@ -192,6 +193,7 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-page">
+      <AuthHomeLink />
       <AuthLanguagePicker />
       <div className="auth-card" style={{ borderRadius: 28, padding: "28px 28px", maxHeight: "92vh", overflowY: "auto" }}>
         {/* Brand icon — same artwork as the login page and the launcher icon.

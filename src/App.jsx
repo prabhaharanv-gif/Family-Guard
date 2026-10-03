@@ -64,9 +64,30 @@ const CallPage          = lazy(() => import('./pages/CallPage'))
 const AddMemberPage     = lazy(() => import('./pages/AddMemberPage'))
 const SettingsPage      = lazy(() => import('./pages/SettingsPage'))
 const ProfilePage       = lazy(() => import('./pages/ProfilePage'))
+const LandingPage       = lazy(() => import('./pages/LandingPage'))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
+const TermsPage         = lazy(() => import('./pages/TermsPage'))
+const ContactPage       = lazy(() => import('./pages/ContactPage'))
 const DeleteAccountPage = lazy(() => import('./pages/DeleteAccountPage'))
 const UserManualPage    = lazy(() => import('./pages/UserManualPage'))
+
+/**
+ * The app's home route. A signed-out visitor on the WEB who opens the bare
+ * address gets the public website; everyone else (the Android app, and anyone
+ * signed in) gets the app as before. The Android bundle never shows the website
+ * because Capacitor.isNativePlatform() is true there, so an app launch still
+ * goes straight to the login screen. Only the exact "/" is affected: deep links
+ * such as /messages keep PrivateRoute's redirect to /login.
+ */
+function RootRoute({ children }) {
+  const { user, loading } = useAuthStore()
+  const { pathname } = useLocation()
+  if (!Capacitor.isNativePlatform() && pathname === '/') {
+    if (loading) return <div className="splash">Loading...</div>
+    if (!user) return <LandingPage />
+  }
+  return <PrivateRoute>{children}</PrivateRoute>
+}
 
 export default function App() {
   const { initialize, user, familyId, allFamilies, loading, signOut } = useAuthStore()
@@ -263,6 +284,8 @@ export default function App() {
         <Route path="/login"   element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/privacy"  element={<PrivacyPolicyPage />} />
+        <Route path="/terms"    element={<TermsPage />} />
+        <Route path="/contact"  element={<ContactPage />} />
         {/* Public, and deliberately outside PrivateRoute: Play requires a
             deletion route reachable by someone who has uninstalled the app. */}
         <Route path="/delete-account" element={<DeleteAccountPage />} />
@@ -274,7 +297,7 @@ export default function App() {
         <Route path="/create-family" element={<PrivateRoute><CreateFamilyPage /></PrivateRoute>} />
         <Route path="/call/:callId"  element={<PrivateRoute><CallPage /></PrivateRoute>} />
 
-        <Route path="/" element={<PrivateRoute><Layout unreadMessages={unreadMessages} /></PrivateRoute>}>
+        <Route path="/" element={<RootRoute><Layout unreadMessages={unreadMessages} /></RootRoute>}>
           <Route index         element={<FamilyPage />} />
           <Route path="messages" element={<MessagesPage />} />
           <Route path="sos"      element={<SOSPage />} />
