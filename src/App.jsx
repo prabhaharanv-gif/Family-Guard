@@ -63,6 +63,7 @@ const MapAllPage        = lazy(() => import('./pages/MapAllPage'))
 const CallPage          = lazy(() => import('./pages/CallPage'))
 const AddMemberPage     = lazy(() => import('./pages/AddMemberPage'))
 const SettingsPage      = lazy(() => import('./pages/SettingsPage'))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const ProfilePage       = lazy(() => import('./pages/ProfilePage'))
 const LandingPage       = lazy(() => import('./pages/LandingPage'))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
@@ -303,6 +304,7 @@ export default function App() {
           <Route path="sos"      element={<SOSPage />} />
           <Route path="map-all"  element={<MapAllPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
           <Route path="profile"  element={<ProfilePage />} />
         </Route>
       </Routes>

@@ -25,6 +25,9 @@ import Icon from '../components/Icon'
 import { useMemberWeather } from '../hooks/useMemberWeather'
 import { weatherView, cellKey } from '../lib/weather'
 import { useTravelTimes } from '../lib/travelTimes'
+import { orderMembers } from '../lib/memberOrder'
+import { isNotificationLogAvailable } from '../lib/notificationLog'
+import { useNotificationUnread } from '../hooks/useNotificationUnread'
 
 
 // Takes the translator rather than reading the store directly, so these stay
@@ -356,6 +359,7 @@ export default function FamilyPage() {
     if (user?.id) useAuthStore.getState().loadFamily(user.id)
   }, [user?.id])
   const [members, setMembers]           = useState([])
+  const [ownerId, setOwnerId]           = useState(null)   // families.created_by: the card at the top
   const [membersLoaded, setMembersLoaded] = useState(false)   // false until first fetch returns
   const [locations, setLocations]       = useState({})
   // Weather for members with a fresh position (member-weather edge function).
@@ -383,6 +387,7 @@ export default function FamilyPage() {
   const longPressTimer = useRef(null)
   const didLongPress = useRef(false)
   const navigate = useNavigate()
+  const unreadNotifs = useNotificationUnread()
 
   // Presence and "last seen" are derived from timestamps, so they go stale with
   // no incoming event to re-render them. A member whose process was force-stopped
@@ -436,7 +441,7 @@ export default function FamilyPage() {
         .eq('family_id', familyId).eq('status', 'pending'),
     ])
 
-    if (famRes.data) setIsOwner(famRes.data.created_by === user.id)
+    if (famRes.data) { setIsOwner(famRes.data.created_by === user.id); setOwnerId(famRes.data.created_by) }
     if (memRes.data) setMembers(memRes.data)
     setMembersLoaded(true)
     if (locRes.data) {
@@ -988,6 +993,33 @@ export default function FamilyPage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, zIndex: 1 }}>
 
+        {/* Notification history — Android only, since the log is kept by the native side */}
+        {isNotificationLogAvailable() && (
+          <button
+            type="button"
+            onClick={() => navigate('/notifications')}
+            aria-label={t('notifLog.title')}
+            style={{
+              position: 'relative',
+              background: 'rgba(255,255,255,0.14)',
+              border: '1px solid rgba(255,255,255,0.28)',
+              borderRadius: 10, width: 36, height: 36, cursor: 'pointer', color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}
+          >
+            {/* An inbox, not a bell: the Messages tab's bell is the mute control, and the
+                two sat in the same corner looking identical. */}
+            <Icon name="inbox" size={18} />
+            {unreadNotifs > 0 && (
+              <span style={{
+                position: 'absolute', top: -5, right: -5, minWidth: 18, height: 18, padding: '0 5px',
+                borderRadius: 9, background: '#D32F2F', color: '#fff', border: '2px solid var(--maroon)',
+                fontSize: 10, fontWeight: 800, lineHeight: '14px', textAlign: 'center', boxSizing: 'border-box',
+              }}>{unreadNotifs > 99 ? '99+' : unreadNotifs}</span>
+            )}
+          </button>
+        )}
+
         {/* Switch Family button — right side, matches Clear Chat style */}
         {allFamilies.length > 1 && (
           <button
@@ -1132,7 +1164,7 @@ export default function FamilyPage() {
             <div className="empty-sub">{t('family.shareCodeToAdd')}</div>
           </div>
         ) : (
-          members.map((m, i) => {
+          orderMembers(members, ownerId).map((m, i) => {
             const loc = locations[m.user_id] || {}
             // Whether a row exists at all, which `loc` cannot answer once it
             // has been defaulted to {} for the convenience of every reader
@@ -1248,7 +1280,10 @@ export default function FamilyPage() {
                   : gpsOff ? '#DC2626'
                   : stale ? '#F59E0B'
                   : '#10B981'
-                const label   = sharingOff ? t('family.gpsOff')
+                // Sharing switched off in Kinest's privacy settings. Told apart from the red 'GPS Off'
+                // (the phone's own location is off): this one is a choice, so from here it means
+                // no access, not a fault.
+                const label   = sharingOff ? t(m.user_id === user?.id ? 'family.gpsOffSelf' : 'family.gpsOff')
                   : gpsOff ? t('family.gpsNoFix')
                   : waiting ? t('family.gpsWaiting')
                   : stale ? formatLastSeen(t, loc.updatedAt)
@@ -1284,8 +1319,8 @@ export default function FamilyPage() {
                 {gps.label}
               </span>
             )
-            // Others show their distance from you; your own card says so with "You".
-            const distText = m.user_id === user?.id ? t('common.you') : trip.label
+            // Others show their distance from you. Your own card has none: its name already reads "You".
+            const distText = m.user_id === user?.id ? '' : trip.label
             const distChip = distText ? (
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text2)', whiteSpace: 'nowrap' }}>{distText}</span>
             ) : null
@@ -1347,7 +1382,7 @@ export default function FamilyPage() {
                       style={{
                         // Above .member-info (z-index 2), which spans the whole card and would otherwise
                         // sit on top of the chip and take its taps.
-                        position: 'absolute', top: 10, right: 10, zIndex: 3,
+                        position: 'absolute', top: 10, right: 46, zIndex: 3,
                         display: 'flex', alignItems: 'center', gap: 4,
                         padding: '5px 10px 5px 8px', borderRadius: 999, cursor: 'pointer',
                         background: '#FBEFF3', border: '1.5px solid var(--maroon)', fontFamily: 'inherit',
@@ -1359,11 +1394,29 @@ export default function FamilyPage() {
                     </button>
                   )
                 })()}
+                {/* Map button, top-right after the weather chip: opens the map on this member. Same stops as the
+                    weather chip so the card's own tap and long press do not fire too. */}
+                {hasPosition(loc) && (() => {
+                  const stop = e => e.stopPropagation()
+                  return (
+                    <button type="button" aria-label={t('family.showOnMap')} title={t('family.showOnMap')}
+                      onClick={e => { e.stopPropagation(); navigate('/map-all', { state: { focusUid: m.user_id } }) }}
+                      onMouseDown={stop} onMouseUp={stop} onTouchStart={stop} onTouchEnd={stop}
+                      style={{
+                        position: 'absolute', top: 10, right: 10, zIndex: 3,
+                        width: 30, height: 30, borderRadius: '50%', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: '#FBEFF3', border: '1.5px solid var(--maroon)', color: 'var(--maroon)',
+                      }}>
+                      <Icon name="map" size={16} />
+                    </button>
+                  )
+                })()}
                 {/* Only the name and status lines keep clear of the weather chip in the
                     corner; the battery / signal / GPS row below runs the full width. */}
                 <div className="member-info">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, paddingRight: hasPosition(loc) ? 62 : 0 }}>
-                    <div className="member-name" style={{ color: 'var(--text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nameFor(m)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, paddingRight: hasPosition(loc) ? 102 : 0 }}>
+                    <div className="member-name" style={{ color: 'var(--text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.user_id === user?.id ? t('common.you') : nameFor(m)}</div>
                     {lostMap[m.user_id] && (
                       <span style={{
                         flexShrink: 0, fontSize: 10.5, fontWeight: 800, letterSpacing: 0.3,
@@ -1378,7 +1431,7 @@ export default function FamilyPage() {
                         : 'family.notSignedIn')}
                     />
                   </div>
-                  <div className="member-meta" style={{ color: 'var(--muted2)', paddingRight: hasPosition(loc) ? 62 : 0 }}>
+                  <div className="member-meta" style={{ color: 'var(--muted2)', paddingRight: hasPosition(loc) ? 102 : 0 }}>
                     {online ? (
                       <span style={{ color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
@@ -1594,6 +1647,33 @@ export default function FamilyPage() {
           </svg>
         </button>
       )}
+
+      {/* ── Join FAB ──
+          The same Join action as Profile → My families, next to the + button.
+          Lighter than the invite button (white, maroon outline) so the two read
+          as different things: + invites someone into THIS family, this one joins
+          ANOTHER family with a code. */}
+      <button
+        onClick={() => navigate('/join-family')}
+        title={t('createFamily.joinFamily')}
+        aria-label={t('createFamily.joinFamily')}
+        style={{
+          position: 'absolute', right: inviteCode ? 86 : 18, bottom: 18, zIndex: 20,
+          width: 56, height: 56, borderRadius: '50%',
+          background: '#fff',
+          border: '1.5px solid var(--maroon)', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          padding: 0,
+        }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="var(--maroon)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <polyline points="10 17 15 12 10 7"/>
+          <line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+      </button>
     </div>
   )
 }

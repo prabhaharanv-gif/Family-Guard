@@ -36,6 +36,24 @@ export function initBackHandler(isRootRoute, goBack) {
   if (initialised) return
   initialised = true
 
+  // The Escape key, for the web: closes the top-most open popup, as the hardware back
+  // button does on the phone. A popup that never registered a closer (some sheets only
+  // close by tapping the dim area around them) is closed by tapping that area for the
+  // person, which is what its own backdrop handler already treats as "close".
+  window.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || e.defaultPrevented) return
+    if (closers.length > 0) {
+      e.preventDefault()
+      closers[closers.length - 1].close()
+      return
+    }
+    const overlays = document.querySelectorAll('.overlay')
+    if (overlays.length > 0) {
+      e.preventDefault()
+      overlays[overlays.length - 1].click()
+    }
+  })
+
   App.addListener('backButton', () => {
     // 1) Close the most recently opened popup, if any
     if (closers.length > 0) {

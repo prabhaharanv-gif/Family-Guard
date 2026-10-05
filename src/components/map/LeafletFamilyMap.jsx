@@ -211,7 +211,7 @@ function RouteLine({ route, inset, renderSpotPopup }) {
 // Times mode: the member's avatar where they were at the picked time. It
 // jumps with the slider (no glide): the finger is already the animation.
 function RouteCursor({ cursor, renderSpotPopup }) {
-  const initial = cursor?.displayName?.[0]?.toUpperCase() || '?'
+  const initial = cursor?.initial || cursor?.displayName?.[0]?.toUpperCase() || '?'
   const icon = useMemo(
     () => cursor && createIcon(cursor.avatarColor || 'var(--maroon)', initial, cursor.avatarUrl || null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -225,10 +225,41 @@ function RouteCursor({ cursor, renderSpotPopup }) {
   )
 }
 
-// A held finger (Leaflet turns a touch long-press into contextmenu) or a right
-// click on the map: the spot to measure the followed member's trip to.
+// A held finger (Leaflet turns a touch long-press into contextmenu), a right click, or
+// the left mouse button held still on the map: the spot to measure the followed
+// member's trip to. The held mouse button is what the phone's long-press looks like
+// with a mouse; without it the flag could only be dropped by right-clicking.
+const MOUSE_HOLD_MS = 600
+const MOUSE_HOLD_SLOP_PX = 6
 function LongPress({ onLongPress }) {
-  useMapEvents({ contextmenu: e => onLongPress?.({ lat: e.latlng.lat, lng: e.latlng.lng }) })
+  const timer = useRef(null)
+  const downAt = useRef(null)
+  const firedAt = useRef(0)
+  const cancel = () => { clearTimeout(timer.current); timer.current = null }
+  const fire = latlng => {
+    // A touch hold can raise both a contextmenu and a mouse hold; act on the first.
+    if (Date.now() - firedAt.current < 1000) return
+    firedAt.current = Date.now()
+    onLongPress?.({ lat: latlng.lat, lng: latlng.lng })
+  }
+  useEffect(() => cancel, [])
+  useMapEvents({
+    contextmenu: e => fire(e.latlng),
+    mousedown: e => {
+      cancel()
+      if (e.originalEvent?.button !== 0) return
+      downAt.current = e.containerPoint
+      const latlng = e.latlng
+      timer.current = setTimeout(() => { timer.current = null; fire(latlng) }, MOUSE_HOLD_MS)
+    },
+    mousemove: e => {
+      if (!timer.current || !downAt.current) return
+      if (e.containerPoint.distanceTo(downAt.current) > MOUSE_HOLD_SLOP_PX) cancel()
+    },
+    mouseup: cancel,
+    dragstart: cancel,
+    zoomstart: cancel,
+  })
   return null
 }
 
@@ -299,7 +330,7 @@ export default function LeafletFamilyMap({
             position={[loc.lat, loc.lng]}
             icon={createIcon(
               loc.avatarColor || 'var(--maroon)',
-              loc.displayName?.[0]?.toUpperCase() || '?',
+              loc.initial || loc.displayName?.[0]?.toUpperCase() || '?',
               loc.avatarUrl || null
             )}
           >

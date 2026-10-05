@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { aqiKey, hourText, dayText, rainPercent } from './weatherDetail'
+import { aqiKey, hourText, dayText, rainPercent, trustedCode } from './weatherDetail'
 
 describe('aqiKey', () => {
   it('names the five levels and nothing else', () => {
@@ -48,7 +48,7 @@ describe('rainPercent', () => {
 })
 
 import { hourlyStrip } from './weatherDetail'
-describe('hourlyStrip', () => {
+describe('hourlyStrip and low-chance rain', () => {
   const H = 3600000
   const base = Date.UTC(2026, 9, 1, 10, 20) // 10:20 UTC, tz 0
   const now = { temp: 30, code: 1, isDay: true }
@@ -88,5 +88,44 @@ describe('hourlyStrip over a full day', () => {
     expect(hrs.slice(0, 11)).toEqual([15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1])
     expect(s.length).toBe(25)
     expect(s[s.length - 1].ts - nowTs).toBeLessThanOrEqual(24 * H)
+  })
+})
+
+describe('trustedCode', () => {
+  it('draws rain as cloud when the chance of rain is low', () => {
+    expect(trustedCode(61, 14)).toBe(3)    // light rain at 14%
+    expect(trustedCode(80, 39)).toBe(3)    // showers just under the line
+    expect(trustedCode(53, 0)).toBe(3)     // drizzle
+  })
+  it('keeps rain when the chance is real or unknown', () => {
+    expect(trustedCode(61, 40)).toBe(61)
+    expect(trustedCode(65, 90)).toBe(65)
+    expect(trustedCode(61, null)).toBe(61)
+  })
+  it('leaves everything that is not rain alone', () => {
+    expect(trustedCode(0, 0)).toBe(0)
+    expect(trustedCode(2, 5)).toBe(2)
+    expect(trustedCode(95, 10)).toBe(95)   // a thunderstorm is not softened
+  })
+})
+
+describe('hourlyStrip and low-chance rain', () => {
+  const H = 3600000
+  const base = Date.UTC(2026, 9, 5, 6, 0)       // a whole hour, so the cells fall on the steps
+  const now = { temp: 32, code: 61, isDay: true, pop: 10 }
+  const steps = [
+    { ts: base + 2 * H, temp: 30, code: 61, isDay: true,  pop: 12 },   // light rain, 12%
+    { ts: base + 5 * H, temp: 28, code: 63, isDay: false, pop: 70 },   // moderate rain, 70%
+  ]
+  const out = hourlyStrip({ now, nowTs: base, steps, tz: 0, count: 25 })
+
+  it('leaves the current reading as the provider reported it', () => {
+    expect(out[0].code).toBe(61)
+  })
+  it('draws a low-chance rain step as cloud and a likely one as rain', () => {
+    const low = out.find(c => c.ts >= base + 2 * H && c.ts < base + 5 * H)
+    const likely = out.find(c => c.ts >= base + 5 * H)
+    expect(low.code).toBe(3)
+    expect(likely.code).toBe(63)
   })
 })

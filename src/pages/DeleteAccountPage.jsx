@@ -261,10 +261,10 @@ export default function DeleteAccountPage() {
           {/* Goes to the app root rather than back: this page is usually opened
               from a store listing or an email, where there is no history. */}
           <button onClick={() => navigate('/')} aria-label={t('deletePage.backToApp')} style={{
-            background: 'rgba(255,255,255,0.15)',
-            border: '1px solid rgba(255,255,255,0.25)',
+            background: '#fff',
+            border: '1px solid #fff',
             borderRadius: 10, width: 36, height: 36,
-            cursor: 'pointer', fontSize: 18, color: '#fff',
+            cursor: 'pointer', fontSize: 18, color: 'var(--maroon)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0, fontFamily: 'inherit',
           }}><Icon name="arrowLeft" size={18} /></button>

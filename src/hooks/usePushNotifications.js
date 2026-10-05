@@ -3,6 +3,7 @@ import { PushNotifications } from '@capacitor/push-notifications'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { playSOSAlarm } from '../lib/sosAudio'
+import { nextPushRetryDelay } from '../lib/pushRetry'
 
 export function usePushNotifications(userId, familyId) {
   useEffect(() => {
@@ -103,13 +104,27 @@ export function usePushNotifications(userId, familyId) {
     }
 
     const listeners = []
+    // A failed registration is retried (see lib/pushRetry.js). Until the phone
+    // gets a token, this account cannot claim it.
+    let retryTimer = null
+    let retryCount = 0
 
     PushNotifications.addListener('registration', async ({ value: token }) => {
+      retryCount = 0
       await saveToken(token)
     }).then(l => listeners.push(l))
 
     PushNotifications.addListener('registrationError', (err) => {
       console.error('[FCM] ❌ registrationError:', JSON.stringify(err))
+      const delay = nextPushRetryDelay(retryCount)
+      if (delay == null || cancelled) return
+      retryCount += 1
+      clearTimeout(retryTimer)
+      retryTimer = setTimeout(() => {
+        if (cancelled) return
+        console.warn(`[FCM] retrying registration (attempt ${retryCount})`)
+        PushNotifications.register().catch(e => console.error('[FCM] retry failed:', e))
+      }, delay)
     }).then(l => listeners.push(l))
 
     // Fired when a push arrives while the app is in the FOREGROUND.
@@ -161,6 +176,7 @@ export function usePushNotifications(userId, familyId) {
 
     return () => {
       cancelled = true
+      clearTimeout(retryTimer)
       listeners.forEach(l => { try { l.remove() } catch (e) {} })
     }
   }, [userId, familyId])

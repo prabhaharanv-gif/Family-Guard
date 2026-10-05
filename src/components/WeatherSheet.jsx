@@ -1,8 +1,9 @@
+import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { useBackButton } from '../hooks/useBackButton'
 import { useWeatherDetail } from '../hooks/useWeatherDetail'
 import { weatherView, conditionFor } from '../lib/weather'
-import { aqiKey, hourText, dayText, rainPercent, dateText, hourlyStrip } from '../lib/weatherDetail'
+import { aqiKey, hourText, dayText, rainPercent, dateText, hourlyStrip, trustedCode } from '../lib/weatherDetail'
 import Icon from './Icon'
 
 /**
@@ -25,11 +26,60 @@ import Icon from './Icon'
  * no card is ever left half-hidden.
  */
 function SwipeRow({ children }) {
+  const ref = useRef(null)
+  const drag = useRef(null)
+  const [dragging, setDragging] = useState(false)
+
+  // A finger swipes this natively. A mouse has no sideways gesture and the row has no
+  // scrollbar, so on the web it cannot move at all. Two ways in: drag it with the
+  // button held, or turn the wheel while over it.
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    let settle = null
+    const onWheel = e => {
+      if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return          // a trackpad's own sideways scroll
+      const max = el.scrollWidth - el.clientWidth
+      const next = Math.max(0, Math.min(max, el.scrollLeft + e.deltaY))
+      if (next === el.scrollLeft) return                              // at an end: let the sheet scroll
+      e.preventDefault()
+      // Snapping would pull each small step back to the card it left.
+      el.style.scrollSnapType = 'none'
+      el.scrollLeft = next
+      clearTimeout(settle)
+      settle = setTimeout(() => { el.style.scrollSnapType = 'x mandatory' }, 140)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => { el.removeEventListener('wheel', onWheel); clearTimeout(settle) }
+  }, [])
+
+  const onPointerDown = e => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return
+    drag.current = { x: e.clientX, left: ref.current.scrollLeft, moved: false }
+  }
+  const onPointerMove = e => {
+    const d = drag.current
+    if (!d) return
+    const dx = e.clientX - d.x
+    if (!d.moved && Math.abs(dx) < 4) return
+    if (!d.moved) { d.moved = true; setDragging(true) }
+    ref.current.scrollLeft = d.left - dx
+  }
+  const endDrag = () => {
+    if (!drag.current) return
+    drag.current = null
+    setDragging(false)   // snapping comes back on, and settles on the nearest card
+  }
+
   return (
-    <div className="weather-swipe" style={{
-      display: 'flex', gap: 6, overflowX: 'auto', overscrollBehaviorX: 'contain', WebkitOverflowScrolling: 'touch',
-      scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none',
-    }}>
+    <div ref={ref} className="weather-swipe"
+      onPointerDown={onPointerDown} onPointerMove={onPointerMove}
+      onPointerUp={endDrag} onPointerCancel={endDrag} onPointerLeave={endDrag}
+      style={{
+        display: 'flex', gap: 6, overflowX: 'auto', overscrollBehaviorX: 'contain', WebkitOverflowScrolling: 'touch',
+        scrollSnapType: dragging ? 'none' : 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none',
+        cursor: dragging ? 'grabbing' : 'grab', userSelect: 'none',
+      }}>
       {children}
     </div>
   )
@@ -122,7 +172,7 @@ export default function WeatherSheet({ name, lat, lng, fresh, self, onClose }) {
           <>
             <div style={label}>{t('weather.nextDays')}</div>
             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${data.daily.length}, minmax(0, 1fr))`, gap: 6 }}>
-              {data.daily.map(d => cell(d.ts, dayText(d.ts, data.tz, t.lang), conditionFor(d.code, true).icon, `${d.high}°`, false, dateText(d.ts, data.tz, t.lang)))}
+              {data.daily.map(d => cell(d.ts, dayText(d.ts, data.tz, t.lang), conditionFor(trustedCode(d.code, d.pop), true).icon, `${d.high}°`, false, dateText(d.ts, data.tz, t.lang)))}
             </div>
           </>
         )}
@@ -148,10 +198,19 @@ export default function WeatherSheet({ name, lat, lng, fresh, self, onClose }) {
               {t(self ? 'weather.areaSelf' : 'weather.area')}{updated ? ` · ${t('weather.updated', { time: updated })}` : ''}
             </div>
           </div>
+          {/* A drawn X in a flex-centred disc: the letter "×" sat low and to one side of its
+              box, and in pale grey it was easy to miss. Maroon edge like the other close
+              buttons on the map. */}
           <button onClick={onClose} aria-label={t('common.close')} style={{
-            width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--border)', background: '#fff',
-            color: 'var(--muted)', fontSize: 20, lineHeight: '32px', padding: 0, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
-          }}>×</button>
+            width: 30, height: 30, borderRadius: '50%', border: '1.5px solid var(--maroon)', background: '#F8E6ED',
+            color: 'var(--maroon)', padding: 0, cursor: 'pointer', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         {body}
       </div>

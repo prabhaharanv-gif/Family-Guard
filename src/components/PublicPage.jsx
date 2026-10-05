@@ -22,8 +22,8 @@ export default function PublicPage({ title, subtitle, children }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, maxWidth: 760, margin: '0 auto' }}>
           <Link to="/" aria-label="Kinest home" style={{
-            background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
-            borderRadius: 10, width: 36, height: 36, color: '#fff', flexShrink: 0,
+            background: '#fff', border: '1px solid #fff',
+            borderRadius: 10, width: 36, height: 36, color: 'var(--maroon)', flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}><Icon name="arrowLeft" size={18} /></Link>
           <div style={{ minWidth: 0 }}>

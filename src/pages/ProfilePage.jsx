@@ -25,6 +25,8 @@ import OfflineSmsCard from '../components/OfflineSmsCard'
 import { useT, useLangStore, UI_LANGUAGES } from '../i18n'
 import Icon from '../components/Icon'
 import AnchoredMenu from '../components/AnchoredMenu'
+import TextSizeCard from '../components/TextSizeCard'
+import { isTextSizeAvailable } from '../lib/textSize'
 
 function Toggle({ on, onToggle }) {
   return (
@@ -571,12 +573,12 @@ export default function ProfilePage() {
   // ?group=places opens that section straight away (a weather alert tap).
   const [openGroup, setOpenGroup] = useState(() => {
     const g = new URLSearchParams(window.location.search).get("group")
-    return ["places", "safety", "driving", "account", "families", "help"].includes(g) ? g : null
+    return ["places", "safety", "driving", "account", "families", "settings", "help"].includes(g) ? g : null
   })
   const routeLocation = useLocation()
   useEffect(() => {
     const g = new URLSearchParams(routeLocation.search).get("group")
-    if (["places", "safety", "driving", "account", "families", "help"].includes(g)) setOpenGroup(g)
+    if (["places", "safety", "driving", "account", "families", "settings", "help"].includes(g)) setOpenGroup(g)
   }, [routeLocation.search])
 
   const [displayName, setDisplayName]   = useState('')
@@ -1345,6 +1347,34 @@ export default function ProfilePage() {
           <FakeCallCard Toggle={Toggle} />
           <OfflineSmsCard Toggle={Toggle} />
 
+        </Group>
+
+        <Group
+          id="driving" icon="car"
+          title={t('profile.group.driving')} subtitle={t('profile.group.drivingSub')}
+          open={openGroup === "driving"} onOpen={() => setOpenGroup("driving")} onBack={() => setOpenGroup(null)}
+        >
+          <OverspeedAlertCard Toggle={Toggle} />
+          <CrashDetectionCard Toggle={Toggle} />
+        </Group>
+
+        <Group
+          id="places" icon="pin"
+          title={t('profile.group.places')} subtitle={t('profile.group.placesSub')}
+          open={openGroup === "places"} onOpen={() => setOpenGroup("places")} onBack={() => setOpenGroup(null)}
+        >
+          <PlacesCard />
+        </Group>
+
+        {/* Both things in here are Android-only, so on the web the group would be an empty page. */}
+        {(isTextSizeAvailable() || ringtones) && (
+        <Group
+          id="settings" icon="sliders"
+          title={t('profile.group.settings')} subtitle={t('profile.group.settingsSub')}
+          open={openGroup === "settings"} onOpen={() => setOpenGroup("settings")} onBack={() => setOpenGroup(null)}
+        >
+          <TextSizeCard />
+
           {/* ── ALERT SOUNDS ── */}
           {/* Native only: the picker is a system Activity, so there is nothing to
               offer on web. */}
@@ -1424,23 +1454,7 @@ export default function ProfilePage() {
             </div>
           )}
         </Group>
-
-        <Group
-          id="driving" icon="car"
-          title={t('profile.group.driving')} subtitle={t('profile.group.drivingSub')}
-          open={openGroup === "driving"} onOpen={() => setOpenGroup("driving")} onBack={() => setOpenGroup(null)}
-        >
-          <OverspeedAlertCard Toggle={Toggle} />
-          <CrashDetectionCard Toggle={Toggle} />
-        </Group>
-
-        <Group
-          id="places" icon="pin"
-          title={t('profile.group.places')} subtitle={t('profile.group.placesSub')}
-          open={openGroup === "places"} onOpen={() => setOpenGroup("places")} onBack={() => setOpenGroup(null)}
-        >
-          <PlacesCard />
-        </Group>
+        )}
 
         <Group
           id="help" icon="book"

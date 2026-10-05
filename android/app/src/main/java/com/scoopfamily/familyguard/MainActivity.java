@@ -60,6 +60,8 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(RingtonePlugin.class);
         registerPlugin(PingRingPlugin.class);
         registerPlugin(FakeCallPlugin.class);
+        registerPlugin(TextSizePlugin.class);
+        registerPlugin(NotificationLogPlugin.class);
 
         showWhenLockedAndTurnScreenOn();
 
@@ -102,6 +104,8 @@ public class MainActivity extends BridgeActivity {
         // test Xiaomi, where this branch cannot run). SosReliabilitySetup
         // already offers it as a user-initiated card, which is where it stays.
         setupWebViewMediaPermissions();
+        // The text size the person chose in Profile -> Text size, before the first page is drawn.
+        TextSizePlugin.applySaved(this, getBridge() != null ? getBridge().getWebView() : null);
         clearWebViewCacheIfAppUpdated();
 
         // One line of permission truth per launch. On a release build there is no
@@ -415,7 +419,8 @@ public class MainActivity extends BridgeActivity {
         // Weather alert tap: straight to Profile -> Places. Allow-listed, so no
         // other app can steer the WebView anywhere with a crafted extra.
         String openRoute = intent.getStringExtra("open_route");
-        if ("/profile?group=places".equals(openRoute) || "/profile?group=antitheft".equals(openRoute)) {
+        if ("/profile?group=places".equals(openRoute) || "/profile?group=antitheft".equals(openRoute)
+            || "/".equals(openRoute)) {
             navigateWhenWebViewReady(openRoute, 0);
         }
 

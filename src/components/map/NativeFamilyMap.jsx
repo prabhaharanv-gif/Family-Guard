@@ -228,7 +228,7 @@ export default function NativeFamilyMap({
       // ever exercised for them; the look/glide branches are family-pin only.
       const isAnon = loc.kind === 'anonDot'
       const isHelper = loc.kind === 'helperFound'
-      const initial = loc.displayName?.[0]?.toUpperCase() || '?'
+      const initial = loc.initial || loc.displayName?.[0]?.toUpperCase() || '?'
       const look = isAnon ? 'anonDot' : isHelper ? 'helperFound' : `${loc.avatarUrl || ''}|${loc.avatarColor || ''}|${initial}`
       let m = live.get(uid)
 
@@ -410,7 +410,7 @@ export default function NativeFamilyMap({
       return
     }
     const { lat, lng } = routeCursor
-    const initial = routeCursor.displayName?.[0]?.toUpperCase() || '?'
+    const initial = routeCursor.initial || routeCursor.displayName?.[0]?.toUpperCase() || '?'
     const look = `${routeCursor.avatarUrl || ''}|${routeCursor.avatarColor || ''}|${initial}`
     const hit = { spot: { lat, lng }, gap: PIN_SIZE / 2 + 12 }
 
