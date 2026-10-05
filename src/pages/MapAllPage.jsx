@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import { Geolocation } from '@capacitor/geolocation'
 import { useAuthStore } from '../store/authStore'
@@ -205,14 +206,20 @@ export default function MapAllPage() {
   // and their letters, the Find Fam list, the Following chip — matches the
   // Family cards and chat. They read the registered name before.
   const { nicknames } = useNicknames()
+  // The signed-in person's own marker, chip and popup read "You". `initial` keeps the
+  // real name's first letter for a pin with no photo, which would otherwise say "Y".
   const locations = useMemo(() => {
-    if (!Object.keys(nicknames).length) return rawLocations
     const out = {}
     for (const [uid, loc] of Object.entries(rawLocations)) {
-      out[uid] = nicknames[uid] ? { ...loc, displayName: nicknames[uid] } : loc
+      if (uid === user?.id) {
+        const real = nicknames[uid] || loc.displayName
+        out[uid] = { ...loc, displayName: t('common.you'), realName: real, initial: real?.[0]?.toUpperCase() }
+      } else {
+        out[uid] = nicknames[uid] ? { ...loc, displayName: nicknames[uid] } : loc
+      }
     }
     return out
-  }, [rawLocations, nicknames])
+  }, [rawLocations, nicknames, user?.id, t.lang]) // eslint-disable-line react-hooks/exhaustive-deps
   const batteryRef = useRef({ level: null, charging: false })
 
   useEffect(() => {
@@ -320,10 +327,13 @@ export default function MapAllPage() {
     const first = route.track[0], last = route.track[route.track.length - 1]
     // With the date: the start is always an earlier day, often by a week.
     const when = ms => `${dateLabel(ms, t.lang)}, ${clockLabel(ms, am, pm)}`
-    const startLabel = t('map.timelineStart', { time: when(first.t) })
+    // Two lines in the box ("Start" over the date and time). The time is the last word of every
+    // language's text, so a break placed where it goes sits between the words and the time.
+    const twoLines = (key, ms) => t(key, { time: '\n' + when(ms) }).replace(/ *\n */, '\n')
+    const startLabel = twoLines('map.timelineStart', first.t)
     const endLabel = Date.now() - last.t < NOW_WINDOW_MS
       ? t('map.timelineNow')
-      : t('map.timelineLast', { time: when(last.t) })
+      : twoLines('map.timelineLast', last.t)
     const callout = (p, labels) => ({ lat: p.lat, lng: p.lng, labels, dir: outwardDir(p, route.path) })
     const callouts = distanceM(first, last) < ENDS_TOGETHER_M
       ? [callout(last, [startLabel, endLabel])]
@@ -342,14 +352,28 @@ export default function MapAllPage() {
   const routeMember = routeUid ? locations[routeUid] : null
   const routeCursor = useMemo(() => cursorAt && {
     lat: cursorAt.lat, lng: cursorAt.lng,
-    displayName: routeMember?.displayName, avatarUrl: routeMember?.avatarUrl, avatarColor: routeMember?.avatarColor,
-  }, [cursorAt?.lat, cursorAt?.lng, routeMember?.displayName, routeMember?.avatarUrl, routeMember?.avatarColor]) // eslint-disable-line react-hooks/exhaustive-deps
+    displayName: routeMember?.displayName, initial: routeMember?.initial,
+    avatarUrl: routeMember?.avatarUrl, avatarColor: routeMember?.avatarColor,
+  }, [cursorAt?.lat, cursorAt?.lng, routeMember?.displayName, routeMember?.initial, routeMember?.avatarUrl, routeMember?.avatarColor]) // eslint-disable-line react-hooks/exhaustive-deps
   // A different family, a different set of people: drop the old trail.
   useEffect(() => { hideRoute() }, [familyId, hideRoute])
 
   const pauseFollowing = useCallback(() => setFollowPaused(true), [])
   const stopFollowing  = useCallback(() => { setFollowUid(null); setFollowPaused(false); setDest(null) }, [])
   const startFollowing = useCallback(uid => { hideRoute(); setFollowUid(uid); setFollowPaused(false); setDest(null) }, [hideRoute])
+
+  // Arriving from the map button on a Family card: fly to that member and follow them,
+  // the same as picking them in the Find Fam list. Waits for their position to load.
+  const focusUid = useLocation().state?.focusUid
+  const focusedRef = useRef(null)
+  useEffect(() => {
+    if (!focusUid || focusedRef.current === focusUid) return
+    const loc = locations[focusUid]
+    if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lng)) return
+    focusedRef.current = focusUid
+    setFlyTarget({ lat: loc.lat, lng: loc.lng })
+    startFollowing(focusUid)
+  }, [focusUid, locations, startFollowing])
   // null   = not yet tried (no banner)
   // 'perm' = permission denied
   // 'fail' = GPS failed AND no locations in DB yet (only show if map is empty)
@@ -667,12 +691,12 @@ export default function MapAllPage() {
       {/* Map | Timeline tabs. Timeline is the tab whenever a member's history is
           open (also when reached from a member card); Map closes it. */}
       <div role="tablist" style={{
-        flexShrink: 0, display: 'flex', background: '#fff',
+        flexShrink: 0, display: 'flex', gap: 8, padding: '10px 12px', background: '#fff',
         borderBottom: '1.5px solid var(--border)',
       }}>
         {[
-          { id: 'map', label: t('map.mapView') },
-          { id: 'timeline', label: t('map.todaysRoute') },
+          { id: 'map', label: t('map.mapView'), icon: 'map' },
+          { id: 'timeline', label: t('map.todaysRoute'), icon: 'clock' },
         ].map(tb => {
           const on = (tb.id === 'timeline') === !!routeUid
           return (
@@ -687,14 +711,19 @@ export default function MapAllPage() {
                 const uid = user?.id && locations[user.id] ? user.id : ids[0]
                 if (uid) showRoute(uid)
               }}
+              // The open tab is a filled maroon pill, the other a pale one: a thin
+              // underline was too easy to miss when deciding which view you were in.
               style={{
-                flex: 1, padding: '13px 0', background: 'none', border: 'none',
-                fontFamily: 'inherit', fontWeight: 700, fontSize: 14, cursor: 'pointer',
-                color: on ? 'var(--maroon)' : 'var(--muted-soft)',
-                borderBottom: on ? '2.5px solid var(--maroon)' : '2.5px solid transparent',
+                flex: 1, padding: '10px 0', borderRadius: 12,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                fontFamily: 'inherit', fontWeight: 800, fontSize: 14, cursor: 'pointer',
+                background: on ? 'var(--maroon)' : '#FBEFF3',
+                color: on ? '#fff' : 'var(--muted)',
+                border: on ? '1.5px solid var(--maroon)' : '1.5px solid #EBD3DD',
                 transition: 'all 0.2s',
               }}
             >
+              <Icon name={tb.icon} size={16} />
               {tb.label}
             </button>
           )
@@ -909,8 +938,8 @@ export default function MapAllPage() {
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 800 }}>
                   {km != null && km < 0.15
-                    ? t('map.destThere', { name: who.displayName })
-                    : t('map.destAway', { name: who.displayName, dist: far })}
+                    ? t('map.destThere', { name: who.realName || who.displayName })
+                    : t('map.destAway', { name: who.realName || who.displayName, dist: far })}
                 </div>
                 {eta && <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--maroon)' }}>{eta}</div>}
               </div>
@@ -1049,7 +1078,7 @@ export default function MapAllPage() {
                           color: '#fff', fontWeight: 800, fontSize: 15,
                           border: '2px solid var(--maroon)', boxSizing: 'border-box',
                         }}>
-                          {loc.displayName?.[0]?.toUpperCase()}
+                          {loc.initial || loc.displayName?.[0]?.toUpperCase()}
                         </div>
                       )}
                       <SpeedBadge loc={loc} />

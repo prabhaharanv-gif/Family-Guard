@@ -43,6 +43,22 @@ export function rainPercent(pop) {
   return Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null
 }
 
+/** Below this chance of rain a forecast step is not drawn as rain. */
+export const RAIN_ICON_MIN_POP = 40
+
+/**
+ * The code to draw for a FORECAST step. The provider labels a step "light rain" even at a
+ * 10-20% chance, which put a rain cloud over a dry, 32 degree evening: a forecast people
+ * stopped trusting. Rain and drizzle codes with a low chance of rain are drawn as cloud;
+ * a chance that is not known leaves the code as it came. Thunderstorms are left alone.
+ */
+export function trustedCode(code, pop) {
+  const c = Number(code)
+  const isRain = (c >= 51 && c <= 67) || (c >= 80 && c <= 82)
+  const p = rainPercent(pop)
+  return isRain && p != null && p < RAIN_ICON_MIN_POP ? 3 : code
+}
+
 /**
  * The strip of "next hours" an hour apart. The provider only forecasts every 3
  * hours, so the temperature between two forecast steps is read off the straight line
@@ -67,7 +83,8 @@ export function hourlyStrip({ now, nowTs, steps, tz, count = 25 }) {
     while (i + 1 < anchors.length && anchors[i + 1].ts <= ts) i++
     const a = anchors[i], b = anchors[i + 1]
     const temp = b ? a.temp + (b.temp - a.temp) * ((ts - a.ts) / (b.ts - a.ts)) : a.temp
-    out.push({ ts, temp: Math.round(temp), code: a.code, isDay: a.isDay })
+    // `first` is the current reading itself, not a forecast step: its code is left as it is.
+    out.push({ ts, temp: Math.round(temp), code: a === first ? a.code : trustedCode(a.code, a.pop), isDay: a.isDay })
   }
   return out
 }

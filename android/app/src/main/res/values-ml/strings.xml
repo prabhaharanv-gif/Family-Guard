@@ -140,4 +140,9 @@
     <string name="reply_sent">നിങ്ങൾ: %1$s</string>
     <string name="reply_failed">മറുപടി അയച്ചില്ല. Kinest തുറക്കാൻ തൊടുക അല്ലെങ്കിൽ വീണ്ടും ശ്രമിക്കുക.</string>
     <string name="reply_empty">അയയ്ക്കാൻ ഒന്നുമില്ല.</string>
+    <!-- Notification: someone asked to join the family -->
+    <string name="ch_joinreq_name">ചേരാനുള്ള അഭ്യർത്ഥനകൾ</string>
+    <string name="ch_joinreq_desc">ആരെങ്കിലും നിങ്ങളുടെ കുടുംബത്തിൽ ചേരാൻ ആവശ്യപ്പെടുമ്പോൾ അറിയിക്കും</string>
+    <string name="joinreq_title">%1$s %2$s ൽ ചേരാൻ ആഗ്രഹിക്കുന്നു</string>
+    <string name="joinreq_text">അംഗീകരിക്കാനോ നിരസിക്കാനോ Kinest തുറക്കുക.</string>
 </resources>

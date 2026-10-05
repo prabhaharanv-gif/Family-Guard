@@ -146,8 +146,10 @@ export function photoPin(url, ring = RING_COLOR) {
 // itself. Boxes that share a spot stack, each with its own leader (a round trip
 // puts Start and Now at home). The whole callout is one bitmap whose anchor is
 // the route point.
-const CALLOUT_FONT = '800 11px Inter, sans-serif'
-const BOX_H = 22, BOX_GAP = 5, LEADER = 30, PAD = 3
+// Everything below sits on whole pixels (even box width, rounded offsets, integer text
+// baseline): a half-pixel anywhere draws the box edges and the text as a soft smear.
+const CALLOUT_FONT = '800 12px Inter, sans-serif'
+const LINE_H = 15, BOX_PAD_Y = 5, BOX_GAP = 5, LEADER = 30, PAD = 3
 const calloutCache = new Map()
 
 /**
@@ -162,24 +164,28 @@ export function timeCallout(labels, dir) {
 
   const probe = document.createElement('canvas').getContext('2d')
   probe.font = CALLOUT_FONT
-  const boxW = Math.ceil(Math.max(...labels.map(l => probe.measureText(l).width))) + 16
-  const stackH = labels.length * BOX_H + (labels.length - 1) * BOX_GAP
+  // A label may hold a line break (\n): "Start\n30 Sept, 7.46 AM" is a two-line box. Every box in
+  // one callout is as tall as the tallest, so a stack stays even.
+  const lines = labels.map(l => l.split('\n'))
+  const boxH = LINE_H * Math.max(...lines.map(l => l.length)) + 2 * BOX_PAD_Y
+  const boxW = 2 * Math.ceil((Math.max(...lines.flat().map(l => probe.measureText(l).width)) + 18) / 2)
+  const stackH = labels.length * boxH + (labels.length - 1) * BOX_GAP
 
   // Centre of the stack, pushed out along dir far enough that the leader has
   // LEADER px of length before it reaches the stack's edge.
   const reach = Math.abs(dir.x) * boxW / 2 + Math.abs(dir.y) * stackH / 2
-  const cx = dir.x * (LEADER + reach), cy = dir.y * (LEADER + reach)
+  const cx = Math.round(dir.x * (LEADER + reach)), cy = Math.round(dir.y * (LEADER + reach))
   const boxes = labels.map((text, i) => ({
     text,
     x: cx - boxW / 2,
-    y: cy - stackH / 2 + i * (BOX_H + BOX_GAP),
+    y: Math.round(cy - stackH / 2) + i * (boxH + BOX_GAP),
   }))
 
   // Bitmap bounds around the anchor (0,0) and every box.
   const minX = Math.min(0, ...boxes.map(b => b.x)) - PAD
   const minY = Math.min(0, ...boxes.map(b => b.y)) - PAD
   const maxX = Math.max(0, ...boxes.map(b => b.x + boxW)) + PAD
-  const maxY = Math.max(0, ...boxes.map(b => b.y + BOX_H)) + PAD
+  const maxY = Math.max(0, ...boxes.map(b => b.y + boxH)) + PAD
   const W = Math.ceil(maxX - minX), H = Math.ceil(maxY - minY)
 
   const canvas = document.createElement('canvas')
@@ -198,9 +204,9 @@ export function timeCallout(labels, dir) {
   g.lineCap = 'round'
   for (const b of boxes) {
     // End on the box edge that faces the route point.
-    const midY = b.y + BOX_H / 2
+    const midY = b.y + boxH / 2
     const ex = dir.x >= 0 ? b.x : b.x + boxW
-    const ey = Math.abs(dir.x) < 0.35 ? (dir.y < 0 ? b.y + BOX_H : b.y) : midY
+    const ey = Math.abs(dir.x) < 0.35 ? (dir.y < 0 ? b.y + boxH : b.y) : midY
     const exx = Math.abs(dir.x) < 0.35 ? b.x + boxW / 2 : ex
     g.beginPath()
     g.moveTo(0, 0)
@@ -224,14 +230,15 @@ export function timeCallout(labels, dir) {
   g.textBaseline = 'middle'
   for (const b of boxes) {
     g.beginPath()
-    g.roundRect(b.x, b.y, boxW, BOX_H, 6)
+    g.roundRect(b.x, b.y, boxW, boxH, 6)
     g.fillStyle = '#FFF8F0'
     g.fill()
     g.lineWidth = 1.5
     g.strokeStyle = maroon
     g.stroke()
     g.fillStyle = maroon
-    g.fillText(b.text, b.x + boxW / 2, b.y + BOX_H / 2 + 0.5)
+    // Each line's centre, on a whole pixel (box padding + half a line + the 0.5 baseline nudge).
+    lines[boxes.indexOf(b)].forEach((ln, k) => g.fillText(ln, b.x + boxW / 2, b.y + BOX_PAD_Y + LINE_H * k + 8))
   }
 
   const out = { url: canvas.toDataURL('image/png'), width: W, height: H, anchorX: -minX, anchorY: -minY }

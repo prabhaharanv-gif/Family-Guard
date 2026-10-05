@@ -212,6 +212,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String sosId   = data.containsKey("sos_id") ? data.get("sos_id") : "";
 
             ensureSosChannelStatic(appCtx);
+            NotificationLog.add(appCtx, "sos", getString(R.string.sos_needs_help, sender), message, "/sos");
 
             // Start the siren foreground service (audio + vibration)
             Intent sirenIntent = new Intent(appCtx, SOSSirenService.class);
@@ -288,6 +289,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
             Log.d("FamoraCall", "onMessageReceived: starting PingRingService");
             PingRingService.ensurePingChannelStatic(appCtx);
+            NotificationLog.add(appCtx, "ping", getString(R.string.notif_ping_body, sender), "", "/");
 
             // Same shape as the SOS branch — the foreground service owns the
             // audio, vibration and its own heads-up notification, so there is
@@ -315,6 +317,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String sender  = data.containsKey("sender")  ? data.get("sender")  : "Family";
             String content = data.containsKey("content") ? data.get("content") : "New message";
             showMessageNotification(appCtx, sender, content, muteLevel, data);
+
+        } else if ("join_request".equals(type)) {
+            // Someone asked to join this family. Only admins are sent this.
+            String who    = data.containsKey("sender")      ? data.get("sender")      : "Someone";
+            String famNm  = data.containsKey("family_name") ? data.get("family_name") : "";
+            showJoinRequestNotification(appCtx, who, famNm);
 
         } else if ("place_enter".equals(type) || "place_exit".equals(type)) {
             // Plain notification, same shape as "message" above — no foreground
@@ -381,6 +389,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             // Not a foreground service — see NearbyHelpRingService's class doc.
             // This just builds and posts one notification; there is no
             // continuous playback to protect with a service or a wake lock.
+            NotificationLog.add(appCtx, "nearby_help_request",
+                getString(R.string.notif_nearby_help_title), getString(R.string.notif_nearby_help_note), "/");
             NearbyHelpRingService.show(appCtx, notificationId, escalationId, tier, fuzzyLat, fuzzyLng, fuzzyRadiusM, helpKind);
 
         } else if ("nearby_help_standdown".equals(type) || "nearby_help_cancelled".equals(type)) {
@@ -439,6 +449,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         String name = sender;
         if ((name == null || name.isEmpty()) && sameAlert) name = SOSSirenService.currentSender;
         if (name == null || name.isEmpty()) name = appCtx.getString(R.string.a_family_member);
+
+        NotificationLog.add(appCtx, "sos_resolved", appCtx.getString(R.string.sos_safe_title, name),
+            appCtx.getString(R.string.sos_marked_safe, name), "/sos");
 
         if (!sameAlert) {
             // Someone else's SOS is still open on this phone; leave it alone.
@@ -505,6 +518,51 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     // ── Places: "reached Home" / "left Home" ─────────────────────────────────
+    private static final String JOINREQ_CHANNEL_ID = "join_requests_v1";
+
+    /** Tells an admin that someone asked to join; tapping opens the Family tab, where the request is. */
+    private static void showJoinRequestNotification(Context ctx, String requester, String familyName) {
+        try {
+            NotificationManager nm =
+                (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (nm.getNotificationChannel(JOINREQ_CHANNEL_ID) != null) {
+                    NotificationChannels.refreshText(ctx, nm, JOINREQ_CHANNEL_ID,
+                        R.string.ch_joinreq_name, R.string.ch_joinreq_desc);
+                } else {
+                    NotificationChannel ch = new NotificationChannel(JOINREQ_CHANNEL_ID,
+                        ctx.getString(R.string.ch_joinreq_name), NotificationManager.IMPORTANCE_HIGH);
+                    ch.setDescription(ctx.getString(R.string.ch_joinreq_desc));
+                    nm.createNotificationChannel(ch);
+                }
+            }
+
+            Intent tap = new Intent(ctx, MainActivity.class);
+            tap.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            tap.putExtra("open_route", "/");
+            PendingIntent tapPi = PendingIntent.getActivity(ctx, 915, tap,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, JOINREQ_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_notify)
+                .setColor(android.graphics.Color.parseColor("#951345"))
+                .setContentTitle(ctx.getString(R.string.joinreq_title, requester, familyName))
+                .setContentText(ctx.getString(R.string.joinreq_text))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_SOCIAL)
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                .setAutoCancel(true)
+                .setContentIntent(tapPi);
+            NotificationLog.add(ctx, "join_request", ctx.getString(R.string.joinreq_title, requester, familyName),
+                ctx.getString(R.string.joinreq_text), "/");
+            nm.notify((int) System.currentTimeMillis(), b.build());
+        } catch (Exception ex) {
+            Log.w("FamoraCall", "could not post the join request notification: " + ex.getMessage());
+        }
+    }
+
     private static final String PLACE_CHANNEL_ID = "family_places_v1";
 
     private static void showPlaceNotification(Context ctx, String sender, String placeName, boolean entered) {
@@ -546,6 +604,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                 .setAutoCancel(true)
                 .setContentIntent(tapPi);
+            NotificationLog.add(ctx, entered ? "place_enter" : "place_exit", title, "", "/");
             nm.notify((int) System.currentTimeMillis(), b.build());
         } catch (Exception e) {
             Log.w("FamoraCall", "could not post the place notification: " + e.getMessage());
@@ -657,6 +716,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                 .setAutoCancel(true)
                 .setContentIntent(tapPi);
+            NotificationLog.add(ctx, "device_alert", title, body, "/");
             nm.notify((int) System.currentTimeMillis(), b.build());
         } catch (Exception e) {
             Log.w("FamoraCall", "could not post the device alert: " + e.getMessage());
@@ -696,6 +756,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                 .setAutoCancel(true)
                 .setContentIntent(tapPi);
+            NotificationLog.add(ctx, "unlock_alert", title, body, "/profile?group=antitheft");
             nm.notify((int) System.currentTimeMillis(), b.build());
         } catch (Exception e) {
             Log.w("FamoraCall", "could not post the unlock alert: " + e.getMessage());
@@ -774,6 +835,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setAutoCancel(true)
                 .setContentIntent(tapPi);
+            NotificationLog.add(ctx, "weather_alert", title, body, "/profile?group=places");
             nm.notify((int) nowMs, b.build());
         } catch (Exception e) {
             Log.w("FamoraCall", "could not post the weather alert: " + e.getMessage());
@@ -847,6 +909,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(true)
                 .setContentIntent(tapPi);
+            NotificationLog.add(ctx, "nearby_help_status",
+                ctx.getString(helperFound
+                    ? R.string.notif_nearby_help_sender_accepted_title
+                    : R.string.notif_nearby_help_sender_exhausted_title),
+                helperFound
+                    ? ctx.getString(R.string.notif_nearby_help_sender_accepted_body)
+                    : ctx.getString(R.string.notif_nearby_help_sender_exhausted_body, NearbyHelpKind.number(helpKind)),
+                "/sos");
             nm.notify(NEARBY_HELP_STATUS_NOTIFICATION_ID, b.build());
         } catch (Exception e) {
             Log.w("FamoraCall", "could not post the nearby-help status notification: " + e.getMessage());

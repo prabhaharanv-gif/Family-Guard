@@ -89,8 +89,8 @@ function TripsSheet({ onClose }) {
         display: 'flex', alignItems: 'center', gap: 12,
       }}>
         <button onClick={onClose} style={{
-          background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
-          borderRadius: 10, width: 36, height: 36, cursor: 'pointer', fontSize: 18, color: '#fff',
+          background: '#fff', border: '1px solid #fff',
+          borderRadius: 10, width: 36, height: 36, cursor: 'pointer', fontSize: 18, color: 'var(--maroon)',
         }}><Icon name="arrowLeft" size={18} /></button>
         <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{t('trips.view')}</div>
       </div>

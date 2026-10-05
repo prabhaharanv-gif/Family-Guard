@@ -24,10 +24,10 @@ export default function PrivacyPolicyPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, maxWidth: 760, margin: '0 auto' }}>
           <button onClick={() => navigate(-1)} style={{
-            background: 'rgba(255,255,255,0.15)',
-            border: '1px solid rgba(255,255,255,0.25)',
+            background: '#fff',
+            border: '1px solid #fff',
             borderRadius: 10, width: 36, height: 36,
-            cursor: 'pointer', fontSize: 18, color: '#fff',
+            cursor: 'pointer', fontSize: 18, color: 'var(--maroon)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}><Icon name="arrowLeft" size={18} /></button>
