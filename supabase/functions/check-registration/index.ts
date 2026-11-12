@@ -47,6 +47,8 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5173',      // local development
   'https://famora-family.vercel.app',
   'https://family-guard-five.vercel.app',
+  'https://www.kinest.co.in',
+  'https://kinest.co.in',
 ]
 function withCors(req: Request, res: Response): Response {
   const origin = req.headers.get('Origin') || ''
