@@ -52,6 +52,9 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
   const [busy, setBusy]         = useState(false)
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState(() => new Set())
+  // 'all' | 'missed'. Missed means a call TO me that I did not answer; one I declined
+  // was a choice, and one I placed that nobody answered is not mine to have missed.
+  const [filter, setFilter]     = useState('all')
   const longPressRef = useRef(null)
   const didLongPress = useRef(false)
 
@@ -86,6 +89,9 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
   }, [familyId, load])
 
   const finishedCalls = calls.filter(c => FINISHED.includes(c.status))
+  const isMissedForMe = c => c.status === 'missed' && c.caller_id !== user?.id
+  const missedCount   = calls.filter(isMissedForMe).length
+  const visibleCalls  = filter === 'missed' ? calls.filter(isMissedForMe) : calls
 
   const exitSelection = useCallback(() => {
     setSelectMode(false)
@@ -178,6 +184,29 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
         </div>
       )}
 
+      {/* All | Missed. Only worth showing once there is a history to filter, and not
+          while picking calls to delete. */}
+      {!selectMode && calls.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, padding: '8px 16px 6px', background: '#fff', flexShrink: 0 }}>
+          {[
+            { id: 'all', label: t('calls.filterAll') },
+            { id: 'missed', label: t('calls.missed'), count: missedCount },
+          ].map(f => {
+            const on = filter === f.id
+            return (
+              <button key={f.id} onClick={() => setFilter(f.id)} aria-pressed={on} style={{
+                padding: '6px 14px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: 12.5, fontWeight: 800, lineHeight: 1.2,
+                background: on ? 'var(--maroon)' : '#FBEFF3', color: on ? '#fff' : 'var(--maroon)',
+                border: '1.5px solid var(--maroon)',
+              }}>
+                {f.label}{f.count > 0 ? ` ${f.count}` : ''}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       <PullToRefresh onRefresh={load}>
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
         {loading ? (
@@ -188,7 +217,11 @@ export default function CallsPanel({ onDialog, onControls, onCall }) {
             <div style={{ fontWeight: 800, color: '#3A1020', marginBottom: 4 }}>{t('calls.noCalls')}</div>
             <div style={{ fontSize: 13 }}>{t('calls.willAppear')}</div>
           </div>
-        ) : calls.map(c => {
+        ) : visibleCalls.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--muted-soft)', fontSize: 13, fontWeight: 600 }}>
+            {t('calls.noMissed')}
+          </div>
+        ) : visibleCalls.map(c => {
           const outgoing = c.caller_id === user?.id
           const otherId  = outgoing ? c.callee_id : c.caller_id
           const other    = names[otherId]

@@ -52,6 +52,7 @@ export const LANDING_UI = {
       heroTitle: 'Keep Your Family Safe, Wherever You Are',
       heroSub: 'Kinest is a private app for your family: live location, one-tap SOS alerts, chat and calls. Only the people you invite can see anything.',
       getApp: 'Get it on Google Play',
+      inAppHint: "Opened inside Instagram or Facebook? Tap ⋮ (top right) and choose “Open in Chrome” to install.",
       openWeb: 'Sign in on the web',
 
       featuresTitle: 'Everything Your Family Needs, in One Place',
@@ -139,6 +140,7 @@ export const LANDING_UI = {
       heroTitle: 'நீங்கள் எங்கிருந்தாலும் உங்கள் குடும்பத்தைப் பாதுகாப்பாக வைத்திருங்கள்',
       heroSub: 'Kinest என்பது உங்கள் குடும்பத்துக்கான தனிப்பட்ட ஆப்: நேரலை இருப்பிடம், ஒரே தொடுதலில் SOS எச்சரிக்கை, அரட்டை மற்றும் அழைப்புகள். நீங்கள் அழைப்பவர்கள் மட்டுமே பார்க்க முடியும்.',
       getApp: 'Google Play-யில் பெறுங்கள்',
+      inAppHint: "Instagram அல்லது Facebook-க்குள் திறந்துள்ளீர்களா? மேலே வலது ⋮ தட்டி “Chrome-இல் திற” தேர்ந்தெடுத்து நிறுவுங்கள்.",
       openWeb: 'வலையில் உள்நுழைக',
 
       featuresTitle: 'உங்கள் குடும்பத்துக்குத் தேவையான எல்லாம், ஓரிடத்தில்',
@@ -226,6 +228,7 @@ export const LANDING_UI = {
       heroTitle: 'आप जहाँ भी हों, अपने परिवार को सुरक्षित रखें',
       heroSub: 'Kinest आपके परिवार के लिए एक निजी ऐप है: लाइव लोकेशन, एक टैप में SOS अलर्ट, चैट और कॉल। सिर्फ़ वही लोग कुछ देख सकते हैं जिन्हें आप जोड़ते हैं।',
       getApp: 'Google Play पर पाएँ',
+      inAppHint: "Instagram या Facebook के अंदर खुला है? ऊपर दाएँ ⋮ दबाएँ और “Chrome में खोलें” चुनें, फिर इंस्टॉल करें।",
       openWeb: 'वेब पर साइन इन करें',
 
       featuresTitle: 'आपके परिवार को जो चाहिए, सब एक जगह',
@@ -313,6 +316,7 @@ export const LANDING_UI = {
       heroTitle: 'మీరు ఎక్కడ ఉన్నా, మీ కుటుంబాన్ని సురక్షితంగా ఉంచండి',
       heroSub: 'Kinest మీ కుటుంబం కోసం ప్రైవేట్ యాప్: లైవ్ లొకేషన్, ఒక్క టచ్‌తో SOS అలర్ట్, చాట్ మరియు కాల్స్. మీరు ఆహ్వానించిన వారికి మాత్రమే కనిపిస్తుంది.',
       getApp: 'Google Play లో పొందండి',
+      inAppHint: "Instagram లేదా Facebook లోపల తెరిచారా? పైన కుడివైపు ⋮ నొక్కి “Chrome లో తెరువు” ఎంచుకుని ఇన్‌స్టాల్ చేయండి.",
       openWeb: 'వెబ్‌లో సైన్ ఇన్ చేయండి',
 
       featuresTitle: 'మీ కుటుంబానికి కావలసినవన్నీ ఒకే చోట',
@@ -400,6 +404,7 @@ export const LANDING_UI = {
       heroTitle: 'ನೀವು ಎಲ್ಲೇ ಇದ್ದರೂ, ನಿಮ್ಮ ಕುಟುಂಬವನ್ನು ಸುರಕ್ಷಿತವಾಗಿಡಿ',
       heroSub: 'Kinest ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕಾಗಿ ಖಾಸಗಿ ಆ್ಯಪ್: ಲೈವ್ ಸ್ಥಳ, ಒಂದೇ ಟ್ಯಾಪ್‌ನಲ್ಲಿ SOS ಎಚ್ಚರಿಕೆ, ಚಾಟ್ ಮತ್ತು ಕರೆಗಳು. ನೀವು ಆಹ್ವಾನಿಸಿದವರಿಗೆ ಮಾತ್ರ ಕಾಣಿಸುತ್ತದೆ.',
       getApp: 'Google Play ನಲ್ಲಿ ಪಡೆಯಿರಿ',
+      inAppHint: "Instagram ಅಥವಾ Facebook ಒಳಗೆ ತೆರೆದಿದೆಯೇ? ಮೇಲಿನ ಬಲದ ⋮ ಒತ್ತಿ “Chrome ನಲ್ಲಿ ತೆರೆಯಿರಿ” ಆಯ್ಕೆಮಾಡಿ, ನಂತರ ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಿ.",
       openWeb: 'ವೆಬ್‌ನಲ್ಲಿ ಸೈನ್ ಇನ್ ಮಾಡಿ',
 
       featuresTitle: 'ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕೆ ಬೇಕಾದ್ದೆಲ್ಲ ಒಂದೇ ಕಡೆ',
@@ -487,6 +492,7 @@ export const LANDING_UI = {
       heroTitle: 'നിങ്ങൾ എവിടെയായിരുന്നാലും, നിങ്ങളുടെ കുടുംബത്തെ സുരക്ഷിതമായി സൂക്ഷിക്കൂ',
       heroSub: 'Kinest നിങ്ങളുടെ കുടുംബത്തിനുള്ള സ്വകാര്യ ആപ്പാണ്: ലൈവ് ലൊക്കേഷൻ, ഒറ്റ ടാപ്പിൽ SOS അലർട്ട്, ചാറ്റ്, കോളുകൾ. നിങ്ങൾ ക്ഷണിക്കുന്നവർക്ക് മാത്രമേ കാണാനാകൂ.',
       getApp: 'Google Play-യിൽ നേടൂ',
+      inAppHint: "Instagram അല്ലെങ്കിൽ Facebook-നുള്ളിൽ തുറന്നോ? മുകളിൽ വലത് ⋮ അമർത്തി “Chrome-ൽ തുറക്കുക” തിരഞ്ഞെടുത്ത് ഇൻസ്റ്റാൾ ചെയ്യുക.",
       openWeb: 'വെബിൽ സൈൻ ഇൻ ചെയ്യൂ',
 
       featuresTitle: 'നിങ്ങളുടെ കുടുംബത്തിന് വേണ്ടതെല്ലാം ഒരിടത്ത്',

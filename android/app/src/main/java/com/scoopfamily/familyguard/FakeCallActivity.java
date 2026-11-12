@@ -100,17 +100,7 @@ public class FakeCallActivity extends Activity {
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getWindow().setStatusBarColor(CREAM);
-        getWindow().setNavigationBarColor(CREAM);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Dark status/nav icons, or they vanish on cream.
-            int flags = getWindow().getDecorView().getSystemUiVisibility()
-                | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
-            }
-            getWindow().getDecorView().setSystemUiVisibility(flags);
-        }
+        SystemBars.applyCream(this, CREAM);
 
         setContentView(buildLayout());
         FakeCallService.alertShown();

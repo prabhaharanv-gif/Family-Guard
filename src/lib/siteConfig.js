@@ -12,8 +12,8 @@
  * visitors). In a development build the row appears with an obvious
  * placeholder so the layout can be checked.
  */
-export const SITE_URL = 'https://kinest.org'
-export const PLAY_STORE_URL = ''
+export const SITE_URL = 'https://www.kinest.co.in'
+export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.scoopfamily.familyguard&referrer=utm_source%3Dwebsite%26utm_medium%3Dlanding'
 export const CONTACT_EMAIL = 'support@kinest.org'
 export const CONTACT_PHONE = ''
 export const SUPPORT_NAME = 'Kinest Customer Support'

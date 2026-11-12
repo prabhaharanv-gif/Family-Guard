@@ -575,6 +575,22 @@ export default function NativeFamilyMap({
     }
   }, [ready, destLat, destLng])
 
+  // A line from the followed member to the held spot, so what the distance is measured
+  // between reads at a glance. Redrawn as either end moves.
+  const fromLat = followLoc?.lat
+  const fromLng = followLoc?.lng
+  useEffect(() => {
+    const map = mapRef.current
+    if (!ready || !map || destLat == null || destLng == null || !Number.isFinite(fromLat) || !Number.isFinite(fromLng)) return
+    const idsP = retrying('draw destination line', () => map.addPolylines([{
+      path: [{ lat: fromLat, lng: fromLng }, { lat: destLat, lng: destLng }],
+      strokeColor: '#8B0D3D', strokeWeight: 3, strokeOpacity: 0.85, geodesic: false,
+    }]))
+    return () => {
+      idsP.then(ids => ids?.length && map.removePolylines(ids)).catch(warn('remove destination line'))
+    }
+  }, [ready, destLat, destLng, fromLat, fromLng])
+
   useEffect(() => {
     const map = mapRef.current
     if (!ready || !map || !resetNorthKey) return

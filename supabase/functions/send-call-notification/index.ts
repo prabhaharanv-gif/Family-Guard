@@ -265,6 +265,18 @@ serve(async (req) => {
       }
     })
 
+    // Tell the caller the ring has gone out, so its screen can say Ringing instead of
+    // Calling (see 20261005120000_call_ring_sent). Best effort: before that migration
+    // the update just fails and the caller keeps seeing Calling.
+    if (successCount > 0) {
+      const { error: ringErr } = await supabase
+        .from('calls')
+        .update({ ring_sent_at: new Date().toISOString() })
+        .eq('id', record.id)
+        .eq('status', 'ringing')
+      if (ringErr) console.warn('[CALL-FN] could not stamp ring_sent_at:', ringErr.message)
+    }
+
     console.log(`[CALL-FN] Done — ${successCount}/${tokens.length} delivered`)
     return new Response(
       JSON.stringify({ sent: successCount, total: tokens.length }),

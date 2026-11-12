@@ -131,7 +131,14 @@ export default function CallPage() {
       .on('postgres_changes', {
         event: 'UPDATE', schema: 'public', table: 'calls', filter: `id=eq.${callId}`,
       }, (payload) => { if (!cancelled) setCall(payload.new) })
-      .subscribe()
+      .subscribe((subStatus) => {
+        // The row was read before this subscription existed, so a change that landed in
+        // between (the ring stamp does, within a second of the call being placed) was
+        // never heard. Read it once more now that updates are flowing.
+        if (subStatus !== 'SUBSCRIBED') return
+        supabase.from('calls').select('*').eq('id', callId).single()
+          .then(({ data }) => { if (!cancelled && data) setCall(data) })
+      })
 
     return () => { cancelled = true; supabase.removeChannel(channel) }
   }, [callId, user?.id, navigate])
@@ -180,6 +187,10 @@ export default function CallPage() {
       if (data && data.status !== 'ringing') {
         console.log('[CallPage] poll picked up status change ->', data.status)
         setCall(data)
+      } else if (data?.ring_sent_at) {
+        // Still ringing, but the ring has gone out to their phone: the caller's screen
+        // says Ringing instead of Calling. Only the stamp is taken, nothing else.
+        setCall(prev => (prev && !prev.ring_sent_at ? { ...prev, ring_sent_at: data.ring_sent_at } : prev))
       }
     }, 2000)
     return () => { cancelled = true; clearInterval(poll) }
@@ -600,7 +611,9 @@ export default function CallPage() {
           </div>
           <div style={styles.name}>{summary || otherName}</div>
           <div style={styles.status}>
-            {status === 'ringing' && isCaller && 'Calling…'}
+            {/* "Ringing" once the push to their phone has gone out (ring_sent_at); until
+                then, or if it never does, the call is still just being placed. */}
+            {status === 'ringing' && isCaller && (call?.ring_sent_at ? 'Ringing…' : 'Calling…')}
             {status === 'ringing' && !isCaller && hasPendingAutoAction && 'Connecting…'}
             {status === 'ringing' && !isCaller && !hasPendingAutoAction && `Incoming ${isVideo ? 'video' : 'voice'} call…`}
             {status === 'accepted' && (joinError || formatDuration(elapsed))}

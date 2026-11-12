@@ -35,6 +35,14 @@ async function nicknameFor(familyId, ownerUserId, targetUserId) {
  * Incoming-call signalling. Takes no family: a call is addressed to the person
  * (callee_id), so this listens across every family they belong to.
  */
+// Tell the caller this app is showing the ring, so its screen can say Ringing (see
+// 20261005130000_ack_call_ringing). Best effort: on a database without the function the
+// caller simply keeps seeing Calling.
+const ackRinging = (callId) => {
+  supabase.rpc('ack_call_ringing', { p_call_id: callId })
+    .then(({ error }) => { if (error) console.warn('[useCallSignaling] ring ack failed:', error.message) })
+}
+
 export function useCallSignaling(user) {
   const [incomingCall, setIncomingCall] = useState(null) // { ...call row, callerName }
 
@@ -87,6 +95,7 @@ export function useCallSignaling(user) {
         callerName: nickname || member?.display_name || 'A family member',
         callerAvatar: member?.avatar_url || '',
       })
+    ackRinging(call.id)
   }, [user])
 
   useEffect(() => {
@@ -137,6 +146,7 @@ export function useCallSignaling(user) {
         const callerName = nickname || data?.display_name || 'A family member'
         const callerAvatar = data?.avatar_url || ''
         setIncomingCall({ ...call, callerName, callerAvatar })
+        ackRinging(call.id)
         triggerNativeCallAlert({ callId: call.id, callerName, callerAvatar, callType: call.call_type })
       })
       .on('postgres_changes', {

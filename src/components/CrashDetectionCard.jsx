@@ -51,7 +51,19 @@ export default function CrashDetectionCard({ Toggle }) {
       </div>
 
       {explain && (
-        <Dialog type="info" title={t('crashDetect.title')} message={t('crashDetect.howItWorks')}
+        <Dialog type="info" title={t('crashDetect.title')}
+          message={(
+            // Four short points rather than one paragraph: this is read once, at the moment
+            // of switching it on, by someone deciding whether to trust it.
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', textAlign: 'left' }}>
+              {['bullet1', 'bullet2', 'bullet3', 'bullet4'].map(k => (
+                <li key={k} style={{ display: 'flex', gap: 8, margin: '0 0 8px', lineHeight: 1.5 }}>
+                  <span aria-hidden="true" style={{ color: 'var(--maroon)', fontWeight: 900, flexShrink: 0 }}>•</span>
+                  <span>{t('crashDetect.' + k)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
           onClose={() => setExplain(false)} />
       )}
     </div>

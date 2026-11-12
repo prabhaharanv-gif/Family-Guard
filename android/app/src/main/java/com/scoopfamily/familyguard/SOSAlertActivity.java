@@ -468,17 +468,7 @@ public class SOSAlertActivity extends Activity {
 
     /** Cream status and navigation bars with dark icons, so the screen reads as one surface. */
     private void applyCreamSystemBars() {
-        android.view.Window w = getWindow();
-        w.setStatusBarColor(CREAM);
-        w.setNavigationBarColor(CREAM);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            int flags = w.getDecorView().getSystemUiVisibility()
-                | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
-            }
-            w.getDecorView().setSystemUiVisibility(flags);
-        }
+        SystemBars.applyCream(this, CREAM);
     }
 
     private int dp(int value) {

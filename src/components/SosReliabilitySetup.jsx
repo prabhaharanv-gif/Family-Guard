@@ -23,7 +23,13 @@ const FIRST_SHOWN_KEY = 'sos_oem_first_shown_v1'
  * the user manually enables "Autostart" and "Display pop-up windows while
  * running in background". These live on OEM-specific settings pages.
  *
- * ── Why this is one checklist and not a wizard ───────────────────────────────
+ * ── One prompt at a time (changed 2026-10-13) ───────────────────────────────
+ * Now a centred system-style dialog showing one permission at a time, with
+ * Allow / Not now / Don't ask again. The history below explains why it was a
+ * checklist before; the user asked for the one-by-one prompt back, kept to a
+ * single small dialog with a "2 of 4" count rather than full sheets.
+ *
+ * ── Why this was one checklist and not a wizard ───────────────────────────────
  * It used to be a step-per-permission flow: a full sheet each for autostart,
  * pop-ups, overlay and full-screen intents, with Back / "I've done this — Next"
  * between them. Two problems, both of which put people off granting anything:
@@ -67,6 +73,9 @@ const FIRST_SHOWN_KEY = 'sos_oem_first_shown_v1'
 // verifiably-missing permission is raised once per app start, never repeatedly
 // while someone moves between apps.
 let reopenedThisLaunch = false
+// Steps the person passed on with "Not now" — held for this app start only, so
+// a skipped step is asked again next launch but not on every return from Settings.
+const skippedThisLaunch = new Set()
 
 const readVisited = () => {
   try { return JSON.parse(localStorage.getItem(VISITED_KEY) || '{}') } catch { return {} }
@@ -89,35 +98,12 @@ const Icons = {
 }
 
 // The row's own identity icon (autostart/popup/overlay/…), always drawn the
-// same way regardless of status — StatusBadge below is what carries done vs.
-// not-done, so this doesn't also need to swap to a checkmark.
-function RowIcon({ shape }) {
+// same way regardless of status.
+function RowIcon({ shape, size = 22 }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)"
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--maroon)"
          strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
       {shape}
-    </svg>
-  )
-}
-
-// Green tick when granted, a plain cross when not — the explicit yes/no this
-// used to leave to a colour change on the left-hand icon alone, which was easy
-// to miss. Doubles as the visual cue that a not-done row is tappable.
-function StatusBadge({ done }) {
-  if (done) {
-    return (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-        <circle cx="12" cy="12" r="10" fill="#059669" />
-        <polyline points="7.5 12.4 10.6 15.4 16.5 8.9" fill="none" stroke="#fff"
-                  strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    )
-  }
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-      <circle cx="12" cy="12" r="10" fill="#F3E4EA" />
-      <path d="M8.7 8.7l6.6 6.6M15.3 8.7l-6.6 6.6" stroke="var(--maroon)"
-            strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   )
 }
@@ -130,6 +116,7 @@ export default function SosReliabilitySetup() {
   const [visited, setVisited]     = useState(readVisited)
   // Set by the native side after an alert failed to reach the screen.
   const [alertBlocked, setAlertBlocked] = useState(false)
+  const [skipped, setSkipped]     = useState(() => new Set(skippedThisLaunch))
 
   // Re-checked on every return to the app, not just at startup: the user leaves
   // to a system settings page to grant these, so coming back is the only moment
@@ -302,118 +289,112 @@ export default function SosReliabilitySetup() {
   }
 
   const rows = buildRows(t, info, overlayOk, visited)
-  const remaining = rows.filter(r => !r.done).length
+
+  // One permission at a time, like a system prompt: the first row still to do
+  // and not passed over. Granting it (verified on return, or marked on leaving
+  // the settings page) moves straight to the next; when nothing is left the
+  // dialog simply isn't drawn.
+  const current = rows.find(r => !r.done && !skipped.has(r.key))
+  if (!current) return null
+  const step = rows.indexOf(current) + 1
+
+  const skip = () => {
+    skippedThisLaunch.add(current.key)
+    setSkipped(new Set(skippedThisLaunch))
+  }
+
+  const total = rows.length
 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 100000,
-      background: 'rgba(42,10,24,0.72)',
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      background: 'rgba(42,10,24,0.55)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 22,
     }}>
-      <div style={{
-        width: '100%', maxWidth: 460, background: '#fff',
-        borderRadius: '24px 24px 0 0', padding: '22px 20px 26px',
-        boxShadow: '0 -8px 40px rgba(0,0,0,0.25)',
-        animation: 'sosSetupUp 0.28s ease',
+      <div role="dialog" aria-modal="true" style={{
+        width: '100%', maxWidth: 330, background: '#fff', borderRadius: 24,
+        padding: '24px 22px 14px', textAlign: 'center',
+        animation: 'sosSetupPop 0.2s ease',
       }}>
-        <style>{`@keyframes sosSetupUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
+        <style>{`@keyframes sosSetupPop{from{transform:scale(0.94);opacity:0}to{transform:scale(1);opacity:1}}`}</style>
 
+        {/* Soft tinted disc behind the line icon — the same treatment as the
+            other prompts, so it reads as part of the app and not a system wall. */}
         <div style={{
-          width: 38, height: 4, borderRadius: 2, background: 'var(--border)',
-          margin: '0 auto 18px',
-        }} />
-
-        {/* Lead with what it buys, not with the word "permission". */}
-        <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 8, letterSpacing: -0.3 }}>
-          {t('reliability.title')}
+          width: 68, height: 68, borderRadius: 34, margin: '0 auto 16px',
+          background: '#FCE7F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <RowIcon shape={current.icon} size={32} />
         </div>
-        <p style={{ fontSize: 14, color: '#6B4152', lineHeight: 1.5, marginBottom: alertBlocked ? 14 : 18 }}>
-          {/* Two intros, because the list can now be about two different
-              things. The OEM one explains apps being held back in the
-              background, which is only true when an autostart/pop-up row is
-              actually on the list. A checklist made up of the plain-Android
-              rows (full-screen alerts, Do Not Disturb access) is about a
-              silenced or locked phone instead, and the OEM sentence describes
-              a problem that phone does not have. */}
-          {t(rows.some(r => r.key === 'autostart' || r.key === 'popup')
-              ? 'reliability.intro'
-              : 'reliability.introPlain', {
-            oem: oemLabel(t, info),
-            switches: remaining === 1
-              ? t('reliability.oneSwitch')
-              : t('reliability.someSwitches', { n: remaining }),
-          })}
-        </p>
 
-        {/* Only when the phone has actually failed to show one — the concrete
-            thing that happened, stated once, instead of a step of its own. */}
-        {alertBlocked && (
-          <div style={{
-            background: '#FEF0F5', border: '1px solid #F5D6E1', borderRadius: 12,
-            padding: '10px 13px', marginBottom: 16, fontSize: 13,
-            color: 'var(--maroon)', lineHeight: 1.5, fontWeight: 600,
-          }}>
+        {/* Lead with what the person gets, not the Android permission name. */}
+        <div style={{ fontSize: 19, fontWeight: 800, color: 'var(--text)', lineHeight: 1.25, marginBottom: 8, letterSpacing: -0.2 }}>
+          {current.title}
+        </div>
+        <div style={{ fontSize: 14.5, color: '#5E3A4B', lineHeight: 1.5, marginBottom: 14 }}>
+          {current.why}
+        </div>
+
+        {alertBlocked && (current.key === 'popup' || current.key === 'fullscreen') && (
+          <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--maroon)', fontWeight: 600, lineHeight: 1.45 }}>
             {t('reliability.blocked')}
           </div>
         )}
 
-        {/* Each row IS the button now — tapping it opens exactly its own
-            settings screen (handleRowTap above), so there is no separate stack
-            of full-width links turning a 4-row checklist into a much taller
-            sheet than the permission ask actually is. The right-hand badge is
-            the plain yes/no: green tick granted, cross not yet — tapping a
-            ticked row does nothing, there is nothing left to fix there. */}
+        {/* The fear is "what is this really letting it do". Say plainly what it
+            is for and that it can be undone — inside a soft box, not a popup. */}
         <div style={{
-          border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', marginBottom: 16,
+          display: 'flex', alignItems: 'flex-start', gap: 9, textAlign: 'left',
+          background: '#F4F9F6', border: '1px solid #D5EADF', borderRadius: 14,
+          padding: '10px 12px', marginBottom: 8,
         }}>
-          {rows.map((row, i) => (
-            <div key={row.key}
-              onClick={row.done ? undefined : () => handleRowTap(row)}
-              style={{
-                display: 'flex', alignItems: 'flex-start', gap: 11,
-                padding: '12px 14px',
-                borderTop: i === 0 ? 'none' : '1px solid #F3E9ED',
-                background: row.done ? '#F7FBF9' : '#fff',
-                cursor: row.done ? 'default' : 'pointer',
-              }}>
-              <div style={{ paddingTop: 1 }}><RowIcon shape={row.icon} /></div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 14, fontWeight: 700,
-                  color: row.done ? '#3F7460' : 'var(--text)', marginBottom: 2,
-                }}>
-                  {row.label}
-                </div>
-                <div style={{ fontSize: 12.5, color: '#8A6675', lineHeight: 1.45 }}>
-                  {row.done ? t('reliability.done') : row.sub}
-                </div>
-              </div>
-              <div style={{ paddingTop: 1 }}><StatusBadge done={row.done} /></div>
-            </div>
-          ))}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F7D5B"
+               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+            <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" /><path d="m9 12 2.2 2.2L15.5 10" />
+          </svg>
+          <div style={{ fontSize: 13, color: '#2F5D49', lineHeight: 1.45 }}>
+            {t('reliability.reassure')}
+          </div>
+        </div>
+        <div style={{ fontSize: 12.5, color: '#7A5565', lineHeight: 1.45, marginBottom: 16 }}>
+          {t(current.key === 'popup' ? 'reliability.howOther' : 'reliability.how')}
         </div>
 
-        {/* No "Done": the sheet closes itself when the list is complete. This is
-            only the way out for someone who does not want to do it now. */}
-        <button onClick={dismiss} style={{
-          width: '100%', padding: 10, background: 'none', border: 'none',
-          color: 'var(--muted2)', fontSize: 13.5, fontFamily: 'inherit',
-          cursor: 'pointer', textDecoration: 'underline',
+        <button onClick={() => handleRowTap(current)} style={{
+          width: '100%', padding: '14px 10px', borderRadius: 14, border: 'none',
+          background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
+          color: '#fff', fontSize: 16, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+        }}>
+          {t('reliability.allow')}
+        </button>
+        <button onClick={skip} style={{
+          width: '100%', padding: '12px 10px', marginTop: 4, background: 'none', border: 'none',
+          color: 'var(--maroon)', fontSize: 15, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
         }}>
           {t('reliability.notNow')}
+        </button>
+
+        {/* Progress as dots, not "2 of 4" — shows the job is small and moving. */}
+        {total > 1 && (
+          <div aria-label={t('reliability.stepOf', { n: step, total })}
+               style={{ display: 'flex', justifyContent: 'center', gap: 6, margin: '4px 0 6px' }}>
+            {rows.map((r, i) => (
+              <span key={r.key} style={{
+                width: i + 1 === step ? 18 : 6, height: 6, borderRadius: 3,
+                background: i + 1 === step ? 'var(--maroon)' : (r.done ? '#2F7D5B' : '#E6D3DB'),
+              }} />
+            ))}
+          </div>
+        )}
+        <button onClick={dismiss} style={{
+          background: 'none', border: 'none', padding: '8px 10px', color: '#8A6675',
+          fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'underline',
+        }}>
+          {t('reliability.dontAsk')}
         </button>
       </div>
     </div>
   )
-}
-
-function oemLabel(t, info) {
-  return {
-    xiaomi: 'Xiaomi / Redmi / POCO',
-    oppo:   'OPPO / Realme',
-    vivo:   'Vivo',
-    huawei: 'Huawei / Honor',
-  }[info.oem] || t('reliability.someAndroid')
 }
 
 // Which permissions this phone needs, and their current status — nothing
@@ -501,21 +482,29 @@ function buildRows(t, info, overlayOk, visited) {
       icon: Icons.autostart,
       label: t('reliability.autostart'),
       sub: t('reliability.autostartSub'),
+      title: t('reliability.autostartTitle'),
+      why: t('reliability.autostartWhy'),
     },
     popup: {
       icon: Icons.popup,
       label: t('reliability.popup'),
       sub: t('reliability.popupSub'),
+      title: t('reliability.popupTitle'),
+      why: t('reliability.popupWhy'),
     },
     fullscreen: {
       icon: Icons.fullscreen,
       label: t('reliability.fullscreen'),
       sub: t('reliability.fullscreenSub'),
+      title: t('reliability.fullscreenTitle'),
+      why: t('reliability.fullscreenWhy'),
     },
     dnd: {
       icon: Icons.dnd,
       label: t('reliability.dnd'),
       sub: t('reliability.dndSub'),
+      title: t('reliability.dndTitle'),
+      why: t('reliability.dndWhy'),
     },
   }
 

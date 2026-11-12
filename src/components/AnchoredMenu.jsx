@@ -42,7 +42,9 @@ export default function AnchoredMenu({ anchor, items = [], onClose, width = 210,
   // Below the anchor by default, flipped above when there is no room. Both
   // clamped, so an element near an edge still yields a fully visible menu.
   let top = anchor ? anchor.bottom + 6 : (vh - height) / 2
+  let above = false
   if (top + height > vh - M) {
+    above = !!anchor
     top = anchor ? anchor.top - height - 6 : top
     if (top < M) top = Math.max(M, vh - height - M)
   }
@@ -53,9 +55,13 @@ export default function AnchoredMenu({ anchor, items = [], onClose, width = 210,
       style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(42,10,24,0.16)' }}
     >
       <div
+        className="anchored-menu"
         onClick={e => e.stopPropagation()}
         style={{
           position: 'fixed', top, left, width,
+          // Opens out of the opener: grows from the edge nearest it, at the opener's centre.
+          transformOrigin: `${anchor ? Math.max(0, Math.min(width, anchor.left + anchor.width / 2 - left)) : width / 2}px ${above ? '100%' : '0%'}`,
+          animation: 'menuPop 0.16s ease-out',
           background: '#fff', borderRadius: 14,
           border: '1px solid var(--border)',
           boxShadow: '0 14px 36px rgba(20,4,10,0.24)',

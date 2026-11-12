@@ -374,6 +374,7 @@ export default function FamilyPage() {
   const [editingFamilyName, setEditingFamilyName] = useState(false)
   const [showFamilySwitcher, setShowFamilySwitcher] = useState(false)
   const [memberAnchor, setMemberAnchor] = useState(null)
+  const [fabAnchor, setFabAnchor]       = useState(null)   // the + button's rect while its menu is open
   const [showInviteSheet, setShowInviteSheet]       = useState(false)
   const [newFamilyName, setNewFamilyName]           = useState('')
   const { background: familyBg } = useFamilyBackground(familyId)
@@ -1134,7 +1135,9 @@ export default function FamilyPage() {
           {/* Just the hint — the "Family members (n)" count above the cards
               was removed at the owner's request; the cards speak for it. */}
           <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, lineHeight: 1.5 }}>
-            {t('family.holdToEdit')}
+            {/* Removing a member is the family creator's alone (see the action sheet), so
+                everyone else is not told the card can remove anyone. */}
+            {t(isOwner ? 'family.holdToEdit' : 'family.holdToEditOnly')}
           </span>
         </div>
 
@@ -1621,59 +1624,56 @@ export default function FamilyPage() {
         )
       })()}
 
-      {/* ── Invite FAB ── */}
-      {/* Absolute inside this page's root, which ends where the bottom nav
+      {/* ── Add FAB ──
+          One + button; its menu holds the two things it can do. They used to be two round
+          buttons side by side, and the second (a door-and-arrow icon, no words) did not say
+          what it was for. Absolute inside this page's root, which ends where the bottom nav
           begins, so it floats clear of the nav without needing its height. */}
-      {inviteCode && (
-        <button
-          onClick={() => setShowInviteSheet(true)}
-          title={t('messages.inviteMember')}
-          aria-label={t('messages.inviteMember')}
-          style={{
-            position: 'absolute', right: 18, bottom: 18, zIndex: 20,
-            width: 56, height: 56, borderRadius: '50%',
-            background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
-            border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            // No coloured halo: it read as a glow. A tight neutral shadow only.
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-            padding: 0,
-          }}
-        >
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
-            stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-        </button>
-      )}
-
-      {/* ── Join FAB ──
-          The same Join action as Profile → My families, next to the + button.
-          Lighter than the invite button (white, maroon outline) so the two read
-          as different things: + invites someone into THIS family, this one joins
-          ANOTHER family with a code. */}
       <button
-        onClick={() => navigate('/join-family')}
-        title={t('createFamily.joinFamily')}
-        aria-label={t('createFamily.joinFamily')}
+        onClick={e => setFabAnchor(e.currentTarget.getBoundingClientRect())}
+        title={t('messages.inviteMember')}
+        aria-label={t('messages.inviteMember')}
+        aria-haspopup="menu"
         style={{
-          position: 'absolute', right: inviteCode ? 86 : 18, bottom: 18, zIndex: 20,
+          position: 'absolute', right: 18, bottom: 18, zIndex: 20,
           width: 56, height: 56, borderRadius: '50%',
-          background: '#fff',
-          border: '1.5px solid var(--maroon)', cursor: 'pointer',
+          background: 'linear-gradient(135deg, var(--maroon), var(--maroon-deep))',
+          border: 'none', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          // No coloured halo: it read as a glow. A tight neutral shadow only.
           boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
           padding: 0,
         }}
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-          stroke="var(--maroon)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-          <polyline points="10 17 15 12 10 7"/>
-          <line x1="15" y1="12" x2="3" y2="12"/>
+        {/* Turns a quarter-turn while the menu is open: the + becomes a x. */}
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+          stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"
+          style={{ transform: fabAnchor ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s ease' }}>
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
       </button>
+
+      {fabAnchor && (
+        <AnchoredMenu
+          anchor={fabAnchor}
+          align="right"
+          width={240}
+          onClose={() => setFabAnchor(null)}
+          items={[
+            inviteCode && {
+              label: t('messages.inviteMember'),
+              icon: <Icon name="users" size={17} />,
+              onClick: () => setShowInviteSheet(true),
+            },
+            {
+              label: t('family.joinAnother'),
+              icon: <Icon name="key" size={17} />,
+              onClick: () => navigate('/join-family'),
+            },
+          ]}
+        />
+      )}
     </div>
   )
 }

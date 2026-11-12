@@ -1005,8 +1005,14 @@ export default function LandingPage() {
 
   // A link only once the real Play URL is set in lib/siteConfig.js; until then the
   // button is shown but is not a link.
+  // Instagram/Facebook's in-app browser on Android often ignores a plain Play link.
+  // There, hand the Play app an intent link, with the normal URL as the fallback.
+  const inApp = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent) && /Instagram|FBAN|FBAV|FB_IAB/i.test(navigator.userAgent)
+  const playHref = PLAY_STORE_URL && inApp
+    ? `intent://details?${PLAY_STORE_URL.split('?')[1]}#Intent;scheme=market;package=com.android.vending;S.browser_fallback_url=${encodeURIComponent(PLAY_STORE_URL)};end`
+    : PLAY_STORE_URL
   const download = PLAY_STORE_URL
-    ? <a className="kl-btn light" href={PLAY_STORE_URL} rel="noopener"><PlayGlyph />{t('landing.getApp')}</a>
+    ? <a className="kl-btn light" href={playHref} rel="noopener"><PlayGlyph />{t('landing.getApp')}</a>
     : <span className="kl-btn soon" aria-disabled="true"><PlayGlyph />{t('landing.getApp')}</span>
 
   const body = {
@@ -1019,6 +1025,10 @@ export default function LandingPage() {
             {download}
             <Link className="kl-btn ghost" to="/login">{t('landing.openWeb')}</Link>
           </div>
+          {/* Instagram/Facebook open links in their own browser, which often will not hand off to the Play Store app. */}
+          {PLAY_STORE_URL && /Instagram|FBAN|FBAV|FB_IAB/i.test(navigator.userAgent) && (
+            <div className="kl-hint" style={{ marginTop: 10, maxWidth: 320 }}>{t('landing.inAppHint')}</div>
+          )}
           {!seen && (
             <div className="kl-hint">
               {t('landing.swipeHint')}
