@@ -11,6 +11,7 @@ import AuthHomeLink from '../components/AuthHomeLink'
 import Dialog from '../components/Dialog'
 import famoraLogo from '../assets/famora-logo.jpg'
 import { APP_NAME } from '../lib/brand'
+import { isIndianMobile } from '../lib/phone'
 
 // Clean open/closed eye icon — no emoji. `open` = password visible.
 function EyeIcon({ open }) {
@@ -55,7 +56,7 @@ export default function RegisterPage() {
     e.preventDefault()
     setError('')
     if (!name.trim()) { setError(t('register.enterName')); return }
-    if (mobile.replace(/[^0-9]/g, '').length !== 10) {
+    if (!isIndianMobile(mobile.replace(/[^0-9]/g, ''))) {
       setError(t('auth.enterValidMobile')); return
     }
     // A soft popup rather than the inline error banner: this is the rule people trip over

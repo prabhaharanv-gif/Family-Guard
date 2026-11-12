@@ -19,6 +19,7 @@ import { createClient } from '@supabase/supabase-js'
 import { useT } from '../i18n'
 import Dialog from '../components/Dialog'
 import Icon from '../components/Icon'
+import { isIndianMobile } from '../lib/phone'
 
 /**
  * A throwaway client for the web deletion flow only.
@@ -104,7 +105,7 @@ function WebDeleteFlow() {
 
   const sendCode = async () => {
     setError('')
-    if (digits.length !== 10) { setError(t('auth.enterValidMobile')); return }
+    if (!isIndianMobile(digits)) { setError(t('auth.enterValidMobile')); return }
     setLoading(true)
     // shouldCreateUser: false — without it, asking for a code for a number that
     // has no account would quietly create one, the way registration relies on.
