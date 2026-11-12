@@ -126,6 +126,11 @@ export function isBareMedia(msg) {
 // anyone meant, and on a phone it is impossible to tell which row to stop.
 let nowPlaying = null
 
+// The speed people chose stays for the next note, like the one they last used in any chat
+// app: it is the habit of a person who listens to every note at 1.5x, not of one note.
+const SPEEDS = [1, 1.5, 2]
+let preferredRate = 1
+
 function mmss(ms) {
   const total = Math.max(0, Math.round((ms || 0) / 1000))
   const m = Math.floor(total / 60)
@@ -142,6 +147,7 @@ function VoiceNote({ msg, url, isOwn }) {
 
   const ref = useRef(null)
   const [playing, setPlaying] = useState(false)
+  const [rate, setRate] = useState(preferredRate)
   const [elapsedMs, setElapsedMs] = useState(0)
   // The recorder stored this when the note was sent, so the length is on
   // screen before the file has been touched — no 0:00 that jumps once the
@@ -189,6 +195,7 @@ function VoiceNote({ msg, url, isOwn }) {
     if (el.paused) {
       if (nowPlaying && nowPlaying !== el) { try { nowPlaying.pause() } catch { /* already gone */ } }
       nowPlaying = el
+      el.playbackRate = rate
       // Autoplay policies can refuse; the catch keeps a refusal from
       // surfacing as an unhandled rejection in the WebView console.
       const r = el.play()
@@ -196,6 +203,14 @@ function VoiceNote({ msg, url, isOwn }) {
     } else {
       el.pause()
     }
+  }
+
+  // 1x -> 1.5x -> 2x -> 1x. Applied at once if the note is playing.
+  const cycleSpeed = () => {
+    const next = SPEEDS[(SPEEDS.indexOf(rate) + 1) % SPEEDS.length]
+    preferredRate = next
+    setRate(next)
+    if (ref.current) ref.current.playbackRate = next
   }
 
   // Tap anywhere on the bars to jump there. The whole row is the scrubber,
@@ -280,6 +295,19 @@ function VoiceNote({ msg, url, isOwn }) {
             two numbers people actually want, never both at once. */}
         {playing || elapsedMs > 0 ? mmss(elapsedMs) : mmss(totalMs)}
       </div>
+
+      <button
+        onClick={cycleSpeed}
+        aria-label={t('messages.voiceSpeed') + ' ' + rate + 'x'}
+        style={{
+          flexShrink: 0, minWidth: 30, height: 20, padding: '0 6px', borderRadius: 10,
+          background: rate === 1 ? 'transparent' : ink, color: rate === 1 ? ink : '#fff',
+          border: `1.5px solid ${ink}`, cursor: 'pointer', fontFamily: 'inherit',
+          fontSize: 10.5, fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {rate}x
+      </button>
     </div>
   )
 }

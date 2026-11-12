@@ -260,7 +260,7 @@ export default function App() {
           the person had an account, let alone seen what the app does. Nothing
           it asks for can matter until there is a family to receive an SOS from,
           and by then the app has earned the question. */}
-      {user && familyId && <SosReliabilitySetup />}
+      {user && familyId && !disclosureOpen && <SosReliabilitySetup />}
       <BackgroundLocationDisclosure
         open={disclosureOpen}
         onAccept={() => { markTimelineNoticeSeen(); acceptDisclosure() }}

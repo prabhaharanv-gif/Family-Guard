@@ -225,6 +225,40 @@ function RouteCursor({ cursor, renderSpotPopup }) {
   )
 }
 
+// The held spot's flag. Its distance card is an open popup over the flag, kept open (a tap
+// on the map or on another member does not close it) and re-opened when the flag moves; the
+// card has its own close button, which clears the spot.
+function DestFlag({ destination, popup, from }) {
+  const ref = useRef(null)
+  const icon = useMemo(() => L.icon({
+    iconUrl: destPin(), iconSize: [DEST_PIN, DEST_PIN],
+    iconAnchor: [DEST_ANCHOR.x, DEST_ANCHOR.y],
+    popupAnchor: [9, -DEST_ANCHOR.y + 3],   // the tip of the pointer sits at the top of the flag
+  }), [])
+  useEffect(() => { if (popup) ref.current?.openPopup() }, [destination.lat, destination.lng, !!popup]) // eslint-disable-line react-hooks/exhaustive-deps
+  const hasFrom = Number.isFinite(from?.lat) && Number.isFinite(from?.lng)
+  return (
+    <>
+      {/* A line from the followed member to the flag, so what the distance is measured
+          between reads at a glance. Dashed and thin: it is a pointer, not a road. */}
+      {hasFrom && (
+        <Polyline positions={[[from.lat, from.lng], [destination.lat, destination.lng]]}
+          interactive={false}
+          pathOptions={{ color: '#8B0D3D', weight: 3, opacity: 0.85, dashArray: '2 9', lineCap: 'round' }} />
+      )}
+      <Marker ref={ref} position={[destination.lat, destination.lng]} icon={icon}
+        interactive={!!popup} keyboard={false}>
+        {popup && (
+          <Popup closeButton={false} autoClose={false} closeOnClick={false} autoPan={false}
+            minWidth={150} maxWidth={190}>
+            {popup}
+          </Popup>
+        )}
+      </Marker>
+    </>
+  )
+}
+
 // A held finger (Leaflet turns a touch long-press into contextmenu), a right click, or
 // the left mouse button held still on the map: the spot to measure the followed
 // member's trip to. The held mouse button is what the phone's long-press looks like
@@ -265,7 +299,7 @@ function LongPress({ onLongPress }) {
 
 export default function LeafletFamilyMap({
   pins, locations, flyTarget, followLoc, following, onUserPanned, renderPopup, renderSpotPopup,
-  route = null, routeCursor = null, routeInset = 0, onLongPress, destination = null,
+  route = null, routeCursor = null, routeInset = 0, onLongPress, destination = null, destPopup = null,
 }) {
   return (
     <MapContainer
@@ -284,13 +318,7 @@ export default function LeafletFamilyMap({
       <RouteLine route={route} inset={routeInset} renderSpotPopup={renderSpotPopup} />
       <RouteCursor cursor={routeCursor} renderSpotPopup={renderSpotPopup} />
       <LongPress onLongPress={onLongPress} />
-      {destination && (
-        <Marker
-          position={[destination.lat, destination.lng]}
-          icon={L.icon({ iconUrl: destPin(), iconSize: [DEST_PIN, DEST_PIN], iconAnchor: [DEST_ANCHOR.x, DEST_ANCHOR.y] })}
-          interactive={false}
-        />
-      )}
+      {destination && <DestFlag destination={destination} popup={destPopup} from={followLoc} />}
 
       {Object.entries(pins).map(([uid, loc]) => (
         loc.kind === 'anonDot' ? (

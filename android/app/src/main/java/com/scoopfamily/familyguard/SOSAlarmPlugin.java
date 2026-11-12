@@ -311,8 +311,33 @@ public class SOSAlarmPlugin extends Plugin {
      */
     @PluginMethod
     public void openAppDetailsSettings(PluginCall call) {
+        Context ctx = getContext();
+        // On Xiaomi/Redmi/POCO go straight to the permission list that holds
+        // "Display pop-up windows while running in the background" and "Show on
+        // lock screen", instead of App Details where the person has to hunt for
+        // "Other permissions". The component name differs between MIUI/HyperOS
+        // versions, so try the current one, then the older one, then fall back.
+        String maker = (Build.MANUFACTURER + " " + Build.BRAND).toLowerCase();
+        if (maker.contains("xiaomi") || maker.contains("redmi") || maker.contains("poco")) {
+            String[] editors = {
+                "com.miui.permcenter.permissions.PermissionsEditorActivity",
+                "com.miui.permcenter.permissions.AppPermissionsEditorActivity",
+            };
+            for (String editor : editors) {
+                try {
+                    Intent miui = new Intent("miui.intent.action.APP_PERM_EDITOR");
+                    miui.setComponent(new ComponentName("com.miui.securitycenter", editor));
+                    miui.putExtra("extra_pkgname", ctx.getPackageName());
+                    miui.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ctx.startActivity(miui);
+                    call.resolve(new JSObject().put("opened", true).put("direct", true));
+                    return;
+                } catch (Exception ignored) {
+                    // not on this ROM version — try the next one
+                }
+            }
+        }
         try {
-            Context ctx = getContext();
             Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
             intent.setData(Uri.parse("package:" + ctx.getPackageName()));
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

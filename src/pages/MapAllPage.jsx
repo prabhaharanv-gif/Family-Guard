@@ -625,6 +625,55 @@ export default function MapAllPage() {
   const showPermError = locErrorType === 'perm'
   const showGpsError  = locErrorType === 'fail' && memberCount === 0
 
+  // The card for the held spot: how far the followed member is from it, and when they
+  // would get there. Built here, once, so the web map can hang it over the flag while the
+  // phone keeps it at the bottom of the screen.
+  const destBody = (() => {
+    if (!followUid || !locations[followUid] || !dest) return null
+          const who = locations[followUid]
+          // Google's route from the followed member to the spot, by the first mode it
+          // offers (car where there is a road). No route, or no answer yet: just the name.
+          // Until Google answers (or where it has no route, or the lookup fails) the
+          // straight line stretched to a rough road length, with a "~" on the arrival,
+          // so the chip always shows a distance.
+          const tr = destTravel.for('dest')
+          const line = haversineKm(who.lat, who.lng, dest.lat, dest.lng)
+          const est = tr?.km == null ? estimateArrival(line) : null
+          const eta = tr?.arriveAt ? t('map.destReachBy', { time: arrivalLabel(tr) })
+            : est ? t('map.destReachBy', { time: '~' + arrivalTextAt(est.arriveAt) }) : null
+          const road = tr?.km != null ? tr.km : line == null ? null : line * (line > 25 ? 1.2 : 1.3)
+          const km = tr?.km != null ? road : line
+          const far = road == null ? '…' : road < 1 ? `${Math.round(road * 10) * 100} m` : `${formatKm(road)} km`
+    return (
+      // Inter set outright: inside a Leaflet popup the text would otherwise take the
+      // library's Helvetica. The words wrap (the popup is capped near 190px) instead of
+      // running out as one long line.
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontFamily: 'Inter, sans-serif' }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, lineHeight: 1.35, color: 'var(--text)' }}>
+            {km != null && km < 0.15
+              ? t('map.destThere', { name: who.realName || who.displayName })
+              : t('map.destAway', { name: who.realName || who.displayName, dist: far })}
+          </div>
+          {eta && <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--maroon)', marginTop: 2 }}>{eta}</div>}
+        </div>
+        <button
+          onClick={() => setDest(null)}
+          aria-label={t('map.destClear')}
+          style={{
+            background: '#F8E6ED', color: 'var(--maroon)', border: '1.5px solid var(--maroon)',
+            borderRadius: 999, width: 24, height: 24, flexShrink: 0, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+          }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    )
+  })()
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Top Bar */}
@@ -792,6 +841,7 @@ export default function MapAllPage() {
           onUserPanned={pauseFollowing}
           onLongPress={followUid ? setDest : undefined}
           destination={followUid ? dest : null}
+          destPopup={Capacitor.isNativePlatform() ? null : destBody}
           renderPopup={renderMemberPopup}
           renderSpotPopup={renderSpotPopup}
           mapMode={mapMode}
@@ -912,53 +962,19 @@ export default function MapAllPage() {
             turned it off with nothing on screen to say so. This states which
             member is being followed, says when a drag has paused it, and offers
             it back in one tap without reopening Find Fam. */}
-        {followUid && locations[followUid] && dest && (() => {
-          const who = locations[followUid]
-          // Google's route from the followed member to the spot, by the first mode it
-          // offers (car where there is a road). No route, or no answer yet: just the name.
-          // Until Google answers (or where it has no route, or the lookup fails) the
-          // straight line stretched to a rough road length, with a "~" on the arrival,
-          // so the chip always shows a distance.
-          const tr = destTravel.for('dest')
-          const line = haversineKm(who.lat, who.lng, dest.lat, dest.lng)
-          const est = tr?.km == null ? estimateArrival(line) : null
-          const eta = tr?.arriveAt ? t('map.destReachBy', { time: arrivalLabel(tr) })
-            : est ? t('map.destReachBy', { time: '~' + arrivalTextAt(est.arriveAt) }) : null
-          const road = tr?.km != null ? tr.km : line == null ? null : line * (line > 25 ? 1.2 : 1.3)
-          const km = tr?.km != null ? road : line
-          const far = road == null ? '…' : road < 1 ? `${Math.round(road * 10) * 100} m` : `${formatKm(road)} km`
-          return (
-            <div style={{
-              position: 'absolute', left: '50%', bottom: 72, transform: 'translateX(-50%)',
-              zIndex: 1000, display: 'flex', alignItems: 'center', gap: 10,
-              background: '#fff', color: 'var(--text)', border: '1.5px solid var(--border2)',
-              borderRadius: 16, padding: '10px 10px 10px 14px',
-              boxShadow: '0 6px 20px rgba(74,8,32,0.22)', maxWidth: '88%',
-            }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 800 }}>
-                  {km != null && km < 0.15
-                    ? t('map.destThere', { name: who.realName || who.displayName })
-                    : t('map.destAway', { name: who.realName || who.displayName, dist: far })}
-                </div>
-                {eta && <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--maroon)' }}>{eta}</div>}
-              </div>
-              <button
-                onClick={() => setDest(null)}
-                aria-label={t('map.destClear')}
-                style={{
-                  background: '#F8E6ED', color: 'var(--maroon)', border: '1.5px solid var(--maroon)',
-                  borderRadius: 999, width: 26, height: 26, flexShrink: 0, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
-                }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="3" strokeLinecap="round" aria-hidden="true">
-                  <path d="M18 6 6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          )
-        })()}
+        {/* The distance card for the held spot. On the web it sits over the flag (the map
+            draws it); on the phone it stays here, at the bottom. */}
+        {destBody && Capacitor.isNativePlatform() && (
+          <div style={{
+            position: 'absolute', left: '50%', bottom: 72, transform: 'translateX(-50%)',
+            zIndex: 1000,
+            background: '#fff', color: 'var(--text)', border: '1.5px solid var(--border2)',
+            borderRadius: 16, padding: '10px 10px 10px 14px',
+            boxShadow: '0 6px 20px rgba(74,8,32,0.22)', maxWidth: '88%',
+          }}>
+            {destBody}
+          </div>
+        )}
 
         {followUid && locations[followUid] && (
           <div style={{

@@ -1002,6 +1002,12 @@ export default function ProfilePage() {
 
         <div style={{ flex: 1 }}>
           <div className="top-bar-title" style={{ fontSize: 16 }}>{displayName || t('profile.myProfile')}</div>
+          {/* The saved phone number, under the name. */}
+          {(member?.phone || phone) && (
+            <div style={{ fontSize: 11.5, fontWeight: 600, color: 'rgba(255,255,255,0.78)', marginTop: 2, lineHeight: 1.4 }}>
+              {member?.phone || phone}
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

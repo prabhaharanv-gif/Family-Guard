@@ -36,7 +36,7 @@ export const UI = {
       today: "Today", yesterday: "Yesterday",
     },
     nav: {
-      family: 'Family', messages: 'Messages', sos: 'SOS',
+      family: 'Family', messages: 'Connect', sos: 'SOS',
       map: 'Map', profile: 'Profile',
     },
 
@@ -291,6 +291,7 @@ export const UI = {
       adminOnly: 'Admin Only',
       renameAdminOnly: 'Only the family creator can rename the family.',
       renameFailed: 'Could not rename family. Please try again.',
+      joinAnother: "Join another family",
       showOnMap: "Show on map",
       pingSent: 'Ping Sent',
       pingSentMsg: "{name}'s phone will ring for 30 seconds, even if it's on silent.",
@@ -319,6 +320,7 @@ export const UI = {
       reject: 'Reject',
       familyMembers: 'Family members ({n})',
       holdToEdit: 'Hold to edit or remove',
+      holdToEditOnly: "Hold to edit",
       noMembers: 'No members yet',
       shareCodeToAdd: 'Share your family code to add members',
       online: 'Online',
@@ -358,6 +360,7 @@ export const UI = {
     messages: {
       voicePlay: 'Play voice message',
       voicePause: 'Pause voice message',
+      voiceSpeed: "Playback speed",
       refresh: 'Refresh',
       mediaDocument: 'Document',
       clearFailed: 'Could not clear the chat. Please try again.',
@@ -375,7 +378,7 @@ export const UI = {
       micFailed: 'Could not record. Check the microphone permission.',
       recordVoice: 'Record a voice message',
       stopRecording: 'Stop recording',
-      title: 'Messages',
+      title: 'Connect',
       tabFamily: 'Family',
       tabPersonal: 'Personal',
       tabCalls: 'Calls',
@@ -459,6 +462,10 @@ export const UI = {
       addToCall: 'Add to call',
 
       callingName: 'Calling {name}…',
+
+      filterAll: "All",
+
+      noMissed: "No missed calls",
 
       didntJoin: "{name} didn't join",
 
@@ -580,6 +587,20 @@ export const UI = {
       turnOn: 'Turn on',
       done: 'Done',
       notNow: 'Not now',
+      allow: 'Allow',
+      stepOf: '{n} of {total}',
+      dontAsk: "Don't ask again",
+      autostartTitle: "Keep family alerts coming",
+      autostartWhy: "Lets Kinest wake up and tell you when someone needs help, even if the app was closed.",
+      popupTitle: "See SOS on your lock screen",
+      popupWhy: "When family sends an SOS it appears right away, with no need to unlock your phone.",
+      fullscreenTitle: "Never miss an emergency",
+      fullscreenWhy: "Lets an SOS or call fill your screen so it cannot be missed.",
+      dndTitle: "Hear SOS even on silent",
+      dndWhy: "Only SOS alerts can ring through Do Not Disturb. Everything else stays quiet.",
+      reassure: "Used only for emergency alerts. You can turn it off any time in your phone settings.",
+      how: "Tap Allow, switch Kinest on in the page that opens, then come back.",
+      howOther: "Tap “Other permissions”, then switch on the pop-up options.",
       autostart: 'Allow background startup',
       autostartSub: 'Find Kinest in the list and switch it on',
       popup: 'Show alerts on the lock screen',
@@ -715,6 +736,10 @@ export const UI = {
     crashDetect: {
       title: 'Crash detection',
       subtitle: 'Starts an SOS countdown if a crash is detected while you drive',
+      bullet1: "Triggers a 20-second SOS countdown if a violent collision or sudden stop is detected.",
+      bullet2: "Automatically notifies all family circles with your location if not canceled.",
+      bullet3: "Runs efficiently in the background during high-speed travel with minimal battery usage.",
+      bullet4: "Prevent false alarms: Cancel immediately if triggered by a heavy phone drop or bump.",
       howItWorks: 'If the phone feels a violent jolt while you are driving and your speed drops to a stop right after, it starts a 20-second SOS countdown with a loud Cancel. If you do not cancel, an SOS with your location goes to every family you are in. It only listens while you are travelling fast, so it uses almost no battery. It can be wrong (a hard fall of the phone, a heavy bump), so cancel a false alarm right away.',
     },
     trips: {
@@ -761,6 +786,8 @@ export const UI = {
     overspeed: {
       title: 'Overspeed alert',
       subtitle: 'Tell your family if you drive faster than the limit you pick',
+      custom: "Custom",
+      customHint: "Enter a limit from 30 to 200 km/h",
     },
     weatherAlerts: {
       title: 'Weather alerts',
@@ -780,7 +807,7 @@ export const UI = {
       voice: 'Voice when answered',
       voiceHint: 'A voice speaks in the earpiece, like a real call',
       notificationButton: '"Call me" button',
-      notificationButtonHint: 'On the Kinest notification (while location sharing is on) and as a Quick Settings tile. Both work from the lock screen',
+      notificationButtonHint: "Trigger fake calls directly from Kinest notifications or Quick Settings tiles, even on lock screen.",
       callMeIn: 'Call me in',
       seconds: '{n} sec',
       minutes: '{n} min',
@@ -790,7 +817,7 @@ export const UI = {
     },
     places: {
       title: 'Places',
-      subtitle: 'Home, Office — get an alert when someone arrives or leaves',
+      subtitle: "Home, Office — Get notified when family members arrive or leave.",
       empty: 'No places saved yet.',
       namePlaceholder: 'Name this place (e.g. Home)',
       saveHere: 'Save current location',
@@ -905,7 +932,7 @@ export const UI = {
         antitheft: "Anti-theft",
         antitheftSub: "Wrong-password alert for your family admins",
         places: 'Places',
-        placesSub: 'Home, Office — get notified on arrival or departure',
+        placesSub: "Home, Office — Get notified when family members arrive or leave.",
         privacy: 'Privacy',
         privacySub: 'What your family can see about you',
         help: 'Help',
@@ -1018,7 +1045,7 @@ export const UI = {
       today: "இன்று", yesterday: "நேற்று",
     },
     nav: {
-      family: 'குடும்பம்', messages: 'செய்திகள்', sos: 'SOS',
+      family: 'குடும்பம்', messages: 'தொடர்பு', sos: 'SOS',
       map: 'வரைபடம்', profile: 'சுயவிவரம்',
     },
 
@@ -1264,6 +1291,7 @@ export const UI = {
       adminOnly: 'நிர்வாகி மட்டும்',
       renameAdminOnly: 'குடும்பத்தை உருவாக்கியவர் மட்டுமே பெயரை மாற்ற முடியும்.',
       renameFailed: 'குடும்பப் பெயரை மாற்ற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.',
+      joinAnother: "மற்றொரு குடும்பத்தில் இணை",
       showOnMap: "வரைபடத்தில் பார்",
       pingSent: 'சமிக்ஞை அனுப்பப்பட்டது',
       pingSentMsg: '{name} அவர்களின் தொலைபேசி சைலண்ட்டில் இருந்தாலும் 30 வினாடிகள் ஒலிக்கும்.',
@@ -1292,6 +1320,7 @@ export const UI = {
       reject: 'நிராகரி',
       familyMembers: 'குடும்ப உறுப்பினர்கள் ({n})',
       holdToEdit: 'திருத்த அல்லது நீக்க அழுத்திப் பிடிக்கவும்',
+      holdToEditOnly: "திருத்த அழுத்திப் பிடிக்கவும்",
       noMembers: 'இன்னும் உறுப்பினர்கள் இல்லை',
       shareCodeToAdd: 'உறுப்பினர்களைச் சேர்க்க உங்கள் குடும்பக் குறியீட்டைப் பகிருங்கள்',
       online: 'ஆன்லைன்',
@@ -1326,6 +1355,7 @@ export const UI = {
     messages: {
       voicePlay: 'குரல் செய்தியை இயக்கு',
       voicePause: 'குரல் செய்தியை நிறுத்து',
+      voiceSpeed: "இயக்க வேகம்",
       refresh: 'புதுப்பி',
       mediaDocument: 'ஆவணம்',
       clearFailed: 'அரட்டையை நீக்க முடியவில்லை. மீண்டும் முயலுங்கள்.',
@@ -1343,7 +1373,7 @@ export const UI = {
       micFailed: 'பதிவு செய்ய முடியவில்லை. மைக்ரோஃபோன் அனுமதியைச் சரிபார்க்கவும்.',
       recordVoice: 'குரல் செய்தியைப் பதிவு செய்யுங்கள்',
       stopRecording: 'பதிவை நிறுத்து',
-      title: 'செய்திகள்',
+      title: 'தொடர்பு',
       tabFamily: 'குடும்பம்',
       tabPersonal: 'தனிப்பட்ட',
       tabCalls: 'அழைப்புகள்',
@@ -1425,6 +1455,10 @@ export const UI = {
       addToCall: 'அழைப்பில் சேர்',
 
       callingName: '{name}-ஐ அழைக்கிறது…',
+
+      filterAll: "அனைத்தும்",
+
+      noMissed: "தவறிய அழைப்புகள் இல்லை",
 
       didntJoin: '{name} சேரவில்லை',
 
@@ -1549,6 +1583,20 @@ export const UI = {
       turnOn: 'இயக்கு',
       done: 'முடிந்தது',
       notNow: 'இப்போது வேண்டாம்',
+      allow: 'அனுமதி',
+      stepOf: '{n} / {total}',
+      dontAsk: 'மீண்டும் கேட்காதே',
+      autostartTitle: "குடும்ப எச்சரிக்கைகள் தவறாமல் வர",
+      autostartWhy: "செயலி மூடியிருந்தாலும், யாருக்காவது உதவி தேவைப்படும்போது Kinest உங்களுக்குத் தெரிவிக்க உதவும்.",
+      popupTitle: "பூட்டுத் திரையில் SOS பார்க்க",
+      popupWhy: "குடும்பத்தினர் SOS அனுப்பியவுடன், போனைத் திறக்காமலேயே உடனே தெரியும்.",
+      fullscreenTitle: "அவசரத்தை ஒருபோதும் தவறவிடாதீர்கள்",
+      fullscreenWhy: "SOS அல்லது அழைப்பு முழுத் திரையில் தெரியும், தவறவிட வாய்ப்பில்லை.",
+      dndTitle: "சைலன்டிலும் SOS கேட்க",
+      dndWhy: "தொந்தரவு செய்யாதே பயன்முறையிலும் SOS மட்டும் ஒலிக்கும். மற்றவை அமைதியாகவே இருக்கும்.",
+      reassure: "அவசர எச்சரிக்கைகளுக்காக மட்டுமே பயன்படும். போன் அமைப்புகளில் எப்போது வேண்டுமானாலும் அணைக்கலாம்.",
+      how: "\"அனுமதி\" தட்டி, திறக்கும் பக்கத்தில் Kinest-ஐ இயக்கி, திரும்பி வாருங்கள்.",
+      howOther: "“Other permissions” தட்டி, pop-up switch-களை ஆன் செய்யுங்கள்.",
       autostart: 'பின்னணி தொடக்கத்தை அனுமதி',
       autostartSub: 'பட்டியலில் Kinest-வைக் கண்டுபிடித்து இயக்கவும்',
       popup: 'பூட்டுத் திரையில் எச்சரிக்கைகளைக் காட்டு',
@@ -1681,6 +1729,10 @@ export const UI = {
     crashDetect: {
       title: 'விபத்து கண்டறிதல்',
       subtitle: 'நீங்கள் ஓட்டும்போது விபத்து கண்டறியப்பட்டால் SOS கவுண்ட்டவுனைத் தொடங்கும்',
+      bullet1: "கடுமையான மோதல் அல்லது திடீர் நிறுத்தம் கண்டறியப்பட்டால் 20 வினாடி SOS கவுண்ட்டவுன் தொடங்கும்.",
+      bullet2: "ரத்து செய்யாவிட்டால், உங்கள் இருப்பிடத்துடன் அனைத்து குடும்பங்களுக்கும் தானாகவே தெரிவிக்கும்.",
+      bullet3: "அதிவேகப் பயணத்தின்போது மட்டும் பின்னணியில் இயங்கும்; மின்கலப் பயன்பாடு மிகக் குறைவு.",
+      bullet4: "தவறான எச்சரிக்கையைத் தவிர்க்க: போன் பலமாக விழுந்தாலோ இடித்தாலோ தொடங்கினால் உடனே ரத்து செய்யுங்கள்.",
       howItWorks: 'நீங்கள் ஓட்டும்போது ஃபோன் கடுமையான அதிர்வை உணர்ந்து, உடனே உங்கள் வேகம் நின்றுவிட்டால், 20 வினாடி SOS கவுண்ட்டவுன் தொடங்கும் (சத்தமான ரத்து பொத்தானுடன்). ரத்து செய்யாவிட்டால், உங்கள் இருப்பிடத்துடன் SOS நீங்கள் உள்ள எல்லா குடும்பங்களுக்கும் செல்லும். வேகமாகப் பயணிக்கும்போது மட்டுமே இது கவனிப்பதால் பேட்டரி கிட்டத்தட்ட செலவாகாது. இது தவறாகவும் இருக்கலாம் (ஃபோன் கீழே விழுவது, பெரிய குழி), எனவே தவறான எச்சரிக்கையை உடனே ரத்து செய்யுங்கள்.',
     },
     trips: {
@@ -1727,6 +1779,8 @@ export const UI = {
     overspeed: {
       title: 'அதிவேக எச்சரிக்கை',
       subtitle: 'நீங்கள் தேர்ந்தெடுத்த வேகத்தை விட வேகமாக ஓட்டினால் குடும்பத்துக்குத் தெரிவிக்கும்',
+      custom: "தனிப்பயன்",
+      customHint: "30 முதல் 200 km/h வரை வேக வரம்பை உள்ளிடுங்கள்",
     },
     weatherAlerts: {
       title: 'வானிலை எச்சரிக்கைகள்',
@@ -1746,7 +1800,7 @@ export const UI = {
       voice: 'பதிலளித்ததும் குரல்',
       voiceHint: 'உண்மையான அழைப்பு போல காதில் ஒரு குரல் பேசும்',
       notificationButton: '"என்னை அழை" பொத்தான்',
-      notificationButtonHint: 'Kinest அறிவிப்பில் (இருப்பிடப் பகிர்வு இயக்கத்தில் இருக்கும்போது) மற்றும் Quick Settings டைலாக. இரண்டும் பூட்டுத் திரையிலிருந்தே வேலை செய்யும்',
+      notificationButtonHint: "Kinest அறிவிப்புகளிலிருந்தோ Quick Settings டைல்களிலிருந்தோ, பூட்டுத் திரையிலும் கூட, போலி அழைப்பை நேரடியாகத் தொடங்கலாம்.",
       callMeIn: 'என்னை அழைக்கவும்',
       seconds: '{n} வினாடி',
       minutes: '{n} நிமிடம்',
@@ -1756,7 +1810,7 @@ export const UI = {
     },
     places: {
       title: 'இடங்கள்',
-      subtitle: 'வீடு, அலுவலகம் — யாராவது சென்றடையும்போது அல்லது வெளியேறும்போது அறிவிப்பு',
+      subtitle: "வீடு, அலுவலகம் — குடும்ப உறுப்பினர்கள் வரும்போது அல்லது புறப்படும்போது அறிவிப்பைப் பெறுங்கள்.",
       empty: 'இன்னும் இடங்கள் சேமிக்கப்படவில்லை.',
       namePlaceholder: 'இந்த இடத்திற்கு பெயர் (எ.கா. வீடு)',
       saveHere: 'தற்போதைய இடத்தை சேமிக்கவும்',
@@ -1783,7 +1837,7 @@ export const UI = {
         antitheft: "திருட்டுத் தடுப்பு",
         antitheftSub: "குடும்ப நிர்வாகிகளுக்கு தவறான கடவுச்சொல் எச்சரிக்கை",
         places: 'இடங்கள்',
-        placesSub: 'வீடு, அலுவலகம் — வருகை/வெளியேறும்போது அறிவிப்பு பெறவும்',
+        placesSub: "வீடு, அலுவலகம் — குடும்ப உறுப்பினர்கள் வரும்போது அல்லது புறப்படும்போது அறிவிப்பைப் பெறுங்கள்.",
         privacy: 'தனியுரிமை',
         privacySub: 'உங்களைப் பற்றி குடும்பம் பார்ப்பது',
         help: 'உதவி',
@@ -1896,7 +1950,7 @@ export const UI = {
       today: "आज", yesterday: "कल",
     },
     nav: {
-      family: 'परिवार', messages: 'संदेश', sos: 'SOS',
+      family: 'परिवार', messages: 'संपर्क', sos: 'SOS',
       map: 'मानचित्र', profile: 'प्रोफ़ाइल',
     },
 
@@ -2145,6 +2199,7 @@ export const UI = {
       adminOnly: 'केवल एडमिन',
       renameAdminOnly: 'परिवार का नाम केवल उसे बनाने वाला ही बदल सकता है।',
       renameFailed: 'परिवार का नाम नहीं बदला जा सका। कृपया फिर कोशिश करें।',
+      joinAnother: "दूसरे परिवार से जुड़ें",
       showOnMap: "मैप पर देखें",
       pingSent: 'पिंग भेजा गया',
       pingSentMsg: '{name} का फ़ोन 30 सेकंड तक बजेगा, भले ही वह साइलेंट पर हो।',
@@ -2173,6 +2228,7 @@ export const UI = {
       reject: 'अस्वीकारें',
       familyMembers: 'परिवार के सदस्य ({n})',
       holdToEdit: 'संपादित करने या हटाने के लिए दबाकर रखें',
+      holdToEditOnly: "संपादित करने के लिए दबाकर रखें",
       noMembers: 'अभी कोई सदस्य नहीं',
       shareCodeToAdd: 'सदस्य जोड़ने के लिए अपना परिवार कोड साझा करें',
       online: 'ऑनलाइन',
@@ -2208,6 +2264,7 @@ export const UI = {
     messages: {
       voicePlay: 'वॉइस संदेश चलाएँ',
       voicePause: 'वॉइस संदेश रोकें',
+      voiceSpeed: "प्लेबैक की गति",
       refresh: 'रीफ़्रेश',
       mediaDocument: 'दस्तावेज़',
       clearFailed: 'चैट साफ़ नहीं हो सकी। फिर कोशिश करें।',
@@ -2225,7 +2282,7 @@ export const UI = {
       micFailed: 'रिकॉर्ड नहीं हो सका। माइक्रोफ़ोन की अनुमति देखें।',
       recordVoice: 'आवाज़ संदेश रिकॉर्ड करें',
       stopRecording: 'रिकॉर्डिंग रोकें',
-      title: 'संदेश',
+      title: 'संपर्क',
       tabFamily: 'परिवार',
       tabPersonal: 'निजी',
       tabCalls: 'कॉल',
@@ -2309,6 +2366,10 @@ export const UI = {
       addToCall: 'कॉल में जोड़ें',
 
       callingName: '{name} को कॉल किया जा रहा है…',
+
+      filterAll: "सभी",
+
+      noMissed: "कोई मिस्ड कॉल नहीं",
 
       didntJoin: '{name} जुड़ा नहीं',
 
@@ -2430,6 +2491,20 @@ export const UI = {
       turnOn: 'चालू करें',
       done: 'हो गया',
       notNow: 'अभी नहीं',
+      allow: 'अनुमति दें',
+      stepOf: '{n} / {total}',
+      dontAsk: 'दोबारा न पूछें',
+      autostartTitle: "परिवार के अलर्ट समय पर पाएं",
+      autostartWhy: "ऐप बंद होने पर भी, किसी को मदद की ज़रूरत हो तो Kinest आपको बता सकेगा।",
+      popupTitle: "लॉक स्क्रीन पर SOS देखें",
+      popupWhy: "परिवार का SOS आते ही दिख जाएगा, फ़ोन अनलॉक करने की ज़रूरत नहीं।",
+      fullscreenTitle: "कोई आपात स्थिति न छूटे",
+      fullscreenWhy: "SOS या कॉल पूरी स्क्रीन पर दिखेगा, इसलिए छूटेगा नहीं।",
+      dndTitle: "साइलेंट पर भी SOS सुनें",
+      dndWhy: "डू नॉट डिस्टर्ब में भी सिर्फ़ SOS बजेगा। बाकी सब शांत रहेगा।",
+      reassure: "सिर्फ़ आपातकालीन अलर्ट के लिए इस्तेमाल होगा। फ़ोन की सेटिंग में कभी भी बंद कर सकते हैं।",
+      how: "\"अनुमति दें\" दबाएं, खुलने वाले पेज में Kinest चालू करें, फिर वापस आएं।",
+      howOther: "“Other permissions” दबाएं, फिर pop-up वाले विकल्प चालू करें।",
       autostart: 'बैकग्राउंड में शुरू होने दें',
       autostartSub: 'सूची में Kinest ढूँढकर चालू करें',
       popup: 'लॉक स्क्रीन पर अलर्ट दिखाएँ',
@@ -2562,6 +2637,10 @@ export const UI = {
     crashDetect: {
       title: 'दुर्घटना पहचान',
       subtitle: 'गाड़ी चलाते समय दुर्घटना पहचानने पर SOS काउंटडाउन शुरू करता है',
+      bullet1: "तेज़ टक्कर या अचानक रुकने का पता चलने पर 20 सेकंड का SOS काउंटडाउन शुरू होता है।",
+      bullet2: "रद्द न करने पर आपकी लोकेशन के साथ सभी परिवारों को अपने आप सूचना जाती है।",
+      bullet3: "तेज़ रफ़्तार की यात्रा में ही बैकग्राउंड में चलता है, बैटरी का उपयोग बहुत कम।",
+      bullet4: "झूठे अलार्म से बचें: फ़ोन ज़ोर से गिरने या टकराने पर शुरू हो जाए तो तुरंत रद्द करें।",
       howItWorks: 'अगर गाड़ी चलाते समय फ़ोन को तेज़ झटका लगे और उसके तुरंत बाद आपकी रफ़्तार रुक जाए, तो 20 सेकंड का SOS काउंटडाउन शुरू होता है (तेज़ आवाज़ वाले Cancel के साथ)। आप रद्द नहीं करेंगे तो आपकी लोकेशन के साथ SOS आपके सभी परिवारों को जाएगा। यह सिर्फ़ तेज़ सफ़र में सुनता है, इसलिए बैटरी लगभग नहीं लगती। यह गलत भी हो सकता है (फ़ोन गिरना, बड़ा गड्ढा), इसलिए गलत अलार्म तुरंत रद्द करें।',
     },
     trips: {
@@ -2608,6 +2687,8 @@ export const UI = {
     overspeed: {
       title: 'अधिक रफ़्तार अलर्ट',
       subtitle: 'आपकी चुनी हुई सीमा से तेज़ चलाने पर परिवार को बताएगा',
+      custom: "कस्टम",
+      customHint: "30 से 200 km/h के बीच सीमा लिखें",
     },
     weatherAlerts: {
       title: 'मौसम अलर्ट',
@@ -2627,7 +2708,7 @@ export const UI = {
       voice: 'जवाब देने पर आवाज़',
       voiceHint: 'असली कॉल की तरह ईयरपीस में एक आवाज़ बोलेगी',
       notificationButton: '"मुझे कॉल करो" बटन',
-      notificationButtonHint: 'Kinest नोटिफ़िकेशन पर (लोकेशन शेयरिंग चालू होने पर) और Quick Settings टाइल के रूप में। दोनों लॉक स्क्रीन से भी काम करते हैं',
+      notificationButtonHint: "Kinest की सूचनाओं या Quick Settings टाइल से सीधे नकली कॉल शुरू करें, लॉक स्क्रीन पर भी।",
       callMeIn: 'मुझे कॉल करो',
       seconds: '{n} सेकंड',
       minutes: '{n} मिनट',
@@ -2637,7 +2718,7 @@ export const UI = {
     },
     places: {
       title: 'स्थान',
-      subtitle: 'घर, ऑफिस — कोई पहुंचे या निकले तो सूचना पाएं',
+      subtitle: "घर, ऑफ़िस — परिवार के सदस्यों के पहुँचने या निकलने पर सूचना पाएँ।",
       empty: 'अभी तक कोई स्थान सहेजा नहीं गया है।',
       namePlaceholder: 'इस स्थान का नाम (जैसे घर)',
       saveHere: 'वर्तमान स्थान सहेजें',
@@ -2664,7 +2745,7 @@ export const UI = {
         antitheft: "चोरी सुरक्षा",
         antitheftSub: "परिवार के एडमिन के लिए गलत पासवर्ड अलर्ट",
         places: 'स्थान',
-        placesSub: 'घर, ऑफिस — पहुंचने या निकलने पर सूचना पाएं',
+        placesSub: "घर, ऑफ़िस — परिवार के सदस्यों के पहुँचने या निकलने पर सूचना पाएँ।",
         privacy: 'गोपनीयता',
         privacySub: 'आपके बारे में परिवार को क्या दिखता है',
         help: 'मदद',
@@ -2779,7 +2860,7 @@ export const UI = {
       today: "ఈ రోజు", yesterday: "నిన్న",
     },
     nav: {
-      family: 'కుటుంబం', messages: 'సందేశాలు', sos: 'SOS',
+      family: 'కుటుంబం', messages: 'కనెక్ట్', sos: 'SOS',
       map: 'మ్యాప్', profile: 'ప్రొఫైల్',
     },
 
@@ -3027,6 +3108,7 @@ export const UI = {
       adminOnly: 'అడ్మిన్ మాత్రమే',
       renameAdminOnly: 'కుటుంబం పేరును సృష్టికర్త మాత్రమే మార్చగలరు.',
       renameFailed: 'కుటుంబం పేరు మార్చడం సాధ్యం కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.',
+      joinAnother: "మరో కుటుంబంలో చేరండి",
       showOnMap: "మ్యాప్‌లో చూడండి",
       pingSent: 'పింగ్ పంపబడింది',
       pingSentMsg: '{name} ఫోన్ సైలెంట్‌లో ఉన్నా 30 సెకన్ల పాటు మోగుతుంది.',
@@ -3055,6 +3137,7 @@ export const UI = {
       reject: 'తిరస్కరించు',
       familyMembers: 'కుటుంబ సభ్యులు ({n})',
       holdToEdit: 'సవరించడానికి లేదా తొలగించడానికి నొక్కి ఉంచండి',
+      holdToEditOnly: "సవరించడానికి నొక్కి ఉంచండి",
       noMembers: 'ఇంకా సభ్యులు లేరు',
       shareCodeToAdd: 'సభ్యులను జోడించడానికి మీ కుటుంబ కోడ్ షేర్ చేయండి',
       online: 'ఆన్‌లైన్',
@@ -3090,6 +3173,7 @@ export const UI = {
     messages: {
       voicePlay: 'వాయిస్ సందేశాన్ని ప్లే చేయి',
       voicePause: 'వాయిస్ సందేశాన్ని ఆపు',
+      voiceSpeed: "ప్లేబ్యాక్ వేగం",
       refresh: 'రిఫ్రెష్',
       mediaDocument: 'పత్రం',
       clearFailed: 'చాట్ క్లియర్ చేయలేకపోయాం. మళ్లీ ప్రయత్నించండి.',
@@ -3107,7 +3191,7 @@ export const UI = {
       micFailed: 'రికార్డ్ చేయలేకపోయాం. మైక్రోఫోన్ అనుమతిని చూడండి.',
       recordVoice: 'వాయిస్ సందేశం రికార్డ్ చేయండి',
       stopRecording: 'రికార్డింగ్ ఆపు',
-      title: 'సందేశాలు',
+      title: 'కనెక్ట్',
       tabFamily: 'కుటుంబం',
       tabPersonal: 'వ్యక్తిగతం',
       tabCalls: 'కాల్‌లు',
@@ -3191,6 +3275,10 @@ export const UI = {
       addToCall: 'కాల్‌కు జోడించు',
 
       callingName: '{name}కు కాల్ చేస్తోంది…',
+
+      filterAll: "అన్నీ",
+
+      noMissed: "మిస్ అయిన కాల్‌లు లేవు",
 
       didntJoin: '{name} చేరలేదు',
 
@@ -3312,6 +3400,20 @@ export const UI = {
       turnOn: 'ఆన్ చేయి',
       done: 'పూర్తయింది',
       notNow: 'ఇప్పుడు వద్దు',
+      allow: 'అనుమతించు',
+      stepOf: '{n} / {total}',
+      dontAsk: 'మళ్లీ అడగవద్దు',
+      autostartTitle: "కుటుంబ అలర్ట్‌లు సమయానికి అందడానికి",
+      autostartWhy: "యాప్ మూసి ఉన్నా, ఎవరికైనా సహాయం కావాలంటే Kinest మీకు తెలియజేయగలదు.",
+      popupTitle: "లాక్ స్క్రీన్‌పై SOS చూడండి",
+      popupWhy: "కుటుంబ సభ్యులు SOS పంపిన వెంటనే, ఫోన్ అన్‌లాక్ చేయకుండానే కనిపిస్తుంది.",
+      fullscreenTitle: "అత్యవసరాన్ని మిస్ కాకండి",
+      fullscreenWhy: "SOS లేదా కాల్ పూర్తి స్క్రీన్‌పై కనిపిస్తుంది, కాబట్టి మిస్ అవ్వదు.",
+      dndTitle: "సైలెంట్‌లో కూడా SOS వినండి",
+      dndWhy: "డు నాట్ డిస్టర్బ్‌లో కూడా SOS మాత్రమే మోగుతుంది. మిగతావన్నీ నిశ్శబ్దంగానే ఉంటాయి.",
+      reassure: "అత్యవసర అలర్ట్‌ల కోసం మాత్రమే వాడతారు. ఫోన్ సెట్టింగ్స్‌లో ఎప్పుడైనా ఆఫ్ చేయవచ్చు.",
+      how: "\"అనుమతించు\" నొక్కి, తెరుచుకునే పేజీలో Kinest ఆన్ చేసి, తిరిగి రండి.",
+      howOther: "“Other permissions” నొక్కి, pop-up ఎంపికలను ఆన్ చేయండి.",
       autostart: 'బ్యాక్‌గ్రౌండ్ స్టార్టప్‌ను అనుమతించు',
       autostartSub: 'జాబితాలో Kinest కనుగొని ఆన్ చేయండి',
       popup: 'లాక్ స్క్రీన్‌పై అలర్ట్‌లను చూపించు',
@@ -3444,6 +3546,10 @@ export const UI = {
     crashDetect: {
       title: 'ప్రమాద గుర్తింపు',
       subtitle: 'మీరు డ్రైవ్ చేస్తున్నప్పుడు ప్రమాదం గుర్తిస్తే SOS కౌంట్‌డౌన్ మొదలుపెడుతుంది',
+      bullet1: "తీవ్రమైన ఢీకొనడం లేదా ఆకస్మిక ఆగడం గుర్తించినప్పుడు 20 సెకన్ల SOS కౌంట్‌డౌన్ మొదలవుతుంది.",
+      bullet2: "రద్దు చేయకపోతే మీ లొకేషన్‌తో మీ అన్ని కుటుంబాలకు ఆటోమేటిక్‌గా తెలియజేస్తుంది.",
+      bullet3: "వేగంగా ప్రయాణించేటప్పుడు మాత్రమే బ్యాక్‌గ్రౌండ్‌లో నడుస్తుంది, బ్యాటరీ వాడకం చాలా తక్కువ.",
+      bullet4: "తప్పుడు అలారం నివారించండి: ఫోన్ బలంగా పడినా, తగిలినా మొదలైతే వెంటనే రద్దు చేయండి.",
       howItWorks: 'మీరు డ్రైవ్ చేస్తున్నప్పుడు ఫోన్‌కు గట్టి కుదుపు తగిలి, వెంటనే మీ వేగం ఆగిపోతే, 20 సెకన్ల SOS కౌంట్‌డౌన్ మొదలవుతుంది (పెద్ద శబ్దంతో Cancel తో). మీరు రద్దు చేయకపోతే, మీ లొకేషన్‌తో SOS మీరు ఉన్న అన్ని కుటుంబాలకు వెళ్తుంది. వేగంగా ప్రయాణిస్తున్నప్పుడు మాత్రమే ఇది వింటుంది కాబట్టి బ్యాటరీ దాదాపు ఖర్చు కాదు. ఇది తప్పు కూడా కావచ్చు (ఫోన్ పడిపోవడం, పెద్ద గుంత), కాబట్టి తప్పుడు అలారాన్ని వెంటనే రద్దు చేయండి.',
     },
     trips: {
@@ -3490,6 +3596,8 @@ export const UI = {
     overspeed: {
       title: 'అధిక వేగం హెచ్చరిక',
       subtitle: 'మీరు ఎంచుకున్న పరిమితి కంటే వేగంగా నడిపితే కుటుంబానికి తెలియజేస్తుంది',
+      custom: "కస్టమ్",
+      customHint: "30 నుండి 200 km/h మధ్య పరిమితిని నమోదు చేయండి",
     },
     weatherAlerts: {
       title: 'వాతావరణ హెచ్చరికలు',
@@ -3509,7 +3617,7 @@ export const UI = {
       voice: 'సమాధానం ఇచ్చాక గొంతు',
       voiceHint: 'నిజమైన కాల్ లాగా ఇయర్‌పీస్‌లో ఒక గొంతు మాట్లాడుతుంది',
       notificationButton: '"నాకు కాల్ చేయి" బటన్',
-      notificationButtonHint: 'Kinest నోటిఫికేషన్‌లో (లొకేషన్ షేరింగ్ ఆన్‌లో ఉన్నప్పుడు) మరియు Quick Settings టైల్‌గా. రెండూ లాక్ స్క్రీన్ నుండే పనిచేస్తాయి',
+      notificationButtonHint: "Kinest నోటిఫికేషన్‌ల నుండి లేదా Quick Settings టైల్స్ నుండి, లాక్ స్క్రీన్‌లో కూడా, నేరుగా నకిలీ కాల్‌ను ప్రారంభించండి.",
       callMeIn: 'నాకు కాల్ చేయి',
       seconds: '{n} సెకన్లు',
       minutes: '{n} నిమి',
@@ -3519,7 +3627,7 @@ export const UI = {
     },
     places: {
       title: 'స్థలాలు',
-      subtitle: 'ఇల్లు, కార్యాలయం — ఎవరైనా చేరుకున్నా లేదా వదిలినా తెలియజేస్తుంది',
+      subtitle: "ఇల్లు, ఆఫీస్ — కుటుంబ సభ్యులు చేరుకున్నప్పుడు లేదా బయలుదేరినప్పుడు నోటిఫికేషన్ పొందండి.",
       empty: 'ఇంకా స్థలాలు సేవ్ చేయలేదు.',
       namePlaceholder: 'ఈ స్థలానికి పేరు (ఉదా. ఇల్లు)',
       saveHere: 'ప్రస్తుత స్థానాన్ని సేవ్ చేయండి',
@@ -3546,7 +3654,7 @@ export const UI = {
         antitheft: "దొంగతన రక్షణ",
         antitheftSub: "కుటుంబ అడ్మిన్‌ల కోసం తప్పు పాస్‌వర్డ్ హెచ్చరిక",
         places: 'స్థలాలు',
-        placesSub: 'ఇల్లు, కార్యాలయం — చేరుకున్నప్పుడు లేదా వదిలినప్పుడు తెలియజేస్తుంది',
+        placesSub: "ఇల్లు, ఆఫీస్ — కుటుంబ సభ్యులు చేరుకున్నప్పుడు లేదా బయలుదేరినప్పుడు నోటిఫికేషన్ పొందండి.",
         privacy: 'గోప్యత',
         privacySub: 'మీ గురించి కుటుంబం చూసేది',
         help: 'సహాయం',
@@ -3661,7 +3769,7 @@ export const UI = {
       today: "ಇಂದು", yesterday: "ನಿನ್ನೆ",
     },
     nav: {
-      family: 'ಕುಟುಂಬ', messages: 'ಸಂದೇಶಗಳು', sos: 'SOS',
+      family: 'ಕುಟುಂಬ', messages: 'ಸಂಪರ್ಕ', sos: 'SOS',
       map: 'ನಕ್ಷೆ', profile: 'ಪ್ರೊಫೈಲ್',
     },
 
@@ -3909,6 +4017,7 @@ export const UI = {
       adminOnly: 'ಅಡ್ಮಿನ್ ಮಾತ್ರ',
       renameAdminOnly: 'ಕುಟುಂಬದ ಹೆಸರನ್ನು ಅದನ್ನು ರಚಿಸಿದವರು ಮಾತ್ರ ಬದಲಾಯಿಸಬಹುದು.',
       renameFailed: 'ಕುಟುಂಬದ ಹೆಸರು ಬದಲಾಯಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
+      joinAnother: "ಇನ್ನೊಂದು ಕುಟುಂಬಕ್ಕೆ ಸೇರಿ",
       showOnMap: "ನಕ್ಷೆಯಲ್ಲಿ ನೋಡಿ",
       pingSent: 'ಪಿಂಗ್ ಕಳುಹಿಸಲಾಗಿದೆ',
       pingSentMsg: '{name} ಅವರ ಫೋನ್ ಸೈಲೆಂಟ್‌ನಲ್ಲಿದ್ದರೂ 30 ಸೆಕೆಂಡು ರಿಂಗ್ ಆಗುತ್ತದೆ.',
@@ -3937,6 +4046,7 @@ export const UI = {
       reject: 'ತಿರಸ್ಕರಿಸಿ',
       familyMembers: 'ಕುಟುಂಬ ಸದಸ್ಯರು ({n})',
       holdToEdit: 'ಸಂಪಾದಿಸಲು ಅಥವಾ ತೆಗೆದುಹಾಕಲು ಒತ್ತಿ ಹಿಡಿಯಿರಿ',
+      holdToEditOnly: "ಸಂಪಾದಿಸಲು ಒತ್ತಿ ಹಿಡಿಯಿರಿ",
       noMembers: 'ಇನ್ನೂ ಸದಸ್ಯರಿಲ್ಲ',
       shareCodeToAdd: 'ಸದಸ್ಯರನ್ನು ಸೇರಿಸಲು ನಿಮ್ಮ ಕುಟುಂಬ ಕೋಡ್ ಹಂಚಿಕೊಳ್ಳಿ',
       online: 'ಆನ್‌ಲೈನ್',
@@ -3972,6 +4082,7 @@ export const UI = {
     messages: {
       voicePlay: 'ಧ್ವನಿ ಸಂದೇಶವನ್ನು ಪ್ಲೇ ಮಾಡಿ',
       voicePause: 'ಧ್ವನಿ ಸಂದೇಶವನ್ನು ವಿರಾಮಗೊಳಿಸಿ',
+      voiceSpeed: "ಪ್ಲೇಬ್ಯಾಕ್ ವೇಗ",
       refresh: 'ರಿಫ್ರೆಶ್',
       mediaDocument: 'ದಾಖಲೆ',
       clearFailed: 'ಚಾಟ್ ಅಳಿಸಲಾಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
@@ -3989,7 +4100,7 @@ export const UI = {
       micFailed: 'ರೆಕಾರ್ಡ್ ಮಾಡಲಾಗಲಿಲ್ಲ. ಮೈಕ್ರೊಫೋನ್ ಅನುಮತಿ ಪರಿಶೀಲಿಸಿ.',
       recordVoice: 'ಧ್ವನಿ ಸಂದೇಶ ರೆಕಾರ್ಡ್ ಮಾಡಿ',
       stopRecording: 'ರೆಕಾರ್ಡಿಂಗ್ ನಿಲ್ಲಿಸಿ',
-      title: 'ಸಂದೇಶಗಳು',
+      title: 'ಸಂಪರ್ಕ',
       tabFamily: 'ಕುಟುಂಬ',
       tabPersonal: 'ವೈಯಕ್ತಿಕ',
       tabCalls: 'ಕರೆಗಳು',
@@ -4073,6 +4184,10 @@ export const UI = {
       addToCall: 'ಕರೆಗೆ ಸೇರಿಸಿ',
 
       callingName: '{name} ಅವರಿಗೆ ಕರೆ ಮಾಡಲಾಗುತ್ತಿದೆ…',
+
+      filterAll: "ಎಲ್ಲಾ",
+
+      noMissed: "ತಪ್ಪಿದ ಕರೆಗಳಿಲ್ಲ",
 
       didntJoin: '{name} ಸೇರಲಿಲ್ಲ',
 
@@ -4194,6 +4309,20 @@ export const UI = {
       turnOn: 'ಆನ್ ಮಾಡಿ',
       done: 'ಮುಗಿದಿದೆ',
       notNow: 'ಈಗ ಬೇಡ',
+      allow: 'ಅನುಮತಿಸಿ',
+      stepOf: '{n} / {total}',
+      dontAsk: 'ಮತ್ತೆ ಕೇಳಬೇಡಿ',
+      autostartTitle: "ಕುಟುಂಬದ ಎಚ್ಚರಿಕೆಗಳು ತಪ್ಪದೆ ಬರಲು",
+      autostartWhy: "ಆ್ಯಪ್ ಮುಚ್ಚಿದ್ದರೂ, ಯಾರಿಗಾದರೂ ಸಹಾಯ ಬೇಕಾದಾಗ Kinest ನಿಮಗೆ ತಿಳಿಸಬಲ್ಲದು.",
+      popupTitle: "ಲಾಕ್ ಸ್ಕ್ರೀನ್‌ನಲ್ಲಿ SOS ನೋಡಿ",
+      popupWhy: "ಕುಟುಂಬದವರು SOS ಕಳುಹಿಸಿದ ತಕ್ಷಣ, ಫೋನ್ ಅನ್‌ಲಾಕ್ ಮಾಡದೆಯೇ ಕಾಣಿಸುತ್ತದೆ.",
+      fullscreenTitle: "ತುರ್ತು ಪರಿಸ್ಥಿತಿ ತಪ್ಪಿಸಿಕೊಳ್ಳಬೇಡಿ",
+      fullscreenWhy: "SOS ಅಥವಾ ಕರೆ ಪೂರ್ಣ ಪರದೆಯಲ್ಲಿ ಕಾಣುತ್ತದೆ, ಆದ್ದರಿಂದ ತಪ್ಪುವುದಿಲ್ಲ.",
+      dndTitle: "ಸೈಲೆಂಟ್‌ನಲ್ಲೂ SOS ಕೇಳಿ",
+      dndWhy: "ಡೂ ನಾಟ್ ಡಿಸ್ಟರ್ಬ್‌ನಲ್ಲೂ SOS ಮಾತ್ರ ರಿಂಗ್ ಆಗುತ್ತದೆ. ಉಳಿದದ್ದೆಲ್ಲ ಮೌನವಾಗಿರುತ್ತದೆ.",
+      reassure: "ತುರ್ತು ಎಚ್ಚರಿಕೆಗಳಿಗೆ ಮಾತ್ರ ಬಳಸಲಾಗುತ್ತದೆ. ಫೋನ್ ಸೆಟ್ಟಿಂಗ್ಸ್‌ನಲ್ಲಿ ಯಾವಾಗ ಬೇಕಾದರೂ ಆಫ್ ಮಾಡಬಹುದು.",
+      how: "\"ಅನುಮತಿಸಿ\" ಒತ್ತಿ, ತೆರೆಯುವ ಪುಟದಲ್ಲಿ Kinest ಆನ್ ಮಾಡಿ, ವಾಪಸ್ ಬನ್ನಿ.",
+      howOther: "“Other permissions” ಒತ್ತಿ, pop-up ಆಯ್ಕೆಗಳನ್ನು ಆನ್ ಮಾಡಿ.",
       autostart: 'ಹಿನ್ನೆಲೆ ಸ್ಟಾರ್ಟಪ್ ಅನ್ನು ಅನುಮತಿಸಿ',
       autostartSub: 'ಪಟ್ಟಿಯಲ್ಲಿ Kinest ಹುಡುಕಿ ಆನ್ ಮಾಡಿ',
       popup: 'ಲಾಕ್ ಸ್ಕ್ರೀನ್‌ನಲ್ಲಿ ಎಚ್ಚರಿಕೆಗಳನ್ನು ತೋರಿಸಿ',
@@ -4326,6 +4455,10 @@ export const UI = {
     crashDetect: {
       title: 'ಅಪಘಾತ ಪತ್ತೆ',
       subtitle: 'ನೀವು ಚಲಾಯಿಸುತ್ತಿರುವಾಗ ಅಪಘಾತ ಪತ್ತೆಯಾದರೆ SOS ಕೌಂಟ್‌ಡೌನ್ ಪ್ರಾರಂಭಿಸುತ್ತದೆ',
+      bullet1: "ತೀವ್ರ ಡಿಕ್ಕಿ ಅಥವಾ ಹಠಾತ್ ನಿಲುಗಡೆ ಪತ್ತೆಯಾದರೆ 20 ಸೆಕೆಂಡ್‌ಗಳ SOS ಕೌಂಟ್‌ಡೌನ್ ಪ್ರಾರಂಭವಾಗುತ್ತದೆ.",
+      bullet2: "ರದ್ದು ಮಾಡದಿದ್ದರೆ ನಿಮ್ಮ ಸ್ಥಳದೊಂದಿಗೆ ನಿಮ್ಮ ಎಲ್ಲಾ ಕುಟುಂಬಗಳಿಗೆ ತಾನಾಗಿ ತಿಳಿಸುತ್ತದೆ.",
+      bullet3: "ವೇಗದ ಪ್ರಯಾಣದಲ್ಲಿ ಮಾತ್ರ ಹಿನ್ನೆಲೆಯಲ್ಲಿ ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತದೆ, ಬ್ಯಾಟರಿ ಬಳಕೆ ಬಹಳ ಕಡಿಮೆ.",
+      bullet4: "ಸುಳ್ಳು ಎಚ್ಚರಿಕೆ ತಪ್ಪಿಸಿ: ಫೋನ್ ಜೋರಾಗಿ ಬಿದ್ದರೆ ಅಥವಾ ತಾಗಿದರೆ ಆರಂಭವಾದರೆ ತಕ್ಷಣ ರದ್ದುಮಾಡಿ.",
       howItWorks: 'ನೀವು ಚಲಾಯಿಸುತ್ತಿರುವಾಗ ಫೋನ್‌ಗೆ ಬಲವಾದ ಕುಲುಕು ತಾಗಿ, ತಕ್ಷಣ ನಿಮ್ಮ ವೇಗ ನಿಂತರೆ, 20 ಸೆಕೆಂಡ್ SOS ಕೌಂಟ್‌ಡೌನ್ ಪ್ರಾರಂಭವಾಗುತ್ತದೆ (ಜೋರಾದ Cancel ನೊಂದಿಗೆ). ನೀವು ರದ್ದುಮಾಡದಿದ್ದರೆ, ನಿಮ್ಮ ಸ್ಥಳದೊಂದಿಗೆ SOS ನೀವು ಇರುವ ಎಲ್ಲಾ ಕುಟುಂಬಗಳಿಗೆ ಹೋಗುತ್ತದೆ. ವೇಗವಾಗಿ ಪ್ರಯಾಣಿಸುವಾಗ ಮಾತ್ರ ಇದು ಆಲಿಸುವುದರಿಂದ ಬ್ಯಾಟರಿ ಬಹುತೇಕ ಖರ್ಚಾಗುವುದಿಲ್ಲ. ಇದು ತಪ್ಪಾಗಬಹುದು (ಫೋನ್ ಬೀಳುವುದು, ದೊಡ್ಡ ಗುಂಡಿ), ಆದ್ದರಿಂದ ಸುಳ್ಳು ಅಲಾರಂ ಅನ್ನು ತಕ್ಷಣ ರದ್ದುಮಾಡಿ.',
     },
     trips: {
@@ -4372,6 +4505,8 @@ export const UI = {
     overspeed: {
       title: 'ಅತಿ ವೇಗ ಎಚ್ಚರಿಕೆ',
       subtitle: 'ನೀವು ಆರಿಸಿದ ಮಿತಿಗಿಂತ ವೇಗವಾಗಿ ಚಲಾಯಿಸಿದರೆ ಕುಟುಂಬಕ್ಕೆ ತಿಳಿಸುತ್ತದೆ',
+      custom: "ಕಸ್ಟಮ್",
+      customHint: "30 ರಿಂದ 200 km/h ನಡುವಿನ ಮಿತಿಯನ್ನು ನಮೂದಿಸಿ",
     },
     weatherAlerts: {
       title: 'ಹವಾಮಾನ ಎಚ್ಚರಿಕೆಗಳು',
@@ -4391,7 +4526,7 @@ export const UI = {
       voice: 'ಉತ್ತರಿಸಿದಾಗ ಧ್ವನಿ',
       voiceHint: 'ನಿಜವಾದ ಕರೆಯಂತೆ ಇಯರ್‌ಪೀಸ್‌ನಲ್ಲಿ ಒಂದು ಧ್ವನಿ ಮಾತನಾಡುತ್ತದೆ',
       notificationButton: '"ನನಗೆ ಕರೆ ಮಾಡಿ" ಬಟನ್',
-      notificationButtonHint: 'Kinest ಅಧಿಸೂಚನೆಯಲ್ಲಿ (ಸ್ಥಳ ಹಂಚಿಕೆ ಆನ್ ಇರುವಾಗ) ಮತ್ತು Quick Settings ಟೈಲ್ ಆಗಿ. ಎರಡೂ ಲಾಕ್ ಸ್ಕ್ರೀನ್‌ನಿಂದಲೇ ಕೆಲಸ ಮಾಡುತ್ತವೆ',
+      notificationButtonHint: "Kinest ಅಧಿಸೂಚನೆಗಳಿಂದ ಅಥವಾ Quick Settings ಟೈಲ್‌ಗಳಿಂದ, ಲಾಕ್ ಸ್ಕ್ರೀನ್‌ನಲ್ಲೂ ನೇರವಾಗಿ ನಕಲಿ ಕರೆಯನ್ನು ಪ್ರಾರಂಭಿಸಿ.",
       callMeIn: 'ನನಗೆ ಕರೆ ಮಾಡಿ',
       seconds: '{n} ಸೆಕೆಂಡ್',
       minutes: '{n} ನಿಮಿಷ',
@@ -4401,7 +4536,7 @@ export const UI = {
     },
     places: {
       title: 'ಸ್ಥಳಗಳು',
-      subtitle: 'ಮನೆ, ಕಚೇರಿ — ಯಾರಾದರೂ ತಲುಪಿದಾಗ ಅಥವಾ ಬಿಟ್ಟಾಗ ಅಧಿಸೂಚನೆ ಪಡೆಯಿರಿ',
+      subtitle: "ಮನೆ, ಕಚೇರಿ — ಕುಟುಂಬದ ಸದಸ್ಯರು ತಲುಪಿದಾಗ ಅಥವಾ ಹೊರಡುವಾಗ ಅಧಿಸೂಚನೆ ಪಡೆಯಿರಿ.",
       empty: 'ಇನ್ನೂ ಯಾವುದೇ ಸ್ಥಳಗಳನ್ನು ಉಳಿಸಿಲ್ಲ.',
       namePlaceholder: 'ಈ ಸ್ಥಳಕ್ಕೆ ಹೆಸರು (ಉದಾ. ಮನೆ)',
       saveHere: 'ಪ್ರಸ್ತುತ ಸ್ಥಳವನ್ನು ಉಳಿಸಿ',
@@ -4428,7 +4563,7 @@ export const UI = {
         antitheft: "ಕಳ್ಳತನ ರಕ್ಷಣೆ",
         antitheftSub: "ಕುಟುಂಬ ಅಡ್ಮಿನ್‌ಗಳಿಗೆ ತಪ್ಪು ಪಾಸ್‌ವರ್ಡ್ ಎಚ್ಚರಿಕೆ",
         places: 'ಸ್ಥಳಗಳು',
-        placesSub: 'ಮನೆ, ಕಚೇರಿ — ತಲುಪಿದಾಗ ಅಥವಾ ಬಿಟ್ಟಾಗ ಅಧಿಸೂಚನೆ ಪಡೆಯಿರಿ',
+        placesSub: "ಮನೆ, ಕಚೇರಿ — ಕುಟುಂಬದ ಸದಸ್ಯರು ತಲುಪಿದಾಗ ಅಥವಾ ಹೊರಡುವಾಗ ಅಧಿಸೂಚನೆ ಪಡೆಯಿರಿ.",
         privacy: 'ಗೌಪ್ಯತೆ',
         privacySub: 'ನಿಮ್ಮ ಬಗ್ಗೆ ಕುಟುಂಬ ನೋಡುವುದು',
         help: 'ಸಹಾಯ',
@@ -4543,7 +4678,7 @@ export const UI = {
       today: "ഇന്ന്", yesterday: "ഇന്നലെ",
     },
     nav: {
-      family: 'കുടുംബം', messages: 'സന്ദേശങ്ങൾ', sos: 'SOS',
+      family: 'കുടുംബം', messages: 'കണക്ട്', sos: 'SOS',
       map: 'മാപ്പ്', profile: 'പ്രൊഫൈൽ',
     },
 
@@ -4791,6 +4926,7 @@ export const UI = {
       adminOnly: 'അഡ്മിൻ മാത്രം',
       renameAdminOnly: 'കുടുംബത്തിന്റെ പേര് അത് സൃഷ്ടിച്ചയാൾക്ക് മാത്രമേ മാറ്റാൻ കഴിയൂ.',
       renameFailed: 'കുടുംബത്തിന്റെ പേര് മാറ്റാൻ കഴിഞ്ഞില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.',
+      joinAnother: "മറ്റൊരു കുടുംബത്തിൽ ചേരുക",
       showOnMap: "മാപ്പിൽ കാണുക",
       pingSent: 'പിംഗ് അയച്ചു',
       pingSentMsg: '{name} ന്റെ ഫോൺ സൈലന്റിലാണെങ്കിലും 30 സെക്കൻഡ് റിംഗ് ചെയ്യും.',
@@ -4819,6 +4955,7 @@ export const UI = {
       reject: 'നിരസിക്കുക',
       familyMembers: 'കുടുംബാംഗങ്ങൾ ({n})',
       holdToEdit: 'എഡിറ്റ് ചെയ്യാനോ നീക്കാനോ അമർത്തിപ്പിടിക്കുക',
+      holdToEditOnly: "എഡിറ്റ് ചെയ്യാൻ അമർത്തിപ്പിടിക്കുക",
       noMembers: 'ഇതുവരെ അംഗങ്ങളില്ല',
       shareCodeToAdd: 'അംഗങ്ങളെ ചേർക്കാൻ നിങ്ങളുടെ കുടുംബ കോഡ് പങ്കിടുക',
       online: 'ഓൺലൈൻ',
@@ -4854,6 +4991,7 @@ export const UI = {
     messages: {
       voicePlay: 'വോയ്‌സ് സന്ദേശം പ്ലേ ചെയ്യുക',
       voicePause: 'വോയ്‌സ് സന്ദേശം താൽക്കാലികമായി നിർത്തുക',
+      voiceSpeed: "പ്ലേബാക്ക് വേഗത",
       refresh: 'പുതുക്കുക',
       mediaDocument: 'രേഖ',
       clearFailed: 'ചാറ്റ് മായ്ക്കാനായില്ല. വീണ്ടും ശ്രമിക്കുക.',
@@ -4871,7 +5009,7 @@ export const UI = {
       micFailed: 'റെക്കോർഡ് ചെയ്യാനായില്ല. മൈക്രോഫോൺ അനുമതി പരിശോധിക്കുക.',
       recordVoice: 'വോയ്‌സ് സന്ദേശം റെക്കോർഡ് ചെയ്യുക',
       stopRecording: 'റെക്കോർഡിംഗ് നിർത്തുക',
-      title: 'സന്ദേശങ്ങൾ',
+      title: 'കണക്ട്',
       tabFamily: 'കുടുംബം',
       tabPersonal: 'സ്വകാര്യം',
       tabCalls: 'കോളുകൾ',
@@ -4955,6 +5093,10 @@ export const UI = {
       addToCall: 'കോളിലേക്ക് ചേർക്കുക',
 
       callingName: '{name}-നെ വിളിക്കുന്നു…',
+
+      filterAll: "എല്ലാം",
+
+      noMissed: "മിസ്ഡ് കോളുകളില്ല",
 
       didntJoin: '{name} ചേർന്നില്ല',
 
@@ -5076,6 +5218,20 @@ export const UI = {
       turnOn: 'ഓണാക്കുക',
       done: 'പൂർത്തിയായി',
       notNow: 'ഇപ്പോൾ വേണ്ട',
+      allow: 'അനുവദിക്കുക',
+      stepOf: '{n} / {total}',
+      dontAsk: 'വീണ്ടും ചോദിക്കരുത്',
+      autostartTitle: "കുടുംബ അലർട്ടുകൾ മുടങ്ങാതെ ലഭിക്കാൻ",
+      autostartWhy: "ആപ്പ് അടച്ചിരുന്നാലും, ആർക്കെങ്കിലും സഹായം വേണമെങ്കിൽ Kinest നിങ്ങളെ അറിയിക്കും.",
+      popupTitle: "ലോക്ക് സ്ക്രീനിൽ SOS കാണാൻ",
+      popupWhy: "കുടുംബാംഗം SOS അയച്ചാൽ ഉടൻ, ഫോൺ അൺലോക്ക് ചെയ്യാതെ തന്നെ കാണാം.",
+      fullscreenTitle: "അടിയന്തരാവസ്ഥ നഷ്ടപ്പെടുത്തരുത്",
+      fullscreenWhy: "SOS അല്ലെങ്കിൽ കോൾ മുഴുവൻ സ്ക്രീനിൽ വരും, അതിനാൽ നഷ്ടപ്പെടില്ല.",
+      dndTitle: "സൈലന്റിലും SOS കേൾക്കാൻ",
+      dndWhy: "ശല്യപ്പെടുത്തരുത് മോഡിലും SOS മാത്രം റിങ് ചെയ്യും. ബാക്കിയെല്ലാം നിശബ്ദമായിരിക്കും.",
+      reassure: "അടിയന്തര അലർട്ടുകൾക്ക് മാത്രം ഉപയോഗിക്കുന്നു. ഫോൺ ക്രമീകരണത്തിൽ എപ്പോൾ വേണമെങ്കിലും ഓഫ് ചെയ്യാം.",
+      how: "\"അനുവദിക്കുക\" അമർത്തി, തുറക്കുന്ന പേജിൽ Kinest ഓണാക്കി, തിരികെ വരൂ.",
+      howOther: "“Other permissions” അമർത്തി, pop-up ഓപ്ഷനുകൾ ഓണാക്കുക.",
       autostart: 'ബാക്ക്ഗ്രൗണ്ട് സ്റ്റാർട്ടപ്പ് അനുവദിക്കുക',
       autostartSub: 'പട്ടികയിൽ Kinest കണ്ടെത്തി ഓണാക്കുക',
       popup: 'ലോക്ക് സ്ക്രീനിൽ അലേർട്ടുകൾ കാണിക്കുക',
@@ -5208,6 +5364,10 @@ export const UI = {
     crashDetect: {
       title: 'അപകട കണ്ടെത്തൽ',
       subtitle: 'വാഹനമോടിക്കുമ്പോൾ അപകടം കണ്ടെത്തിയാൽ SOS കൗണ്ട്ഡൗൺ തുടങ്ങും',
+      bullet1: "ശക്തമായ കൂട്ടിയിടിയോ പെട്ടെന്നുള്ള നിർത്തലോ കണ്ടെത്തിയാൽ 20 സെക്കൻഡ് SOS കൗണ്ട്ഡൗൺ ആരംഭിക്കും.",
+      bullet2: "റദ്ദാക്കിയില്ലെങ്കിൽ നിങ്ങളുടെ ലൊക്കേഷനോടെ എല്ലാ കുടുംബങ്ങളെയും സ്വയം അറിയിക്കും.",
+      bullet3: "വേഗത്തിലുള്ള യാത്രയിൽ മാത്രം പശ്ചാത്തലത്തിൽ പ്രവർത്തിക്കും, ബാറ്ററി ഉപയോഗം വളരെ കുറവ്.",
+      bullet4: "തെറ്റായ അലാറം ഒഴിവാക്കുക: ഫോൺ ശക്തമായി വീണാലോ തട്ടിയാലോ തുടങ്ങിയാൽ ഉടൻ റദ്ദാക്കുക.",
       howItWorks: 'വാഹനമോടിക്കുമ്പോൾ ഫോണിന് ശക്തമായ കുലുക്കം അനുഭവപ്പെടുകയും ഉടൻ നിങ്ങളുടെ വേഗം നിലയ്ക്കുകയും ചെയ്താൽ, 20 സെക്കൻഡ് SOS കൗണ്ട്ഡൗൺ തുടങ്ങും (ഉച്ചത്തിലുള്ള Cancel സഹിതം). നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ, നിങ്ങളുടെ ലൊക്കേഷനോടുകൂടിയ SOS നിങ്ങൾ ഉള്ള എല്ലാ കുടുംബങ്ങളിലേക്കും പോകും. വേഗത്തിൽ സഞ്ചരിക്കുമ്പോൾ മാത്രമേ ഇത് ശ്രദ്ധിക്കൂ, അതിനാൽ ബാറ്ററി ഏതാണ്ട് ഉപയോഗിക്കില്ല. ഇത് തെറ്റാവാനും സാധ്യതയുണ്ട് (ഫോൺ വീഴുന്നത്, വലിയ കുഴി), അതിനാൽ തെറ്റായ അലാറം ഉടൻ റദ്ദാക്കുക.',
     },
     trips: {
@@ -5254,6 +5414,8 @@ export const UI = {
     overspeed: {
       title: 'അമിതവേഗ മുന്നറിയിപ്പ്',
       subtitle: 'നിങ്ങൾ തിരഞ്ഞെടുത്ത പരിധിക്കു മുകളിൽ വാഹനമോടിച്ചാൽ കുടുംബത്തെ അറിയിക്കും',
+      custom: "കസ്റ്റം",
+      customHint: "30 മുതൽ 200 km/h വരെയുള്ള പരിധി നൽകുക",
     },
     weatherAlerts: {
       title: 'കാലാവസ്ഥാ മുന്നറിയിപ്പുകൾ',
@@ -5273,7 +5435,7 @@ export const UI = {
       voice: 'മറുപടി നൽകുമ്പോൾ ശബ്ദം',
       voiceHint: 'യഥാർത്ഥ കോൾ പോലെ ഇയർപീസിൽ ഒരു ശബ്ദം സംസാരിക്കും',
       notificationButton: '"എന്നെ വിളിക്കൂ" ബട്ടൺ',
-      notificationButtonHint: 'Kinest അറിയിപ്പിൽ (ലൊക്കേഷൻ പങ്കിടൽ ഓണായിരിക്കുമ്പോൾ) ഒപ്പം Quick Settings ടൈലായും. രണ്ടും ലോക്ക് സ്ക്രീനിൽ നിന്നുതന്നെ പ്രവർത്തിക്കും',
+      notificationButtonHint: "Kinest അറിയിപ്പുകളിൽ നിന്നോ Quick Settings ടൈലുകളിൽ നിന്നോ, ലോക്ക് സ്ക്രീനിലും, നേരിട്ട് വ്യാജ കോൾ ആരംഭിക്കുക.",
       callMeIn: 'എന്നെ വിളിക്കൂ',
       seconds: '{n} സെക്കൻഡ്',
       minutes: '{n} മിനിറ്റ്',
@@ -5283,7 +5445,7 @@ export const UI = {
     },
     places: {
       title: 'സ്ഥലങ്ങൾ',
-      subtitle: 'വീട്, ഓഫീസ് — ആരെങ്കിലും എത്തുമ്പോഴോ വിടുമ്പോഴോ അറിയിപ്പ് ലഭിക്കും',
+      subtitle: "വീട്, ഓഫീസ് — കുടുംബാംഗങ്ങൾ എത്തുമ്പോഴോ പുറപ്പെടുമ്പോഴോ അറിയിപ്പ് നേടുക.",
       empty: 'ഇതുവരെ സ്ഥലങ്ങളൊന്നും സേവ് ചെയ്തിട്ടില്ല.',
       namePlaceholder: 'ഈ സ്ഥലത്തിന് പേര് (ഉദാ. വീട്)',
       saveHere: 'നിലവിലെ സ്ഥലം സേവ് ചെയ്യുക',
@@ -5310,7 +5472,7 @@ export const UI = {
         antitheft: "മോഷണ സംരക്ഷണം",
         antitheftSub: "കുടുംബ അഡ്മിനുകൾക്ക് തെറ്റായ പാസ്‌വേഡ് മുന്നറിയിപ്പ്",
         places: 'സ്ഥലങ്ങൾ',
-        placesSub: 'വീട്, ഓഫീസ് — എത്തുമ്പോഴോ വിടുമ്പോഴോ അറിയിപ്പ് ലഭിക്കും',
+        placesSub: "വീട്, ഓഫീസ് — കുടുംബാംഗങ്ങൾ എത്തുമ്പോഴോ പുറപ്പെടുമ്പോഴോ അറിയിപ്പ് നേടുക.",
         privacy: 'സ്വകാര്യത',
         privacySub: 'നിങ്ങളെക്കുറിച്ച് കുടുംബം കാണുന്നത്',
         help: 'സഹായം',
