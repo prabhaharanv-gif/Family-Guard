@@ -10,6 +10,7 @@ import Dialog from '../components/Dialog'
 import famoraLogo from '../assets/famora-logo.jpg'
 import Icon from '../components/Icon'
 import { APP_NAME } from '../lib/brand'
+import { isIndianMobile } from '../lib/phone'
 
 function EyeIcon({ open }) {
   return open ? (
@@ -51,7 +52,7 @@ function ForgotPasswordModal({ onClose }) {
   const handleContinue = async () => {
     setError('')
     const digits = mobile.replace(/[^0-9]/g, '')
-    if (!digits || digits.length !== 10) { setError(t('auth.enterValidMobile')); return }
+    if (!isIndianMobile(digits)) { setError(t('auth.enterValidMobile')); return }
     setLoading(true)
     // No existence probe before sending the OTP.
     //
@@ -266,7 +267,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     const digits = mobile.replace(/[^0-9]/g, '')
-    if (!digits || digits.length !== 10) { setError(t('auth.enterValidMobile')); return }
+    if (!isIndianMobile(digits)) { setError(t('auth.enterValidMobile')); return }
     if (!password) { setError(t('auth.enterPassword')); return }
     // Two eras of account, and they are identified differently.
     //
