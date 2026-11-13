@@ -26,7 +26,7 @@ import { Link } from 'react-router-dom'
 import { useT } from '../i18n'
 import Icon from '../components/Icon'
 import AuthLanguagePicker from '../components/AuthLanguagePicker'
-import { PLAY_STORE_URL } from '../lib/siteConfig'
+import { PLAY_STORE_URL as PLAY_DEFAULT_URL, playStoreUrlFor } from '../lib/siteConfig'
 
 const FEATURES = [
   { icon: 'map',     n: 1 },
@@ -1007,6 +1007,8 @@ export default function LandingPage() {
   // button is shown but is not a link.
   // Instagram/Facebook's in-app browser on Android often ignores a plain Play link.
   // There, hand the Play app an intent link, with the normal URL as the fallback.
+  // Carry the visitor's utm_ campaign (from an ad link) through to Play as the install referrer.
+  const PLAY_STORE_URL = PLAY_DEFAULT_URL && typeof window !== 'undefined' ? playStoreUrlFor(window.location.search) : PLAY_DEFAULT_URL
   const inApp = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent) && /Instagram|FBAN|FBAV|FB_IAB/i.test(navigator.userAgent)
   const playHref = PLAY_STORE_URL && inApp
     ? `intent://details?${PLAY_STORE_URL.split('?')[1]}#Intent;scheme=market;package=com.android.vending;S.browser_fallback_url=${encodeURIComponent(PLAY_STORE_URL)};end`
