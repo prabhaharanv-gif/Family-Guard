@@ -44,8 +44,8 @@ const CSS = `
 /* one screenshot on screen at a time; the arrows sit just outside it */
 .ad-carousel { position: relative; width: var(--w); margin: 10px auto 0;
   /* the picture takes whatever height is left once the text and button are placed, so the button stays on screen even inside a browser's toolbars; dvh overrides vh where supported */
-  --w: max(110px, min(60vw, 224px, calc((100vh - 300px) / 1.78))); }
-@supports (height: 100dvh) { .ad-carousel { --w: max(110px, min(60vw, 224px, calc((100dvh - 300px) / 1.78))); } }
+  --w: max(110px, min(62vw, 232px, calc((100vh - 300px) / 1.66))); }
+@supports (height: 100dvh) { .ad-carousel { --w: max(110px, min(62vw, 232px, calc((100dvh - 300px) / 1.66))); } }
 .ad-shots { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
 .ad-shots::-webkit-scrollbar { display: none; }
@@ -69,9 +69,9 @@ const CSS = `
 .ad-free { margin: 8px 0 0; font-size: 13px; font-weight: 600; color: #F7CFDC; }
 .ad-hint { margin: 12px auto 0; max-width: 300px; font-size: 13px; opacity: .85; }
 
-.ad-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; margin: 10px 0 0;
+.ad-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; margin: 4px 0 0;
   padding: 0 20px max(24px, env(safe-area-inset-bottom)); font-size: 13px; opacity: .8; }
-.ad-foot a { text-decoration: none; padding: 8px 2px; }
+.ad-foot a { text-decoration: none; padding: 6px 2px; }
 .ad-foot .sep { opacity: .6; user-select: none; }
 
 @media (prefers-reduced-motion: reduce) { .ad .ad-play { transition: none; } .ad-shots { scroll-behavior: auto; } }

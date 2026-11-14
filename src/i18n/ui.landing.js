@@ -56,7 +56,7 @@ export const LANDING_UI = {
       openWeb: 'Sign in on the web',
       adQuote: '“Reached home?”',
       adQuoteSub: 'Two small words that carry a family’s whole love.',
-      adFree: 'Free to use',
+      adFree: 'Free to Use',
 
       featuresTitle: 'Everything Your Family Needs, in One Place',
       f1Title: 'Live Family Map',
