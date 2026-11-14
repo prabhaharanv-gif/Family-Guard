@@ -57,6 +57,9 @@ export const AD_SHOTS = [
   { src: '/shots/family.webp',     alt: 'Kinest Family screen with each member’s status, battery and weather', cap: 'landing.showStatus' },
 ]
 
+/** Show the closing "25+ Features" slide (the website's animated phone screens) after the screenshots. */
+export const AD_FEATURE_WALL = true
+
 /**
  * Analytics IDs come from the build environment (Vercel project settings), never from
  * source: VITE_GA4_ID (G-XXXXXXXXXX) and VITE_META_PIXEL_ID (digits). Both are public
