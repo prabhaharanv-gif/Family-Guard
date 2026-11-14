@@ -28,27 +28,30 @@ const CSS = `
 .ad a { color: inherit; }
 .ad-wrap { width: 100%; max-width: 480px; margin: 0 auto; padding: 0 20px; }
 
-.ad-head { text-align: center; padding: max(16px, env(safe-area-inset-top)) 0 0; }
-.ad-logo { width: 60px; height: 60px; border-radius: 16px; display: block; margin: 0 auto; }
-.ad-name { margin: 6px 0 0; font-size: 24px; font-weight: 900; letter-spacing: .01em; }
+.ad-head { display: flex; align-items: center; justify-content: center; gap: 10px; padding: max(14px, env(safe-area-inset-top)) 0 0; }
+.ad-logo { width: 44px; height: 44px; border-radius: 12px; display: block; }
+.ad-name { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: .01em; }
 
 /* the quote: one big line, one soft line under it */
-.ad-quote { margin: 12px auto 0; max-width: 330px; text-align: center; }
-.ad-quote .q { margin: 0; font: 900 30px/1.25 Sora, Inter, sans-serif; text-wrap: balance; }
-.ad-quote .s { margin: 10px 0 0; font-size: 16px; font-weight: 500; line-height: 1.55; color: #F7CFDC; text-wrap: balance; }
+.ad-quote { margin: 10px auto 0; max-width: 330px; text-align: center; }
+.ad-quote .q { margin: 0; font: 900 26px/1.25 Sora, Inter, sans-serif; text-wrap: balance; }
+.ad-quote .s { margin: 6px 0 0; font-size: 14.5px; font-weight: 500; line-height: 1.5; color: #F7CFDC; text-wrap: balance; }
 .ad[data-lang="ta"] .ad-quote .q, .ad[data-lang="ml"] .ad-quote .q, .ad[data-lang="te"] .ad-quote .q,
-.ad[data-lang="kn"] .ad-quote .q, .ad[data-lang="hi"] .ad-quote .q { font-size: 25px; line-height: 1.4; }
+.ad[data-lang="kn"] .ad-quote .q, .ad[data-lang="hi"] .ad-quote .q { font-size: 22px; line-height: 1.4; }
 .ad[data-lang="ta"] .ad-quote .s, .ad[data-lang="ml"] .ad-quote .s, .ad[data-lang="te"] .ad-quote .s,
-.ad[data-lang="kn"] .ad-quote .s, .ad[data-lang="hi"] .ad-quote .s { font-size: 15px; line-height: 1.65; }
+.ad[data-lang="kn"] .ad-quote .s, .ad[data-lang="hi"] .ad-quote .s { font-size: 13.5px; line-height: 1.6; }
 
 /* one screenshot on screen at a time; the arrows sit just outside it */
-.ad-carousel { position: relative; width: var(--w); margin: 14px auto 0; --w: min(68vw, 256px); }
+.ad-carousel { position: relative; width: var(--w); margin: 10px auto 0;
+  /* the picture takes whatever height is left once the text and button are placed, so the button stays on screen even inside a browser's toolbars; dvh overrides vh where supported */
+  --w: max(120px, min(68vw, 256px, calc((100vh - 300px) / 1.6))); }
+@supports (height: 100dvh) { .ad-carousel { --w: max(120px, min(68vw, 256px, calc((100dvh - 300px) / 1.6))); } }
 .ad-shots { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
 .ad-shots::-webkit-scrollbar { display: none; }
 .ad-slide { flex: 0 0 100%; margin: 0; scroll-snap-align: center; scroll-snap-stop: always; }
 .ad-shot { border-radius: 26px; padding: 5px; background: #1E0510; }
-.ad-slide figcaption { margin-top: 10px; text-align: center; font-size: 14px; font-weight: 700; color: #F7CFDC; }
+.ad-slide figcaption { margin-top: 6px; text-align: center; font-size: 13px; font-weight: 700; color: #F7CFDC; }
 .ad-shot img { display: block; width: 100%; height: auto; aspect-ratio: 992 / 1585; object-fit: cover; border-radius: 21px; }
 .ad .ad-arrow { position: absolute; top: calc(50% - 20px); transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; border: 0; cursor: pointer;
   display: grid; place-items: center; background: rgba(255,255,255,.92); color: #8B0D3D; box-shadow: 0 6px 16px rgba(0,0,0,.35);
@@ -57,13 +60,13 @@ const CSS = `
 .ad .ad-arrow:disabled { opacity: .3; cursor: default; }
 .ad .ad-arrow:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
-.ad-cta { margin: 12px 0 0; text-align: center; }
-.ad .ad-play { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: 100%; max-width: 340px; min-height: 58px;
+.ad-cta { margin: 8px 0 0; text-align: center; }
+.ad .ad-play { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: 100%; max-width: 340px; min-height: 54px;
   padding: 14px 24px; border-radius: 16px; background: #fff; color: #8B0D3D; font: 800 18px Inter, sans-serif; text-decoration: none;
   box-shadow: 0 10px 26px rgba(0,0,0,.3); transition: transform .2s; -webkit-tap-highlight-color: transparent; }
 .ad .ad-play:active { transform: scale(.98); }
 .ad .ad-play:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-.ad-free { margin: 12px 0 0; font-size: 14px; font-weight: 600; color: #F7CFDC; }
+.ad-free { margin: 8px 0 0; font-size: 13px; font-weight: 600; color: #F7CFDC; }
 .ad-hint { margin: 12px auto 0; max-width: 300px; font-size: 13px; opacity: .85; }
 
 .ad-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 20px; margin: 26px 0 0;
@@ -132,7 +135,7 @@ export default function AdLandingPage() {
 
       <div className="ad-wrap">
         <div className="ad-head">
-          <img className="ad-logo" src="/kinest-icon.png" alt="" width="60" height="60" />
+          <img className="ad-logo" src="/kinest-icon.png" alt="" width="44" height="44" />
           <div className="ad-name">Kinest</div>
         </div>
         <blockquote className="ad-quote">
