@@ -44,8 +44,8 @@ const CSS = `
 /* one screenshot on screen at a time; the arrows sit just outside it */
 .ad-carousel { position: relative; width: var(--w); margin: 10px auto 0;
   /* the picture takes whatever height is left once the text and button are placed, so the button stays on screen even inside a browser's toolbars; dvh overrides vh where supported */
-  --w: max(120px, min(68vw, 256px, calc((100vh - 300px) / 1.6))); }
-@supports (height: 100dvh) { .ad-carousel { --w: max(120px, min(68vw, 256px, calc((100dvh - 300px) / 1.6))); } }
+  --w: max(110px, min(60vw, 224px, calc((100vh - 300px) / 1.78))); }
+@supports (height: 100dvh) { .ad-carousel { --w: max(110px, min(60vw, 224px, calc((100dvh - 300px) / 1.78))); } }
 .ad-shots { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
 .ad-shots::-webkit-scrollbar { display: none; }
@@ -61,24 +61,25 @@ const CSS = `
 .ad .ad-arrow:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
 .ad-cta { margin: 8px 0 0; text-align: center; }
-.ad .ad-play { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: 100%; max-width: 340px; min-height: 54px;
-  padding: 14px 24px; border-radius: 16px; background: #fff; color: #8B0D3D; font: 800 18px Inter, sans-serif; text-decoration: none;
-  box-shadow: 0 10px 26px rgba(0,0,0,.3); transition: transform .2s; -webkit-tap-highlight-color: transparent; }
+.ad .ad-play { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 270px; min-height: 48px;
+  padding: 10px 18px; border-radius: 14px; background: #fff; color: #8B0D3D; font: 800 16px Inter, sans-serif; text-decoration: none;
+  box-shadow: 0 8px 20px rgba(0,0,0,.28); transition: transform .2s; -webkit-tap-highlight-color: transparent; }
 .ad .ad-play:active { transform: scale(.98); }
 .ad .ad-play:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 .ad-free { margin: 8px 0 0; font-size: 13px; font-weight: 600; color: #F7CFDC; }
 .ad-hint { margin: 12px auto 0; max-width: 300px; font-size: 13px; opacity: .85; }
 
-.ad-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 20px; margin: 26px 0 0;
+.ad-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; margin: 10px 0 0;
   padding: 0 20px max(24px, env(safe-area-inset-bottom)); font-size: 13px; opacity: .8; }
 .ad-foot a { text-decoration: none; padding: 8px 2px; }
+.ad-foot .sep { opacity: .6; user-select: none; }
 
 @media (prefers-reduced-motion: reduce) { .ad .ad-play { transition: none; } .ad-shots { scroll-behavior: auto; } }
 `
 
 function PlayGlyph() {
   return (
-    <svg width="22" height="24" viewBox="0 0 24 26" aria-hidden="true" style={{ flexShrink: 0 }}>
+    <svg width="19" height="21" viewBox="0 0 24 26" aria-hidden="true" style={{ flexShrink: 0 }}>
       <path d="M1.2 1.1C.9 1.4.8 1.8.8 2.3v21.4c0 .5.1.9.4 1.2L13 13z" fill="#00A0FF" />
       <path d="M1.2 1.1 13 13l4.1-4.1L3.6 1.3C2.7.8 1.8.6 1.2 1.1z" fill="#00E076" />
       <path d="M17.1 8.9 13 13l4.1 4.1 5.3-3c1.1-.6 1.1-1.6 0-2.2z" fill="#FFD500" />
@@ -177,6 +178,7 @@ export default function AdLandingPage() {
 
       <footer className="ad-foot">
         <Link to="/privacy">{t('landing.footPrivacy')}</Link>
+        <span className="sep" aria-hidden="true">|</span>
         <Link to="/terms">{t('landing.footTerms')}</Link>
       </footer>
     </div>
