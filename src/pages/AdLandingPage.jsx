@@ -16,8 +16,18 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT } from '../i18n'
 import Icon from '../components/Icon'
-import { PLAY_STORE_URL as PLAY_DEFAULT_URL, playStoreUrlFor, AD_SHOTS } from '../lib/siteConfig'
+import { PLAY_STORE_URL as PLAY_DEFAULT_URL, playStoreUrlFor, AD_SHOTS, AD_FEATURE_WALL } from '../lib/siteConfig'
+import { CSS as SHOW_CSS, PhoneGrid } from './landingShow'
 import { initTracking, trackDownloadClick } from '../lib/tracking'
+
+// the screenshots, then one more slide that lists every feature
+const SLIDE_COUNT = AD_SHOTS.length + (AD_FEATURE_WALL ? 1 : 0)
+
+// one or two short words under each mini phone, in the same order as the phones on the home page
+const WALL_CAPTIONS = Object.fromEntries(
+  ['map', 'timeline', 'arrive', 'status', 'sos', 'voice', 'nearby', 'call', 'chat', 'find', 'speed', 'offline']
+    .map((id, i) => [id, `landing.adC${i + 1}`]),
+)
 
 const CSS = `
 .ad { position: fixed; inset: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
@@ -49,10 +59,24 @@ const CSS = `
 .ad-shots { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
 .ad-shots::-webkit-scrollbar { display: none; }
-.ad-slide { flex: 0 0 100%; margin: 0; scroll-snap-align: center; scroll-snap-stop: always; }
+.ad-slide { flex: 0 0 100%; min-width: 0; margin: 0; scroll-snap-align: center; scroll-snap-stop: always; }
 .ad-shot { border-radius: 26px; padding: 5px; background: #1E0510; }
 .ad-slide figcaption { margin-top: 6px; text-align: center; font-size: 13px; font-weight: 700; color: #F7CFDC; }
 .ad-shot img { display: block; width: 100%; height: auto; aspect-ratio: 992 / 1585; object-fit: cover; border-radius: 21px; }
+/* the closing slide: a wall of the website's twelve animated mini phones, sized from the picture width */
+.ad-wall { min-width: 0; aspect-ratio: 992 / 1585; border-radius: 22px; background: #FFFBFC; color: #4A0E24; overflow: hidden;
+  padding: calc(var(--w) * .07) calc(var(--w) * .06) calc(var(--w) * .05); text-align: center; display: flex; flex-direction: column; }
+.ad-wall h2 { margin: 0 0 calc(var(--w) * .05); font: 900 calc(var(--w) * .082) / 1.15 Sora, Inter, sans-serif; color: #8B0D3D; }
+.ad-wallgrid { flex: 1; min-height: 0; }
+.ad-wall .kl-phones { height: 100%; align-content: space-evenly; --z: var(--adz); grid-template-columns: repeat(4, max-content); gap: calc(var(--w) * .02) calc(var(--w) * .02); }
+.ad-wall .kl-phone { box-shadow: none; }
+/* a short caption under each phone: plain text, no pill, 8px at the smallest (Android WebView will not draw smaller) */
+.ad-wall .kl-fp { gap: 3px; width: calc(var(--w) * .2); }
+.ad-wall .kl-cap { display: flex; justify-content: center; width: 0; margin: 0 auto; white-space: nowrap; letter-spacing: -.01em; max-width: none; min-height: 0; padding: 0; border: 0; border-radius: 0; background: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none; color: #3A0818; text-align: center;
+  font: 800 max(8px, calc(var(--w) * .04)) / 1.15 Inter, sans-serif; }
+.ad-wall .kl-cap svg { display: none !important; }
+.ad[data-lang]:not([data-lang="en"]) .ad-wall .kl-cap { line-height: 1.5; font-weight: 700; letter-spacing: 0; }
 .ad .ad-arrow { position: absolute; top: calc(50% - 20px); transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; border: 0; cursor: pointer;
   display: grid; place-items: center; background: rgba(255,255,255,.92); color: #8B0D3D; box-shadow: 0 6px 16px rgba(0,0,0,.35);
   -webkit-tap-highlight-color: transparent; }
@@ -94,6 +118,29 @@ export default function AdLandingPage() {
   const pending = useRef(null)   // the slot an arrow tap is heading to, until the scroll settles
   const settle = useRef(0)
   const [edge, setEdge] = useState({ start: true, end: false })
+  const wall = useRef(null)
+  const wallGrid = useRef(null)
+  const [zoom, setZoom] = useState(0.2)
+  // Four phones across and three down, each with a caption of up to three lines. A phone is 210px wide
+  // (348px tall with its frame) at zoom 1, so take the smaller zoom that fits both the width and the height.
+  useEffect(() => {
+    const el = wall.current
+    const grid = wallGrid.current
+    if (!el || !grid) return undefined
+    const fit = () => {
+      const w = el.clientWidth
+      const h = grid.clientHeight
+      if (!w || !h) return
+      // Every caption is one short word or two on a single line; Indic scripts need taller lines
+      const capLines = Math.max(8, w * 0.04) * (t.lang === 'en' ? 1.15 : 1.5) + 4
+      const byWidth = (w * 0.88 - w * 0.02 * 3) / 4 / 210
+      const byHeight = ((h - w * 0.02 * 2) / 3 - capLines - 3) / 348
+      setZoom(Math.max(0.08, Math.min(byWidth, byHeight)))
+    }
+    fit()
+    window.addEventListener('resize', fit)
+    return () => window.removeEventListener('resize', fit)
+  }, [t.lang])
   useEffect(() => { initTracking() }, [])
 
   const syncEdges = useCallback(() => {
@@ -101,7 +148,7 @@ export default function AdLandingPage() {
     if (!el) return
     clearTimeout(settle.current)
     settle.current = setTimeout(() => { pending.current = null }, 160)
-    setEdge({ start: el.scrollLeft <= 4, end: el.scrollLeft >= el.scrollWidth - el.clientWidth - 4 })
+    setEdge({ start: el.scrollLeft <= 4, end: el.scrollLeft >= el.scrollWidth - el.clientWidth - 14 })
   }, [])
   useEffect(() => {
     syncEdges()
@@ -117,7 +164,7 @@ export default function AdLandingPage() {
     // Aim at an absolute slot, not a relative nudge, so a quick second tap cannot land between two shots.
     const w = first.offsetWidth
     const now = Math.round(el.scrollLeft / w)
-    const target = Math.min(AD_SHOTS.length - 1, Math.max(0, (pending.current ?? now) + dir))
+    const target = Math.min(SLIDE_COUNT - 1, Math.max(0, (pending.current ?? now) + dir))
     pending.current = target
     el.scrollTo({ left: target * w, behavior: 'smooth' })
   }
@@ -132,6 +179,7 @@ export default function AdLandingPage() {
 
   return (
     <div className="ad" data-lang={t.lang}>
+      <style>{SHOW_CSS}</style>
       <style>{CSS}</style>
 
       <div className="ad-wrap">
@@ -145,7 +193,7 @@ export default function AdLandingPage() {
         </blockquote>
       </div>
 
-      {AD_SHOTS.length > 0 && (
+      {SLIDE_COUNT > 0 && (
         <div className="ad-carousel" role="group" aria-roledescription="carousel" aria-label={t('landing.navShow')}>
           <div className="ad-shots" ref={track} onScroll={syncEdges}>
             {AD_SHOTS.map((s, i) => (
@@ -156,6 +204,18 @@ export default function AdLandingPage() {
                 {s.cap && <figcaption>{t(s.cap)}</figcaption>}
               </figure>
             ))}
+            {AD_FEATURE_WALL && (
+              <figure className="ad-slide">
+                <div className="ad-shot">
+                  <div className="ad-wall" ref={wall}>
+                    <h2>30+ {t('landing.navFeatures')}</h2>
+                    <div className="ad-wallgrid" ref={wallGrid} style={{ '--adz': zoom }}>
+                      <PhoneGrid running={edge.end} t={t} captions={WALL_CAPTIONS} />
+                    </div>
+                  </div>
+                </div>
+              </figure>
+            )}
           </div>
           <button type="button" className="ad-arrow prev" onClick={() => step(-1)} disabled={edge.start} aria-label="Previous">
             <Icon name="arrowLeft" size={20} />
