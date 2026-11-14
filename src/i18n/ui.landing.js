@@ -56,7 +56,7 @@ export const LANDING_UI = {
       openWeb: 'Sign in on the web',
       adQuote: '“Reached home?”',
       adQuoteSub: 'Two small words that carry a family’s whole love.',
-      adFree: 'Free to download',
+      adFree: 'Free to use',
 
       featuresTitle: 'Everything Your Family Needs, in One Place',
       f1Title: 'Live Family Map',
@@ -147,7 +147,7 @@ export const LANDING_UI = {
       openWeb: 'வலையில் உள்நுழைக',
       adQuote: '“போய்ச் சேர்ந்துட்டியா?”',
       adQuoteSub: 'இந்த சின்ன கேள்வியில ஒரு குடும்பத்தோட முழு அன்பும் இருக்கு.',
-      adFree: 'இலவசமாகப் பதிவிறக்கலாம்',
+      adFree: 'இலவசமாகப் பயன்படுத்தலாம்',
 
       featuresTitle: 'உங்கள் குடும்பத்துக்குத் தேவையான எல்லாம், ஓரிடத்தில்',
       f1Title: 'நேரலை குடும்ப வரைபடம்',
@@ -238,7 +238,7 @@ export const LANDING_UI = {
       openWeb: 'वेब पर साइन इन करें',
       adQuote: '“पहुँच गए?”',
       adQuoteSub: 'इन दो छोटे शब्दों में एक परिवार का पूरा प्यार समाया है।',
-      adFree: 'डाउनलोड मुफ़्त',
+      adFree: 'उपयोग मुफ़्त',
 
       featuresTitle: 'आपके परिवार को जो चाहिए, सब एक जगह',
       f1Title: 'लाइव फ़ैमिली मैप',
@@ -329,7 +329,7 @@ export const LANDING_UI = {
       openWeb: 'వెబ్‌లో సైన్ ఇన్ చేయండి',
       adQuote: '“చేరుకున్నావా?”',
       adQuoteSub: 'ఈ చిన్న ప్రశ్నలో ఒక కుటుంబం ప్రేమ అంతా ఉంది.',
-      adFree: 'ఉచిత డౌన్‌లోడ్',
+      adFree: 'ఉచితంగా వాడుకోవచ్చు',
 
       featuresTitle: 'మీ కుటుంబానికి కావలసినవన్నీ ఒకే చోట',
       f1Title: 'లైవ్ ఫ్యామిలీ మ్యాప్',
@@ -420,7 +420,7 @@ export const LANDING_UI = {
       openWeb: 'ವೆಬ್‌ನಲ್ಲಿ ಸೈನ್ ಇನ್ ಮಾಡಿ',
       adQuote: '“ತಲುಪಿದೆಯಾ?”',
       adQuoteSub: 'ಈ ಪುಟ್ಟ ಪ್ರಶ್ನೆಯಲ್ಲಿ ಇಡೀ ಕುಟುಂಬದ ಪ್ರೀತಿ ಇದೆ.',
-      adFree: 'ಉಚಿತ ಡೌನ್‌ಲೋಡ್',
+      adFree: 'ಉಚಿತವಾಗಿ ಬಳಸಿ',
 
       featuresTitle: 'ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕೆ ಬೇಕಾದ್ದೆಲ್ಲ ಒಂದೇ ಕಡೆ',
       f1Title: 'ಲೈವ್ ಕುಟುಂಬ ನಕ್ಷೆ',
@@ -511,7 +511,7 @@ export const LANDING_UI = {
       openWeb: 'വെബിൽ സൈൻ ഇൻ ചെയ്യൂ',
       adQuote: '“എത്തിയോ?”',
       adQuoteSub: 'ഈ ചെറിയ ചോദ്യത്തിൽ ഒരു കുടുംബത്തിന്റെ മുഴുവൻ സ്നേഹവുമുണ്ട്.',
-      adFree: 'സൗജന്യമായി ഡൗൺലോഡ് ചെയ്യാം',
+      adFree: 'സൗജന്യമായി ഉപയോഗിക്കാം',
 
       featuresTitle: 'നിങ്ങളുടെ കുടുംബത്തിന് വേണ്ടതെല്ലാം ഒരിടത്ത്',
       f1Title: 'ലൈവ് ഫാമിലി മാപ്പ്',
