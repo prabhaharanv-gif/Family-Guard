@@ -38,6 +38,32 @@ export function playStoreUrlFor(search = '') {
   if (!kept.length) return PLAY_STORE_URL
   return `${PLAY_BASE}&referrer=${encodeURIComponent(kept.join('&'))}`
 }
-export const CONTACT_EMAIL = 'support@kinest.co.in'
+
+/** True for someone who arrived from an ad link (utm_ keys or Meta's fbclid). They get the AdLandingPage. */
+export function isAdVisit(search = '') {
+  return /[?&](utm_source|utm_medium|utm_campaign|fbclid)=/i.test(search)
+}
+
+/**
+ * Real app screenshots for the ad page's preview section, as { src, alt, cap } (cap is a landing.* text key shown under the picture) with
+ * src under /shots/ (put the PNG/JPG/WebP files in public/shots/). Empty means
+ * the section is left out: nothing is ever drawn as a stand-in. Use screenshots
+ * of test accounts only, never real people's names, photos or locations.
+ */
+export const AD_SHOTS = [
+  { src: '/shots/family-map.webp', alt: 'Kinest Family Map showing each family member on the map', cap: 'landing.showMap' },
+  { src: '/shots/timeline.webp',   alt: 'Kinest Timeline showing the route a family member travelled', cap: 'landing.showTimeline' },
+  { src: '/shots/sos.webp',        alt: 'Kinest Emergency SOS screen with six alert types and a Send SOS Now button', cap: 'landing.showSos' },
+  { src: '/shots/family.webp',     alt: 'Kinest Family screen with each member’s status, battery and weather', cap: 'landing.showStatus' },
+]
+
+/**
+ * Analytics IDs come from the build environment (Vercel project settings), never from
+ * source: VITE_GA4_ID (G-XXXXXXXXXX) and VITE_META_PIXEL_ID (digits). Both are public
+ * identifiers, not secrets. Unset means that tool is not loaded at all.
+ */
+export const GA4_ID = import.meta.env.VITE_GA4_ID || ''
+export const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || ''
+export const CONTACT_EMAIL ='support@kinest.co.in'
 export const CONTACT_PHONE = ''
 export const SUPPORT_NAME = 'Kinest Customer Support'

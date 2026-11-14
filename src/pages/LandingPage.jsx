@@ -26,7 +26,8 @@ import { Link } from 'react-router-dom'
 import { useT } from '../i18n'
 import Icon from '../components/Icon'
 import AuthLanguagePicker from '../components/AuthLanguagePicker'
-import { PLAY_STORE_URL as PLAY_DEFAULT_URL, playStoreUrlFor } from '../lib/siteConfig'
+import { PLAY_STORE_URL as PLAY_DEFAULT_URL, playStoreUrlFor, isAdVisit } from '../lib/siteConfig'
+import AdLandingPage from './AdLandingPage'
 
 const FEATURES = [
   { icon: 'map',     n: 1 },
@@ -88,6 +89,7 @@ const CSS = `
 .kl-top, .kl-bot { position: absolute; left: 0; right: 0; z-index: 5; display: flex; align-items: center;
   justify-content: space-between; padding: 18px 24px; gap: 14px; color: #6E0A30; pointer-events: none; transition: color .25s; }
 .kl-top { top: 0; } .kl-bot { bottom: 0; padding-bottom: 20px; }
+
 .kl[data-dark="true"] .kl-top, .kl[data-dark="true"] .kl-bot { color: #fff; }
 .kl-top > *, .kl-bot > * { pointer-events: auto; }
 .kl-brand { display: inline-flex; align-items: center; gap: 10px; font: 900 21px Sora, sans-serif; text-decoration: none; }
@@ -908,7 +910,7 @@ function Cards({ items, prefix, t, two }) {
   )
 }
 
-export default function LandingPage() {
+function SlidesLanding() {
   const t = useT()
   const slides = SLIDES
   const trackRef = useRef(null)
@@ -1096,7 +1098,6 @@ export default function LandingPage() {
     ),
   }
 
-
   return (
     <div className="kl" data-lang={t.lang} data-home={idx === 0} data-dark={isDark(idx)} tabIndex={-1} onKeyDown={onKey}>
       <style>{CSS}</style>
@@ -1174,4 +1175,9 @@ export default function LandingPage() {
       <div className="kl-prog" aria-hidden="true"><i style={{ width: `${((idx + 1) / slides.length) * 100}%` }} /></div>
     </div>
   )
+}
+
+/** Visitors from an ad get the single-scroll download page; everyone else the swipe slides. */
+export default function LandingPage() {
+  return isAdVisit(typeof window !== 'undefined' ? window.location.search : '') ? <AdLandingPage /> : <SlidesLanding />
 }

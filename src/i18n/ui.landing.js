@@ -54,6 +54,9 @@ export const LANDING_UI = {
       getApp: 'Get it on Google Play',
       inAppHint: "Opened inside Instagram or Facebook? Tap ⋮ (top right) and choose “Open in Chrome” to install.",
       openWeb: 'Sign in on the web',
+      adQuote: '“Reached home?”',
+      adQuoteSub: 'Two small words that carry a family’s whole love.',
+      adFree: 'Free to download',
 
       featuresTitle: 'Everything Your Family Needs, in One Place',
       f1Title: 'Live Family Map',
@@ -142,6 +145,9 @@ export const LANDING_UI = {
       getApp: 'Google Play-யில் பெறுங்கள்',
       inAppHint: "Instagram அல்லது Facebook-க்குள் திறந்துள்ளீர்களா? மேலே வலது ⋮ தட்டி “Chrome-இல் திற” தேர்ந்தெடுத்து நிறுவுங்கள்.",
       openWeb: 'வலையில் உள்நுழைக',
+      adQuote: '“போய்ச் சேர்ந்துட்டியா?”',
+      adQuoteSub: 'இந்த சின்ன கேள்வியில ஒரு குடும்பத்தோட முழு அன்பும் இருக்கு.',
+      adFree: 'இலவசமாகப் பதிவிறக்கலாம்',
 
       featuresTitle: 'உங்கள் குடும்பத்துக்குத் தேவையான எல்லாம், ஓரிடத்தில்',
       f1Title: 'நேரலை குடும்ப வரைபடம்',
@@ -230,6 +236,9 @@ export const LANDING_UI = {
       getApp: 'Google Play पर पाएँ',
       inAppHint: "Instagram या Facebook के अंदर खुला है? ऊपर दाएँ ⋮ दबाएँ और “Chrome में खोलें” चुनें, फिर इंस्टॉल करें।",
       openWeb: 'वेब पर साइन इन करें',
+      adQuote: '“पहुँच गए?”',
+      adQuoteSub: 'इन दो छोटे शब्दों में एक परिवार का पूरा प्यार समाया है।',
+      adFree: 'डाउनलोड मुफ़्त',
 
       featuresTitle: 'आपके परिवार को जो चाहिए, सब एक जगह',
       f1Title: 'लाइव फ़ैमिली मैप',
@@ -318,6 +327,9 @@ export const LANDING_UI = {
       getApp: 'Google Play లో పొందండి',
       inAppHint: "Instagram లేదా Facebook లోపల తెరిచారా? పైన కుడివైపు ⋮ నొక్కి “Chrome లో తెరువు” ఎంచుకుని ఇన్‌స్టాల్ చేయండి.",
       openWeb: 'వెబ్‌లో సైన్ ఇన్ చేయండి',
+      adQuote: '“చేరుకున్నావా?”',
+      adQuoteSub: 'ఈ చిన్న ప్రశ్నలో ఒక కుటుంబం ప్రేమ అంతా ఉంది.',
+      adFree: 'ఉచిత డౌన్‌లోడ్',
 
       featuresTitle: 'మీ కుటుంబానికి కావలసినవన్నీ ఒకే చోట',
       f1Title: 'లైవ్ ఫ్యామిలీ మ్యాప్',
@@ -406,6 +418,9 @@ export const LANDING_UI = {
       getApp: 'Google Play ನಲ್ಲಿ ಪಡೆಯಿರಿ',
       inAppHint: "Instagram ಅಥವಾ Facebook ಒಳಗೆ ತೆರೆದಿದೆಯೇ? ಮೇಲಿನ ಬಲದ ⋮ ಒತ್ತಿ “Chrome ನಲ್ಲಿ ತೆರೆಯಿರಿ” ಆಯ್ಕೆಮಾಡಿ, ನಂತರ ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಿ.",
       openWeb: 'ವೆಬ್‌ನಲ್ಲಿ ಸೈನ್ ಇನ್ ಮಾಡಿ',
+      adQuote: '“ತಲುಪಿದೆಯಾ?”',
+      adQuoteSub: 'ಈ ಪುಟ್ಟ ಪ್ರಶ್ನೆಯಲ್ಲಿ ಇಡೀ ಕುಟುಂಬದ ಪ್ರೀತಿ ಇದೆ.',
+      adFree: 'ಉಚಿತ ಡೌನ್‌ಲೋಡ್',
 
       featuresTitle: 'ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕೆ ಬೇಕಾದ್ದೆಲ್ಲ ಒಂದೇ ಕಡೆ',
       f1Title: 'ಲೈವ್ ಕುಟುಂಬ ನಕ್ಷೆ',
@@ -494,6 +509,9 @@ export const LANDING_UI = {
       getApp: 'Google Play-യിൽ നേടൂ',
       inAppHint: "Instagram അല്ലെങ്കിൽ Facebook-നുള്ളിൽ തുറന്നോ? മുകളിൽ വലത് ⋮ അമർത്തി “Chrome-ൽ തുറക്കുക” തിരഞ്ഞെടുത്ത് ഇൻസ്റ്റാൾ ചെയ്യുക.",
       openWeb: 'വെബിൽ സൈൻ ഇൻ ചെയ്യൂ',
+      adQuote: '“എത്തിയോ?”',
+      adQuoteSub: 'ഈ ചെറിയ ചോദ്യത്തിൽ ഒരു കുടുംബത്തിന്റെ മുഴുവൻ സ്നേഹവുമുണ്ട്.',
+      adFree: 'സൗജന്യമായി ഡൗൺലോഡ് ചെയ്യാം',
 
       featuresTitle: 'നിങ്ങളുടെ കുടുംബത്തിന് വേണ്ടതെല്ലാം ഒരിടത്ത്',
       f1Title: 'ലൈവ് ഫാമിലി മാപ്പ്',
