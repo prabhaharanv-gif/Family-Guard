@@ -172,11 +172,9 @@ export default function AdLandingPage() {
   const url = PLAY_DEFAULT_URL && typeof window !== 'undefined' ? playStoreUrlFor(window.location.search) : PLAY_DEFAULT_URL
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
   const inApp = /Instagram|FBAN|FBAV|FB_IAB/i.test(ua)
-  // Instagram/Facebook's in-app browser on Android often ignores a plain Play link, so hand the Play app an intent link.
-  const href = url && inApp && /Android/i.test(ua)
-    ? `intent://details?${url.split('?')[1]}#Intent;scheme=market;package=com.android.vending;S.browser_fallback_url=${encodeURIComponent(url)};end`
-    : url
-
+  // Always a plain https Play link. Instagram/Facebook/Messenger's in-app browser blocks intent:// and
+  // market:// links, so the button did nothing there; a normal link at least reaches the Play page.
+  const href = url
   return (
     <div className="ad" data-lang={t.lang}>
       <style>{SHOW_CSS}</style>

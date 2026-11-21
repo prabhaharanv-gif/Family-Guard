@@ -304,14 +304,11 @@ function SlidesLanding() {
 
   // A link only once the real Play URL is set in lib/siteConfig.js; until then the
   // button is shown but is not a link.
-  // Instagram/Facebook's in-app browser on Android often ignores a plain Play link.
-  // There, hand the Play app an intent link, with the normal URL as the fallback.
-  // Carry the visitor's utm_ campaign (from an ad link) through to Play as the install referrer.
+  // Always a plain https Play link: the in-app browsers (Instagram, Facebook, Messenger) block intent:// links,
+  // which made the button do nothing there. Carry the visitor's utm_ campaign through as the install referrer.
   const PLAY_STORE_URL = PLAY_DEFAULT_URL && typeof window !== 'undefined' ? playStoreUrlFor(window.location.search) : PLAY_DEFAULT_URL
   const inApp = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent) && /Instagram|FBAN|FBAV|FB_IAB/i.test(navigator.userAgent)
-  const playHref = PLAY_STORE_URL && inApp
-    ? `intent://details?${PLAY_STORE_URL.split('?')[1]}#Intent;scheme=market;package=com.android.vending;S.browser_fallback_url=${encodeURIComponent(PLAY_STORE_URL)};end`
-    : PLAY_STORE_URL
+  const playHref = PLAY_STORE_URL
   const download = PLAY_STORE_URL
     ? <a className="kl-btn light" href={playHref} rel="noopener"><PlayGlyph />{t('landing.getApp')}</a>
     : <span className="kl-btn soon" aria-disabled="true"><PlayGlyph />{t('landing.getApp')}</span>
