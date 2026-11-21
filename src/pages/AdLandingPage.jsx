@@ -19,6 +19,7 @@ import Icon from '../components/Icon'
 import { PLAY_STORE_URL as PLAY_DEFAULT_URL, playStoreUrlFor, AD_SHOTS, AD_FEATURE_WALL } from '../lib/siteConfig'
 import { CSS as SHOW_CSS, PhoneGrid } from './landingShow'
 import { initTracking, trackDownloadClick } from '../lib/tracking'
+import { logSiteEvent, logPageViewOnce } from '../lib/siteStats'
 
 // the screenshots, then one more slide that lists every feature
 const SLIDE_COUNT = AD_SHOTS.length + (AD_FEATURE_WALL ? 1 : 0)
@@ -141,7 +142,7 @@ export default function AdLandingPage() {
     window.addEventListener('resize', fit)
     return () => window.removeEventListener('resize', fit)
   }, [t.lang])
-  useEffect(() => { initTracking() }, [])
+  useEffect(() => { initTracking(); logPageViewOnce() }, [])
 
   const syncEdges = useCallback(() => {
     const el = track.current
@@ -227,7 +228,7 @@ export default function AdLandingPage() {
       <div className="ad-wrap">
         <div className="ad-cta">
           {url
-            ? <a className="ad-play" href={href} rel="noopener" onClick={() => trackDownloadClick('hero')}><PlayGlyph />{t('landing.getApp')}</a>
+            ? <a className="ad-play" href={href} rel="noopener" onClick={() => { trackDownloadClick('hero'); logSiteEvent('download_click', 'hero') }}><PlayGlyph />{t('landing.getApp')}</a>
             : <span className="ad-play" aria-disabled="true"><PlayGlyph />{t('landing.getApp')}</span>}
           <p className="ad-free">{t('landing.adFree')}</p>
           {url && inApp && <p className="ad-hint">{t('landing.inAppHint')}</p>}
