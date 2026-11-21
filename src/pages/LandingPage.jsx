@@ -29,6 +29,7 @@ import AuthLanguagePicker from '../components/AuthLanguagePicker'
 import { PLAY_STORE_URL as PLAY_DEFAULT_URL, playStoreUrlFor, isAdVisit } from '../lib/siteConfig'
 import AdLandingPage from './AdLandingPage'
 import { CSS, PhoneGrid } from './landingShow'
+import { logSiteEvent } from '../lib/siteStats'
 
 const FEATURES = [
   { icon: 'map',     n: 1 },
@@ -307,10 +308,9 @@ function SlidesLanding() {
   // Always a plain https Play link: the in-app browsers (Instagram, Facebook, Messenger) block intent:// links,
   // which made the button do nothing there. Carry the visitor's utm_ campaign through as the install referrer.
   const PLAY_STORE_URL = PLAY_DEFAULT_URL && typeof window !== 'undefined' ? playStoreUrlFor(window.location.search) : PLAY_DEFAULT_URL
-  const inApp = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent) && /Instagram|FBAN|FBAV|FB_IAB/i.test(navigator.userAgent)
   const playHref = PLAY_STORE_URL
   const download = PLAY_STORE_URL
-    ? <a className="kl-btn light" href={playHref} rel="noopener"><PlayGlyph />{t('landing.getApp')}</a>
+    ? <a className="kl-btn light" href={playHref} rel="noopener" onClick={() => logSiteEvent('download_click', 'home')}><PlayGlyph />{t('landing.getApp')}</a>
     : <span className="kl-btn soon" aria-disabled="true"><PlayGlyph />{t('landing.getApp')}</span>
 
   const body = {
